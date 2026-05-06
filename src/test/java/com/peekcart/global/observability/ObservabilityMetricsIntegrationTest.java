@@ -10,6 +10,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -20,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureObservability
+@TestPropertySource(properties = "management.endpoint.health.probes.enabled=true")
 @Testcontainers
 @DisplayName("관측성 계약 회귀 테스트 (D-001/D-005 재발 방지)")
 class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
@@ -60,5 +62,36 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
         assertThat(body)
                 .as("비즈니스 URI 에 대한 http_server_requests histogram bucket 이 노출되어야 한다 (D-001: MetricsConfig MeterFilter)")
                 .containsPattern("http_server_requests_seconds_bucket\\{[^}]*uri=\"/api/v1/products\"[^}]*le=\"[^\"]+\"[^}]*\\}");
+    }
+
+    @Test
+    @DisplayName("actuator exposure 화이트리스트가 정확히 health, prometheus 만 데이터를 노출한다 (D5-V3)")
+    void actuatorExposure_whitelistsExactlyHealthAndPrometheus() {
+        assertThat(restTemplate.getForEntity("/actuator/health", String.class).getStatusCode())
+                .as("health 는 노출 (whitelisted)")
+                .isEqualTo(HttpStatus.OK);
+        assertThat(restTemplate.getForEntity("/actuator/prometheus", String.class).getStatusCode())
+                .as("prometheus 는 노출 (whitelisted)")
+                .isEqualTo(HttpStatus.OK);
+        // info / env 는 exposure include 미포함 + PUBLIC_URLS 미포함 — 200 으로 데이터를 내면
+        // 화이트리스트 (exposure include + SecurityConfig PUBLIC_URLS) 양쪽이 동시에 깨진 회귀.
+        // 단일 레이어 (exposure 또는 SecurityConfig 한쪽만 깨짐) 도 200 이 아닌 응답으로 차단.
+        assertThat(restTemplate.getForEntity("/actuator/info", String.class).getStatusCode())
+                .as("info 는 데이터 미노출 (exposure include + SecurityConfig 이중 보호)")
+                .isNotEqualTo(HttpStatus.OK);
+        assertThat(restTemplate.getForEntity("/actuator/env", String.class).getStatusCode())
+                .as("env 는 데이터 미노출")
+                .isNotEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    @DisplayName("/actuator/health/** 가 인증 없이 200 응답한다 (D5-V4 — K8s liveness/readiness Probe 의존)")
+    void actuatorHealth_noAuthRequired() {
+        assertThat(restTemplate.getForEntity("/actuator/health", String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(restTemplate.getForEntity("/actuator/health/liveness", String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(restTemplate.getForEntity("/actuator/health/readiness", String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
     }
 }
