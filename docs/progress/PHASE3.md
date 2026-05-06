@@ -1193,4 +1193,4 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 **잔여 (D5-V6 부분 격상 — §8 후속)**:
 - PromQL syntax check (ADR-0009 §Decision S6 검증 수단의 절반): `promtool promql format` 의 experimental 기능 의존 + CI 설치 step + expr 추출 비용 비대칭으로 본 task 기각. 재검토 트리거 — Phase 4 OpenTelemetry alert 수 증가 / promtool stable 승격 / 운영 인시던트.
 
-**브랜치**: `chore/task-d005-observability-consolidation`. 계획 리뷰 3 loops (Codex 7건 — P0:0/P1:4/P2:3 — 전체 반영). /work loop 1.
+**브랜치**: `chore/task-d005-observability-consolidation`. 계획 리뷰 3 loops (Codex 7건 — P0:0/P1:4/P2:3 — 전체 반영). /work loop 1 + Codex split review 1 loop (3 chunks 9건 — P0:1/P1:4/P2:4 — 7건 반영 + 1건 부분 + 2건 거부). PR: https://github.com/Kimgyuilli/PeakCart/pull/32
