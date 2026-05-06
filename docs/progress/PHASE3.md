@@ -1152,3 +1152,45 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 - 후속 task `task-d005-observability-consolidation` 작업 항목이 본 ADR §Decision 표에서 1:1 도출 가능 (CQ1, CQ2 충족)
 
 **브랜치**: `docs/adr-0009-observability-ssot`. 계획 리뷰 1 loop (Codex 6건 — P0:0/P1:4/P2:2 — 전체 반영). /work 3 loops (Codex 12건 — P0:0/P1:8/P2:4 — 전체 반영). PR: https://github.com/Kimgyuilli/PeakCart/pull/30
+
+## 2026-05-06 — task-d005-observability-consolidation (D-005 강제 메커니즘 격상)
+
+**범위**: ADR-0009 §Decision 표 6번째 컬럼 ("검증 수단") 의 D5-V1~V6 action 을 1:1 격상 (D5-V6 는 라벨 invariant 만 부분 격상 — PromQL syntax 는 §7 R1 트레이드오프). surface 의 *위치* 변경 0건 — Phase 4 멀티모듈 분리 task 가 ADR-0009 인용으로 수행할 부분은 본 task 비대상.
+
+**Part A — lint script 3종 신규**:
+- **`scripts/observability-ssot-lint.sh`** (D5-V1 + D5-V2): yaml 파싱(pyyaml) + grep. base `application.yml` 가 SSOT 인 키 (`management.metrics.tags.application` / `management.endpoints.web.exposure.include`) 의 다른 프로파일 재선언 검출 + `MeterFilter`/`MeterRegistryCustomizer<>` 가 `MetricsConfig.java` 외 클래스에 있는지 검사 + application 태그 값 'peekcart' 외 검출. 화이트리스트는 ADR-0007/0009 회색지대 분류 (probes.enabled/show-details).
+- **`scripts/servicemonitor-selector-lint.sh`** (D5-V5): `kubectl kustomize` 로 양 overlay (minikube, gke) 빌드 → ServiceMonitor `spec.selector.matchLabels` 와 `endpoints[].port` 가 같은 namespace Service 의 `metadata.labels` / `spec.ports[].name` 과 매칭되는지 정적 검증. kubectl 미존재 시 skip exit 0.
+- **`scripts/observability-promql-lint.sh`** (D5-V6 부분): grafana-alerts ConfigMap → 내부 yaml → 각 rule 의 `data[].model.expr` 추출. alert uid 별 required-label matrix 적용 — S6.a/b (`peekcart-high-error-rate`/`peekcart-slow-response`): `application` 필수 + S2 ground truth (`application.yml` `management.metrics.tags.application`) 일치 / S6.c/d (`peekcart-target-down`/`peekcart-scrape-absent`): `namespace`+`service` 필수 + S5 ground truth (servicemonitor namespace + selector `matchLabels.app`) 일치. presence 부재 + value mismatch 모두 검출.
+
+**Part B — 통합 테스트 메서드 2건 추가** (`ObservabilityMetricsIntegrationTest`):
+- **D5-V3** (`actuatorExposure_whitelistsExactlyHealthAndPrometheus`): health/prometheus 200 + info/env 는 200 미반환 (`isNotEqualTo(HttpStatus.OK)`). Spring Security filter 가 actuator 이전에 동작하므로 `/actuator/info` 는 PUBLIC_URLS 미포함 → 401. plan §3 P3 가 `NOT_FOUND` 로 단정한 부분은 보안 레이어 작동 순서 미고려 — 실제 ground truth 는 401(security) 또는 404(actuator). 어느 쪽이든 200 미반환이 화이트리스트 회귀 신호 (`isNotEqualTo(OK)` 로 양쪽 케이스 모두 커버).
+- **D5-V4** (`actuatorHealth_noAuthRequired`): `/actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness` 가 인증 없이 200. K8s liveness/readiness Probe 의존.
+- 클래스 레벨 `@TestPropertySource(properties = "management.endpoint.health.probes.enabled=true")` 추가 (ADR-0007/0009 회색지대 재결정 회피 — `application-test.yml` 에 management 정책 추가 안 함).
+
+**Part C — CI 통합** (`.github/workflows/ci.yml`):
+- `chmod +x gradlew` 다음 + `./gradlew build` 이전 위치에 step 3건 추가:
+  - `Install lint dependencies` — `python3 -m pip install --user pyyaml`
+  - `Set up kubectl` — `azure/setup-kubectl@v4`
+  - `Run observability lints` — 3 lint script 순차 실행
+- 정책 위반은 build (수분) 비용 부담 전 fail. 후속 step 은 default `if: success()` 로 skip. `upload-artifact` 의 `if: always()` 는 그대로 (lint 실패 시에도 빈 artifact 업로드 — 디버깅 가치 유지).
+
+**Part D — 문서 동기화**:
+- TASKS.md: D-005 행 우선순위 `중간 — 1차 봉합 완료, 잔여 리스크` → ~~중간~~ **해결됨**. "완료된 작업" 표 새 행.
+- 본 PHASE3.md 엔트리.
+- `docs/02-architecture.md` 변경 없음 (§12 패키지 구조가 `scripts/` 미언급 상태).
+- `CLAUDE.md` 변경 없음 (ADR-0009 참조는 ADR task 에서 추가됨).
+
+**부동성 (ADR-0009 §Decision 표 4번째 컬럼 = "없음" 유지)**:
+- `MetricsConfig.java` (S1) / `application.yml` (S2/S3 base) / `application-k8s.yml` 회색지대 키 / `SecurityConfig.java` (S4) / `servicemonitor.yml` (S5) / `grafana-alerts.yml` (S6.a~d) 변경 0건.
+
+**검증**:
+- `./gradlew test`: 244 + 신규 2건 (P3+P4) = 246건 통과 (ObservabilityMetricsIntegrationTest 4건).
+- 3 lint script 현 트리에서 exit 0 (positive).
+- negative detector branch 11건 모두 exit 1 (PR 본문 §검증 부록에 명령 + exit code 첨부): D5-V1 두 키 / D5-V2 Java 중복 + base yaml 값 변경 / D5-V5 selector + port / D5-V6 value mismatch 3 + label absence 2 family 대표.
+- D5-V3/V4 는 통합 테스트 assertion 자동 회귀 — negative 별도 증빙 불필요.
+- `bash docs/consistency-hints.sh` exit 0.
+
+**잔여 (D5-V6 부분 격상 — §8 후속)**:
+- PromQL syntax check (ADR-0009 §Decision S6 검증 수단의 절반): `promtool promql format` 의 experimental 기능 의존 + CI 설치 step + expr 추출 비용 비대칭으로 본 task 기각. 재검토 트리거 — Phase 4 OpenTelemetry alert 수 증가 / promtool stable 승격 / 운영 인시던트.
+
+**브랜치**: `chore/task-d005-observability-consolidation`. 계획 리뷰 3 loops (Codex 7건 — P0:0/P1:4/P2:3 — 전체 반영). /work loop 1.
