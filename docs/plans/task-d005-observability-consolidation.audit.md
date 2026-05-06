@@ -57,3 +57,17 @@
 - raw: `.cache/codex-reviews/diff-task-d005-observability-consolidation-1778049858-c1.json` / `-c2.json` / `-c3.json`
 - run_id: `work:20260506T064339Z:55b52af4-b007-44d8-abe7-58f7a163a35f:1:c1` / `:c2` / `:c3`
 - tokens used: c1=66,408 / c2=107,181 / c3=82,754 (총 256,343)
+
+## 2026-05-06 16:50 — /ship execute (GS-1 auto-pass / GS-2 user-approved / 5+1 commits)
+
+- precheck: ok (warnings 0, GS-1 auto-pass)
+- partition: 5 partitions (chore lint 3종 / test / ci / docs plan / docs 동기화)
+- commits:
+  - p1 `3b70adc` chore(observability): D5-V1/V2/V5/V6 lint 3종
+  - p2 `4836e1f` test(observability): D5-V3 + D5-V4
+  - p3 `4a8a11d` ci: observability lint step
+  - p4 `e4e15a8` docs(plan): plan + audit
+  - p5 `bc831f0` docs: D-005 해결 표기
+  - 추가 `ca8f3ad` docs: PR link append (Step 9 /done)
+- branch: `chore/task-d005-observability-consolidation` (origin push OK)
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/32
