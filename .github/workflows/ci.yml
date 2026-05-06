@@ -31,6 +31,19 @@ jobs:
 
       - run: chmod +x gradlew
 
+      - name: Install lint dependencies
+        run: |
+          python3 -m pip install --user pyyaml
+
+      - name: Set up kubectl (for ServiceMonitor lint)
+        uses: azure/setup-kubectl@v4
+
+      - name: Run observability lints
+        run: |
+          bash scripts/observability-ssot-lint.sh
+          bash scripts/servicemonitor-selector-lint.sh
+          bash scripts/observability-promql-lint.sh
+
       - run: ./gradlew build --no-daemon
         env:
           SPRING_PROFILES_ACTIVE: test
