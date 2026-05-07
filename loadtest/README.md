@@ -38,7 +38,7 @@ loadtest/
 2. peekcart 이미지가 Artifact Registry 에 push 되어 있음
 3. `kustomize edit set image` 로 `PROJECT_ID_PLACEHOLDER` 가 실제 프로젝트 ID 로 치환됨 (**커밋 금지**, `k8s/overlays/gke/README.md` 참고)
 4. 4단계 apply 완료 (namespace → infra → services → monitoring, `docs/02-architecture.md` §12)
-5. 부하 발생기 VM `loadgen` 에 JDK 11 (nGrinder agent 전용), nGrinder, k6 v0.49+ 설치 완료
+5. 부하 발생기 VM `peekcart-loadgen` 에 JDK 11 (nGrinder agent 전용), nGrinder, k6 v0.49+ 설치 완료
 6. billing alert ₩50,000 설정 확인
 
 ## 절차

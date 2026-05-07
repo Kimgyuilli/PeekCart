@@ -120,7 +120,7 @@
 ## 정리 체크리스트 (ADR-0004)
 
 - [ ] `gcloud container clusters delete peekcart-loadtest --region=asia-northeast3-a`
-- [ ] `gcloud compute instances delete loadgen --zone=asia-northeast3-a`
+- [ ] `gcloud compute instances delete peekcart-loadgen --zone=asia-northeast3-a`
 - [ ] `gcloud compute disks list` — orphan PD 없음
 - [ ] `gcloud compute addresses list` — 예약 IP 없음
 - [ ] billing 콘솔 당일 과금 확인
