@@ -51,6 +51,10 @@ grafana:
     alerts:
       enabled: true
       searchNamespace: ALL
+    # D-008: datasource UID 명시 고정. 차트 기본값과 동일하나 명시 선언으로
+    # 업그레이드 시 기본값 변경에 따른 dashboard/alert (`uid: prometheus`) 회귀 차단.
+    datasources:
+      uid: prometheus
   service:
     type: LoadBalancer
     annotations:
