@@ -1194,3 +1194,26 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 - PromQL syntax check (ADR-0009 §Decision S6 검증 수단의 절반): `promtool promql format` 의 experimental 기능 의존 + CI 설치 step + expr 추출 비용 비대칭으로 본 task 기각. 재검토 트리거 — Phase 4 OpenTelemetry alert 수 증가 / promtool stable 승격 / 운영 인시던트.
 
 **브랜치**: `chore/task-d005-observability-consolidation`. 계획 리뷰 3 loops (Codex 7건 — P0:0/P1:4/P2:3 — 전체 반영). /work loop 1 + Codex split review 1 loop (3 chunks 9건 — P0:1/P1:4/P2:4 — 7건 반영 + 1건 부분 + 2건 거부). PR: https://github.com/Kimgyuilli/PeakCart/pull/32
+
+## 2026-05-07 — cleanup.sh VM 이름 정정 (Task 3-4 세션 C 부산물 fix)
+
+**범위**: 세션 C 측정 (2026-04-29) 시 발견된 cleanup.sh 기본값 불일치 정리. TASKS.md 491번 행 "별도 fix 안건" 으로 유지되던 잔여. 9 lines / 4 files. /plan→/work 워크플로우 우회 + 수동 ship (state 파일 부재로 /ship harness 미구동).
+
+**변경**:
+- `loadtest/cleanup.sh` — `LOADGEN_NAME` 기본값 `loadgen` → `peekcart-loadgen` (헤더 주석 + 변수 기본값 동시 갱신)
+- `loadtest/README.md:41` — 전제조건 VM 이름 동기화
+- `loadtest/reports/TEMPLATE.md:123` — 정리 체크리스트 명령 동기화
+
+**근거 (이름 결정)**:
+- `docs/progress/PHASE3.md:981` — "loadgen VM `peekcart-loadgen` (e2-standard-2 ...)" 실제 프로비저닝 명세
+- `:1018` — "`loadgen=loadgen` → `loadgen=peekcart-loadgen` 로 정정 필요" 명시
+- cluster `peekcart-loadtest` prefix 와 일관성
+
+**비변경 (immutable 이력)**:
+- `loadtest/reports/2026-04-09/REPORT.md`, `loadtest/reports/2026-04-29/REPORT.md` — 이력 기록은 미수정. 미래 측정 세션 진입점 (TEMPLATE 복사) 과 운영 스크립트 기본값만 정정.
+
+**검증**:
+- `bash loadtest/cleanup.sh --dry-run` 출력에서 `loadgen=peekcart-loadgen` + `gcloud compute instances delete peekcart-loadgen --zone=asia-northeast3-a --quiet` 정상 치환 확인.
+- 코드/매니페스트 변경 없음 → 단위·통합 테스트 영향 0.
+
+**브랜치**: `fix/cleanup-loadgen-vm-name`. 커밋 3개 (`fix(loadtest)` / `docs(tasks)` / `docs: append PR link`). PR: https://github.com/Kimgyuilli/PeakCart/pull/33
