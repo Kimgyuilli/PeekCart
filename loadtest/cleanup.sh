@@ -10,7 +10,7 @@
 #
 # 환경변수 override:
 #   CLUSTER_NAME   기본 peekcart-loadtest
-#   LOADGEN_NAME   기본 loadgen
+#   LOADGEN_NAME   기본 peekcart-loadgen
 #   ZONE           기본 asia-northeast3-a
 #   REGION         기본 asia-northeast3
 #
@@ -27,7 +27,7 @@ if [[ "${1:-}" == "--dry-run" ]]; then
 fi
 
 CLUSTER_NAME="${CLUSTER_NAME:-peekcart-loadtest}"
-LOADGEN_NAME="${LOADGEN_NAME:-loadgen}"
+LOADGEN_NAME="${LOADGEN_NAME:-peekcart-loadgen}"
 ZONE="${ZONE:-asia-northeast3-a}"
 REGION="${REGION:-asia-northeast3}"
 
