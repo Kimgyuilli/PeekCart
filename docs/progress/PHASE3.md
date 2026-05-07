@@ -1217,3 +1217,28 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 - 코드/매니페스트 변경 없음 → 단위·통합 테스트 영향 0.
 
 **브랜치**: `fix/cleanup-loadgen-vm-name`. 커밋 3개 (`fix(loadtest)` / `docs(tasks)` / `docs: append PR link`). PR: https://github.com/Kimgyuilli/PeakCart/pull/33
+
+## 2026-05-07 — D-008 해결 (Grafana datasource UID 명시 pin)
+
+**범위**: D-008 ("Grafana datasource UID 하드코딩 — Helm 업그레이드 시 변경 가능성") 해결. 차트 기본값 의존을 끊고 values 에서 UID 를 명시 pin 하여 회귀 차단. dashboard JSON · alert YAML 변경 0건 (기존 `uid: prometheus` 참조 그대로 유지).
+
+**변경**:
+- `k8s/monitoring/minikube/values-prometheus.yml` — `grafana.sidecar.datasources.uid: prometheus` 추가 + D-008 의도 주석
+- `k8s/monitoring/gke/values-prometheus.yml` — 동일
+
+**비변경 (의도)**:
+- `k8s/monitoring/shared/api-jvm-dashboard.json` (7건), `kafka-lag-dashboard.json` (3건), `pod-resources-dashboard.json` (4건) 의 `"uid": "prometheus"` 14건 — values pin 과 동일 값이라 변경 불필요
+- `k8s/monitoring/shared/grafana-alerts.yml` 의 `datasourceUid: prometheus` 8건 — 동일
+- `install.sh` chart version pin — 별도 결정 영역 (D-008 범위 외)
+
+**근거 (kube-prometheus-stack 차트 기본값 점검)**:
+- `helm show values prometheus-community/kube-prometheus-stack` → `grafana.sidecar.datasources.uid: prometheus` 가 차트 기본값. 현재 작동하는 이유.
+- 차트 87+ 또는 grafana subchart 변경 시 기본 UID 변경 위험 — 명시 pin 으로 forward-compat.
+
+**검증**:
+- `helm template kube-prometheus-stack prometheus-community/kube-prometheus-stack -n monitoring -f k8s/monitoring/minikube/values-prometheus.yml` → datasource ConfigMap 에 리터럴 `uid: prometheus` 렌더링 확인 (gke 동일).
+- 코드 변경 없음 → 단위·통합 테스트 영향 0.
+
+**ADR-0009 영향**: S6 (Grafana alerts) surface 의 `datasourceUid` 는 본 task 범위 외. ADR-0009 §Decision 표 4번째 컬럼 ("본 task 변경" = "없음") 부동성 유지 — pin 은 *값 ground truth* 가 아니라 *해석 안정성* 격상.
+
+**브랜치**: `fix/d008-grafana-datasource-uid-pin`
