@@ -38,7 +38,7 @@ class PaymentCommandServiceTest {
     @Mock PaymentOutboxEventPublisher outboxEventPublisher;
 
     @Test
-    @DisplayName("confirmPayment: 성공 시 APPROVED 상태와 PaymentCompletedEvent가 발행된다")
+    @DisplayName("confirmPayment: 성공 시 APPROVED 상태와 payment.completed Outbox 이벤트가 발행된다")
     void confirmPayment_success() {
         Payment payment = PaymentFixture.pendingPaymentWithId();
         ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
@@ -60,7 +60,7 @@ class PaymentCommandServiceTest {
     }
 
     @Test
-    @DisplayName("confirmPayment: Toss API 실패 시 FAILED 상태와 PaymentFailedEvent가 발행된다")
+    @DisplayName("confirmPayment: Toss API 실패 시 FAILED 상태와 payment.failed Outbox 이벤트가 발행된다")
     void confirmPayment_tossFailure_failsPayment() {
         Payment payment = PaymentFixture.pendingPaymentWithId();
         ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
