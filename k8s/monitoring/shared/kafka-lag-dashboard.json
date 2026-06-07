@@ -13,7 +13,7 @@
       "targets": [
         {
           "expr": "kafka_consumer_fetch_manager_records_lag_max{application=\"peekcart\"}",
-          "legendFormat": "{{kafka_consumer_group_id}} — {{topic}}"
+          "legendFormat": "{{client_id}} — {{topic}}"
         }
       ],
       "fieldConfig": {
@@ -39,7 +39,7 @@
       "targets": [
         {
           "expr": "rate(kafka_consumer_fetch_manager_records_consumed_total{application=\"peekcart\"}[5m])",
-          "legendFormat": "{{kafka_consumer_group_id}} — {{topic}}"
+          "legendFormat": "{{client_id}} — {{topic}}"
         }
       ],
       "fieldConfig": {
@@ -55,7 +55,7 @@
       "targets": [
         {
           "expr": "rate(kafka_consumer_fetch_manager_fetch_total{application=\"peekcart\"}[5m])",
-          "legendFormat": "{{kafka_consumer_group_id}}"
+          "legendFormat": "{{client_id}}"
         }
       ],
       "fieldConfig": {
