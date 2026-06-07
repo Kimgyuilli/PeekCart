@@ -42,12 +42,12 @@ echo "[D-012/L-015] starting smoke infrastructure"
 
 echo "[D-012/L-015] waiting for MySQL"
 for _ in {1..60}; do
-    if "${COMPOSE[@]}" exec -T mysql mysqladmin ping -h 127.0.0.1 -uroot -proot --silent >/dev/null 2>&1; then
+    if "${COMPOSE[@]}" exec -T mysql env MYSQL_PWD=root mysqladmin ping -h 127.0.0.1 -uroot --silent >/dev/null 2>&1; then
         break
     fi
     sleep 2
 done
-"${COMPOSE[@]}" exec -T mysql mysqladmin ping -h 127.0.0.1 -uroot -proot --silent >/dev/null
+"${COMPOSE[@]}" exec -T mysql env MYSQL_PWD=root mysqladmin ping -h 127.0.0.1 -uroot --silent >/dev/null
 
 echo "[D-012/L-015] waiting for Redis"
 for _ in {1..30}; do
