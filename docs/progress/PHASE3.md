@@ -1267,3 +1267,30 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 - 코드 변경 없음 → `./gradlew test` 미실행.
 
 **브랜치**: `chore/tier-a-immediate-fixes`. 커밋 6개 (`docs(loadtest)` / `fix(loadtest)` / `docs(loadtest)` / `docs(k8s)` / `fix(monitoring)` / `docs(tasks)`). PR: 미생성.
+
+## 2026-06-08 — D-012 해결 (CI 품질 게이트: PR build·smoke·branch protection·NS lint)
+
+**범위**: Phase 4 진입 전 기술부채 로드맵 §2 "작업 2 — D-012: CI 품질 게이트". 기존 CI 가 `./gradlew build` 중심이라 PR 이미지 빌드·런타임 smoke·main branch protection·Kustomize namespace 누출 검증이 빠져 있던 상태를 버킷 1 범위에서 닫음.
+
+**변경**:
+- **L-017 (K8s/CI)**: `scripts/kustomize-namespace-lint.sh` 신규 추가. `kubectl kustomize` 로 `k8s/overlays/{minikube,gke}` 렌더링 후 namespaced 리소스가 기대 namespace(`peekcart`) 를 직접 선언했는지 PyYAML 로 검증. `base` 의 `namespace:` 필드 미사용 원칙을 유지하면서 overlay 산출물의 namespace 누락/불일치만 CI 에서 차단.
+- **L-015 (Docker build gate)**: `.github/workflows/ci.yml` PR 경로에 `docker/build-push-action@v5` 이미지 빌드 게이트 추가. `push: false`, `cache-from: type=gha`, 태그 `peekcart-ci:${{ github.sha }}` 로 빌드 성공 자체를 검증하고 main push 의 GHCR publish 경로와 분리.
+- **L-015 (Runtime smoke gate)**: `scripts/docker-health-smoke.sh` 신규 추가. PR 빌드 이미지를 `load: true` 로 로컬 Docker daemon 에 적재한 뒤 기존 `docker-compose.yml` 의 MySQL/Redis/Kafka 를 올리고 앱 컨테이너를 같은 compose 네트워크에 붙여 `/actuator/health` HTTP 200 을 확인. 앱 조기 종료/timeout 시 `docker logs` 를 출력해 실패 원인을 CI 로그에 남김.
+- **L-014 (Branch protection)**: GitHub API 로 `main` branch protection 적용. required status check 는 현재 단일 CI job 이름인 `build`, `strict: true`, force push/delete 금지. PR 리뷰 강제와 admin enforcement 는 본 항목 범위 밖이라 미적용.
+- **TASKS.md**: `CI 품질 게이트` PR 단위와 `D-012` 상태를 `✅` 완료로 갱신.
+
+**비변경 (의도)**:
+- CI job 분리는 하지 않음. 현 워크플로우에서 lint, Gradle build, PR Docker build, smoke 가 모두 `build` job 안에 있으므로 branch protection required check 도 `build` 하나로 지정.
+- PR 경로의 `cache-to` 는 추가하지 않음. main push 캐시를 읽되 PR 에서 새 캐시를 쓰지 않아 fork/권한 이슈와 PR 캐시 오염을 피함.
+- Branch protection 에 PR 리뷰 필수, admin 강제, linear history 강제는 추가하지 않음. D-012/L-014 정의는 required status check 지정이므로 설정 범위를 그 안에 제한.
+- Kafka 대기는 `/actuator/health` 200 판정 자체보다는 `@KafkaListener` 포함 런타임 기동 안정화 목적. 비용은 있지만 smoke 범위 안에 유지.
+
+**검증**:
+- `PATH=/tmp/peakcart-lint-venv/bin:$PATH bash scripts/kustomize-namespace-lint.sh` 통과.
+- fake `kubectl` negative 검증에서 minikube/gke 양 overlay 위반을 한 번에 보고하고 exit 1 반환 확인.
+- `docker build -t peakcart-ci:local .` 통과.
+- `bash scripts/docker-health-smoke.sh peakcart-ci:local` 통과 — MySQL/Redis/Kafka 기동 후 앱 `/actuator/health` 200 확인.
+- `gh api repos/Kimgyuilli/PeakCart/branches/main/protection --jq ...` 로 `strict=true`, `contexts=["build"]`, `checks=["build"]`, `allow_force_pushes=false`, `allow_deletions=false` 확인.
+- `bash -n scripts/docker-health-smoke.sh`, `git diff --check` 통과.
+
+**브랜치**: `chore/d012-ci-quality-gates`. 커밋 5개 (`docs(tasks)` / `ci(k8s)` / `ci(docker)` / `ci(docker)` / `docs(tasks)`). PR: 미생성.
