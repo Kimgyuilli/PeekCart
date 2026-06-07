@@ -46,3 +46,5 @@ docs/plans/.archive/
 
 # Load test local rehearsal output (task-loadtest-session-c §4)
 loadtest/reports/local/
+
+docs/learning/
