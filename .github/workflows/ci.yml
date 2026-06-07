@@ -38,8 +38,9 @@ jobs:
       - name: Set up kubectl (for ServiceMonitor lint)
         uses: azure/setup-kubectl@v4
 
-      - name: Run observability lints
+      - name: Run CI policy lints
         run: |
+          bash scripts/kustomize-namespace-lint.sh
           bash scripts/observability-ssot-lint.sh
           bash scripts/servicemonitor-selector-lint.sh
           bash scripts/observability-promql-lint.sh
