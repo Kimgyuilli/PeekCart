@@ -17,9 +17,10 @@ SELECT
     100                                       AS initial_stock,
     i.stock                                   AS current_stock,
     (100 - i.stock)                           AS stock_decreased,
-    COALESCE(SUM(oi.quantity), 0)             AS items_sold,
+    COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity ELSE 0 END), 0)
+                                              AS items_sold,
     CASE
-        WHEN (100 - i.stock) = COALESCE(SUM(oi.quantity), 0) THEN 'OK'
+        WHEN (100 - i.stock) = COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity ELSE 0 END), 0) THEN 'OK'
         ELSE 'MISMATCH'
     END                                       AS consistency
 FROM products p
