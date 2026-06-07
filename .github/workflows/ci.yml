@@ -70,8 +70,13 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           cache-from: type=gha
           tags: peekcart-ci:${{ github.sha }}
+
+      - name: Smoke Docker image (PR)
+        if: github.event_name == 'pull_request'
+        run: bash scripts/docker-health-smoke.sh peekcart-ci:${{ github.sha }}
 
       - name: Set image name lowercase
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
