@@ -122,7 +122,7 @@
 | 134m | 3% | 1 |
 | 137m | 5% | 1 |
 | **138m** | **269%** | **1** ← saturation 시작 |
-| 138m | **400%** | **1** ← max-out (4 vCPU 100% × 4) |
+| 138m | **400%** | **1** ← Pod limit 도달 (request 500m 대비 400% = 2 vCPU) |
 | 138m | 400% | **3** ← scale-out 발생 |
 | 138m | 246% | 3 |
 | 139m | 244% | 3 |
@@ -206,7 +206,7 @@ kafka_consumer_fetch_manager_records_lag_max{
 
 #### 1차 병목 — CPU saturation (Run 1, 1 pod cold-start)
 
-- 단일 Pod CPU **400% saturation** (4 vCPU 100% × 4)
+- 단일 Pod CPU **400% saturation** (request 500m 대비 400% = 2 vCPU, Pod limit 2000m 도달)
 - 1000 VU cold-start 부하를 단일 Pod 가 흡수 불가능
 - HPA reaction window (~60s) 동안 timeout 폭증 (login 실패 537건, http_req_failed 60.59%)
 - HPA 1→3 scale-out 후 CPU 90% → 15% 로 안정화
