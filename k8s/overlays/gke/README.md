@@ -76,8 +76,7 @@ kubectl apply -k k8s/overlays/gke/
 측정 종료 시 반드시 실행:
 
 ```bash
-gcloud container clusters delete peekcart-loadtest --region=asia-northeast3-a
-gcloud compute instances delete loadgen --zone=asia-northeast3-a
-gcloud compute disks list         # orphan PD 확인
-gcloud compute addresses list     # 예약 IP 확인
+bash loadtest/cleanup.sh
 ```
+
+기본 대상은 GKE 클러스터 `peekcart-loadtest`, 부하 발생기 VM `peekcart-loadgen`, zone `asia-northeast3-a`, region `asia-northeast3` 입니다. 실행 후 스크립트가 출력하는 orphan PD / 예약 IP 목록을 반드시 확인합니다.
