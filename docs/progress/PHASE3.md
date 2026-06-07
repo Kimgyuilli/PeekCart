@@ -1242,3 +1242,28 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 **ADR-0009 영향**: S6 (Grafana alerts) surface 의 `datasourceUid` 는 본 task 범위 외. ADR-0009 §Decision 표 4번째 컬럼 ("본 task 변경" = "없음") 부동성 유지 — pin 은 *값 ground truth* 가 아니라 *해석 안정성* 격상.
 
 **브랜치**: `fix/d008-grafana-datasource-uid-pin`
+
+## 2026-06-07 — Tier A 즉시 정정 (Phase 4 진입 전 버킷 1)
+
+**범위**: Phase 4 진입 전 기술부채 로드맵 §2 "작업 1 — Tier A: 즉시 정정". D- 승격 없이 폐기하는 명백한 문서/주석/쿼리 오류 5건 정정. Phase 3 산출물의 운영 안내·검증 쿼리·리포트 해석·대시보드 범례 오류를 바로잡는 범위이며 애플리케이션 런타임 코드 변경은 0건.
+
+**변경**:
+- **L-018 (Docs/Cost)**: ADR-0004 운영 체크리스트와 GKE README 의 정리 명령을 `bash loadtest/cleanup.sh` 단일 진입점으로 통일. 스크립트 기본값(`peekcart-loadtest` / `peekcart-loadgen` / `asia-northeast3-a` / `asia-northeast3`) 을 문서에 명시하고, 실행 후 `disks list` / `addresses list` 출력 확인을 유지. `loadtest/reports/TEMPLATE.md` 도 같은 진입점으로 갱신해 향후 리포트 템플릿에서 오류가 재생산되지 않게 함.
+- **L-021 (Testing)**: `loadtest/sql/verify-concurrency.sql` A쿼리의 판매량 집계를 `SUM(oi.quantity)` 에서 `SUM(CASE WHEN o.id IS NOT NULL THEN oi.quantity ELSE 0 END)` 로 정정. `LEFT JOIN orders ... AND status NOT IN (...)` 에서 필터 탈락한 주문 아이템이 판매량에 포함되는 false mismatch/false pass 가능성 차단.
+- **L-022 (Docs)**: `loadtest/reports/2026-04-29/REPORT.md` 의 HPA CPU `400%` 해석 정정. 노드 전체 vCPU 기준 해석이 아니라 Pod request `500m` 대비 `400%` = `2000m` = Pod CPU limit 도달로 기록.
+- **L-016(b) (Deploy)**: `k8s/overlays/gke/patches/peekcart-deployment.yml` 의 `imagePullPolicy` 주석 정정. base image tag 가 `:latest` 이므로 Kubernetes 기본값은 `IfNotPresent` 가 아니라 `Always`.
+- **L-020(1) (Observability)**: `k8s/monitoring/shared/kafka-lag-dashboard.json` 범례를 `{{kafka_consumer_group_id}}` 에서 `{{client_id}}` 기반으로 정정. 본 프로젝트는 Micrometer Kafka client metric 을 사용하며 consumer group 정보가 `client_id` 에 임베디드되어 있어 기존 범례가 빈 문자열로 렌더될 수 있었음.
+- **TASKS.md**: `Tier A 즉시 정정` 상태를 `✅` 로 완료 표기.
+
+**비변경 (의도)**:
+- L-016(a) image digest 고정과 L-020(2) consumer group 독립 라벨 노출은 로드맵 §3 버킷 2 로 유지. 이번 PR 은 주석/범례의 명백한 오류만 정정.
+- `loadtest/cleanup.sh` 동작 변경 없음. 이미 `fix/cleanup-loadgen-vm-name` 에서 기본값 정정 완료된 스크립트를 문서가 따르도록 맞춤.
+- 애플리케이션 Java 코드, K8s 리소스 spec 동작, Grafana datasource UID, alert rule 변경 없음.
+
+**검증**:
+- `git diff --check HEAD~6..HEAD` 통과 (Tier A 6개 커밋 기준 공백 오류 없음).
+- `jq empty k8s/monitoring/shared/kafka-lag-dashboard.json` 통과.
+- 낡은 cleanup 명령, 잘못된 CPU 해석, 잘못된 `imagePullPolicy` 주석, dashboard JSON 내 부재 라벨 잔존 검색 통과.
+- 코드 변경 없음 → `./gradlew test` 미실행.
+
+**브랜치**: `chore/tier-a-immediate-fixes`. 커밋 6개 (`docs(loadtest)` / `fix(loadtest)` / `docs(loadtest)` / `docs(k8s)` / `fix(monitoring)` / `docs(tasks)`). PR: 미생성.
