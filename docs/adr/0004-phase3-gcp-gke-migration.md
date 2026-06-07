@@ -100,14 +100,14 @@ Phase 3 Exit Criteria의 "nGrinder 부하 테스트 리포트 (캐싱 전/후 TP
 
 ## 운영 체크리스트 (예산 보호)
 
-측정 종료 시 **반드시** 다음을 수행하고 billing alert 를 ₩50,000 에 걸어둔다.
+측정 종료 시 **반드시** 정리 스크립트를 실행하고 billing alert 를 ₩50,000 에 걸어둔다.
+스크립트 기본값은 GKE 클러스터 `peekcart-loadtest`, 부하 발생기 VM `peekcart-loadgen`, zone `asia-northeast3-a`, region `asia-northeast3` 이다.
 
+```bash
+bash loadtest/cleanup.sh
 ```
-gcloud container clusters delete peekcart-loadtest --region=asia-northeast3-a
-gcloud compute instances delete loadgen --zone=asia-northeast3-a
-gcloud compute disks list         # orphan PD 확인
-gcloud compute addresses list     # 예약 IP 확인
-```
+
+실행 후 스크립트가 출력하는 `disks list` / `addresses list` 결과에서 orphan PD 와 예약 IP 잔존 여부를 육안 확인한다.
 
 ## References
 - `docs/07-roadmap-portfolio.md` Section 16 Phase 3 Exit Criteria
