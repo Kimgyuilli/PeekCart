@@ -24,7 +24,7 @@
 |---|---|---|---|---|---|
 | 문서 정비 | TASKS 아카이빙 + 신규 시작, 부채 로드맵 작성 | — | — | 🔄 | — |
 | Tier A 즉시 정정 | 문서/주석/쿼리 명백한 오류 일괄 정정 | L-018, L-021, L-022, L-016(b), L-020(1) | — | ✅ | — |
-| CI 품질 게이트 | PR Docker build+smoke / branch protection / NS lint | L-014, L-015, L-017 | **D-012** | 🔄 | — |
+| CI 품질 게이트 | PR Docker build+smoke / branch protection / NS lint | L-014, L-015, L-017 | **D-012** | ✅ | — |
 | 발행 경로 하드닝 | DLQ 발행 확정 + outbox `.get()` 타임아웃·사이클 상한 | L-010, L-012 | **D-013** | 🔲 | — |
 | 관측성 선결 표면 (선택) | 캐시 적중률 + outbox 파이프라인 메트릭 | L-005, L-009 | **D-014** | 🔲 | — |
 
@@ -34,20 +34,20 @@
 
 ## 개발 부채 (Tech Debt)
 
-> 해결 완료(D-001~D-011) 상세는 아카이브(`TASKS-archive-phase1-3.md §개발 부채`) 보존. 여기서는 **live + 신규**만 추적.
+> 해결 완료(D-001~D-012) 상세는 아카이브(`TASKS-archive-phase1-3.md §개발 부채`) 보존. 여기서는 **live + 신규**만 추적.
 
 ### Live / 신규
 
 | ID | 영역 | 요약 | 묶음 | 상태 |
 |---|---|---|---|---|
 | D-002 | Performance | 캐시 TPS ×2.31(목표 ×3 미달). 1차 병목 CPU 확증, 2차 후보(MySQL 풀 / Redis 락 contention) 미분리 | Phase 4 Order Service 분리 후 격리 재측정 | 🔄 추적 |
-| D-012 | CI / Deliverable | CI 가 품질 게이트가 아니다 — PR Docker build·smoke 부재, branch protection 미설정, NS 누출 lint 부재 | 버킷 1 (L-014/015/017) | 🔄 진행 중 |
+| D-012 | CI / Deliverable | CI 가 품질 게이트가 아니다 — PR Docker build·smoke 부재, branch protection 미설정, NS 누출 lint 부재 | 버킷 1 (L-014/015/017) | ✅ 완료 |
 | D-013 | Resilience | 발행 경로 한 줄 갭 — DLQ 발행 미확정(유실), outbox `.get()` 타임아웃 부재(워커 잠식) | 버킷 1 (L-010/012) | 🔲 대기 |
 | D-014 | Observability | 선결 측정 표면 부재 — 캐시 적중률 / outbox 파이프라인 메트릭 | 버킷 1 선택 (L-005/009) | 🔲 대기 |
 
 ### 해결 완료 (아카이브 참조)
 
-D-001(✅), D-005(✅), D-006(✅), D-007(✅), D-008(✅), D-009(✅), D-010(✅), D-011(✅) · D-003(Won't Fix) · D-004(운영지식) — 상세: `docs/progress/TASKS-archive-phase1-3.md §개발 부채`.
+D-001(✅), D-005(✅), D-006(✅), D-007(✅), D-008(✅), D-009(✅), D-010(✅), D-011(✅), D-012(✅) · D-003(Won't Fix) · D-004(운영지식) — 상세: `docs/progress/TASKS-archive-phase1-3.md §개발 부채`.
 
 ---
 
