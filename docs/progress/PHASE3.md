@@ -1378,4 +1378,4 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 **검증**:
 - `./gradlew test --tests com.peekcart.global.outbox.OutboxPollingServiceTest --tests com.peekcart.global.observability.ObservabilityMetricsIntegrationTest` 통과(Docker/Testcontainers 환경).
 
-**브랜치**: `feat/outbox-pipeline-metrics`. PR: (생성 시 기록)
+**브랜치**: `feat/outbox-pipeline-metrics`. 커밋 5개 (`feat(observability)` / `docs(adr)` / `docs(progress)` / `test(observability)` / `docs(adr)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/39
