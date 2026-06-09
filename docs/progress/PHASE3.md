@@ -1329,3 +1329,29 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 - `DlqIntegrationTest` 포함 실행은 Testcontainers 가 Docker runtime 을 찾지 못해 초기화 단계에서 실패. 컴파일은 통과했으며, Docker 사용 가능한 환경에서 재검증 필요.
 
 **브랜치**: `fix/d013-publish-path-hardening`. 커밋 2개 (`feat(outbox)` / `docs(progress)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/37
+
+## 2026-06-09 — D-014 부분 진행 (L-005 캐시 hit/miss 메트릭)
+
+**범위**: Phase 4 진입 전 기술부채 로드맵 §2 "작업 4 — D-014: 관측성 선결 표면" 중 L-005 캐시 hit/miss 메트릭만 처리. L-009(outbox backlog gauge / publish latency / result counter) 는 다음 작업 단위로 남겨두며, D-014 전체 상태는 `🔄 진행 중` 유지.
+
+**변경**:
+- **L-005 (캐시 hit/miss 측정 표면)**: `RedisCacheManager.enableStatistics()` 를 활성화해 Spring Boot Actuator cache meter 가 Redis 캐시 hit/miss 를 집계할 수 있게 함.
+- **중복 시계열 제거**: 초기 구현에서 `CacheMetricsRegistrar` 수동 바인딩을 추가했을 때 `cache_manager="cache"` 와 `cache_manager="cacheManager"` 두 벌의 `cache_gets_total` 시계열이 노출되는 것을 실측 확인. 최종 구현은 수동 바인더를 제거하고 Spring Boot `CacheMetricsAutoConfiguration` 자동 바인딩만 사용.
+- **회귀 테스트 추가**: `ObservabilityMetricsIntegrationTest` 에 `/api/v1/products` 2회 호출(miss → hit) 후 `cache_gets_total` 의 `result="miss"` / `result="hit"` 시계열이 각각 정확히 1개만 노출되는지 검증하는 케이스 추가. 라벨은 자동 구성 기준인 `cache_manager="cacheManager"` 로 고정.
+- **ADR-0009 S7 추가**: `cache hit/miss` surface 를 ADR-0009 표에 추가. Phase 4 owner 는 상품 캐시 owner 인 `product-service` 로 지정하고, `CacheMetricsRegistrar` 수동 중복 바인딩 금지 규칙을 기록.
+- **TASKS.md 상태 갱신**: D-014 PR 링크를 #38 로 기록. L-009 가 남아 있어 완료가 아니라 진행 중 상태 유지.
+
+**실측 확인**:
+- 수동 바인더 존재 시 `cache_gets_total{name="products", result="hit|miss|pending"}` 가 `cache_manager="cache"` 와 `cache_manager="cacheManager"` 로 각각 노출됨을 확인.
+- 수동 바인더 제거 후 테스트가 `cache_manager="cacheManager"` 단일 시계열을 검증하도록 정리.
+
+**비변경 (의도)**:
+- L-009 outbox pipeline metric 은 이번 PR 비대상.
+- Grafana dashboard / alert 추가 없음.
+- `CacheMetricsRegistrar` 수동 바인더 미도입.
+- D-014 전체 완료 처리 없음.
+
+**검증**:
+- `./gradlew test --tests com.peekcart.global.observability.ObservabilityMetricsIntegrationTest` 통과.
+
+**브랜치**: `feat/d014-cache-metrics`. 커밋 4개 (`feat(observability)` / `fix(observability)` / `docs(adr)` / `docs(progress)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/38
