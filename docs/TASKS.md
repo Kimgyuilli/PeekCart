@@ -9,7 +9,7 @@
 |---|---|
 | Phase 1~3 task 이력 (아카이브) | `docs/progress/TASKS-archive-phase1-3.md` |
 | 부채 해소 로드맵 (트리아지·시퀀싱·게이트) | `docs/progress/phase4-prep-debt-roadmap.md` |
-| 부채 후보 원장 (L-001~L-022) | `docs/progress/tech-debt-candidates.md` |
+| 부채 후보 도출 기록 (L-001~L-022) | `docs/learning/18-phase4-prep-design-debt.md` |
 | Phase별 작업 이력 | `docs/progress/PHASE1.md` · `PHASE2.md` · `PHASE3.md` |
 
 ---
@@ -42,7 +42,7 @@
 |---|---|---|---|---|
 | D-002 | Performance | 캐시 TPS ×2.31(목표 ×3 미달). 1차 병목 CPU 확증, 2차 후보(MySQL 풀 / Redis 락 contention) 미분리 | Phase 4 Order Service 분리 후 격리 재측정 | 🔄 추적 |
 | D-012 | CI / Deliverable | CI 가 품질 게이트가 아니다 — PR Docker build·smoke 부재, branch protection 미설정, NS 누출 lint 부재 | 버킷 1 (L-014/015/017) | ✅ 완료 |
-| D-013 | Resilience | 발행 경로 한 줄 갭 — DLQ 발행 미확정(유실), outbox `.get()` 타임아웃 부재(워커 잠식) | 버킷 1 (L-010/012) | 🔲 대기 |
+| D-013 | Resilience | 발행 경로 resilience 갭 — DLQ 발행 미확정(유실), outbox `.get()` 타임아웃 부재와 polling cycle 상한 미정의(워커 잠식) | 버킷 1 (L-010/012) | 🔲 대기 |
 | D-014 | Observability | 선결 측정 표면 부재 — 캐시 적중률 / outbox 파이프라인 메트릭 | 버킷 1 선택 (L-005/009) | 🔲 대기 |
 
 ### 해결 완료 (아카이브 참조)
