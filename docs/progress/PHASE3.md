@@ -1328,4 +1328,4 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 - `git diff --check` 통과.
 - `DlqIntegrationTest` 포함 실행은 Testcontainers 가 Docker runtime 을 찾지 못해 초기화 단계에서 실패. 컴파일은 통과했으며, Docker 사용 가능한 환경에서 재검증 필요.
 
-**브랜치**: `fix/d013-publish-path-hardening`. 커밋 2개 (`feat(outbox)` / `docs(progress)`).
+**브랜치**: `fix/d013-publish-path-hardening`. 커밋 2개 (`feat(outbox)` / `docs(progress)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/37
