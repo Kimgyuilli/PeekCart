@@ -21,4 +21,9 @@ public class OutboxEventRepositoryImpl implements OutboxEventRepository {
     public List<OutboxEvent> findPendingEvents(int limit) {
         return outboxEventJpaRepository.findPendingEvents(PageRequest.of(0, limit));
     }
+
+    @Override
+    public long countByStatus(OutboxEventStatus status) {
+        return outboxEventJpaRepository.countByStatus(status);
+    }
 }

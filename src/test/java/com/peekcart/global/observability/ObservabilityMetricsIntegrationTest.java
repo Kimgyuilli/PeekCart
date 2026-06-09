@@ -1,5 +1,8 @@
 package com.peekcart.global.observability;
 
+import com.peekcart.global.outbox.OutboxEvent;
+import com.peekcart.global.outbox.OutboxEventRepository;
+import com.peekcart.global.outbox.OutboxPollingService;
 import com.peekcart.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +48,12 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     TestRestTemplate restTemplate;
 
+    @Autowired
+    OutboxEventRepository outboxEventRepository;
+
+    @Autowired
+    OutboxPollingService outboxPollingService;
+
     @Test
     @DisplayName("비즈니스 엔드포인트 호출 후 /actuator/prometheus에 histogram bucket + application 태그가 노출된다")
     void prometheusEndpoint_exposesHistogramBucketAndApplicationTag() {
@@ -85,6 +94,30 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("outbox 발행 후 /actuator/prometheus에 backlog gauge + publish timer 메트릭이 노출된다 (D-014/L-009)")
+    void prometheusEndpoint_exposesOutboxPipelineMetrics() {
+        // probe 토픽(consumer 없음)으로 PENDING 이벤트 1건 발행 → publish success 경로 생성
+        outboxEventRepository.save(OutboxEvent.create(
+                "Observability", "probe", "observability.outbox.probe", null, null, eventId -> "{}"));
+        outboxPollingService.pollAndPublish();
+
+        ResponseEntity<String> prometheusResponse = restTemplate.getForEntity("/actuator/prometheus", String.class);
+        assertThat(prometheusResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String body = prometheusResponse.getBody();
+        assertThat(body).isNotNull();
+
+        assertThat(body)
+                .as("backlog gauge 는 status=pending / status=failed 두 시계열로 노출되어야 한다")
+                .containsPattern("outbox_backlog\\{[^}]*status=\"pending\"[^}]*\\}")
+                .containsPattern("outbox_backlog\\{[^}]*status=\"failed\"[^}]*\\}");
+
+        assertThat(outboxPublishCount(body, "success"))
+                .as("발행 성공 1건 이상이 outbox_publish Timer 의 result=success 시계열로 집계되어야 한다")
+                .isGreaterThanOrEqualTo(1.0);
+    }
+
+    @Test
     @DisplayName("actuator exposure 화이트리스트가 정확히 health, prometheus 만 데이터를 노출한다 (D5-V3)")
     void actuatorExposure_whitelistsExactlyHealthAndPrometheus() {
         assertThat(restTemplate.getForEntity("/actuator/health", String.class).getStatusCode())
@@ -113,6 +146,14 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
                 .isEqualTo(HttpStatus.OK);
         assertThat(restTemplate.getForEntity("/actuator/health/readiness", String.class).getStatusCode())
                 .isEqualTo(HttpStatus.OK);
+    }
+
+    private static double outboxPublishCount(String prometheusBody, String result) {
+        return prometheusBody.lines()
+                .filter(line -> line.startsWith("outbox_publish_seconds_count"))
+                .filter(line -> line.contains("result=\"" + result + "\""))
+                .mapToDouble(line -> Double.parseDouble(line.substring(line.lastIndexOf(' ') + 1)))
+                .sum();
     }
 
     private static void assertCacheGetLine(String prometheusBody, String cacheName, String result) {

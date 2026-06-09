@@ -2,6 +2,9 @@ package com.peekcart.global.outbox;
 
 import com.peekcart.global.kafka.KafkaTraceHeaders;
 import com.peekcart.global.port.SlackPort;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,11 +27,14 @@ public class OutboxPollingService {
     private final int maxRetry;
     private final Duration publishTimeout;
     private final Duration cycleTimeout;
+    private final Timer publishSuccessTimer;
+    private final Timer publishFailureTimer;
 
     public OutboxPollingService(
             OutboxEventRepository outboxEventRepository,
             KafkaTemplate<String, String> kafkaTemplate,
             SlackPort slackPort,
+            MeterRegistry meterRegistry,
             @Value("${app.outbox.polling.batch-size:100}") int batchSize,
             @Value("${app.outbox.polling.max-retry:5}") int maxRetry,
             @Value("${app.outbox.polling.publish-timeout:6s}") Duration publishTimeout,
@@ -40,6 +46,25 @@ public class OutboxPollingService {
         this.maxRetry = requirePositive(maxRetry, "maxRetry");
         this.publishTimeout = requirePositive(publishTimeout, "publishTimeout");
         this.cycleTimeout = requirePositive(cycleTimeout, "cycleTimeout");
+
+        // L-009: 발행 처리량 부채화 판단의 선결 표면 (ADR-0009 S8). alert/dashboard 는 비대상.
+        registerBacklogGauge(meterRegistry, OutboxEventStatus.PENDING, "pending");
+        registerBacklogGauge(meterRegistry, OutboxEventStatus.FAILED, "failed");
+        this.publishSuccessTimer = Timer.builder("outbox.publish")
+                .description("Outbox 이벤트 Kafka 발행 소요 시간 및 건수")
+                .tag("result", "success")
+                .register(meterRegistry);
+        this.publishFailureTimer = Timer.builder("outbox.publish")
+                .description("Outbox 이벤트 Kafka 발행 소요 시간 및 건수")
+                .tag("result", "failure")
+                .register(meterRegistry);
+    }
+
+    private void registerBacklogGauge(MeterRegistry meterRegistry, OutboxEventStatus status, String tag) {
+        Gauge.builder("outbox.backlog", outboxEventRepository, repo -> repo.countByStatus(status))
+                .description("발행 대기/소진 outbox 이벤트 수 (scrape 시점 집계)")
+                .tag("status", tag)
+                .register(meterRegistry);
     }
 
     public void pollAndPublish() {
@@ -53,15 +78,19 @@ public class OutboxPollingService {
                 break;
             }
 
+            long publishStartNanos = System.nanoTime();
             try {
                 kafkaTemplate.send(buildRecord(event)).get(publishTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                publishSuccessTimer.record(System.nanoTime() - publishStartNanos, TimeUnit.NANOSECONDS);
                 event.markPublished();
                 outboxEventRepository.save(event);
             } catch (InterruptedException e) {
+                publishFailureTimer.record(System.nanoTime() - publishStartNanos, TimeUnit.NANOSECONDS);
                 Thread.currentThread().interrupt();
                 handlePublishFailure(event, e);
                 break;
             } catch (Exception e) {
+                publishFailureTimer.record(System.nanoTime() - publishStartNanos, TimeUnit.NANOSECONDS);
                 handlePublishFailure(event, e);
             }
         }

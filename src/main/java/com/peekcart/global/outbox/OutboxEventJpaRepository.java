@@ -10,4 +10,6 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEvent, Lon
 
     @Query("SELECT o FROM OutboxEvent o WHERE o.status = 'PENDING' ORDER BY o.createdAt ASC")
     List<OutboxEvent> findPendingEvents(Pageable pageable);
+
+    long countByStatus(OutboxEventStatus status);
 }

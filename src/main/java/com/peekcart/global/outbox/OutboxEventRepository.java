@@ -7,4 +7,6 @@ public interface OutboxEventRepository {
     OutboxEvent save(OutboxEvent outboxEvent);
 
     List<OutboxEvent> findPendingEvents(int limit);
+
+    long countByStatus(OutboxEventStatus status);
 }

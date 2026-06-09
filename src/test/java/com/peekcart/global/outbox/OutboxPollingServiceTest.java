@@ -3,6 +3,7 @@ package com.peekcart.global.outbox;
 import com.peekcart.global.kafka.KafkaTraceHeaders;
 import com.peekcart.global.port.SlackPort;
 import com.peekcart.support.ServiceTest;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -185,6 +186,6 @@ class OutboxPollingServiceTest {
 
     private OutboxPollingService service(Duration publishTimeout, Duration cycleTimeout) {
         return new OutboxPollingService(outboxEventRepository, kafkaTemplate, slackPort,
-                100, 5, publishTimeout, cycleTimeout);
+                new SimpleMeterRegistry(), 100, 5, publishTimeout, cycleTimeout);
     }
 }
