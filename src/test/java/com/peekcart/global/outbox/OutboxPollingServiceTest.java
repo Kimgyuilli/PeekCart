@@ -33,6 +33,7 @@ import static org.mockito.Mockito.verify;
 class OutboxPollingServiceTest {
 
     OutboxPollingService outboxPollingService;
+    SimpleMeterRegistry meterRegistry;
     @Mock OutboxEventRepository outboxEventRepository;
     @Mock KafkaTemplate<String, String> kafkaTemplate;
     @Mock SlackPort slackPort;
@@ -40,6 +41,7 @@ class OutboxPollingServiceTest {
     @BeforeEach
     void setUp() {
         org.slf4j.MDC.clear();
+        meterRegistry = new SimpleMeterRegistry();
         outboxPollingService = service(Duration.ofSeconds(6), Duration.ofMinutes(4));
     }
 
@@ -76,6 +78,20 @@ class OutboxPollingServiceTest {
         assertThat(msgCaptor.getValue()).contains("[Outbox FAILED]", event.getEventId());
         verify(outboxEventRepository).save(any(OutboxEvent.class));
         assertThat(event.getStatus()).isEqualTo(OutboxEventStatus.FAILED);
+    }
+
+    @Test
+    @DisplayName("Kafka 발행 실패 시 outbox.publish result=failure timer 가 증가하고 success 는 기록되지 않는다 (D-014/L-009)")
+    void publishFailureRecordsFailureTimer() {
+        OutboxEvent event = pendingEvent(null, null);
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
+        given(kafkaTemplate.send(any(ProducerRecord.class)))
+                .willThrow(new RuntimeException("Kafka down"));
+
+        outboxPollingService.pollAndPublish();
+
+        assertThat(publishTimerCount("failure")).isEqualTo(1);
+        assertThat(publishTimerCount("success")).isZero();
     }
 
     @Test
@@ -184,8 +200,13 @@ class OutboxPollingServiceTest {
         return header == null ? null : new String(header.value(), StandardCharsets.UTF_8);
     }
 
+    private long publishTimerCount(String result) {
+        var timer = meterRegistry.find("outbox.publish").tag("result", result).timer();
+        return timer == null ? 0 : timer.count();
+    }
+
     private OutboxPollingService service(Duration publishTimeout, Duration cycleTimeout) {
         return new OutboxPollingService(outboxEventRepository, kafkaTemplate, slackPort,
-                new SimpleMeterRegistry(), 100, 5, publishTimeout, cycleTimeout);
+                meterRegistry, 100, 5, publishTimeout, cycleTimeout);
     }
 }
