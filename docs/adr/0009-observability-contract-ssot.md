@@ -25,7 +25,7 @@
 | S6.c | target-down (`up == 0`) | `k8s/monitoring/shared/grafana-alerts.yml:84-110` (uid `peekcart-target-down`, `up{namespace,service}`) | S5 | scrape label 의존만 — S1/S2 무관 |
 | S6.d | scrape-absent (series 부재) | `k8s/monitoring/shared/grafana-alerts.yml:111-137` (uid `peekcart-scrape-absent`, `absent(up{...})`) | S5 (scrape target 등록 자체) | ServiceMonitor selector 미스매치/네임스페이스·서비스 삭제 — S1/S2 무관 |
 | S7 | cache hit/miss (`cache_gets_total`) | `src/main/java/com/peekcart/global/config/CacheConfig.java:70-75` (`RedisCacheManager.enableStatistics`) | — | 상품 캐시 적중률/미스율 측정. Phase 4 CQRS 로컬 캐시 및 Redis fallback(L-006) 판단의 선결 표면 |
-| S8 | outbox pipeline (`outbox_backlog` gauge / `outbox_publish` timer) | `src/main/java/com/peekcart/global/outbox/OutboxPollingService.java:51-65` (생성자 backlog gauge 등록 + publish Timer), `:84-93` (발행 결과별 record) | — | 발행 backlog(지연)·처리량·성공/실패율 측정. 처리량 부채화(D-002 후속·L-006) 판단의 선결 표면. alert/dashboard 는 미도입(무관) |
+| S8 | outbox pipeline (`outbox_backlog` gauge / `outbox_publish` timer) | `src/main/java/com/peekcart/global/outbox/OutboxPollingService.java:51-68` (생성자 publish Timer + backlog gauge 헬퍼), `:84-93` (발행 결과별 record) | — | 발행 backlog(지연)·처리량·성공/실패율 측정. 처리량 부채화(D-002 후속·L-006) 판단의 선결 표면. alert/dashboard 는 미도입(무관) |
 
 ### 자동 회귀 검증의 현 범위
 
@@ -52,7 +52,7 @@
 | S6.c | target-down | `grafana-alerts.yml:84-110` | 없음 | 동상 (S6.a) | 동상. 단 S5 ownership 변경 시 selector 동기 필수 (D5-V5 와 짝) | 동상 (D5-V6) |
 | S6.d | scrape-absent | `grafana-alerts.yml:111-137` | 없음 | 동상 (S6.a) | 동상 | 동상 (D5-V6) |
 | S7 | cache hit/miss | `CacheConfig.java:70-75` | D-014/L-005: `RedisCacheManager.enableStatistics()` | Phase 4 `product-service` 의 캐시 설정 (상품 캐시 owner). 공통 관측성 모듈은 cache meter 수동 재등록을 소유하지 않음 | 캐시 hit/miss 계측은 cache owner 서비스 1개소. Spring Boot `CacheMetricsAutoConfiguration` 자동 바인딩 사용, `CacheMetricsRegistrar` 수동 중복 바인딩 금지 | `ObservabilityMetricsIntegrationTest` D-014/L-005 케이스 (`cache_gets_total` hit/miss + `cache_manager="cacheManager"` 단일 시계열 검증) |
-| S8 | outbox pipeline | `OutboxPollingService.java:51-65,84-93` | D-014/L-009: `outbox.backlog` gauge(`status=pending\|failed`) + `outbox.publish` Timer(`result=success\|failure`) | Phase 4 발행 주체 서비스(outbox 소유자 — `order-service`/`payment-service`). 공통 관측성 모듈은 outbox meter 를 소유하지 않음(발행 코드와 동일 위치) | outbox 계측은 발행 서비스 폴링 컴포넌트 1개소. cache(S7)와 달리 Spring Boot 자동 바인딩 대상이 아니므로 수동 등록하되, 동일 meter 이름의 중복 등록 금지(`outbox.publish` 는 result 태그로만 분기) | `ObservabilityMetricsIntegrationTest` D-014/L-009 케이스 (`outbox_backlog` status 2시계열 + `outbox_publish_seconds_count{result="success"}` 집계 검증) |
+| S8 | outbox pipeline | `OutboxPollingService.java:51-68,84-93` | D-014/L-009: `outbox.backlog` gauge(`status=pending\|failed`) + `outbox.publish` Timer(`result=success\|failure`) | Phase 4 발행 주체 서비스(outbox 소유자 — `order-service`/`payment-service`). 공통 관측성 모듈은 outbox meter 를 소유하지 않음(발행 코드와 동일 위치) | outbox 계측은 발행 서비스 폴링 컴포넌트 1개소. cache(S7)와 달리 Spring Boot 자동 바인딩 대상이 아니므로 수동 등록하되, 동일 meter 이름의 중복 등록 금지(`outbox.publish` 는 result 태그로만 분기). 의미: `result=failure` 는 **발행 시도 단위**(재시도마다 증가)이며 "소진된 이벤트 수"가 아님 — 소진 이벤트 수는 `outbox.backlog{status=failed}` 로 해석 | `ObservabilityMetricsIntegrationTest` D-014/L-009 케이스 (`outbox_backlog` status 2시계열 + `outbox_publish_seconds_count{result="success"}` 집계 검증) |
 
 > **본 task (`task-adr-observability-ssot`) 당시 S1~S6.d 변경 컬럼 = 모든 행 "없음"**. S7 이후 행은 후속 task 에서 추가된 surface 이므로 해당 task 의 변경 내용을 기록한다. 기존 surface 의 물리적 이동은 여전히 후속 task 범위다.
 
