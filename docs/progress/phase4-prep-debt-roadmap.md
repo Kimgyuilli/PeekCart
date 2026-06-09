@@ -62,14 +62,14 @@ Phase 4 에서 서비스/매니페스트가 N배로 늘기 *전에* 게이트를
 | L-012 | Resilience | `KafkaConfig` recoverer `setFailIfSendResultIsError(true)` — DLQ 발행 실패 시 원본·DLQ 양쪽 유실 차단 |
 | L-010 | Resilience | `OutboxPollingService.kafkaTemplate.send().get(timeout)` + producer `max.block.ms`/`delivery.timeout.ms` 명시. ⚠️ `@SchedulerLock(lockAtMostFor=PT5M)` 과 **사이클 상한 정합**까지 함께(BATCH_SIZE=100 순차 `.get()` → 건당 상한이 곧 사이클 상한 아님). 단순 한 줄 아님 |
 
-### 작업 4 — Tier D: 관측성 선결 표면 (선택, 시간 여유 시) → **D-014 승격 검토**
+### 작업 4 — Tier D: 관측성 선결 표면 (선택, 시간 여유 시) → **D-014 완료**
 
 버킷 2 결정(L-006 fallback, 처리량)의 *측정 기반*. 선행하면 Phase 4 결정이 데이터 기반이 됨. 우선순위 최하.
 
-| ID | 영역 | 내용 |
-|---|---|---|
-| L-005 | Observability | `CacheConfig` 에 `CacheMetricsRegistrar` 등록 — 캐시 적중률. L-006 발동 빈도 추적 선결 표면 |
-| L-009 | Observability | `OutboxPollingService` Micrometer 계측(backlog gauge / publish latency·result counter) — 처리량 부채화 판단 선결 표면 |
+| ID | 영역 | 내용 | 상태 |
+|---|---|---|---|
+| L-005 | Observability | `RedisCacheManager.enableStatistics()` — 캐시 적중률. Spring Boot 자동 바인딩 사용(수동 `CacheMetricsRegistrar` 미도입). L-006 발동 빈도 추적 선결 표면 | ✅ PR #38 |
+| L-009 | Observability | `OutboxPollingService` Micrometer 계측(`outbox.backlog` gauge `status=pending\|failed` / `outbox.publish` Timer `result` 태그) — 처리량 부채화 판단 선결 표면 | ✅ 완료 |
 
 > Tier D 는 ADR-0009 §Decision 표에 surface 행(cache/outbox) 추가를 동반. Phase 4 멀티모듈 표 갱신과 묶어도 무방하므로 "선택".
 
@@ -113,7 +113,7 @@ Phase 4 에서 서비스/매니페스트가 N배로 늘기 *전에* 게이트를
 | (승격 없음) | Tier A 5건(L-018/021/022/016b/020-1) | 1 | 즉시 정정 후 폐기 |
 | **D-012** | CI 품질 게이트(L-014/015/017) | 1 | 완료 |
 | **D-013** | 발행 경로 resilience 하드닝(L-010/012) | 1 | 완료 |
-| **D-014** | 관측성 선결 표면(L-005/009) | 1 | 선택 대기 |
+| **D-014** | 관측성 선결 표면(L-005/009) | 1 | 완료 |
 | Phase 4 task | 보안 묶음(L-001/002/003/019), L-004/006/008/011/016a/020-2, D-002 | 2 | Phase 4 편입 |
 | (보류) | L-007, L-013 | 3 | 측정 게이트 대기 |
 
@@ -121,5 +121,5 @@ Phase 4 에서 서비스/매니페스트가 N배로 늘기 *전에* 게이트를
 
 ## 6. 다음 단계
 
-1. D-014 선택 승격 여부를 재검토한다.
+1. 버킷 1 완료(Tier A / D-012 / D-013 / D-014). 버킷 2(Phase 4 이관) 로 진행.
 2. 버킷 3 게이트(17편 후속 부하 세션)는 별도 task 로 추적.

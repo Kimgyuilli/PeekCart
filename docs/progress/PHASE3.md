@@ -1355,3 +1355,27 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 - `./gradlew test --tests com.peekcart.global.observability.ObservabilityMetricsIntegrationTest` 통과.
 
 **브랜치**: `feat/d014-cache-metrics`. 커밋 4개 (`feat(observability)` / `fix(observability)` / `docs(adr)` / `docs(progress)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/38
+
+## 2026-06-09 — D-014 완결 (L-009 outbox 파이프라인 메트릭)
+
+**범위**: Phase 4 진입 전 기술부채 로드맵 §2 "작업 4 — D-014: 관측성 선결 표면" 의 잔여 L-009 처리. PR #38 이 L-005(캐시 hit/miss)만 다뤘으므로, outbox 발행 경로의 backlog/throughput 측정 표면을 추가해 D-014 를 완결(`🔄` → `✅`)함.
+
+**변경**:
+- **backlog gauge**: `OutboxPollingService` 생성자에서 `outbox.backlog` gauge 를 `status=pending` / `status=failed` 두 시계열로 등록. scrape 시점에 `OutboxEventRepository.countByStatus()` 로 집계 — pending=발행 지연(부채화), failed=재시도 소진(stuck/poisoned) 신호.
+- **publish Timer**: `pollAndPublish()` 의 `kafkaTemplate.send().get()` 구간을 `outbox.publish` Timer 로 계측하고 `result=success|failure` 태그로 분기. Timer 의 `_count` 가 곧 result counter 역할을 하므로 별도 Counter 는 두지 않음(meter 1개로 latency + 건수 + 성공/실패율).
+- **repository**: `OutboxEventRepository.countByStatus(OutboxEventStatus)` + JPA 파생 쿼리(`countByStatus`) 추가 — backlog gauge 의 집계원.
+- **회귀 테스트**: `ObservabilityMetricsIntegrationTest` 에 probe 토픽(consumer 없음)으로 PENDING 이벤트 1건을 저장 → `pollAndPublish()` → `/actuator/prometheus` 에서 `outbox_backlog{status=...}` 2시계열 + `outbox_publish_seconds_count{result="success"}` ≥ 1 을 검증하는 케이스 추가.
+- **ADR-0009 S8 추가**: `outbox pipeline` surface 를 §현황표 + §Decision 표에 등록. Phase 4 owner 는 발행 주체 서비스(outbox 소유자)로 지정하고, cache(S7)와 달리 Spring Boot 자동 바인딩 대상이 아니므로 발행 컴포넌트 1개소 수동 등록 + 동일 meter 중복 등록 금지 규칙을 기록.
+
+**설계 결정**:
+- **Timer 단일(result 태그) vs Timer + 별도 Counter**: Timer 단일 채택. `outbox_publish_seconds_count{result=...}` 가 result counter 와 동일 정보를 제공하므로 별도 Counter 는 중복 시계열만 만든다(Simplicity First).
+- **backlog gauge scrape-time 집계**: gauge 함수가 scrape(≈15s)마다 `SELECT COUNT(*)` 를 수행하나 인덱스된 status 컬럼 count 라 비용 미미. 폴링 사이클 종료 시점 set 방식보다 시점 정확도가 높아 채택.
+
+**비변경 (의도)**:
+- Grafana dashboard / alert 추가 없음(PR #38 과 동일 — surface 만 제공, alert 는 D5-V6/Phase 4 범위).
+- `OutboxPollingScheduler` / retry·timeout 정책(D-013) 변경 없음.
+
+**검증**:
+- `./gradlew test --tests com.peekcart.global.outbox.OutboxPollingServiceTest --tests com.peekcart.global.observability.ObservabilityMetricsIntegrationTest` 통과(Docker/Testcontainers 환경).
+
+**브랜치**: `feat/outbox-pipeline-metrics`. PR: (생성 시 기록)
