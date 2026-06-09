@@ -65,6 +65,25 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("상품 목록 캐시 호출 후 /actuator/prometheus에 cache hit/miss 메트릭이 노출된다 (D-014/L-005)")
+    void prometheusEndpoint_exposesCacheMetrics() {
+        assertThat(restTemplate.getForEntity("/api/v1/products", String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(restTemplate.getForEntity("/api/v1/products", String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<String> prometheusResponse = restTemplate.getForEntity("/actuator/prometheus", String.class);
+        assertThat(prometheusResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String body = prometheusResponse.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body)
+                .as("Redis products cache hit/miss 판단을 위한 cache.gets counter 가 노출되어야 한다")
+                .containsPattern("cache_gets_total\\{[^}]*cache_manager=\"cache\"[^}]*name=\"products\"[^}]*result=\"miss\"[^}]*\\}")
+                .containsPattern("cache_gets_total\\{[^}]*cache_manager=\"cache\"[^}]*name=\"products\"[^}]*result=\"hit\"[^}]*\\}");
+    }
+
+    @Test
     @DisplayName("actuator exposure 화이트리스트가 정확히 health, prometheus 만 데이터를 노출한다 (D5-V3)")
     void actuatorExposure_whitelistsExactlyHealthAndPrometheus() {
         assertThat(restTemplate.getForEntity("/actuator/health", String.class).getStatusCode())
