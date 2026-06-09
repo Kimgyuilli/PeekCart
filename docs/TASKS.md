@@ -9,7 +9,7 @@
 |---|---|
 | Phase 1~3 task 이력 (아카이브) | `docs/progress/TASKS-archive-phase1-3.md` |
 | 부채 해소 로드맵 (트리아지·시퀀싱·게이트) | `docs/progress/phase4-prep-debt-roadmap.md` |
-| 부채 후보 도출 기록 (L-001~L-022) | `docs/learning/18-phase4-prep-design-debt.md` |
+| 부채 후보 분류·승격 매핑 (L-001~L-022) | `docs/progress/phase4-prep-debt-roadmap.md §2~5` |
 | Phase별 작업 이력 | `docs/progress/PHASE1.md` · `PHASE2.md` · `PHASE3.md` |
 
 ---
