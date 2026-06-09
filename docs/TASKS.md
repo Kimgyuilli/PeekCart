@@ -26,7 +26,7 @@
 | Tier A 즉시 정정 | 문서/주석/쿼리 명백한 오류 일괄 정정 | L-018, L-021, L-022, L-016(b), L-020(1) | — | ✅ | — |
 | CI 품질 게이트 | PR Docker build+smoke / branch protection / NS lint | L-014, L-015, L-017 | **D-012** | ✅ | — |
 | 발행 경로 하드닝 | DLQ 발행 확정 + outbox `.get()` 타임아웃·사이클 상한 | L-010, L-012 | **D-013** | ✅ | [#37](https://github.com/Kimgyuilli/PeakCart/pull/37) |
-| 관측성 선결 표면 (선택) | 캐시 적중률 + outbox 파이프라인 메트릭 | L-005, L-009 | **D-014** | 🔄 | — |
+| 관측성 선결 표면 (선택) | 캐시 적중률 + outbox 파이프라인 메트릭 | L-005, L-009 | **D-014** | 🔄 | [#38](https://github.com/Kimgyuilli/PeakCart/pull/38) |
 
 > 권장 시퀀스: 문서 정비 → Tier A → D-012 → D-013 → (여유 시) D-014. 상세 근거는 로드맵 §2.
 
