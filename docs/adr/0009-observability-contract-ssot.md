@@ -24,7 +24,7 @@
 | S6.b | latency alert (p95 > 2s) | `k8s/monitoring/shared/grafana-alerts.yml:53-83` (uid `peekcart-slow-response`, `histogram_quantile` on `_bucket`) | S1, S2, S5 | bucket series 부재 시 NaN, `_bucket` 으로 S1 직접 의존 |
 | S6.c | target-down (`up == 0`) | `k8s/monitoring/shared/grafana-alerts.yml:84-110` (uid `peekcart-target-down`, `up{namespace,service}`) | S5 | scrape label 의존만 — S1/S2 무관 |
 | S6.d | scrape-absent (series 부재) | `k8s/monitoring/shared/grafana-alerts.yml:111-137` (uid `peekcart-scrape-absent`, `absent(up{...})`) | S5 (scrape target 등록 자체) | ServiceMonitor selector 미스매치/네임스페이스·서비스 삭제 — S1/S2 무관 |
-| S7 | cache hit/miss (`cache_gets_total`) | `src/main/java/com/peekcart/global/config/CacheConfig.java:70-75` (`RedisCacheManager.enableStatistics`) | S2, S3, S4, S5 | 상품 캐시 적중률/미스율 측정. Phase 4 CQRS 로컬 캐시 및 Redis fallback(L-006) 판단의 선결 표면 |
+| S7 | cache hit/miss (`cache_gets_total`) | `src/main/java/com/peekcart/global/config/CacheConfig.java:70-75` (`RedisCacheManager.enableStatistics`) | — | 상품 캐시 적중률/미스율 측정. Phase 4 CQRS 로컬 캐시 및 Redis fallback(L-006) 판단의 선결 표면 |
 
 ### 자동 회귀 검증의 현 범위
 
