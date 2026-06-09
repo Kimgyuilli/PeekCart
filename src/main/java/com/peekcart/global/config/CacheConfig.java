@@ -5,12 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.actuate.metrics.cache.CacheMetricsRegistrar;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.support.NoOpCacheManager;
@@ -88,36 +83,5 @@ public class CacheConfig {
     @ConditionalOnProperty(name = "peekcart.cache.enabled", havingValue = "false")
     public CacheManager noOpCacheManager() {
         return new NoOpCacheManager();
-    }
-
-    @Bean
-    @ConditionalOnProperty(name = "peekcart.cache.enabled", havingValue = "true", matchIfMissing = true)
-    public ApplicationRunner cacheMetricsBinder(
-            CacheManager cacheManager,
-            CacheMetricsRegistrar cacheMetricsRegistrar,
-            MeterRegistry meterRegistry) {
-        return args -> {
-            bindConfiguredCache(cacheManager, cacheMetricsRegistrar, meterRegistry, PRODUCT_DETAIL_CACHE);
-            bindConfiguredCache(cacheManager, cacheMetricsRegistrar, meterRegistry, PRODUCT_LIST_CACHE);
-        };
-    }
-
-    private static void bindConfiguredCache(
-            CacheManager cacheManager,
-            CacheMetricsRegistrar cacheMetricsRegistrar,
-            MeterRegistry meterRegistry,
-            String cacheName) {
-        Cache cache = cacheManager.getCache(cacheName);
-        if (cache == null || isCacheAlreadyBound(meterRegistry, cacheName)) {
-            return;
-        }
-        cacheMetricsRegistrar.bindCacheToRegistry(cache, Tag.of("cache.manager", "cache"));
-    }
-
-    private static boolean isCacheAlreadyBound(MeterRegistry meterRegistry, String cacheName) {
-        return meterRegistry.find("cache.gets")
-                .tag("cache.manager", "cache")
-                .tag("name", cacheName)
-                .meter() != null;
     }
 }

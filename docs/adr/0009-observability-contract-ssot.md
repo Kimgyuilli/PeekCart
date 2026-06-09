@@ -9,9 +9,9 @@
 
 세션 C 종료 후 전반적 리뷰(2026-04-10)에서 D-005 "관측성 계약 5파일 분산" 이 등록되었다. 1차 봉합으로 P0-B (`management.endpoints.web.exposure.include` + `management.metrics.tags.application` 의 base `application.yml` 이동) 와 P1-D (`@AutoConfigureObservability` 회귀 테스트) 가 적용되었으나, "어느 surface 의 SSOT 가 어느 파일·레이어인가" 라는 결정 자체가 명문화되지 않은 상태로 남았다.
 
-본 ADR 의 직접 동기는 **Phase 4 Gradle 멀티모듈 분리** 다. 모듈 경계가 그어지면 관측성 계약의 9개 surface (S1~S6.d) 가 어느 모듈/서비스에 위치해야 하는지 결정해야 하며, 결정 부재 상태로 분리하면 D-005 의 분산이 모듈 경계를 따라 더 깊어진다. ADR-0007 (YAML 프로파일 병합 원칙) 의 일반 원칙만으로는 manifest 측 surface (S5/S6) 의 결정이 도출되지 않으므로, 관측성 도메인에 구체화한 별도 ADR 이 필요하다.
+본 ADR 의 직접 동기는 **Phase 4 Gradle 멀티모듈 분리** 다. 모듈 경계가 그어지면 관측성 계약의 초기 9개 surface (S1~S6.d) 가 어느 모듈/서비스에 위치해야 하는지 결정해야 하며, 결정 부재 상태로 분리하면 D-005 의 분산이 모듈 경계를 따라 더 깊어진다. ADR-0007 (YAML 프로파일 병합 원칙) 의 일반 원칙만으로는 manifest 측 surface (S5/S6) 의 결정이 도출되지 않으므로, 관측성 도메인에 구체화한 별도 ADR 이 필요하다.
 
-### 9 surface 의 현 위치와 의존 관계
+### 관측성 surface 의 현 위치와 의존 관계
 
 | # | Surface | 현 SSOT (파일:라인) | 의존 surface | 변경 시 파급 |
 |---|---------|---------------------|--------------|--------------|
@@ -24,12 +24,13 @@
 | S6.b | latency alert (p95 > 2s) | `k8s/monitoring/shared/grafana-alerts.yml:53-83` (uid `peekcart-slow-response`, `histogram_quantile` on `_bucket`) | S1, S2, S5 | bucket series 부재 시 NaN, `_bucket` 으로 S1 직접 의존 |
 | S6.c | target-down (`up == 0`) | `k8s/monitoring/shared/grafana-alerts.yml:84-110` (uid `peekcart-target-down`, `up{namespace,service}`) | S5 | scrape label 의존만 — S1/S2 무관 |
 | S6.d | scrape-absent (series 부재) | `k8s/monitoring/shared/grafana-alerts.yml:111-137` (uid `peekcart-scrape-absent`, `absent(up{...})`) | S5 (scrape target 등록 자체) | ServiceMonitor selector 미스매치/네임스페이스·서비스 삭제 — S1/S2 무관 |
+| S7 | cache hit/miss (`cache_gets_total`) | `src/main/java/com/peekcart/global/config/CacheConfig.java:70-75` (`RedisCacheManager.enableStatistics`) | S2, S3, S4, S5 | 상품 캐시 적중률/미스율 측정. Phase 4 CQRS 로컬 캐시 및 Redis fallback(L-006) 판단의 선결 표면 |
 
 ### 자동 회귀 검증의 현 범위
 
 `src/test/java/com/peekcart/global/observability/ObservabilityMetricsIntegrationTest.java` (`@SpringBootTest` + `@AutoConfigureObservability`, P1-D 도입) 가 검증하는 surface:
 
-- **검증 중**: S1 (histogram `_bucket` 노출 확인, L60-62), S2 (`application="peekcart"` 태그, L56-58), S3 happy path (`/actuator/prometheus` 200, L50-51 — exposure 의 prometheus 항목 검증), S4 happy path (no-auth `restTemplate.getForEntity` 200, L50-51 — permitAll 검증)
+- **검증 중**: S1 (histogram `_bucket` 노출 확인, L60-62), S2 (`application="peekcart"` 태그, L56-58), S3 happy path (`/actuator/prometheus` 200, L50-51 — exposure 의 prometheus 항목 검증), S4 happy path (no-auth `restTemplate.getForEntity` 200, L50-51 — permitAll 검증), S7 (`cache_gets_total` hit/miss + 중복 시계열 부재, D-014/L-005)
 - **미검증 잔여 공백**: S3 의 정확한 whitelist 형태 (예: `health` 누락 / 추가 endpoint 추가는 검출 불가), S4 의 `/actuator/health/**` 경로 (현 테스트는 prometheus 만 호출), S5 (k8s integration 범위), S6.a~d PromQL 입력 series 정합 (Prometheus 미실행 환경)
 
 ## Decision
@@ -49,8 +50,9 @@
 | S6.b | latency alert | `grafana-alerts.yml:53-83` | 없음 | 동상 (S6.a) | 동상 | 동상 (D5-V6) |
 | S6.c | target-down | `grafana-alerts.yml:84-110` | 없음 | 동상 (S6.a) | 동상. 단 S5 ownership 변경 시 selector 동기 필수 (D5-V5 와 짝) | 동상 (D5-V6) |
 | S6.d | scrape-absent | `grafana-alerts.yml:111-137` | 없음 | 동상 (S6.a) | 동상 | 동상 (D5-V6) |
+| S7 | cache hit/miss | `CacheConfig.java:70-75` | D-014/L-005: `RedisCacheManager.enableStatistics()` | Phase 4 `product-service` 의 캐시 설정 (상품 캐시 owner). 공통 관측성 모듈은 cache meter 수동 재등록을 소유하지 않음 | 캐시 hit/miss 계측은 cache owner 서비스 1개소. Spring Boot `CacheMetricsAutoConfiguration` 자동 바인딩 사용, `CacheMetricsRegistrar` 수동 중복 바인딩 금지 | `ObservabilityMetricsIntegrationTest` D-014/L-005 케이스 (`cache_gets_total` hit/miss + `cache_manager="cacheManager"` 단일 시계열 검증) |
 
-> **본 task (`task-adr-observability-ssot`) 변경 컬럼 = 모든 행 "없음"**. 본 ADR 은 결정 문서이고 surface 의 물리적 이동은 후속 task 범위.
+> **본 task (`task-adr-observability-ssot`) 당시 S1~S6.d 변경 컬럼 = 모든 행 "없음"**. S7 이후 행은 후속 task 에서 추가된 surface 이므로 해당 task 의 변경 내용을 기록한다. 기존 surface 의 물리적 이동은 여전히 후속 task 범위다.
 
 ### ADR-0007 / ADR-0006 과의 관계
 

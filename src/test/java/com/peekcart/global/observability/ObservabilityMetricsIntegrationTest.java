@@ -17,6 +17,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -77,10 +79,9 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
 
         String body = prometheusResponse.getBody();
         assertThat(body).isNotNull();
-        assertThat(body)
-                .as("Redis products cache hit/miss 판단을 위한 cache.gets counter 가 노출되어야 한다")
-                .containsPattern("cache_gets_total\\{[^}]*cache_manager=\"cache\"[^}]*name=\"products\"[^}]*result=\"miss\"[^}]*\\}")
-                .containsPattern("cache_gets_total\\{[^}]*cache_manager=\"cache\"[^}]*name=\"products\"[^}]*result=\"hit\"[^}]*\\}");
+
+        assertCacheGetLine(body, "products", "miss");
+        assertCacheGetLine(body, "products", "hit");
     }
 
     @Test
@@ -112,5 +113,20 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
                 .isEqualTo(HttpStatus.OK);
         assertThat(restTemplate.getForEntity("/actuator/health/readiness", String.class).getStatusCode())
                 .isEqualTo(HttpStatus.OK);
+    }
+
+    private static void assertCacheGetLine(String prometheusBody, String cacheName, String result) {
+        List<String> lines = prometheusBody.lines()
+                .filter(line -> line.startsWith("cache_gets_total"))
+                .filter(line -> line.contains("name=\"" + cacheName + "\""))
+                .filter(line -> line.contains("result=\"" + result + "\""))
+                .toList();
+
+        assertThat(lines)
+                .as("cache_gets_total name=%s result=%s 는 중복 없이 한 시계열만 노출되어야 한다", cacheName, result)
+                .hasSize(1);
+        assertThat(lines.get(0))
+                .as("Spring Boot CacheMetricsAutoConfiguration 이 CacheManager 빈 이름을 cache_manager 라벨로 사용한다")
+                .contains("cache_manager=\"cacheManager\"");
     }
 }
