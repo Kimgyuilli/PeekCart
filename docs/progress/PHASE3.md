@@ -1294,3 +1294,38 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 - `bash -n scripts/docker-health-smoke.sh`, `git diff --check` 통과.
 
 **브랜치**: `chore/d012-ci-quality-gates`. 커밋 5개 (`docs(tasks)` / `ci(k8s)` / `ci(docker)` / `ci(docker)` / `docs(tasks)`). PR: 미생성.
+
+## 2026-06-09 — D-013 해결 (발행 경로 하드닝: DLQ 발행 확정 + Outbox timeout/cycle 상한)
+
+**범위**: Phase 4 진입 전 기술부채 로드맵 §2 "작업 3 — D-013: 발행 경로 resilience 하드닝". Consumer 실패 메시지가 DLQ 발행 실패 시 조용히 유실될 수 있는 경로(L-012)와, Outbox polling publisher 가 Kafka future `.get()` 에 무제한 대기해 scheduler worker 를 잠식할 수 있는 경로(L-010)를 버킷 1 범위에서 닫음.
+
+**변경**:
+- **L-012 (DLQ 발행 확정)**: `KafkaConfig.kafkaErrorHandler` 의 `DeadLetterPublishingRecoverer` 에 `setFailIfSendResultIsError(true)` 적용. DLQ send 결과가 실패일 때 silent drop 으로 지나가지 않고 error handler 경로에서 실패가 드러나도록 변경. `DlqIntegrationTest` 의 test 전용 recoverer 도 같은 설정으로 동기화.
+- **L-010 (Outbox publish timeout)**: `OutboxPollingService` 의 `kafkaTemplate.send(...).get()` 을 `get(publishTimeout)` 으로 변경. 기본값 `publish-timeout: 6s` 로 Kafka 발행 future 가 완료되지 않으면 기존 실패 처리 경로(retryCount 증가, max retry 도달 시 FAILED + Slack 알림)를 타도록 함.
+- **L-010 (Polling cycle 상한)**: `cycle-timeout: 4m` 데드라인을 추가해 batch 처리 중 상한에 도달하면 잔여 이벤트를 다음 polling cycle 로 이월. `@SchedulerLock(lockAtMostFor = "PT5M")` 보다 짧은 cycle 상한을 두어 락 해제 후 기존 cycle 이 계속 발행하는 중복 위험을 차단.
+- **Producer timeout 명시**: `application.yml` 에 `max.block.ms: 3000`, `request.timeout.ms: 3000`, `delivery.timeout.ms: 5000` 을 명시. `publish-timeout(6s) > delivery.timeout.ms(5s)` 순서로 producer delivery timeout 이 먼저 future 를 완료시키고 application timeout 이 최종 안전망이 되게 함.
+- **Outbox polling 설정화**: 기존 상수였던 batch size / max retry / publish timeout / cycle timeout 을 `app.outbox.polling.*` 설정으로 분리. 기본값은 `batch-size: 100`, `max-retry: 5`, `publish-timeout: 6s`, `cycle-timeout: 4m`.
+- **TASKS.md / 로드맵 상태 갱신**: `D-013` 과 PR 단위 `발행 경로 하드닝` 을 `✅` 완료로 표기.
+
+**정합성 산술**:
+- cycle deadline 체크는 각 이벤트의 blocking `.get()` 이전에 수행.
+- 최악 cycle 시간은 `cycleTimeout + max.block.ms + publishTimeout` ≈ `4m + 3s + 6s = 4m9s`.
+- ShedLock `lockAtMostFor=PT5M` 대비 약 51초 여유가 있어 lock 이 먼저 풀린 뒤 같은 batch 가 계속 발행되는 시나리오를 피함.
+- Kafka producer 제약도 `delivery.timeout.ms(5000) >= request.timeout.ms(3000) + linger.ms(0)` 를 만족.
+
+**비변경 (의도)**:
+- 별도 Outbox 전용 `KafkaTemplate` / `ProducerFactory` 는 만들지 않음. 현재 애플리케이션 Kafka 발행은 Outbox 중심이고, DLQ recoverer 도 실패를 드러내는 방향이 D-013 목적과 맞아 전역 producer timeout 적용을 수용.
+- Outbox retry 정책 자체는 변경하지 않음. `max-retry: 5`, max retry 도달 시 `FAILED` 전이와 Slack 알림 경로를 유지.
+- `@SchedulerLock(lockAtMostFor = "PT5M", lockAtLeastFor = "PT4S")` 값은 변경하지 않음. application-level cycle timeout 을 이보다 짧게 두는 방식으로 정합을 맞춤.
+
+**테스트**:
+- `OutboxPollingServiceTest` 에 publish timeout 회귀 케이스 추가: 완료되지 않는 Kafka future 를 반환해 `publish-timeout` 이후 retryCount 증가 + PENDING 유지 + 저장을 검증.
+- `OutboxPollingServiceTest` 에 cycle timeout 회귀 케이스 추가: 첫 이벤트 처리 후 deadline 에 도달하면 두 번째 이벤트는 발행/저장하지 않고 PENDING 으로 다음 cycle 에 이월되는지 검증. 테스트 안정성을 위해 `publishTimeout=10ms`, `cycleTimeout=5ms` 로 설정.
+- 기존 trace header 주입 테스트(null/blank/set)와 Slack failure isolation 테스트 유지.
+
+**검증**:
+- `GRADLE_USER_HOME=$PWD/.gradle-work ./gradlew test --tests com.peekcart.global.outbox.OutboxPollingServiceTest` 통과.
+- `git diff --check` 통과.
+- `DlqIntegrationTest` 포함 실행은 Testcontainers 가 Docker runtime 을 찾지 못해 초기화 단계에서 실패. 컴파일은 통과했으며, Docker 사용 가능한 환경에서 재검증 필요.
+
+**브랜치**: `fix/d013-publish-path-hardening`. 커밋 2개 (`feat(outbox)` / `docs(progress)`).
