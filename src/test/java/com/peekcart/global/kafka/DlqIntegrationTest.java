@@ -78,6 +78,7 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
                     kafkaTemplate,
                     (record, ex) -> new TopicPartition(record.topic() + ".dlq", -1)
             );
+            dlqRecoverer.setFailIfSendResultIsError(true);
 
             return new DefaultErrorHandler((record, exception) -> {
                 dlqRecoverer.accept(record, exception);

@@ -8,12 +8,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,20 +24,22 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ServiceTest
 @DisplayName("OutboxPollingService 단위 테스트")
 class OutboxPollingServiceTest {
 
-    @InjectMocks OutboxPollingService outboxPollingService;
+    OutboxPollingService outboxPollingService;
     @Mock OutboxEventRepository outboxEventRepository;
     @Mock KafkaTemplate<String, String> kafkaTemplate;
     @Mock SlackPort slackPort;
 
     @BeforeEach
-    void clearMdc() {
+    void setUp() {
         org.slf4j.MDC.clear();
+        outboxPollingService = service(Duration.ofSeconds(6), Duration.ofMinutes(4));
     }
 
     @Test
@@ -125,6 +128,40 @@ class OutboxPollingServiceTest {
         assertThat(sent.headers().lastHeader(KafkaTraceHeaders.USER_ID)).isNull();
     }
 
+    @Test
+    @DisplayName("Kafka 발행 future 가 완료되지 않으면 publish-timeout 이후 retryCount 를 증가시키고 저장한다")
+    void publishTimeoutIncrementsRetryAndPersistsEvent() {
+        outboxPollingService = service(Duration.ofMillis(10), Duration.ofSeconds(1));
+        OutboxEvent event = pendingEvent(null, null);
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
+        given(kafkaTemplate.send(any(ProducerRecord.class))).willReturn(new CompletableFuture<>());
+
+        outboxPollingService.pollAndPublish();
+
+        assertThat(event.getRetryCount()).isEqualTo(1);
+        assertThat(event.getStatus()).isEqualTo(OutboxEventStatus.PENDING);
+        verify(outboxEventRepository).save(event);
+    }
+
+    @Test
+    @DisplayName("cycle-timeout 도달 시 잔여 이벤트는 발행하지 않고 다음 폴링 사이클로 이월한다")
+    void cycleTimeoutStopsBeforePublishingRemainingEvents() {
+        outboxPollingService = service(Duration.ofMillis(10), Duration.ofMillis(5));
+        OutboxEvent first = pendingEvent(null, null);
+        OutboxEvent remaining = pendingEvent(null, null);
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(first, remaining));
+        given(kafkaTemplate.send(any(ProducerRecord.class))).willReturn(new CompletableFuture<>());
+
+        outboxPollingService.pollAndPublish();
+
+        assertThat(first.getRetryCount()).isEqualTo(1);
+        assertThat(remaining.getRetryCount()).isZero();
+        assertThat(remaining.getStatus()).isEqualTo(OutboxEventStatus.PENDING);
+        verify(kafkaTemplate, times(1)).send(any(ProducerRecord.class));
+        verify(outboxEventRepository).save(first);
+        verify(outboxEventRepository, never()).save(remaining);
+    }
+
     private static OutboxEvent pendingEvent(String traceId, String userId) {
         return OutboxEvent.create("Order", "1", "order.created", traceId, userId, eventId -> "{}");
     }
@@ -144,5 +181,10 @@ class OutboxPollingServiceTest {
     private static String headerValue(ProducerRecord<String, String> record, String key) {
         var header = record.headers().lastHeader(key);
         return header == null ? null : new String(header.value(), StandardCharsets.UTF_8);
+    }
+
+    private OutboxPollingService service(Duration publishTimeout, Duration cycleTimeout) {
+        return new OutboxPollingService(outboxEventRepository, kafkaTemplate, slackPort,
+                100, 5, publishTimeout, cycleTimeout);
     }
 }

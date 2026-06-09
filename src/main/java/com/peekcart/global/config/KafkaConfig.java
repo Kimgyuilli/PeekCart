@@ -78,6 +78,7 @@ public class KafkaConfig {
                 kafkaTemplate,
                 (record, ex) -> new TopicPartition(record.topic() + ".dlq", -1)
         );
+        dlqRecoverer.setFailIfSendResultIsError(true);
 
         return new DefaultErrorHandler((record, exception) -> {
             String message = String.format(
