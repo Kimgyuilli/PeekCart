@@ -26,7 +26,7 @@
 | Tier A 즉시 정정 | 문서/주석/쿼리 명백한 오류 일괄 정정 | L-018, L-021, L-022, L-016(b), L-020(1) | — | ✅ | — |
 | CI 품질 게이트 | PR Docker build+smoke / branch protection / NS lint | L-014, L-015, L-017 | **D-012** | ✅ | — |
 | 발행 경로 하드닝 | DLQ 발행 확정 + outbox `.get()` 타임아웃·사이클 상한 | L-010, L-012 | **D-013** | ✅ | [#37](https://github.com/Kimgyuilli/PeakCart/pull/37) |
-| 관측성 선결 표면 (선택) | 캐시 적중률 + outbox 파이프라인 메트릭 | L-005, L-009 | **D-014** | 🔄 | [#38](https://github.com/Kimgyuilli/PeakCart/pull/38) |
+| 관측성 선결 표면 (선택) | 캐시 적중률 + outbox 파이프라인 메트릭 | L-005, L-009 | **D-014** | ✅ | [#38](https://github.com/Kimgyuilli/PeakCart/pull/38) (L-005) · L-009 PR |
 
 > 권장 시퀀스: 문서 정비 → Tier A → D-012 → D-013 → (여유 시) D-014. 상세 근거는 로드맵 §2.
 
@@ -43,7 +43,7 @@
 | D-002 | Performance | 캐시 TPS ×2.31(목표 ×3 미달). 1차 병목 CPU 확증, 2차 후보(MySQL 풀 / Redis 락 contention) 미분리 | Phase 4 Order Service 분리 후 격리 재측정 | 🔄 추적 |
 | D-012 | CI / Deliverable | CI 가 품질 게이트가 아니다 — PR Docker build·smoke 부재, branch protection 미설정, NS 누출 lint 부재 | 버킷 1 (L-014/015/017) | ✅ 완료 |
 | D-013 | Resilience | 발행 경로 resilience 갭 — DLQ 발행 미확정(유실), outbox `.get()` 타임아웃 부재와 polling cycle 상한 미정의(워커 잠식) | 버킷 1 (L-010/012) | ✅ 완료 |
-| D-014 | Observability | 선결 측정 표면 부재 — 캐시 적중률 / outbox 파이프라인 메트릭 | 버킷 1 선택 (L-005/009) | 🔄 진행 중 |
+| D-014 | Observability | 선결 측정 표면 부재 — 캐시 적중률 / outbox 파이프라인 메트릭 | 버킷 1 선택 (L-005/009) | ✅ 완료 |
 
 ### 해결 완료 (아카이브 참조)
 
