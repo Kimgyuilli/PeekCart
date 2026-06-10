@@ -1,7 +1,7 @@
 # Phase 4 진입 전 기술부채 해소 로드맵
 
 > 작성: 2026-06-07 · Phase 3 종결 후, Phase 4(MSA 분리) 착수 전 기술부채 트리아지 결과.
-> 입력: 18편 학습 과정에서 도출된 L-001~L-022 + `docs/TASKS.md §개발 부채`(D-002 추적).
+> 입력: 18편 학습 과정에서 도출된 L-001~L-022 + `docs/TASKS.md §개발 부채`(D-002 추적) + 2026-06-10 인프라 도식 정합성 검토.
 > 이 문서는 **실행 로드맵**(승격·시퀀싱·게이트)이다. 학습/회고와 별개로, 저장소에서 추적하는 현행 기준은 본 문서와 `docs/TASKS.md` 다.
 > 항목이 모두 승격/이관/폐기되면 본 문서의 참조 상태를 함께 정리한다.
 
@@ -19,7 +19,8 @@
 
 ## 1. 현황
 
-- **D-001~D-011**: D-001/005/006/007/008/009/010/011 해결 완료, D-003 Won't Fix, D-004 운영지식. → **D-002 만 추적 중**(버킷 2).
+- **D-001~D-014**: D-001/005/006/007/008/009/010/011/012/013/014 해결 완료, D-003 Won't Fix, D-004 운영지식. → **D-002 만 기존 추적 중**(버킷 2).
+- **D-015~D-018**: 2026-06-10 인프라 도식 정합성 검토에서 신규 도출. D-015/017/018 은 버킷 1, D-016 은 버킷 2 로 분류.
 - **L-001~L-022**: 전부 미승격 후보 → 본 로드맵에서 3버킷으로 분류.
 - **Phase 4 범위**(`07-roadmap-portfolio.md §16`): ① Gradle 멀티모듈 ② 서비스별 DB 분리 ③ Spring Cloud Gateway ④ Choreography Saga ⑤ CQRS 로컬 캐시 ⑥ Cursor 페이지네이션.
 
@@ -73,7 +74,17 @@ Phase 4 에서 서비스/매니페스트가 N배로 늘기 *전에* 게이트를
 
 > Tier D 는 ADR-0009 §Decision 표에 surface 행(cache/outbox) 추가를 동반. Phase 4 멀티모듈 표 갱신과 묶어도 무방하므로 "선택".
 
-**버킷 1 권장 시퀀스**: 작업1(Tier A) → 작업2(D-012) → 작업3(D-013) → (여유 시)작업4(D-014).
+### 작업 5 — Tier E: 인프라 도식 정합성 검토 신규 부채 (2026-06-10)
+
+도식 검토 중 발견된 repo 내부 계약 불일치. Phase 4 멀티모듈/서비스 분리 전에 닫아야 배포·관측성 문서가 더 이상 드리프트하지 않는다.
+
+| D- | 영역 | 내용 | 권장 처리 |
+|---|---|---|---|
+| **D-015** | Deploy/CI | CI 는 `ghcr.io/${owner}/peekcart` 를 push하지만 K8s base/GKE image rewrite 원본은 `ghcr.io/kimgyuilli/peakcart` 를 참조. 이미지 repository 명 계약이 깨져 GHCR → Artifact Registry 복사 또는 base 배포가 실패할 수 있음 | 단일 image repository 이름 결정 후 CI/K8s/문서 일괄 정렬. 가능하면 CI lint 로 `IMAGE_NAME` 과 Kustomize image source 불일치 검출 |
+| **D-017** | Observability | Grafana alert rule 과 values 주석은 존재하지만 Slack contact point/provisioning 파일이 없음. "Grafana alert → Slack" 경로가 repo 선언 상태로는 완성되지 않음 | Slack contact point/notification policy 를 provisioning 하거나, Slack 발송을 앱 내부 알림으로 한정하도록 values/문서/도식 정정 |
+| **D-018** | Docs | `loadtest/reports/2026-04-29/REPORT.md` 는 Redis PVC 를 1Gi 로 기록하지만 현재 매니페스트는 512Mi. 리포트와 배포 SSOT 드리프트 | 리포트 환경 표를 매니페스트 기준(512Mi)으로 정정하거나, 실제 세션 당시 값이 달랐다면 "당시 실측 / 현행 매니페스트" 를 분리 표기 |
+
+**버킷 1 권장 시퀀스**: 기존 완료분(작업1~4) 이후, 작업5는 D-015 → D-017 → D-018 순으로 처리. D-015 는 배포 실패 가능성이 있어 최우선.
 
 ---
 
@@ -88,6 +99,7 @@ Phase 4 에서 서비스/매니페스트가 N배로 늘기 *전에* 게이트를
 | L-006 | Resilience | Redis 조회 캐시 fallback(`CacheErrorHandler`) — Redis 가 서비스간 공유 인프라화 시. L-005(작업4) 선결 | Phase 4 ⑤ CQRS/캐시 |
 | L-008 / L-011 | Operations | `outbox_events`/`processed_events` retention(§9-7 코드화) — DB 서비스별 분리 시 N배. 같은 작업 단위. 보존기간=멱등성 창 상한 결정 동반 | Phase 4 ② DB 분리 |
 | L-016(a) | Deploy | gke `images.newTag` digest 고정 — L-015 의 CI 이미지 운반 자동화와 맞물림 | Phase 4 ① 멀티모듈 |
+| **D-016** | Deploy/Release | GHCR → Artifact Registry 복사(`crane copy`) + `kustomize edit set image` + `git restore` 가 수동 절차. 서비스 수가 늘면 image promotion 재현성·감사성이 급격히 낮아짐 | Phase 4 ① 멀티모듈 / 배포 자동화 |
 | L-020(2) | Observability | consumer group 독립 라벨(kafka-exporter 배포/Micrometer tag) — consumer group N개화 시. ADR-0009 §Decision 표 Kafka lag surface 행 추가 | Phase 4 ① 멀티모듈 |
 | **D-002** | Performance | 2차 병목(MySQL 풀/Redis 락 contention) 분리 — Order Service 분리 후 격리 측정 | Phase 4 ① 분리 후 재측정 |
 
@@ -114,12 +126,16 @@ Phase 4 에서 서비스/매니페스트가 N배로 늘기 *전에* 게이트를
 | **D-012** | CI 품질 게이트(L-014/015/017) | 1 | 완료 |
 | **D-013** | 발행 경로 resilience 하드닝(L-010/012) | 1 | 완료 |
 | **D-014** | 관측성 선결 표면(L-005/009) | 1 | 완료 |
-| Phase 4 task | 보안 묶음(L-001/002/003/019), L-004/006/008/011/016a/020-2, D-002 | 2 | Phase 4 편입 |
+| **D-015** | CI/K8s image repository 이름 계약 불일치 | 1 | 신규 |
+| **D-017** | Grafana alert Slack contact point/provisioning 부재 | 1 | 신규 |
+| **D-018** | Redis PVC 용량 리포트 드리프트 | 1 | 신규 |
+| Phase 4 task | 보안 묶음(L-001/002/003/019), L-004/006/008/011/016a/020-2, D-002, D-016 | 2 | Phase 4 편입 |
 | (보류) | L-007, L-013 | 3 | 측정 게이트 대기 |
 
 ---
 
 ## 6. 다음 단계
 
-1. 버킷 1 완료(Tier A / D-012 / D-013 / D-014). 버킷 2(Phase 4 이관) 로 진행.
-2. 버킷 3 게이트(17편 후속 부하 세션)는 별도 task 로 추적.
+1. 신규 버킷 1(D-015/D-017/D-018) 처리. D-015 는 배포 계약 불일치라 최우선.
+2. 버킷 2(Phase 4 이관) 진행 시 D-016 을 멀티모듈/배포 자동화 작업에 편입.
+3. 버킷 3 게이트(17편 후속 부하 세션)는 별도 task 로 추적.
