@@ -99,7 +99,7 @@ Phase 4 에서 서비스/매니페스트가 N배로 늘기 *전에* 게이트를
 
 | ID | 영역 | 측정 게이트 | 승격 시 동반 결정 |
 |---|---|---|---|
-| L-007 | 주문 *생성* 경로 "락 ⊃ 트랜잭션" 불변식 | 동일-상품 경합 시나리오에서 `PRD-004`/`OptimisticLockingFailureException` 응답률 유의 관측 | `REQUIRES_NEW` 분리 시 부분커밋 보상, 또는 주문단위 다중 락 선획득(productId 정렬 데드락 방지) |
+| L-007 | 주문 *생성* 경로 "락 ⊃ 트랜잭션" 불변식 + 재고 차감 retry 정책 미정 | 동일-상품 경합 시나리오에서 재고 차감 `PRD-004`/`OptimisticLockingFailureException` 응답률 유의 관측. 현재 구현은 lock/optimistic-lock 충돌을 서버 재시도 없이 409로 노출하는 fail-fast 정책 | `REQUIRES_NEW` 분리 시 부분커밋 보상, 주문단위 다중 락 선획득(productId 정렬 데드락 방지), 또는 bounded retry(짧은 backoff+jitter) 도입 여부 |
 | L-013 | 주문 *상태 전이* 동시성(`Order @Version` 부재) | `payment.completed`/`payment.failed` ↔ 타임아웃이 같은 주문에 동시 적용되는 시나리오에서 상태 모순 실측 | **트리거 충돌 우선순위(결제완료 vs 취소)** + 패배 consumer 재처리/DLQ 정책 |
 
 > 현재 정합성은 `@Version` + 격리수준의 *조건부* 백스톱으로 유지 중(오버셀링/모순 미관측). 선제 적용 여부만 보류.
