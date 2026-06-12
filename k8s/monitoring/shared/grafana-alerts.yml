@@ -1,3 +1,10 @@
+# Grafana unified alerting — alert 규칙 provisioning (ConfigMap, Grafana sidecar 자동 로드).
+# 범위: 규칙 평가 + Grafana UI 시각화/알림 상태 표시까지.
+# contact point/notification policy 는 의도적으로 미provisioning —
+#   "alert 발화 → 외부 채널(Slack/PagerDuty) 발송" 경로는 본 파일 비대상이며,
+#   운영 알림 채널 설계는 L-004(Phase 4)로 이관(부하테스트용 임시 클러스터엔 불필요).
+# 주의: 앱 비즈니스/운영 Slack(Notification 도메인 · Outbox FAILED 통지)은 앱이
+#   SlackNotificationClient 로 직접 발송하는 별개 경로이며 본 alert 경로와 무관.
 apiVersion: v1
 kind: ConfigMap
 metadata:
