@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: peekcart
-          image: ghcr.io/kimgyuilli/peakcart:latest
+          image: ghcr.io/kimgyuilli/peekcart:latest
           ports:
             - containerPort: 8080
           envFrom:
