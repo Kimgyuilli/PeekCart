@@ -1443,4 +1443,27 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 
 **브랜치**: `fix/d-018-report-redis-pvc-512mi`. 커밋 1개 (`fix(loadtest)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/42
 
-**완결**: 버킷 1 도식검토 부채(D-015/017/018) 3건 모두 종료. 잔여 버킷 1 항목 없음. (D-019 flaky 는 미분류 — 추후 분석.)
+**완결**: 버킷 1 도식검토 부채(D-015/017/018) 3건 모두 종료. 잔여 버킷 1 항목 없음. (D-019 flaky 는 후속 처리 — 아래 2026-06-13 항목 참조.)
+
+## 2026-06-13 — D-019 해결 (OutboxKafka E2E `orderCancelled` flaky 봉합)
+
+**범위**: D-012 PR CI 에서 표면화된 `OutboxKafkaIntegrationTest.orderCancelled_e2e` 간헐 실패. 등록 시 "순수 timing flake vs D-013 동기 send 여파" 분리가 미정이라 `미분류` 였다. 본 작업에서 코드·git 이력으로 갈래를 확정하고 봉합.
+
+**진단 (두 갈래 판정)**:
+- **"D-013 동기 send 전환" 전제는 부정확.** 발행은 D-013 이전부터 이미 동기(`kafkaTemplate.send().get()`)였다. D-013(`f057bea`)이 실제로 바꾼 것은 ① `.get()` → `.get(publish-timeout 6s)` 상한 부여, ② **producer 타임아웃을 기본값에서 타이트하게** 명시(`max.block.ms 60000→3000`, `delivery.timeout.ms 120000→5000`, `request.timeout.ms→3000`), ③ cycle-timeout / batch·retry 외부화.
+- **D-013 은 이 E2E 테스트를 수정하지 않았다**(git 확인). 테스트는 여전히 `pollAndPublish()` 를 **1회만** 호출하고 발행 성공을 가정.
+- 인과: D-013 이전엔 producer 가 메타데이터/토픽 자동생성을 최대 60s 기다려 콜드 스타트라도 단발 poll 이 항상 성공. D-013 이후엔 `order.cancelled` **첫 발행**이 CI 콜드 스타트에서 3~5s producer 바운드를 초과하면 send 실패 → 이벤트 `PENDING` 고착 → 단발 호출 테스트는 재폴링이 없어 consumer 가 메시지를 못 받고 `await 10s` 타임아웃.
+- **결론: (a) 타이밍 flake — 프로덕션 회귀 아님.** 프로덕션 스케줄러는 매 사이클 `pollAndPublish()` 를 반복하므로 첫 발행 타임아웃도 다음 사이클에 재발행되어 설계대로 자가치유. 깨진 것은 프로덕션이 아니라 **테스트의 "1회 poll = 발행 성공" 가정**.
+
+**처리 방향**: D-013 하드닝(타이트한 producer 타임아웃 / 바운드 `.get()`)은 정상 동작이라 **되돌리지 않음**. 테스트 가정만 프로덕션과 동일하게 수정.
+
+**변경 (테스트 전용)**:
+- **`OutboxKafkaIntegrationTest.orderCancelled_e2e`**: 단발 `outboxPollingService.pollAndPublish()` → `pollUntilPublished()` 헬퍼로 교체.
+- **`pollUntilPublished()` 헬퍼 신규**: PENDING 이 비워질 때까지(`await 10s`) `pollAndPublish()` 반복 호출 → 프로덕션 스케줄러 재발행 의미를 테스트에 부여. 재발행은 consumer `eventId` 멱등(`processed_events`)으로 중복 알림 없음.
+
+**검증**:
+- 수정 후 `OutboxKafkaIntegrationTest` 전체 **4회 반복 → 4/4 green**. 수정 전에도 로컬 6/6 green — 로컬 Docker 는 warm 이라 콜드 스타트 flake 미재현. 본 flake 는 CI 부하/콜드 컨테이너 현상이며 진단 근거는 코드·git 이력(D-013 producer 타임아웃 변경 + 테스트 미수정).
+
+**브랜치**: `fix/d-019-outbox-e2e-repoll`. 커밋 1개 (`fix(test)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/43
+
+**분류**: 버킷 1 **마무리분**(D-013 여파). 동일 클래스의 다른 단발 poll 테스트도 같은 패턴이나 관측된 flake 는 `orderCancelled_e2e` 한정이라 범위를 등록 부채에 한정 — 추후 동일 증상 시 `pollUntilPublished()` 일괄 이관 가능.

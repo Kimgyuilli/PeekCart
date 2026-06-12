@@ -30,8 +30,9 @@
 | 이미지 repo 계약 정렬 | CI/K8s/문서 image repository 이름 단일화 (+ 가능하면 CI lint) | 도식검토 | **D-015** | ✅ | [#40](https://github.com/Kimgyuilli/PeakCart/pull/40) |
 | Grafana→Slack 경로 | Slack contact point provisioning 또는 범위 정정 | 도식검토 | **D-017** | ✅ | [#41](https://github.com/Kimgyuilli/PeakCart/pull/41) |
 | 리포트 드리프트 정정 | REPORT.md Redis PVC 512Mi 정합 | 도식검토 | **D-018** | ✅ | [#42](https://github.com/Kimgyuilli/PeakCart/pull/42) |
+| E2E flaky 봉합 | OutboxKafka E2E `orderCancelled` 단발 poll → PUBLISHED 까지 재폴링 | D-013 여파 | **D-019** | ✅ | [#43](https://github.com/Kimgyuilli/PeakCart/pull/43) |
 
-> 권장 시퀀스: 문서 정비 → Tier A → D-012 → D-013 → (여유 시) D-014 → **D-015 → D-017 → D-018**. 상세 근거는 로드맵 §2·§5. D-015 는 배포 계약 불일치라 최우선.
+> 권장 시퀀스: 문서 정비 → Tier A → D-012 → D-013 → (여유 시) D-014 → **D-015 → D-017 → D-018**. 상세 근거는 로드맵 §2·§5. D-015 는 배포 계약 불일치라 최우선. D-019 는 D-013 머지 후 표면화된 flaky 로, 버킷 1 마무리분으로 흡수.
 
 ---
 
@@ -50,7 +51,7 @@
 | D-015 | Deploy/CI | CI push image repo(`peekcart`) ↔ K8s base/GKE 참조(`peakcart`) 계약 불일치 → GHCR→AR 복사·base 배포 실패 가능 | 버킷 1 (도식검토) | ✅ 완료 |
 | D-017 | Observability | Grafana alert rule 존재하나 Slack contact point/provisioning 부재 → "alert→Slack" 경로 미완성. 범위 정정(②)으로 봉합, delivery 는 L-004 이관 | 버킷 1 (도식검토) | ✅ 완료 |
 | D-018 | Docs | `loadtest/reports/2026-04-29/REPORT.md` Redis PVC 1Gi ↔ 현 매니페스트 512Mi 드리프트 | 버킷 1 (도식검토) | ✅ 완료 |
-| D-019 | Testing | `OutboxKafkaIntegrationTest.orderCancelled_e2e` (Kafka E2E `await 10s` 비동기 검증) CI 간헐 실패 → 타이밍 의존 flaky. 순수 flake vs D-013 동기 send 여파 분리 필요 | 미분류 (추후 분석) | 🔲 대기 |
+| D-019 | Testing | `OutboxKafkaIntegrationTest.orderCancelled_e2e` CI 간헐 실패 → **(a) 타이밍 flake 확정**(프로덕션 회귀 아님). D-013 producer 타임아웃 타이트화로 콜드 스타트 첫 발행이 실패하면 단발 poll 테스트는 재폴링이 없어 PENDING 고착 → `await` 타임아웃. 프로덕션은 스케줄러 재발행으로 자가치유. 테스트만 `pollUntilPublished` 로 수정(하드닝 유지) | 버킷 1 마무리분 (D-013 여파) | ✅ 완료 |
 
 ### 해결 완료 (아카이브 참조)
 
