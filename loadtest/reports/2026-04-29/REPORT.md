@@ -15,7 +15,7 @@
 | 노드 | e2-standard-4 × 1 (4 vCPU / 16 GiB), pd-standard 50GB |
 | peekcart Pod 리소스 | req 500m/1Gi · lim 2000m/2Gi (overlay/gke patch) |
 | peekcart 이미지 | `asia-northeast3-docker.pkg.dev/peekcart-loadtest/peekcart/peekcart:f7ea932` (digest `sha256:25068882...`) |
-| MySQL / Redis / Kafka | base 매니페스트 리소스, PVC standard-rwo (mysql 1Gi / redis 1Gi / kafka 1Gi) |
+| MySQL / Redis / Kafka | base 매니페스트 리소스, PVC standard-rwo (mysql 1Gi / redis 512Mi / kafka 1Gi) |
 | 모니터링 | kube-prometheus-stack (`k8s/monitoring/gke/values-prometheus.yml`, retention 24h, remote-write receiver enabled) |
 | 부하 발생기 | loadgen VM e2-standard-2 (asia-northeast3-a, Ubuntu 22.04 LTS, pd-standard 20GB) |
 | 캐시 상태 | `PEEKCART_CACHE_ENABLED=true` (default, 시나리오 1 캐시 ON 상태와 동일) |
