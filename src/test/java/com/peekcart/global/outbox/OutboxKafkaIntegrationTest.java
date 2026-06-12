@@ -235,7 +235,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
 
         // when
         orderOutboxEventPublisher.publishOrderCancelled(order);
-        outboxPollingService.pollAndPublish();
+        pollUntilPublished();
 
         // then
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -314,6 +314,22 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
     }
 
     // ── 헬퍼 메서드 ──
+
+    /**
+     * Outbox 이벤트가 PUBLISHED 로 전이될 때까지 폴링을 반복한다.
+     *
+     * <p>프로덕션 스케줄러는 매 사이클 {@code pollAndPublish()} 를 반복 호출하므로, 콜드 스타트에서
+     * 첫 발행이 producer 타임아웃({@code max.block.ms}/{@code delivery.timeout.ms}, D-013)을 초과해
+     * 이벤트가 PENDING 으로 남더라도 다음 사이클에 재발행되어 자가치유된다. 단발 호출만 하던 테스트는
+     * 이 재시도 의미가 빠져 CI 콜드 스타트에서 간헐 실패했다(D-019). PENDING 이 비워질 때까지 재폴링해
+     * 프로덕션과 동일한 발행 보장을 부여한다.</p>
+     */
+    private void pollUntilPublished() {
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+            outboxPollingService.pollAndPublish();
+            assertThat(outboxEventRepository.findPendingEvents(100)).isEmpty();
+        });
+    }
 
     /**
      * headerCapture 큐에서 주어진 key 와 일치하는 record 를 찾을 때까지 polling.
