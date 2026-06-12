@@ -1422,3 +1422,25 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 **브랜치**: `fix/d-017-grafana-alert-slack-scope`. 커밋 2개 (`docs(monitoring)` ×2). PR: https://github.com/Kimgyuilli/PeakCart/pull/41
 
 **후속**: 본 PR CI 에서 무관한 E2E 테스트(`OutboxKafkaIntegrationTest.orderCancelled_e2e`, `await 10s` 비동기 검증)가 간헐 실패 → 타이밍 의존 flaky 후보로 **D-019** 신규 등록(순수 flake vs D-013 동기 send 여파 분리는 추후 분석).
+
+## 2026-06-13 — D-018 해결 (REPORT 환경 표 Redis PVC 512Mi 정합)
+
+**범위**: Phase 4 진입 전 기술부채 로드맵 §2 "작업 5 — D-018"(2026-06-10 인프라 도식 정합성 검토 신규 부채). 세션 C 부하테스트 리포트(`loadtest/reports/2026-04-29/REPORT.md`) 환경 표가 Redis PVC 를 1Gi 로 기록했으나 배포 SSOT 인 매니페스트(`k8s/base/infra/redis/redis.yml`)는 512Mi 라, 리포트↔배포 드리프트를 봉합.
+
+**처리 방향**: 두 갈래(① "당시 실측 1Gi / 현행 512Mi" 분리 표기 vs ② 매니페스트 기준 정정) 중 **②**채택. git 전체 이력상 Redis PVC 는 최초 생성(Task 3-2, commit `1c79dbe`)부터 줄곧 512Mi 였고 1Gi→512Mi 변경 이력이 전무(커밋 메시지 자체가 "Redis PVC 512Mi + Kafka PVC 1Gi 추가")하므로, 측정일에도 512Mi 였다 → ①은 불성립. mysql/kafka 1Gi 옆에 redis 도 1Gi 로 채운 단순 복붙 오기로 판정.
+
+**변경**:
+- **`loadtest/reports/2026-04-29/REPORT.md`**: 환경 표 PVC 항목 `mysql 1Gi / redis 1Gi / kafka 1Gi` → `mysql 1Gi / redis 512Mi / kafka 1Gi` 로 정정.
+- **TASKS.md 상태 갱신**: `리포트 드리프트 정정` PR 단위와 `D-018` 을 `✅` 완료로 표기. 로드맵 §5 표 D-015/017/018 을 `완료` 로 동기화(D-015/017 지연분 포함).
+
+**비변경 (의도)**:
+- 코드/매니페스트 무변경 — 매니페스트는 측정 당시·현재 모두 512Mi 로 변경이 없으므로 사실 기록(리포트)만 정정.
+- 동일 세션 학습 초안(`docs/learning/17-...md`)에도 같은 오기(`각 PVC 1Gi`)가 있어 로컬에서 redis 512Mi 로 정정했으나, `docs/learning/` 은 `.gitignore` 대상이라 추적 변경에는 미포함.
+
+**검증**:
+- `git log -p -- k8s/base/infra/redis/redis.yml` 및 옛 경로 이력 → Redis PVC 전 이력 512Mi, 1Gi 기록/변경 없음.
+- `grep -rin "redis.*1Gi"` 잔여 오기 부재(추적 파일 한정), `bash docs/consistency-hints.sh` exit 0.
+
+**브랜치**: `fix/d-018-report-redis-pvc-512mi`. 커밋 1개 (`fix(loadtest)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/42
+
+**완결**: 버킷 1 도식검토 부채(D-015/017/018) 3건 모두 종료. 잔여 버킷 1 항목 없음. (D-019 flaky 는 미분류 — 추후 분석.)

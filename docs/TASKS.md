@@ -29,7 +29,7 @@
 | 관측성 선결 표면 (선택) | 캐시 적중률 + outbox 파이프라인 메트릭 | L-005, L-009 | **D-014** | ✅ | [#38](https://github.com/Kimgyuilli/PeakCart/pull/38) (L-005) · [#39](https://github.com/Kimgyuilli/PeakCart/pull/39) (L-009) |
 | 이미지 repo 계약 정렬 | CI/K8s/문서 image repository 이름 단일화 (+ 가능하면 CI lint) | 도식검토 | **D-015** | ✅ | [#40](https://github.com/Kimgyuilli/PeakCart/pull/40) |
 | Grafana→Slack 경로 | Slack contact point provisioning 또는 범위 정정 | 도식검토 | **D-017** | ✅ | [#41](https://github.com/Kimgyuilli/PeakCart/pull/41) |
-| 리포트 드리프트 정정 | REPORT.md Redis PVC 512Mi 정합 | 도식검토 | **D-018** | 🔲 | — |
+| 리포트 드리프트 정정 | REPORT.md Redis PVC 512Mi 정합 | 도식검토 | **D-018** | ✅ | [#42](https://github.com/Kimgyuilli/PeakCart/pull/42) |
 
 > 권장 시퀀스: 문서 정비 → Tier A → D-012 → D-013 → (여유 시) D-014 → **D-015 → D-017 → D-018**. 상세 근거는 로드맵 §2·§5. D-015 는 배포 계약 불일치라 최우선.
 
@@ -49,7 +49,7 @@
 | D-014 | Observability | 선결 측정 표면 부재 — 캐시 적중률 / outbox 파이프라인 메트릭 | 버킷 1 선택 (L-005/009) | ✅ 완료 |
 | D-015 | Deploy/CI | CI push image repo(`peekcart`) ↔ K8s base/GKE 참조(`peakcart`) 계약 불일치 → GHCR→AR 복사·base 배포 실패 가능 | 버킷 1 (도식검토) | ✅ 완료 |
 | D-017 | Observability | Grafana alert rule 존재하나 Slack contact point/provisioning 부재 → "alert→Slack" 경로 미완성. 범위 정정(②)으로 봉합, delivery 는 L-004 이관 | 버킷 1 (도식검토) | ✅ 완료 |
-| D-018 | Docs | `loadtest/reports/2026-04-29/REPORT.md` Redis PVC 1Gi ↔ 현 매니페스트 512Mi 드리프트 | 버킷 1 (도식검토) | 🔲 대기 |
+| D-018 | Docs | `loadtest/reports/2026-04-29/REPORT.md` Redis PVC 1Gi ↔ 현 매니페스트 512Mi 드리프트 | 버킷 1 (도식검토) | ✅ 완료 |
 | D-019 | Testing | `OutboxKafkaIntegrationTest.orderCancelled_e2e` (Kafka E2E `await 10s` 비동기 검증) CI 간헐 실패 → 타이밍 의존 flaky. 순수 flake vs D-013 동기 send 여파 분리 필요 | 미분류 (추후 분석) | 🔲 대기 |
 
 ### 해결 완료 (아카이브 참조)
