@@ -8,7 +8,9 @@
 # - prometheus PVC 5Gi (standard-rwo): 24h × ~1만 시계열 여유
 # - prometheus limits 1500m/2Gi: 노드 allocatable 의 ~12%
 # - grafana: Internal LB. persistence 미사용 (대시보드는 sidecar ConfigMap, 측정 후 클러스터 폐기 전제)
-# - alertmanager 미사용: Slack 알림은 Grafana unified alerting 사용 (minikube 와 동일)
+# - alertmanager 미사용: Grafana unified alerting 으로 alert 규칙 평가·UI 시각화 (minikube 와 동일).
+#   외부 채널(Slack/PagerDuty) 발송용 contact point/notification policy 는 미provisioning —
+#   운영 알림 채널 설계는 L-004(Phase 4)로 이관. 상세는 shared/grafana-alerts.yml 헤더 참고.
 
 prometheus:
   prometheusSpec:
