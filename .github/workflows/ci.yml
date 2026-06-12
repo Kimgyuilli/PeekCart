@@ -41,6 +41,7 @@ jobs:
       - name: Run CI policy lints
         run: |
           bash scripts/kustomize-namespace-lint.sh
+          bash scripts/image-contract-lint.sh
           bash scripts/observability-ssot-lint.sh
           bash scripts/servicemonitor-selector-lint.sh
           bash scripts/observability-promql-lint.sh
