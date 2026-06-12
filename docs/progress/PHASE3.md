@@ -1379,3 +1379,46 @@ Run 2 (3 pods pre-warmed, HPA 일시 제거 + manual scale=3, DB 재시드):
 - `./gradlew test --tests com.peekcart.global.outbox.OutboxPollingServiceTest --tests com.peekcart.global.observability.ObservabilityMetricsIntegrationTest` 통과(Docker/Testcontainers 환경).
 
 **브랜치**: `feat/outbox-pipeline-metrics`. 커밋 5개 (`feat(observability)` / `docs(adr)` / `docs(progress)` / `test(observability)` / `docs(adr)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/39
+
+## 2026-06-12 — D-015 해결 (이미지 repository 이름 계약 정렬 + CI lint 가드)
+
+**범위**: Phase 4 진입 전 기술부채 로드맵 §2 "작업 5 — D-015"(2026-06-10 인프라 도식 정합성 검토 신규 부채). CI 가 push 하는 이미지 경로(`ghcr.io/${owner}/peekcart`)와 K8s base/GKE overlay 가 참조하는 경로(`ghcr.io/kimgyuilli/peakcart`)가 어긋나, 클러스터가 CI 가 만든 적 없는 이미지를 pull → base 배포 / GHCR→AR 복사 실패 가능성을 버킷 1 범위에서 닫음.
+
+**변경**:
+- **이름 계약 정렬**: base deployment / GKE overlay(`images.name`·주석) / `overlays/gke/README.md` 의 image repository 이름을 `peakcart` → `peekcart` 로 통일(나머지 리소스 명명과 일치).
+- **CI lint 가드**: `scripts/image-contract-lint.sh`(의존성 없는 순수 bash) 추가. CI `IMAGE_NAME` ↔ base image ↔ GKE rewrite source 의 owner/repo 전체 경로를 정규화 비교해 계약 재드리프트를 차단. CI policy lints 단계에 등록.
+- **TASKS.md 상태 갱신**: `이미지 repo 계약 정렬` PR 단위와 `D-015` 를 `✅` 완료로 표기.
+
+**설계 결정**:
+- **basename 비교 회피**: repo basename 만 비교하면 owner 가 어긋나도 통과하므로, 정규화한 owner/repo 전체를 비교 → owner 세그먼트 드리프트도 검출.
+- **런타임 owner 해석**: CI 의 `${{ github.repository_owner }}` 는 `${GITHUB_REPOSITORY_OWNER}` 로 해석(로컬은 `kimgyuilli` fallback)해 런타임 owner 드리프트까지 검출.
+- **추출 실패 신호 분리**: 경로 추출 실패는 `set -e` 중단이 아니라 `exit 2`(structure changed)로 보고해 "구조 변경"과 "이름 불일치(1)"를 구분.
+
+**검증**:
+- kustomize render 시 base=`peekcart`, gke=AR placeholder 로 rewrite 정상.
+- lint 종료코드 local(0) / runtime owner drift(1) / name drift(1) / structure change(2) 통과.
+
+**브랜치**: `fix/d-015-image-repo-contract`. 커밋 2개 (`fix(deploy)` / `ci(deploy)`). PR: https://github.com/Kimgyuilli/PeakCart/pull/40
+
+## 2026-06-12 — D-017 해결 (Grafana alert→Slack 경로 범위 정정)
+
+**범위**: Phase 4 진입 전 기술부채 로드맵 §2 "작업 5 — D-017". `grafana-alerts.yml` 에 alert 규칙은 provisioning 돼 있으나 contact point/notification policy 가 미선언이라 "alert→Slack 발송" 경로가 실제로는 동작하지 않는데, GKE values 주석은 "Slack 알림은 Grafana unified alerting 사용" 이라 단언해 선언↔실제가 어긋난 드리프트를 봉합.
+
+**처리 방향**: 두 갈래(① contact point/policy 실제 provisioning vs ② 범위 정정) 중 **②**채택. ①은 정의상 L-004(버킷 2 / Phase 4 운영 알림 채널 재설계)와 동일 작업이고, 대상 GKE 클러스터가 부하테스트용 임시("측정 후 폐기 전제")라 payoff 가 낮다. 버킷 1 취지(Phase 4 전 드리프트 봉합)에는 ②가 부합.
+
+**변경**:
+- **`k8s/monitoring/gke/values-prometheus.yml`**: `alertmanager 미사용` 주석에서 "Slack 알림은 Grafana unified alerting 사용" 단언 제거. unified alerting 의 실제 범위(규칙 평가·UI 시각화)로 한정하고, 외부 채널 발송용 contact point/notification policy 는 미provisioning 이며 운영 알림 채널 설계가 L-004(Phase 4)로 이관됨을 명시.
+- **`k8s/monitoring/shared/grafana-alerts.yml`**: 파일 헤더에 범위 명문화 — ①규칙 provisioning·시각화까지가 대상, ②contact point/policy 의도적 미선언, ③"alert→외부 채널 발송" 은 본 파일 비대상(L-004 이관), ④앱 내부 Slack(Notification 도메인 · Outbox FAILED 통지, `SlackNotificationClient` 직접 발송)은 별개 경로로 본 alert 경로와 무관함을 구분.
+- **TASKS.md 상태 갱신**: `Grafana→Slack 경로` PR 단위와 `D-017` 을 `✅` 완료로 표기.
+
+**비변경 (의도)**:
+- `docs/progress/PHASE3.md` Task 3-2/3-4 의 동일 뿌리 언급(L116 "규칙 2개", L330 결정표)은 Layer 3 이력이라 사후 정정하지 않음 — 현행 진실은 Live 설정 surface 정정으로 확보.
+- ADR-0009(immutable) · 로드맵 status 무변경. alert delivery 는 ADR-0009 가 추적하는 surface 가 아니며(규칙 SSOT 만 추적), delivery 채널 설계는 L-004 가 보유.
+- 코드/인프라 무변경(주석·헤더 텍스트만, diff 10줄).
+
+**검증**:
+- `kubectl kustomize k8s/monitoring/shared/` 빌드 성공(grafana-alerts ConfigMap + 내장 규칙 블록 파싱·생성 정상).
+
+**브랜치**: `fix/d-017-grafana-alert-slack-scope`. 커밋 2개 (`docs(monitoring)` ×2). PR: https://github.com/Kimgyuilli/PeakCart/pull/41
+
+**후속**: 본 PR CI 에서 무관한 E2E 테스트(`OutboxKafkaIntegrationTest.orderCancelled_e2e`, `await 10s` 비동기 검증)가 간헐 실패 → 타이밍 의존 flaky 후보로 **D-019** 신규 등록(순수 flake vs D-013 동기 send 여파 분리는 추후 분석).
