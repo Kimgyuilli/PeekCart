@@ -361,6 +361,8 @@ erDiagram
 
 ### Notification DB
 
+> Notification Service 가 DB 를 소유함을 ADR-0010 §D1 (F1) 에서 확정 — `02-architecture.md §5` DataLayer 와 정합 (see ADR-0010).
+
 ```mermaid
 erDiagram
   notifications {
