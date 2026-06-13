@@ -32,4 +32,5 @@
 | [0007](./0007-yaml-profile-merge-principle.md) | YAML 프로파일 병합 원칙 — 연결 정보 vs 동작 정책 | Accepted | 전체 | CLAUDE.md |
 | [0008](./0008-outbox-trace-context-propagation.md) | Outbox Trace Context Propagation | Accepted | Phase 3 잔여 부채 | 02, 05 |
 | [0009](./0009-observability-contract-ssot.md) | 관측성 계약 SSOT 결정 | Accepted | 전체 | 02 |
+| [0010](./0010-phase4-service-decomposition.md) | Phase 4 서비스 분해 — 5개 마이크로서비스 경계 확정 | Accepted | Phase 4 | 02, 03, 04, 05 |
 <!-- INDEX:END -->
