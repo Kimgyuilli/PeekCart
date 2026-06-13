@@ -8,15 +8,44 @@
 | 대상 | 경로 |
 |---|---|
 | Phase 1~3 task 이력 (아카이브) | `docs/progress/TASKS-archive-phase1-3.md` |
-| 부채 해소 로드맵 (트리아지·시퀀싱·게이트) | `docs/progress/phase4-prep-debt-roadmap.md` |
+| Phase 4 설계·실행 로드맵 (ADR 시퀀싱·구현 순서) | `docs/progress/phase4-design-roadmap.md` |
+| 진입 전 부채 해소 로드맵 (버킷 1 완결, 버킷 2/3 이관·게이트) | `docs/progress/phase4-prep-debt-roadmap.md` |
 | 부채 후보 분류·승격 매핑 (L-001~L-022) | `docs/progress/phase4-prep-debt-roadmap.md §2~5` |
 | Phase별 작업 이력 | `docs/progress/PHASE1.md` · `PHASE2.md` · `PHASE3.md` |
 
 ---
 
-## 현재 단계: Phase 4 진입 전 기술부채 해소
+## 현재 단계: Phase 4 — MSA 분리
 
-> 로드맵 §2(버킷 1) 을 PR 단위로 분리. 각 PR 착수 시 상태를 `🔄`, 머지 시 `✅` 로 갱신하고 PR 링크를 단다.
+> 서비스 경계 정본 = §5(5개 풀 분해) 확정. 설계(ADR) 선행 → 구현 PR 시퀀싱. 상세: `docs/progress/phase4-design-roadmap.md`.
+> 착수 시 상태를 `🔄`, 머지 시 `✅` 로 갱신하고 PR/ADR 링크를 단다.
+
+### 설계 (ADR 먼저)
+
+| 순서 | ADR | 작업 | 편입 부채 | 상태 |
+|---|---|---|---|---|
+| A1 | ADR-0010 | 서비스 분해 — §5 비준 + §4-5 정정, 5개 서비스 계약 명문화 (+ F1/F2/F3 정합) | — | ✅ |
+| A2 | — | 멀티모듈 구조 (`common` 경계·의존 규칙) | L-016a, D-016 | 🔲 |
+| A3 | — | DB-per-service + 이벤트/Saga 계약 | L-008/011, L-020-2 | 🔲 |
+| A4 | — | Gateway 보안 (RS256·라우팅·Rate Limit) | 보안 묶음 L-001/002/003/019 | 🔲 |
+
+### 구현 (ADR 선행 후 PR 단위)
+
+| 순서 | 작업 | 선행 ADR | 편입 부채 | 상태 |
+|---|---|---|---|---|
+| ① | Gradle 멀티모듈 전환 | A2 | L-016a, D-016 | 🔲 |
+| ② | 서비스별 DB 분리 | A3 | L-008/011 | 🔲 |
+| ③ | Spring Cloud Gateway | A4 | 보안 묶음 | 🔲 |
+| ④ | Choreography Saga | A3 | — | 🔲 |
+| ⑤ | CQRS 로컬 캐시 | A3 | L-006 (L-005 선결 완료) | 🔲 |
+| ⑥ | Cursor 페이지네이션 | — | — | 🔲 |
+| — | D-002 격리 재측정 | — | D-002 (분리 후) | 🔄 추적 |
+
+---
+
+## 진입 전 부채 해소 (버킷 1) — ✅ 완료 (아카이브 후보)
+
+> 로드맵 §2(버킷 1) 을 PR 단위로 분리. 전 항목 완료. 상세: `docs/progress/phase4-prep-debt-roadmap.md`.
 
 ### PR 단위 (버킷 1)
 
