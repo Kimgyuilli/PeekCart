@@ -1,6 +1,6 @@
 package com.peekcart.global.jwt;
 
-import com.peekcart.global.auth.TokenBlacklistPort;
+import com.peekcart.global.auth.TokenBlacklistLookupPort;
 import com.peekcart.global.auth.TokenClaims;
 import com.peekcart.global.auth.TokenParseException;
 import jakarta.servlet.FilterChain;
@@ -25,8 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
-    private final JwtProvider jwtProvider;
-    private final TokenBlacklistPort tokenBlacklistPort;
+    private final JwtTokenVerifier jwtTokenVerifier;
+    private final TokenBlacklistLookupPort tokenBlacklistLookupPort;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -34,8 +34,8 @@ public class JwtFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
         if (token != null) {
             try {
-                TokenClaims claims = jwtProvider.parseToken(token);
-                if (!tokenBlacklistPort.isBlacklisted(token)) {
+                TokenClaims claims = jwtTokenVerifier.parseToken(token);
+                if (!tokenBlacklistLookupPort.isBlacklisted(token)) {
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             claims.userId(), null, List.of(new SimpleGrantedAuthority("ROLE_" + claims.role()))
                     );

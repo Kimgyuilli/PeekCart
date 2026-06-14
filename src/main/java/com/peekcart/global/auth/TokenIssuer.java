@@ -3,8 +3,9 @@ package com.peekcart.global.auth;
 import java.time.LocalDateTime;
 
 /**
- * 액세스 토큰 발급 · 파싱을 제공하는 추상화.
+ * 액세스 토큰 발급(sign)을 제공하는 추상화 (ADR-0014 D1-b, User 전속).
  * Application 레이어가 JWT 구현 세부사항에 의존하지 않도록 역전시킨다.
+ * 검증(parse/verify)은 common-auth {@code JwtTokenVerifier}로 분리됐다.
  */
 public interface TokenIssuer {
 
@@ -16,16 +17,6 @@ public interface TokenIssuer {
      * @return 발급된 토큰 쌍
      */
     IssuedTokens issue(Long userId, String role);
-
-    /**
-     * 액세스 토큰을 파싱하여 클레임을 반환한다.
-     * 서명이 유효하지 않거나 만료된 토큰이면 {@link TokenParseException}을 던진다.
-     *
-     * @param token JWT 문자열
-     * @return 파싱된 {@link TokenClaims}
-     * @throws TokenParseException 토큰이 유효하지 않을 때
-     */
-    TokenClaims parseToken(String token);
 
     /**
      * 발급된 액세스 토큰과 리프레시 토큰 정보를 담는 값 객체.
