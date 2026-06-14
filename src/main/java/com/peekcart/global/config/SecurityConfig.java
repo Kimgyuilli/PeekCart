@@ -1,27 +1,20 @@
 package com.peekcart.global.config;
 
-import com.peekcart.global.filter.MdcFilter;
-import com.peekcart.global.jwt.JwtFilter;
-import com.peekcart.global.jwt.JwtProvider;
-import com.peekcart.global.security.JwtAccessDeniedHandler;
-import com.peekcart.global.security.JwtAuthenticationEntryPoint;
-import com.peekcart.global.auth.TokenBlacklistPort;
+import com.peekcart.global.security.JwtSecurityConfigurer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Spring Security 설정. Stateless JWT 방식으로 동작하며
- * 인증이 필요 없는 공개 URL을 제외한 모든 요청에 인증을 요구한다.
+ * 전환기 root app(User/Product/Order/Payment 잔류)의 Spring Security 설정.
+ * 공통 JWT 정책은 common-auth {@link JwtSecurityConfigurer}로 위임하고,
+ * 본 모듈은 {@code SecurityFilterChain} 빈을 정확히 1개 생성한다 (ADR-0014 D1).
  */
 @Configuration
 @EnableWebSecurity
@@ -29,10 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtProvider jwtProvider;
-    private final TokenBlacklistPort tokenBlacklistPort;
-    private final JwtAuthenticationEntryPoint authenticationEntryPoint;
-    private final JwtAccessDeniedHandler accessDeniedHandler;
+    private final JwtSecurityConfigurer jwtSecurityConfigurer;
 
     private static final String[] PUBLIC_URLS = {
             "/api/v1/auth/signup",
@@ -48,32 +38,13 @@ public class SecurityConfig {
             "/actuator/prometheus"
     };
 
-    /**
-     * 세션 비활성화, CSRF 비활성화, JWT 필터 등록, URL 인가 규칙을 구성한다.
-     * {@link JwtFilter}는 빈으로 등록하지 않고 여기서 직접 생성하여 컴포넌트 스캔 대상에서 제외한다.
-     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        JwtFilter jwtFilter = new JwtFilter(jwtProvider, tokenBlacklistPort);
-
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(PUBLIC_URLS).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(authenticationEntryPoint)
-                        .accessDeniedHandler(accessDeniedHandler)
-                )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new MdcFilter(), JwtFilter.class);
-
+        jwtSecurityConfigurer.apply(http, PUBLIC_URLS);
         return http.build();
     }
 
-    /** BCrypt 기반 패스워드 인코더를 빈으로 등록한다. */
+    /** BCrypt 기반 패스워드 인코더를 빈으로 등록한다 (User 발급 경로). */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

@@ -4,6 +4,7 @@ import com.peekcart.global.auth.TokenBlacklistPort;
 import com.peekcart.global.auth.TokenClaims;
 import com.peekcart.global.auth.TokenIssuer;
 import com.peekcart.global.auth.TokenParseException;
+import com.peekcart.global.jwt.JwtTokenVerifier;
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.user.application.dto.TokenResult;
 import com.peekcart.user.domain.exception.UserException;
@@ -30,6 +31,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final TokenBlacklistPort tokenBlacklistPort;
     private final TokenIssuer tokenIssuer;
+    private final JwtTokenVerifier jwtTokenVerifier;
     private final PasswordEncoder passwordEncoder;
 
     /**
@@ -77,7 +79,7 @@ public class AuthService {
     public void logout(String accessToken) {
         TokenClaims claims;
         try {
-            claims = tokenIssuer.parseToken(accessToken);
+            claims = jwtTokenVerifier.parseToken(accessToken);
         } catch (TokenParseException e) {
             throw new UserException(ErrorCode.USR_004);
         }

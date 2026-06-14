@@ -1,7 +1,9 @@
 rootProject.name = 'peekcart'
 
-// Phase 4 구현 ① 멀티모듈 전환 — PR1 (ADR-0011 §D1)
-// 과도기: 루트가 단일 app 으로 유지되며 아래 두 라이브러리 모듈을 의존한다.
-// 5개 서비스 모듈 분리는 PR2.
+// Phase 4 구현 ① 멀티모듈 전환 (ADR-0011 §D1, ADR-0014)
+// PR2a: peekcart-common-auth(전환기 JWT 검증) 신설 + notification-service 첫 peel.
+// 과도기: 루트가 잔여 4서비스(User/Product/Order/Payment) app 으로 유지된다.
 include 'common'
 include 'peekcart-common-observability'   // ADR-0009 선결정
+include 'peekcart-common-auth'            // ADR-0014 전환기 JWT 검증 공유 모듈
+// include 'notification-service'         // PR2a — 첫 서비스 peel (모듈 골격 생성 후 활성화)

@@ -32,11 +32,11 @@
 
 ### 구현 (ADR 선행 후 PR 단위) ← 현재 focus
 
-> **진행 중: 구현 ① (선행 ADR-0011)** — 3-PR 분할(PR1 스켈레톤+common → PR2 서비스 5개 분리 → PR3 Dockerfile/CI/k8s). 계획서: `docs/plans/task-impl1-gradle-multimodule.md`.
+> **진행 중: 구현 ① (선행 ADR-0011/ADR-0014)** — PR1 스켈레톤+common → PR2 서비스 분리 → PR3 Dockerfile/CI/k8s. **PR2 는 PR2a-1(common-auth 추출)→PR2a-2(notification peel)→PR2b/c/d 로 세분.** 계획서: `docs/plans/task-impl1-gradle-multimodule.md`.
 
 | 순서 | 작업 | 선행 ADR | 편입 부채 | 상태 |
 |---|---|---|---|---|
-| ① | Gradle 멀티모듈 전환 (PR1 ✅ [#48](https://github.com/Kimgyuilli/PeakCart/pull/48) · PR2/PR3 대기) | A2 | L-016a, D-016 | 🔄 |
+| ① | Gradle 멀티모듈 전환 (PR1 ✅ [#48](https://github.com/Kimgyuilli/PeakCart/pull/48) · PR2a-1 ✅ [#51](https://github.com/Kimgyuilli/PeakCart/pull/51) common-auth 추출+JWT verify/sign 분리 · PR2a-2 notification peel/PR2b~d/PR3 대기) | A2·A4.5 | L-016a, D-016 | 🔄 |
 | ② | 서비스별 DB 분리 | A3 | L-008/011 | 🔲 |
 | ③ | Spring Cloud Gateway | A4 | 보안 묶음 | 🔲 |
 | ④ | Choreography Saga | A3 | — | 🔲 |

@@ -4,6 +4,7 @@ import com.peekcart.global.auth.TokenBlacklistPort;
 import com.peekcart.global.auth.TokenClaims;
 import com.peekcart.global.auth.TokenIssuer;
 import com.peekcart.global.auth.TokenParseException;
+import com.peekcart.global.jwt.JwtTokenVerifier;
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.support.ServiceTest;
 import com.peekcart.support.fixture.UserFixture;
@@ -41,6 +42,7 @@ class AuthServiceTest {
     @Mock RefreshTokenRepository refreshTokenRepository;
     @Mock TokenBlacklistPort tokenBlacklistPort;
     @Mock TokenIssuer tokenIssuer;
+    @Mock JwtTokenVerifier jwtTokenVerifier;
     @Mock PasswordEncoder passwordEncoder;
 
     private static final String ACCESS_TOKEN = "access.token.value";
@@ -135,7 +137,7 @@ class AuthServiceTest {
     @DisplayName("logout: 유효한 토큰이면 블랙리스트 등록 후 리프레시 토큰을 삭제한다")
     void logout_success() {
         Instant expiration = Instant.now().plusSeconds(3600);
-        given(tokenIssuer.parseToken(ACCESS_TOKEN)).willReturn(tokenClaims(1L, expiration));
+        given(jwtTokenVerifier.parseToken(ACCESS_TOKEN)).willReturn(tokenClaims(1L, expiration));
 
         authService.logout(ACCESS_TOKEN);
 
@@ -146,7 +148,7 @@ class AuthServiceTest {
     @Test
     @DisplayName("logout: 유효하지 않은 토큰이면 USR-004 예외가 발생한다")
     void logout_invalidToken_throwsUSR004() {
-        given(tokenIssuer.parseToken(ACCESS_TOKEN)).willThrow(new TokenParseException(new RuntimeException()));
+        given(jwtTokenVerifier.parseToken(ACCESS_TOKEN)).willThrow(new TokenParseException(new RuntimeException()));
 
         assertThatThrownBy(() -> authService.logout(ACCESS_TOKEN))
                 .isInstanceOf(UserException.class)

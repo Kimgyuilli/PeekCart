@@ -27,9 +27,19 @@ subprojects {
 			}
 		}
 
+		// Spring 의 생성자 파라미터명 기반 DI(by-name 해소)를 라이브러리 모듈에서도 보장.
+		// boot 플러그인이 없는 java-library 모듈(common/observability/auth)은 -parameters 가
+		// 자동 적용되지 않아, 생성자 주입의 동명 빈 해소가 깨진다 (ADR-0011 멀티모듈).
+		tasks.withType(JavaCompile).configureEach {
+			options.compilerArgs.add('-parameters')
+		}
+
 		dependencies {
 			compileOnly 'org.projectlombok:lombok'
 			annotationProcessor 'org.projectlombok:lombok'
+
+			// JUnit Platform 실행기 — 라이브러리 모듈(boot 플러그인 부재)도 테스트 실행 가능하도록
+			testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 		}
 
 		tasks.withType(Test).configureEach {
@@ -60,9 +70,10 @@ jar {
 }
 
 dependencies {
-	// 멀티모듈 (ADR-0011 §D3) — 서비스 모듈은 :common + :peekcart-common-observability 만 의존
+	// 멀티모듈 (ADR-0011 §D3 · ADR-0014) — 전환기 root app 은 검증 공유 모듈도 의존
 	implementation project(':common')
 	implementation project(':peekcart-common-observability')
+	implementation project(':peekcart-common-auth')
 	testImplementation testFixtures(project(':common'))
 
 	// Web

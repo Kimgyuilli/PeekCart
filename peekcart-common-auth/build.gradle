@@ -1,0 +1,31 @@
+// peekcart-common-auth — 전환기 JWT 검증 공유 모듈 (ADR-0014 D1/D3)
+// bootJar 없음. 5개 서비스(+root app 과도기)가 implementation 으로 의존한다.
+// 소유: JWT verify(JwtTokenVerifier)/JwtFilter/LoginUser·resolver/handler 2종/
+//       WebMvcConfig·OpenApiConfig/TokenBlacklistLookupPort + read-only Redis adapter.
+// 발급(JwtTokenSigner)·블랙리스트 write 는 User 전속(ADR-0014 D1).
+
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // common 의 entity/response/exception/filter(MdcFilter) 등 — 공개 시그니처에 노출(handlers, configurer)
+    api project(':common')
+
+    // security — JwtSecurityConfigurer(HttpSecurity)/handlers 가 소비자 compile 경로에 노출
+    api 'org.springframework.boot:spring-boot-starter-security'
+
+    // JWT verify — JwtTokenVerifier 내부 전용(공개 시그니처 미노출)
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // blacklist read-only Redis adapter 내부 전용
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // OpenApiConfig(LoginUser ignore + OpenAPI 빈) 내부 전용
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+
+    // 검증/blacklist fail-closed 단위 회귀
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}

@@ -33,15 +33,6 @@ public class TokenBlacklistRepository implements TokenBlacklistPort {
     }
 
     /**
-     * 토큰이 블랙리스트에 등록되어 있는지 확인한다.
-     *
-     * @return 블랙리스트에 있으면 {@code true}
-     */
-    public boolean isBlacklisted(String token) {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(BLACKLIST_PREFIX + token));
-    }
-
-    /**
      * 토큰 로테이션 직후 짧은 시간 동안 구 토큰 재사용을 허용하기 위해
      * 그레이스 피리어드 항목을 Redis에 저장한다.
      *
