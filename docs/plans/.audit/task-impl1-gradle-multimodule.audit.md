@@ -1,5 +1,32 @@
 # task-impl1-gradle-multimodule — Codex 리뷰 audit
 
+## 2026-06-15 — GP-2 (loop 3, PR2a 추가 리뷰 — 사용자 요청)
+- attempt 3/3 (plan 예산 상한). 검증 중심 프롬프트(2차 반영본 정확성 + 잔여 P0/P1). 리뷰 항목: 3건 (P0:0, P1:3, P2:0) — 전부 신규 이슈.
+- 사용자 선택: [2] 전체 반영
+- 반영 요약:
+  - P1 #1 T2/T4 + 게이트(h) — JWT sign/verify 단일 설정 계약(`JwtAuthProperties`, 동일 jwt.secret/algorithm HS256) + root signer↔common-auth verifier cross-module 회귀 (ADR-0014 D1-b/D2-a)
+  - P1 #2 T2 + 게이트(i) — `JwtProvider`→`JwtTokenSigner`(root)/`JwtTokenVerifier`(common-auth) 대체+기존 FQCN 제거, global.* 중복 FQCN 부재 검사 (split-package 오로딩 방지)
+  - P1 #3 T7 + 게이트(j) — SecurityFilterChain 소유 단일화(common-auth=filter/configurer 제공, 각 모듈 1 chain), 모듈별 chain 수·JwtFilter 1회 등록 + root 미인증 거부 회귀
+- raw: .cache/codex-reviews/plan-task-impl1-gradle-multimodule-1781459901.json
+- run_id: plan:20260614T175821Z:6491c029-f6c0-4f05-9011-25708812d1d9:3
+
+## 2026-06-15 — GP-2 (loop 2, PR2a 분해)
+- 컨텍스트: PR1 완료·아카이브 후 PR2a(Notification peel + peekcart-common-auth 최초 생성) 분해 위해 state 재초기화. 계획서에 "PR2a 실행 세부"(T1~T11 + 완료 게이트 a~e) 서브섹션 추가.
+- GP-1: ADR 경계 변경이나 ADR-0014(Accepted) 구현이므로 auto-pass.
+- attempt 1: codex 180s 타임아웃(global/ 전체 탐색, 출력 0 bytes) → GP-2b → 사용자 [재시도]
+- attempt 2: 탐색 축소 프롬프트(읽을 파일 2개 한정)로 성공. 리뷰 항목: 5건 (P0:0, P1:3, P2:2)
+- 사용자 선택: [2] 전체 반영
+- 반영 요약:
+  - P1 #1 T1/T2 — `TokenBlacklistLookupPort`(read-only)+Redis adapter, `miss=pass`/`실패=fail-closed`/jti·TTL 검증을 T1 완료 조건으로 명시 (ADR-0014 D1-c)
+  - P1 #2 T7 — common-auth WebMvcConfig/OpenApiConfig 는 LoginUser/resolver+공통 schema 만, 서비스 스캔/PUBLIC_URLS 의존 금지 경계 명시 (ADR-0011 D3)
+  - P1 #3 T10 — 보안 negative 에 blacklist hit 거부·Redis 실패 fail-closed·miss 통과 회귀 추가 (ADR-0014 D1-c/D2-b)
+  - P2 #4 게이트 (f) 신설 — `flywayMigrateShared` 실행성 + Testcontainers 단일 마이그레이션 확인
+  - P2 #5 게이트 (e) — 산출 이미지 범위 명시(root app + notification-service)
+- raw: .cache/codex-reviews/plan-task-impl1-gradle-multimodule-1781454326.json
+- run_id: plan:20260614T162526Z:5e02aa3a-19a8-47f7-bbc5-bba574d0b4c2:2
+- (참고 attempt1 timeout raw: plan-task-impl1-gradle-multimodule-1781454021.json)
+
+
 ## 2026-06-14 18:13 — GP-2 (loop 1)
 - 리뷰 항목: 9건 (P0:0, P1:5, P2:4)
 - 사용자 선택: [2] 전체 반영
@@ -40,3 +67,13 @@
 - Push: origin/feat/task-impl1-gradle-multimodule-pr1
 - PR: https://github.com/Kimgyuilli/PeakCart/pull/48
 - /done: TASKS.md 구현 ① 🔲→🔄 (PR1 ✅ #48), PHASE4.md PR1 이력 추가
+
+## 2026-06-15 — GW-2 (work loop 1, PR2a-1 common-auth 추출)
+- 컨텍스트: PR2a 가 커서 PR2a-1(common-auth 추출 + JWT verify/sign 분리)로 체크포인트 분할. notification peel 은 PR2a-2 이연(SlackPort 경계 발견).
+- 구현(P7/P10 부분): common-auth 모듈 + 검증 9종 이동 + JwtTokenVerifier/JwtTokenSigner 분리(JwtProvider 제거) + JwtAuthProperties 단일 계약 + TokenBlacklistLookupPort/RedisTokenBlacklistLookupAdapter(fail-closed) + JwtSecurityConfigurer + root SecurityConfig/AuthService 재배선.
+- 구현 중 발견 수정(2건, systemic): (a) 라이브러리 모듈 -parameters 미적용 → Spring by-name DI 깨짐(RedisTemplate 동명빈) → subprojects 에 -parameters. (b) 라이브러리 모듈 junit-platform-launcher 부재 → 테스트 실행 불가 → subprojects testRuntimeOnly 추가.
+- diff 리뷰: 1건 (P0:0, P1:1, P2:0). 사용자 선택: [반영]. → common-auth 단위 회귀 추가(RedisTokenBlacklistLookupAdapterTest 3케이스 + JwtFilterTest 4케이스).
+- 검증: ./gradlew build 그린 (272 root tests + 7 common-auth tests).
+- diff: .cache/diffs/diff-task-impl1-gradle-multimodule-1781462191.patch
+- raw: .cache/codex-reviews/diff-task-impl1-gradle-multimodule-1781462214.json
+- run_id: work:20260614T183654Z:b5c1431b-b916-4f8c-a1ad-800f9fb36a2b:1
