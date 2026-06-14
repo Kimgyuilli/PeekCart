@@ -8,15 +8,15 @@ plugins {
 }
 
 dependencies {
-    // 공유 클래스가 노출하는 타입(엔티티/페이지/예외 응답 등)은 api 로 전이 노출
-    api 'org.springframework.boot:spring-boot-starter-web'
-    api 'org.springframework.boot:spring-boot-starter-validation'
-    api 'org.springframework.boot:spring-boot-starter-data-jpa'
-    api 'org.springframework.boot:spring-boot-starter-data-redis'
-    api 'org.springframework.boot:spring-boot-starter-security'
-    api 'org.redisson:redisson:3.27.0'
-    api 'org.springframework.kafka:spring-kafka'
-    api 'net.logstash.logback:logstash-logback-encoder:8.0'
+    // api — common 의 공개 시그니처/상위 타입에 노출되는 의존 (소비자 전이 노출)
+    api 'org.springframework.boot:spring-boot-starter-web'        // ApiResponse/ErrorResponse/MdcFilter/GlobalExceptionHandler
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'   // BaseEntity(@MappedSuperclass) · CachedPage(Page<T>)
+    api 'org.springframework.kafka:spring-kafka'                  // MdcRecordInterceptor implements RecordInterceptor
+
+    // implementation — common 내부 전용 (공개 시그니처 미노출, 소비자는 자체 선언)
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'  // RedisConfig
+    implementation 'org.redisson:redisson:3.27.0'                             // RedissonConfig · DistributedLockManager
+    implementation 'org.springframework.security:spring-security-core'        // MdcFilter(SecurityContextHolder)
 
     // 공용 test support(java-test-fixtures) 용 — AbstractIntegrationTest/ServiceTest/WithMockLoginUser*
     testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
