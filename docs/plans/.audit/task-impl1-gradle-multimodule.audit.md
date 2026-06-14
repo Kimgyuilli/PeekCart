@@ -34,3 +34,9 @@
 - 검증: ./gradlew build BUILD SUCCESSFUL (common/observability/app + 51 test 그린), 이동 파일 R100(순수 이동)
 - diff: .cache/diffs/diff-task-impl1-gradle-multimodule-1781436981.patch
 - raw: .cache/codex-reviews/diff-task-impl1-gradle-multimodule-1781437039.json
+
+## 2026-06-14 21:00 — /ship --execute → /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/48)
+- Commits: p1 refactor(global) 멀티모듈+이동(35파일), p2 docs(plans) 계획서+audit, +done docs(tasks)
+- Push: origin/feat/task-impl1-gradle-multimodule-pr1
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/48
+- /done: TASKS.md 구현 ① 🔲→🔄 (PR1 ✅ #48), PHASE4.md PR1 이력 추가
