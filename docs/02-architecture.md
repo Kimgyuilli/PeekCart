@@ -36,10 +36,10 @@
 
 > 환경 진화와 선택 근거의 상세: `docs/01-project-overview.md` §4 (SSOT), ADR-0004 (§Context 가 Phase 3 초기 minikube 근거 포함), ADR-0005, ADR-0006 (monitoring 스택 환경 분리).
 
-### 4-4. 레포 전략: 모노레포 (Gradle 멀티모듈) (Phase 4 모듈 구조는 see ADR-0011)
+### 4-4. 레포 전략: 모노레포 (Gradle 멀티모듈) (Phase 4 모듈 구조는 see ADR-0011, ADR-0014)
 
 - 단일 GitHub 레포에서 전체 서비스 구조를 한눈에 파악 가능
-- `common` 모듈로 이벤트 DTO, 공통 예외, 응답 포맷 공유 + `peekcart-common-observability` 모듈(ADR-0009 선결정) + 5개 서비스 모듈 (경계·의존 규칙은 ADR-0011)
+- `common` 모듈로 이벤트 DTO, 공통 예외, 응답 포맷 공유 + `peekcart-common-observability` 모듈(ADR-0009 선결정) + `peekcart-common-auth` 모듈(전환기 JWT 검증, ADR-0014) + 5개 서비스 모듈 (경계·의존 규칙은 ADR-0011/ADR-0014)
 - 실무 기준에서는 서비스별 독립 배포와 권한 분리를 위해 멀티레포가 적합하나, 포트폴리오 가시성과 개발 효율을 위해 모노레포 채택
 
 ### 4-5. MSA 분리 대상 서비스 (see ADR-0010)

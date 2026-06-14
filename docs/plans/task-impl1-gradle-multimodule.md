@@ -6,11 +6,11 @@
 
 ## 1. 목표
 
-단일 모듈 `peekcart` 를 **`common` + `peekcart-common-observability` + 5개 서비스 모듈(user/product/order/payment/notification)** 의 Gradle 멀티모듈로 전환한다. 모듈 경계로 "서비스 간 직접 호출 금지"(ADR-0001)를 컴파일 차원에서 물리 강제하고, 서비스별 `bootJar`→이미지 N개 빌드/CI/k8s 체계를 구축한다.
+단일 모듈 `peekcart` 를 **`common` + `peekcart-common-observability` + `peekcart-common-auth`(전환기 JWT 검증, ADR-0014) + 5개 서비스 모듈(user/product/order/payment/notification)** 의 8모듈 Gradle 멀티모듈로 전환한다. 모듈 경계로 "서비스 간 직접 호출 금지"(ADR-0001)를 컴파일 차원에서 물리 강제하고, 서비스별 `bootJar`→이미지 N개 빌드/CI/k8s 체계를 구축한다.
 
 성공 기준:
 - 5개 서비스 모듈이 각각 `bootJar` 산출 + 독립 부팅(`/actuator/health` 200)
-- `:common`·`:peekcart-common-observability` 외 서비스↔서비스 `project()` 의존 시 **빌드 실패**(검출 task)
+- `:common`·`:peekcart-common-observability`·`:peekcart-common-auth`(ADR-0014) 외 서비스↔서비스 `project()` 의존 시 **빌드 실패**(검출 task)
 - 전체 테스트 그린 (Testcontainers 통합 테스트 각 서비스 모듈에서 실행)
 - CI image matrix 로 5개 이미지 빌드 + docker-health-smoke 통과
 
@@ -57,14 +57,26 @@
   - **PR2 이연**: `IntegrationTestConfig`(`SlackPort` 의존)·`support/fixture/*`(도메인 모델 의존) 은 해당 서비스 모듈 test 로.
 - [ ] **P6.** app 모듈 `build.gradle` 가 `:common`+`:peekcart-common-observability` 를 `implementation` 의존하도록 배선. 전체 빌드/테스트 그린 확인.
 
-### PR2 — 5개 서비스 모듈 분리
+### PR2 — 5개 서비스 모듈 분리 (sub-PR 1~2개 서비스씩 vertical slice)
 
-- [ ] **P7.** 5개 서비스 모듈 골격 생성(ADR-0011 §D1 정확한 모듈명: `user-service`, `product-service`, `order-service`, `payment-service`, `notification-service`, 각 `bootJar`): `settings.gradle` include, 각 `build.gradle` 가 `:common`+`:peekcart-common-observability` 만 의존. 루트 app/`src` 제거.
+> **분할 확정**: 서비스를 1~2개씩 monolith(root app)에서 순차로 떼어낸다. 각 sub-PR 은 해당 서비스의 **수직 슬라이스**(모듈 골격 + main/yml + 도메인 이동 + 전속 global + 테스트)를 가져가며, 그 슬라이스가 P7~P13 의 해당 서비스 몫을 이행한다. 마지막 sub-PR 에서 root app/`src` 가 소멸한다. 각 sub-PR 은 독립 `/work`→리뷰→`/ship`.
+
+| sub-PR | 서비스 | 전속 global (PR1 이연분 포함) | 핵심 주의 |
+|---|---|---|---|
+| **PR2a** | Notification | `port.SlackPort` · `idempotency`(복제) · `KafkaConfig` 팩토리(`kafkaErrorHandler`→Slack) · `IntegrationTestConfig` | NotificationController `@CurrentUser` 인증 필요. **`peekcart-common-auth` 모듈 생성·재사용 시작점(ADR-0014)** + peel 메커니즘 확립 |
+| **PR2b** | Product | `CacheConfig`(S7) · `idempotency`(소비 시) | public product API permitAll + `AdminProductController @PreAuthorize` → `:peekcart-common-auth` 의존 |
+| **PR2c** | User | 발급 전속: `TokenIssuer`/JWT sign · `AuthController`/refresh · 블랙리스트 **write**(Redis) · 서비스 SecurityConfig(자기 PUBLIC_URLS) | 검증은 `:peekcart-common-auth`(ADR-0014). User=발급 owner |
+| **PR2d** | Order + Payment | `outbox` · `ShedLockConfig` · `KafkaConfig` 토픽/DLQ(order.*/payment.*) · `idempotency`(복제) | Saga 결합 → 함께. root app 소멸 |
+
+> **⚠️ 전환기(게이트웨이 이전) 인증 모델 (ADR-0014 확정)**: 게이트웨이(구현 ③) 이전엔 **5개 서비스 전부** JWT 검증이 필요(Product 도 admin API). 검증 primitives(`JwtFilter`/verify/`LoginUser`/resolver/handler/blacklist read)는 **`peekcart-common-auth` 전용 모듈** 소유, **발급(sign/`TokenIssuer`/`AuthController`)·블랙리스트 write 는 User 전속**. 블랙리스트는 공유 Redis read + fail-closed. 각 서비스는 thin SecurityConfig 로 common-auth `JwtFilter` 배선 + 자기 PUBLIC_URLS. `common-auth` 는 PR2a 에서 생성·이후 재사용. 게이트웨이 도입 시 검증 로직 제거·헤더 변환 잔류(ADR-0014 D2-c). 상세: ADR-0014.
+> **⚠️ Dockerfile 컨텍스트**: 멀티모듈 변경이므로 각 sub-PR 에서 Dockerfile COPY 컨텍스트 동기화 + 로컬 `docker build` 검증 필수(PR1 회귀 재발 방지).
+
+- [ ] **P7.** (각 sub-PR 의 해당 서비스 몫) 서비스 모듈 골격 생성(ADR-0011 §D1 정확한 모듈명: `user-service`, `product-service`, `order-service`, `payment-service`, `notification-service`, 각 `bootJar`): `settings.gradle` include, 각 `build.gradle` 가 `:common`+`:peekcart-common-observability`(+ 전 서비스가 `:peekcart-common-auth`, see ADR-0014) 의존. **마지막 sub-PR(PR2d)에서 루트 app/`src` 제거.**
 - [ ] **P8.** 각 서비스에 `@SpringBootApplication` main 클래스 + 서비스별 `application.yml`(+local/k8s profile, ADR-0009 S2 `application=` 태그 자기 yml) 생성. `PeekcartApplication` 분해.
 - [ ] **P9.** 도메인 패키지 이동: `com.peekcart.{user,product,order,payment,notification}.*` → 각 서비스 모듈(4-Layered 구조 유지).
 - [ ] **P10.** 서비스 전속 global 분배(§D2): User=`SecurityConfig`(인증부+actuator S4)+`auth`(+`WebMvcConfig`,`OpenApiConfig`)/`jwt`/`security` · Order/Payment=`outbox`+`ShedLockConfig`+`KafkaConfig`(토픽/DLQ 빈 + PR1 이연 팩토리) · Product=`CacheConfig`(S7) · Order/Payment/Notification=`idempotency`(ProcessedEvent 복제) · Notification=`port.SlackPort`. PR1 이연분(WebMvcConfig/OpenApiConfig/KafkaConfig 팩토리/SecurityConfig S4/IntegrationTestConfig/fixtures) 포함.
-- [ ] **P11.** 과도기 DB/Flyway 전략 — **단일 확정**: 5개 서비스 전부 `spring.flyway.enabled=false`. 공유 `V1~V4` 는 **root Gradle task `flywayMigrateShared`** 가 단일 실행 지점(별도 모듈 신설 금지 — ADR-0011 §D1 7모듈 불변 유지). 모든 환경이 동일 runner 를 호출: (Testcontainers) 테스트 fixture 가 1회 마이그레이션 → (compose/CI smoke) infra up → `flywayMigrateShared`(또는 동일 runner 이미지) → 서비스 up → (k8s) Job/initContainer 가 동일 마이그레이션 → 서비스. `flyway_schema_history` 동시 쓰기 경합 원천 차단. 스키마 서비스별 분리는 ②.
-- [ ] **P12.** 의존 위반 검출 Gradle task(`assertNoServiceProjectDeps`) — 문자열 스캔이 아니라 각 서비스 프로젝트의 **모든 관련 configuration**(`implementation`/`api`/`runtimeOnly`/`testImplementation` 등)을 순회하며 `ProjectDependency` 를 평가, allowlist(`:common`, `:peekcart-common-observability`, `testFixtures(project(':common'))` 허용) 외 프로젝트 의존 시 **빌드 실패**. 루트 convention/플러그인 주입 의존도 포착. CI 에 **의도적 위반 추가→빌드 실패** 재현 테스트 포함. (선택) ArchUnit 패키지 의존 테스트.
+- [ ] **P11.** 과도기 DB/Flyway 전략 — **단일 확정**: 5개 서비스 전부 `spring.flyway.enabled=false`. 공유 `V1~V4` 는 **root Gradle task `flywayMigrateShared`** 가 단일 실행 지점(**마이그레이션 전용 모듈 신설 금지** — root task 로 처리; 모듈 토폴로지는 8모듈[common+observability+auth+5서비스], see ADR-0014). 모든 환경이 동일 runner 를 호출: (Testcontainers) 테스트 fixture 가 1회 마이그레이션 → (compose/CI smoke) infra up → `flywayMigrateShared`(또는 동일 runner 이미지) → 서비스 up → (k8s) Job/initContainer 가 동일 마이그레이션 → 서비스. `flyway_schema_history` 동시 쓰기 경합 원천 차단. 스키마 서비스별 분리는 ②.
+- [ ] **P12.** 의존 위반 검출 Gradle task(`assertNoServiceProjectDeps`) — 문자열 스캔이 아니라 각 서비스 프로젝트의 **모든 관련 configuration**(`implementation`/`api`/`runtimeOnly`/`testImplementation` 등)을 순회하며 `ProjectDependency` 를 평가, allowlist(`:common`, `:peekcart-common-observability`, `:peekcart-common-auth`(ADR-0014), `testFixtures(project(':common'))` 허용) 외 프로젝트 의존 시 **빌드 실패**. 루트 convention/플러그인 주입 의존도 포착. CI 에 **의도적 위반 추가→빌드 실패** 재현 테스트 포함. (선택) ArchUnit 패키지 의존 테스트.
 - [ ] **P13.** testFixtures 의존 배선(서비스별 `testImplementation(testFixtures(project(':common')))`) + 각 서비스 모듈에서 Testcontainers 통합 테스트 실행 확인. **관측성 회귀 테스트 서비스별 복제/파라미터화**(ADR-0009 §45-48): 서비스별 `ObservabilityMetricsIntegrationTest` — `application=` 태그 값, histogram `_bucket`, `/actuator/prometheus` 200, `/actuator/health/**` permitAll, exposure whitelist 정확도 검증. **보안 negative 회귀**(ADR-0009 S4 §47-48,81-82 — P4 actuator 분리로 인한 SecurityFilterChain 병합 과허용 방지): 미인증 시 대표 비즈니스 endpoint 401/403, `/actuator/health/**`·`/actuator/prometheus` 만 permitAll 확인. 5개 모듈 각각 그린.
 
 ### PR3 — Dockerfile / CI matrix / k8s N개화
@@ -80,14 +92,14 @@
 
 **PR1**: `build.gradle`(루트 재구성), `settings.gradle`(include), 신규 `common/build.gradle`·`peekcart-common-observability/build.gradle`, `common/src/main/java/com/peekcart/global/**`(이동), `common/src/testFixtures/java/com/peekcart/support/**`(이동), `peekcart-common-observability/src/main/java/com/peekcart/global/config/MetricsConfig.java`(이동), base yml exposure fragment.
 
-**PR2**: `settings.gradle`(5 include — `{user,product,order,payment,notification}-service`), `*-service/build.gradle`×5, `*-service/src/main/java/com/peekcart/{domain}/**`(이동)×5, `*-service/src/main/java/.../<Service>Application.java`×5, `*-service/src/main/resources/application*.yml`×5, 서비스 전속 global 이동(outbox/shedlock/cache/idempotency/security/auth/jwt/port), **공유 `V1~V4` 실행 위치 배선**(서비스별 `db/migration/{service}/` 재배치는 ② 제외), `assertNoServiceProjectDeps` gradle 로직, `*-service/src/test/**`(이동, `ObservabilityMetricsIntegrationTest` 포함).
+**PR2**: `settings.gradle`(6 include — `{user,product,order,payment,notification}-service` + `peekcart-common-auth`), **`peekcart-common-auth/build.gradle` + `peekcart-common-auth/src/main/java/com/peekcart/global/{auth,jwt,security}/**`(검증 primitives 이동, ADR-0014 D1) + `common-auth` testFixtures(WithMockLoginUser* 재배치 시)**, `*-service/build.gradle`×5(전 서비스 `:peekcart-common-auth` 의존), `*-service/src/main/java/com/peekcart/{domain}/**`(이동)×5, `*-service/src/main/java/.../<Service>Application.java`×5, `*-service/src/main/resources/application*.yml`×5, 서비스 전속 global 이동(outbox/shedlock/cache/idempotency/port + User=발급 sign/AuthController/blacklist write), **공유 `V1~V4` 실행 위치 배선**(서비스별 `db/migration/{service}/` 재배치는 ② 제외), `assertNoServiceProjectDeps` gradle 로직, `*-service/src/test/**`(이동, `ObservabilityMetricsIntegrationTest` 포함).
 
 **PR3**: `Dockerfile`(서비스별), `scripts/docker-health-smoke.sh`, `.github/workflows/ci.yml`(matrix), `k8s/base/services/{service}/**`×5(Deployment/Service/`servicemonitor.yml`), `k8s/monitoring/shared/grafana-alerts.yml`(application 정규식), `k8s/base/kustomization.yml`, `k8s/overlays/{gke,minikube}/kustomization.yml`(digest 고정), image promotion 스크립트/문서.
 
 ## 5. 검증 방법
 
 ### 자동
-- `./gradlew build` — 전 모듈 컴파일 + 테스트 그린 (PR1: app+2모듈 / PR2: 7모듈).
+- `./gradlew build` — 전 모듈 컴파일 + 테스트 그린 (PR1: app+2모듈 / PR2: 8모듈 = common+observability+auth+5서비스, see ADR-0014).
 - `./gradlew assertNoServiceProjectDeps` — 서비스↔서비스 의존 0 (의도적 위반 추가 시 빌드 실패 재현).
 - 각 서비스 `./gradlew :{service}:bootJar` 산출물 생성.
 - CI: 5개 이미지 `docker build` + `docker-health-smoke`(`/actuator/health` 200).
@@ -99,7 +111,7 @@
 
 ## 6. 완료 조건
 
-- [ ] 7개 모듈(common+observability+5서비스) 빌드/테스트 그린
+- [ ] 8개 모듈(common+observability+auth+5서비스, see ADR-0014) 빌드/테스트 그린
 - [ ] 서비스↔서비스 의존 위반이 빌드 실패로 검출됨(재현 테스트 포함)
 - [ ] 5개 서비스 독립 이미지 빌드 + smoke 통과 (CI matrix 그린)
 - [ ] k8s 5개 Deployment + gke digest 고정(L-016a 해소)
