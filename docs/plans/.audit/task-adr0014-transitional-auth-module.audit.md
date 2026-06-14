@@ -39,3 +39,8 @@
 - 반영: #1 task-adr0014 §1 목표 5개로 · #2 task-impl1 §1 +auth(8모듈) · #3 PR2 영향파일 peekcart-common-auth · #4 PHASE4 SSOT +ADR-0014 · #5 ADR-0014 C1 라인 인용 추가
 - diff: .cache/diffs/diff-task-adr0014-transitional-auth-module-1781446011.patch
 - raw: .cache/codex-reviews/diff-task-adr0014-transitional-auth-module-1781446063.json
+
+## 2026-06-14 23:25 — /ship --execute → /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/50)
+- Commits: p1 docs(adr) ADR-0014+0011 Status, p2 docs 동기화, +done docs(tasks) A4.5 ✅
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/50
+- /done: TASKS A4.5 🔄→✅(#50), PHASE4 A4.5 PR URL
