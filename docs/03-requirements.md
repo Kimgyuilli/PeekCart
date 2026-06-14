@@ -99,8 +99,8 @@
     - 2차: DB 낙관적 락 (`version` 컬럼) — Redis 장애/만료 시 최후 방어선
 - **JWT Refresh Token 전략**
     - `refresh_tokens` 테이블(DB)에 토큰 저장 → 영속성 보장, 발급 이력 관리
-    - Redis는 로그아웃된 토큰 블랙리스트 용도로만 사용 → 역할 분리, 중복 아님
-    - Refresh Token Rotation 적용 (재발급 시 기존 토큰 즉시 무효화)
+    - Redis는 로그아웃된 토큰 블랙리스트 (+ Phase 4: family/session deny — 탈취 즉시 차단, see ADR-0013) 용도 → 역할 분리(저장은 DB, 즉시 차단/deny enforcement는 Redis)
+    - Refresh Token Rotation 적용 (재발급 시 기존 토큰 즉시 무효화). Phase 4: `family_id` 이력 모델 기반 **Reuse Detection**(재사용 감지 시 family 전체 무효화), RS256 + Gateway 검증 (see ADR-0013)
 - **Kafka Consumer 멱등성**: `processed_events` 테이블로 중복 이벤트 체크 (at-least-once + 멱등성 처리)
 - **재고 차감 시점**: 주문 생성 시 즉시 차감 (전략 A) — 결제 타임아웃 15분 초과 시 자동 취소 + 재고 복구 스케줄러 적용
 - Kafka Consumer 장애 시 메시지 유실 방지 (at-least-once 보장)
