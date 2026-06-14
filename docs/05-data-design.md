@@ -244,6 +244,8 @@ erDiagram
   products ||--|| inventories : tracks
 ```
 
+> Product 가 Phase 4 에서 `product.updated`/`stock.reservation.result` 발행 + `order.created`/`payment.*` 소비를 하므로 `outbox_events`/`processed_events` 를 소유하고, `inventories` 에 예약 컬럼(available/reserved)을 도입한다 (see ADR-0012 §D1/§D3). DDL 은 구현 ②.
+
 ### Order DB
 
 > `order_items`의 `product_name`, `unit_price`는 주문 시점 스냅샷으로 저장 (상품 가격 변경 대응)

@@ -93,7 +93,7 @@
 - **Outbox 발행 실패 처리**: `retry_count` 증가 → 최대 재시도 횟수 초과 시 `FAILED` 상태로 전환, 별도 알림
 - **Saga 패턴 (Phase별 구분)** (Phase 4 경계는 see ADR-0010)
     - Phase 1: `@TransactionalEventListener`로 결제 실패 시 로컬 보상 트랜잭션 처리
-    - Phase 4: Choreography-based Saga — `payment.failed` → Order Service 주문 취소 → `order.cancelled` → **Product Service 재고 복구** (재고 소유자가 Product 이므로 복구 주체도 Product). 재고 예약/차감 경계는 ADR-0010 §D3 F2 참조 (확정은 A3)
+    - Phase 4: Choreography-based Saga — `order.created` → Product 재고 예약 → `stock.reservation.result` → 결제, `payment.failed`/`order.cancelled` → **Product 재고(예약) 복구** (재고 소유자가 Product). 재고 예약/차감 경계·토픽 매트릭스 확정은 ADR-0012 §D3/§D4 (see ADR-0012)
 - **재고 동시성 제어**
     - 1차: Redis 분산 락으로 동시 요청 직렬화 (획득 실패 시 즉시 409 응답)
     - 2차: DB 낙관적 락 (`version` 컬럼) — Redis 장애/만료 시 최후 방어선
