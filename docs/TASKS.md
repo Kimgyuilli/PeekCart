@@ -17,10 +17,10 @@
 
 ## 현재 단계: Phase 4 — MSA 분리
 
-> 서비스 경계 정본 = §5(5개 풀 분해) 확정. **설계 ADR(A1~A4) 전부 완료 (#44~#47) → 현재는 구현 단계.** 상세: `docs/progress/phase4-design-roadmap.md`.
+> 서비스 경계 정본 = §5(5개 풀 분해) 확정. **초기 설계 ADR(A1~A4) 완료 (#44~#47) → 구현 단계.** 구현 ① PR2 착수 중 전환기 인증 보정 **ADR-0014(A4.5)** 추가(`peekcart-common-auth`, ADR-0011 부분 무효화). 상세: `docs/progress/phase4-design-roadmap.md`.
 > 착수 시 상태를 `🔄`, 머지 시 `✅` 로 갱신하고 PR/ADR 링크를 단다. 구현 각 항목의 세부 PR 분할은 해당 항목 `/plan` 착수 시 정의한다.
 
-### 설계 (A1~A4 ✅ 완료)
+### 설계 (A1~A4 ✅ 완료 · A4.5 보정 ADR)
 
 | 순서 | ADR | 작업 | 편입 부채 | 상태 |
 |---|---|---|---|---|
@@ -28,6 +28,7 @@
 | A2 | ADR-0011 | 멀티모듈 구조 (`common`+관측성+5서비스, 의존 규칙·빌드/테스트/이미지 계약) | L-016a, D-016 | ✅ [#45](https://github.com/Kimgyuilli/PeakCart/pull/45) |
 | A3 | ADR-0012 | DB-per-service + 이벤트/Saga 계약 (재고 예약·`stock.reservation.result`·retention) | L-008/011, L-020-2 | ✅ [#46](https://github.com/Kimgyuilli/PeakCart/pull/46) |
 | A4 | ADR-0013 | Gateway 보안 (RS256·Gateway 검증·Rate Limit·Reuse Detection·S9 관측성) | 보안 묶음 L-001/002/003/019 | ✅ [#47](https://github.com/Kimgyuilli/PeakCart/pull/47) |
+| A4.5 | ADR-0014 | 전환기 인증 검증 공유 모듈 `peekcart-common-auth` (게이트웨이 이전, ADR-0011 부분 무효화) — 구현 ① PR2 중 발견 | — | 🔄 (이 PR) |
 
 ### 구현 (ADR 선행 후 PR 단위) ← 현재 focus
 
