@@ -154,6 +154,8 @@ Redis (블랙리스트):           로그아웃된 토큰 즉시 무효화 (TTL 
 
 DB 단독 사용 시 매 요청마다 DB 조회가 발생하고, Redis 단독 사용 시 서버 재시작에서 데이터가 유실될 수 있습니다. 두 저장소의 역할을 분리해 각 단점을 보완합니다.
 
+> **Phase 4**: rotation 을 삭제 기반에서 **이력 모델**(`family_id`/`status`/`grace_until`)로 전환하여 **Refresh Token Reuse Detection**(탈취 감지 시 family 전체 무효화 + Gateway access token 차단)을 도입한다 (see ADR-0013 §D4).
+
 ### 9-3. Outbox 패턴 — Kafka 이벤트 유실 방지 (Phase 2~)
 
 ```
@@ -400,9 +402,9 @@ Polling 방식 선택 이유:
   - 추후 트래픽 증가 시 Debezium 전환 가능한 구조로 설계
 ```
 
-### 10-2. API Gateway 인증 책임 범위
+### 10-2. API Gateway 인증 책임 범위 (RS256·Rate Limit·헤더 신뢰 모델은 see ADR-0013)
 
-Phase 4에서 JWT 검증은 Spring Cloud Gateway에서 수행하며, 내부 서비스는 별도 JWT 재검증을 수행하지 않습니다.
+Phase 4에서 JWT 검증은 Spring Cloud Gateway에서 **RS256 공개키**로 수행하며(서명은 User 서버 개인키), 내부 서비스는 별도 JWT 재검증을 수행하지 않습니다. Gateway 검증 순서(서명/만료 → blacklist+family deny → 헤더 주입)·헤더 위조 차단·Rate Limit 은 ADR-0013 §D1/D3.
 
 ```
 Gateway 통과 후 내부 서비스 호출 시:

@@ -34,7 +34,7 @@
 | **A1** ✅ | **ADR-0010 서비스 분해** (Accepted) | §5 비준 + §4-5 정정. 5개 서비스 bounded context·책임·소유 데이터·이벤트 토폴로지(토픽 4개)·Saga 체인 명문화 + F1/F2/F3 정합. 이후 전부의 SSOT | — |
 | A2 ✅ | 멀티모듈 구조 (ADR-0011) | `common` + `peekcart-common-observability`(ADR-0009 선결정) + 5개 서비스 모듈. class-level common 경계, 서비스↔서비스 의존 금지(위반 검출 필수), 빌드/테스트/이미지 계약 | L-016a(digest 고정), D-016(image promotion 자동화) |
 | A3 ✅ | DB-per-service + 이벤트/Saga 계약 (ADR-0012) | 서비스별 Flyway 독립, envelope 버저닝·파티션 키, 재고 예약 Saga(`stock.reservation.result` 신규 토픽)·실패 경로, retention=멱등성 창 상한(DLQ 창 포함) | L-008/L-011, L-020-2 |
-| A4 | Gateway 보안 | RS256 전환 + 시크릿 저장소(KMS/Vault) + 라우팅 + Rate Limit + Reuse Detection(`family_id`) + 인증 실패 관측성 | 보안 묶음 L-001/L-002/L-003/L-019 |
+| A4 ✅ | Gateway 보안 (ADR-0013) | RS256(Gateway 공개키 1차 검증) + 시크릿 저장소(Secret Manager/KMS) + 라우팅·Rate Limit(route-class) + Reuse Detection(`family_id` 이력 모델 + family deny) + 인증 실패 관측성(ADR-0009 S9) | 보안 묶음 L-001/L-002/L-003/L-019 |
 
 ---
 
@@ -69,5 +69,5 @@ L-007(주문 생성 락⊃트랜잭션) · L-013(상태전이 `@Version` 부재)
 ## 4. 다음 단계
 
 1. ~~**A1 (ADR-0010 서비스 분해)** 착수~~ ✅ 완료 (Accepted 2026-06-14) — §5 비준 + §4-5 정정 + 5개 서비스 계약 + F1/F2/F3 정합.
-2. ~~A2(ADR-0011)~~ ✅ · ~~A3(ADR-0012)~~ ✅ 완료. 다음 **A4(Gateway 보안)** — 마지막 설계 ADR. 이후 구현 ①~⑥ PR 단위.
+2. ~~A2(ADR-0011)~~ ✅ · ~~A3(ADR-0012)~~ ✅ · ~~A4(ADR-0013)~~ ✅ 완료 — **설계 ADR(A1~A4) 전부 완료**. 다음은 **구현 단계 ①(Gradle 멀티모듈 전환)** 부터 — 실제 코드.
 3. 버킷 2 D-016은 ①(멀티모듈/배포 자동화)에 편입, D-002는 분리 완료 후 재측정.

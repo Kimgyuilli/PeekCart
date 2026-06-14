@@ -210,7 +210,9 @@ erDiagram
   users ||--o{ addresses : has
 ```
 
-> Redis는 로그아웃된 Refresh Token의 블랙리스트 저장소로 별도 운영합니다.
+> Phase 4: `refresh_tokens` 에 `family_id`/`status`(ACTIVE/ROTATED/REVOKED)/`grace_until`/`rotated_at` 를 추가해 삭제 기반 rotation 을 이력 모델로 전환, Reuse Detection 을 지원한다 (see ADR-0013 §D4). DDL 은 구현 ③.
+
+> Redis는 로그아웃된 Refresh Token의 블랙리스트 저장소로 별도 운영합니다 (+ Phase 4: family/session deny enforcement — 탈취 감지 시 이미 발급된 access token 즉시 차단, see ADR-0013).
 >
 
 ### Product DB

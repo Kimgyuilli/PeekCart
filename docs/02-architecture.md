@@ -105,7 +105,7 @@ graph TD
     Slack["Slack Webhook (외부)"]
     LB["nGrinder / k6 부하 테스트"]
 
-    Client -->|HTTP| Gateway["Spring Cloud Gateway\\n라우팅 · JWT 인증 필터 · Rate Limit"]
+    Client -->|HTTP| Gateway["Spring Cloud Gateway\\nRS256 JWT 1차 검증 · 라우팅 · Rate Limit (see ADR-0013)"]
 
     Gateway --> UserSvc
     Gateway --> ProductSvc
