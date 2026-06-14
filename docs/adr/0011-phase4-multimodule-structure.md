@@ -1,9 +1,11 @@
 # ADR-0011: Phase 4 Gradle 멀티모듈 구조 — common + 관측성 + 5개 서비스 모듈
 
-- **Status**: Accepted
+- **Status**: Partially Superseded by ADR-0014
 - **Decided**: 2026-06-14 (Proposed) → 2026-06-14 (Accepted)
 - **Deciders**: 프로젝트 오너
 - **관련 Phase**: Phase 4 (MSA 분리)
+
+> **무효화 범위 (ADR-0014, 게이트웨이 이전 전환기)**: §D1 모듈 레이아웃에 `peekcart-common-auth` 추가 / §D2 `auth`/`jwt`/`security` 중 **검증 소유**만 전용 모듈로 변경(발급·AuthController·refresh·블랙리스트 write 등 User 저장소 소유는 **유효**) / §D3 서비스 허용 의존에 `:peekcart-common-auth` 추가. 그 외 §D1~D4 결정은 유효.
 
 ## Context
 

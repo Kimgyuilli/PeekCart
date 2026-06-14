@@ -33,7 +33,8 @@
 | [0008](./0008-outbox-trace-context-propagation.md) | Outbox Trace Context Propagation | Accepted | Phase 3 잔여 부채 | 02, 05 |
 | [0009](./0009-observability-contract-ssot.md) | 관측성 계약 SSOT 결정 | Accepted | 전체 | 02 |
 | [0010](./0010-phase4-service-decomposition.md) | Phase 4 서비스 분해 — 5개 마이크로서비스 경계 확정 | Accepted | Phase 4 | 02, 03, 04, 05 |
-| [0011](./0011-phase4-multimodule-structure.md) | Phase 4 Gradle 멀티모듈 구조 — common + 관측성 + 5개 서비스 | Accepted | Phase 4 | 02 |
+| [0011](./0011-phase4-multimodule-structure.md) | Phase 4 Gradle 멀티모듈 구조 — common + 관측성 + 5개 서비스 | Partially Superseded | Phase 4 | 02 |
 | [0012](./0012-phase4-db-event-saga-contract.md) | Phase 4 DB-per-service + 이벤트/Saga 계약 | Accepted | Phase 4 | 02, 03, 04, 05 |
 | [0013](./0013-phase4-gateway-security.md) | Phase 4 Gateway 보안 — RS256 + Spring Cloud Gateway + Reuse Detection | Accepted | Phase 4 | 02, 03, 04, 05 |
+| [0014](./0014-transitional-auth-module.md) | 전환기 인증 검증 공유 모듈 — peekcart-common-auth (게이트웨이 이전) | Accepted | Phase 4 | 02 |
 <!-- INDEX:END -->
