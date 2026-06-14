@@ -17,10 +17,10 @@
 
 ## 현재 단계: Phase 4 — MSA 분리
 
-> 서비스 경계 정본 = §5(5개 풀 분해) 확정. 설계(ADR) 선행 → 구현 PR 시퀀싱. 상세: `docs/progress/phase4-design-roadmap.md`.
-> 착수 시 상태를 `🔄`, 머지 시 `✅` 로 갱신하고 PR/ADR 링크를 단다.
+> 서비스 경계 정본 = §5(5개 풀 분해) 확정. **설계 ADR(A1~A4) 전부 완료 (#44~#47) → 현재는 구현 단계.** 상세: `docs/progress/phase4-design-roadmap.md`.
+> 착수 시 상태를 `🔄`, 머지 시 `✅` 로 갱신하고 PR/ADR 링크를 단다. 구현 각 항목의 세부 PR 분할은 해당 항목 `/plan` 착수 시 정의한다.
 
-### 설계 (ADR 먼저)
+### 설계 (A1~A4 ✅ 완료)
 
 | 순서 | ADR | 작업 | 편입 부채 | 상태 |
 |---|---|---|---|---|
@@ -29,7 +29,9 @@
 | A3 | ADR-0012 | DB-per-service + 이벤트/Saga 계약 (재고 예약·`stock.reservation.result`·retention) | L-008/011, L-020-2 | ✅ [#46](https://github.com/Kimgyuilli/PeakCart/pull/46) |
 | A4 | ADR-0013 | Gateway 보안 (RS256·Gateway 검증·Rate Limit·Reuse Detection·S9 관측성) | 보안 묶음 L-001/002/003/019 | ✅ [#47](https://github.com/Kimgyuilli/PeakCart/pull/47) |
 
-### 구현 (ADR 선행 후 PR 단위)
+### 구현 (ADR 선행 후 PR 단위) ← 현재 focus
+
+> **다음 착수: 구현 ① (선행 ADR-0011)**. 코드 task — work diff 大, 실제 빌드/테스트 동반. `/plan` 시 PR 분할 결정.
 
 | 순서 | 작업 | 선행 ADR | 편입 부채 | 상태 |
 |---|---|---|---|---|
@@ -43,25 +45,9 @@
 
 ---
 
-## 진입 전 부채 해소 (버킷 1) — ✅ 완료 (아카이브 후보)
+## 진입 전 부채 해소 (버킷 1) — ✅ 완료 (아카이브)
 
-> 로드맵 §2(버킷 1) 을 PR 단위로 분리. 전 항목 완료. 상세: `docs/progress/phase4-prep-debt-roadmap.md`.
-
-### PR 단위 (버킷 1)
-
-| PR | 작업 | 묶는 부채 | D- | 상태 | PR |
-|---|---|---|---|---|---|
-| 문서 정비 | TASKS 아카이빙 + 신규 시작, 부채 로드맵 작성 | — | — | ✅ | — |
-| Tier A 즉시 정정 | 문서/주석/쿼리 명백한 오류 일괄 정정 | L-018, L-021, L-022, L-016(b), L-020(1) | — | ✅ | — |
-| CI 품질 게이트 | PR Docker build+smoke / branch protection / NS lint | L-014, L-015, L-017 | **D-012** | ✅ | — |
-| 발행 경로 하드닝 | DLQ 발행 확정 + outbox `.get()` 타임아웃·사이클 상한 | L-010, L-012 | **D-013** | ✅ | [#37](https://github.com/Kimgyuilli/PeakCart/pull/37) |
-| 관측성 선결 표면 (선택) | 캐시 적중률 + outbox 파이프라인 메트릭 | L-005, L-009 | **D-014** | ✅ | [#38](https://github.com/Kimgyuilli/PeakCart/pull/38) (L-005) · [#39](https://github.com/Kimgyuilli/PeakCart/pull/39) (L-009) |
-| 이미지 repo 계약 정렬 | CI/K8s/문서 image repository 이름 단일화 (+ 가능하면 CI lint) | 도식검토 | **D-015** | ✅ | [#40](https://github.com/Kimgyuilli/PeakCart/pull/40) |
-| Grafana→Slack 경로 | Slack contact point provisioning 또는 범위 정정 | 도식검토 | **D-017** | ✅ | [#41](https://github.com/Kimgyuilli/PeakCart/pull/41) |
-| 리포트 드리프트 정정 | REPORT.md Redis PVC 512Mi 정합 | 도식검토 | **D-018** | ✅ | [#42](https://github.com/Kimgyuilli/PeakCart/pull/42) |
-| E2E flaky 봉합 | OutboxKafka E2E `orderCancelled` 단발 poll → PUBLISHED 까지 재폴링 | D-013 여파 | **D-019** | ✅ | [#43](https://github.com/Kimgyuilli/PeakCart/pull/43) |
-
-> 권장 시퀀스: 문서 정비 → Tier A → D-012 → D-013 → (여유 시) D-014 → **D-015 → D-017 → D-018**. 상세 근거는 로드맵 §2·§5. D-015 는 배포 계약 불일치라 최우선. D-019 는 D-013 머지 후 표면화된 flaky 로, 버킷 1 마무리분으로 흡수.
+> 9개 PR 전부 완료(Tier A · D-012~D-015 · D-017~D-019, PR #37~#43). 상세 PR 테이블·시퀀스는 `docs/progress/phase4-prep-debt-roadmap.md §2`(SSOT)에 보존.
 
 ---
 
