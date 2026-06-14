@@ -5,9 +5,46 @@ plugins {
 	id 'jacoco'
 }
 
-group = 'com'
-version = '0.0.1-SNAPSHOT'
+// ===== 전 프로젝트 공통 (ADR-0011 §D1 root: subprojects 공통 설정) =====
+allprojects {
+	group = 'com'
+	version = '0.0.1-SNAPSHOT'
 
+	repositories {
+		mavenCentral()
+	}
+}
+
+subprojects {
+	apply plugin: 'io.spring.dependency-management'
+	apply plugin: 'jacoco'
+
+	// java 플러그인이 적용된 모듈에만 공통 자바 설정 (적용 순서 무관하게 deferred)
+	plugins.withType(JavaPlugin).configureEach {
+		java {
+			toolchain {
+				languageVersion = JavaLanguageVersion.of(17)
+			}
+		}
+
+		dependencies {
+			compileOnly 'org.projectlombok:lombok'
+			annotationProcessor 'org.projectlombok:lombok'
+		}
+
+		tasks.withType(Test).configureEach {
+			useJUnitPlatform()
+		}
+	}
+
+	dependencyManagement {
+		imports {
+			mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+		}
+	}
+}
+
+// ===== 루트 = app 모듈 (과도기 — PR2 에서 5개 서비스 모듈로 분해) =====
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(17)
@@ -22,11 +59,12 @@ jar {
 	enabled = false
 }
 
-repositories {
-	mavenCentral()
-}
-
 dependencies {
+	// 멀티모듈 (ADR-0011 §D3) — 서비스 모듈은 :common + :peekcart-common-observability 만 의존
+	implementation project(':common')
+	implementation project(':peekcart-common-observability')
+	testImplementation testFixtures(project(':common'))
+
 	// Web
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
