@@ -28,7 +28,7 @@
 | A2 | ADR-0011 | 멀티모듈 구조 (`common`+관측성+5서비스, 의존 규칙·빌드/테스트/이미지 계약) | L-016a, D-016 | ✅ [#45](https://github.com/Kimgyuilli/PeakCart/pull/45) |
 | A3 | ADR-0012 | DB-per-service + 이벤트/Saga 계약 (재고 예약·`stock.reservation.result`·retention) | L-008/011, L-020-2 | ✅ [#46](https://github.com/Kimgyuilli/PeakCart/pull/46) |
 | A4 | ADR-0013 | Gateway 보안 (RS256·Gateway 검증·Rate Limit·Reuse Detection·S9 관측성) | 보안 묶음 L-001/002/003/019 | ✅ [#47](https://github.com/Kimgyuilli/PeakCart/pull/47) |
-| A4.5 | ADR-0014 | 전환기 인증 검증 공유 모듈 `peekcart-common-auth` (게이트웨이 이전, ADR-0011 부분 무효화) — 구현 ① PR2 중 발견 | — | 🔄 (이 PR) |
+| A4.5 | ADR-0014 | 전환기 인증 검증 공유 모듈 `peekcart-common-auth` (게이트웨이 이전, ADR-0011 부분 무효화) — 구현 ① PR2 중 발견 | — | ✅ [#50](https://github.com/Kimgyuilli/PeakCart/pull/50) |
 
 ### 구현 (ADR 선행 후 PR 단위) ← 현재 focus
 
