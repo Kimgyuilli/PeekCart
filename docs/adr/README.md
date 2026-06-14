@@ -35,4 +35,5 @@
 | [0010](./0010-phase4-service-decomposition.md) | Phase 4 서비스 분해 — 5개 마이크로서비스 경계 확정 | Accepted | Phase 4 | 02, 03, 04, 05 |
 | [0011](./0011-phase4-multimodule-structure.md) | Phase 4 Gradle 멀티모듈 구조 — common + 관측성 + 5개 서비스 | Accepted | Phase 4 | 02 |
 | [0012](./0012-phase4-db-event-saga-contract.md) | Phase 4 DB-per-service + 이벤트/Saga 계약 | Accepted | Phase 4 | 02, 03, 04, 05 |
+| [0013](./0013-phase4-gateway-security.md) | Phase 4 Gateway 보안 — RS256 + Spring Cloud Gateway + Reuse Detection | Accepted | Phase 4 | 02, 03, 04, 05 |
 <!-- INDEX:END -->

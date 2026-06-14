@@ -54,7 +54,9 @@
 | S7 | cache hit/miss | `CacheConfig.java:70-75` | D-014/L-005: `RedisCacheManager.enableStatistics()` | Phase 4 `product-service` 의 캐시 설정 (상품 캐시 owner). 공통 관측성 모듈은 cache meter 수동 재등록을 소유하지 않음 | 캐시 hit/miss 계측은 cache owner 서비스 1개소. Spring Boot `CacheMetricsAutoConfiguration` 자동 바인딩 사용, `CacheMetricsRegistrar` 수동 중복 바인딩 금지 | `ObservabilityMetricsIntegrationTest` D-014/L-005 케이스 (`cache_gets_total` hit/miss + `cache_manager="cacheManager"` 단일 시계열 검증) |
 | S8 | outbox pipeline | `OutboxPollingService.java:51-68,84-93` | D-014/L-009: `outbox.backlog` gauge(`status=pending\|failed`) + `outbox.publish` Timer(`result=success\|failure`) | Phase 4 발행 주체 서비스(outbox 소유자 — `order-service`/`payment-service`). 공통 관측성 모듈은 outbox meter 를 소유하지 않음(발행 코드와 동일 위치) | outbox 계측은 발행 서비스 폴링 컴포넌트 1개소. cache(S7)와 달리 Spring Boot 자동 바인딩 대상이 아니므로 수동 등록하되, 동일 meter 이름의 중복 등록 금지(`outbox.publish` 는 result 태그로만 분기). 의미: `result=failure` 는 **발행 시도 단위**(재시도마다 증가)이며 "소진된 이벤트 수"가 아님 — 소진 이벤트 수는 `outbox.backlog{status=failed}` 로 해석 | `ObservabilityMetricsIntegrationTest` D-014/L-009 케이스 (`outbox_backlog` status 2시계열 + `outbox_publish_seconds_count{result="success"}` 집계 검증) |
 
-> **본 task (`task-adr-observability-ssot`) 당시 S1~S6.d 변경 컬럼 = 모든 행 "없음"**. S7 이후 행은 후속 task 에서 추가된 surface 이므로 해당 task 의 변경 내용을 기록한다. 기존 surface 의 물리적 이동은 여전히 후속 task 범위다.
+| S9 | auth/authz 실패 (`auth_failure` counter) | (Phase 4 신규 — Gateway 인증 필터 + User reuse/logout) | ADR-0013/L-019: 인증 실패(서명오류/만료)·인가 실패(403)·reuse 감지·429 메트릭(사유 태그)·로그 | Phase 4 **Gateway**(인증 필터/`RequestRateLimiter` 메트릭) + **User Service**(reuse/logout counter). 공통 관측성 모듈은 surface 소유 안 함 | 인증 실패 메트릭 이름은 surface owner 1개소(Gateway/User)만. 다른 모듈 재선언 금지 | Gateway 인증 메트릭 통합 테스트 + **User Service reuse/logout counter 테스트**(owner별 분리 — `auth_failure{reason=reuse\|logout}` 또는 별도 counter 검증, 구현 ③) |
+
+> **본 task (`task-adr-observability-ssot`) 당시 S1~S6.d 변경 컬럼 = 모든 행 "없음"**. S7 이후 행은 후속 task 에서 추가된 surface 이므로 해당 task 의 변경 내용을 기록한다. 기존 surface 의 물리적 이동은 여전히 후속 task 범위다. **S9 는 ADR-0013(Gateway 보안)에서 추가 — 코드/검증은 구현 ③.**
 
 ### ADR-0007 / ADR-0006 과의 관계
 
