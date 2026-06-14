@@ -1,0 +1,12 @@
+// peekcart-common-observability — 관측성 공유 모듈 (ADR-0009 선결정 · ADR-0011 §D1)
+// 본 모듈 경계/소유는 ADR-0009 결정을 인용·반영만 한다 (재결정 금지).
+// PR1 소유: S1 MetricsConfig. (S3 exposure base yml / S4 actuator 허용부는 PR2 이연)
+
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api 'org.springframework.boot:spring-boot-starter-actuator'
+    api 'io.micrometer:micrometer-core'
+}

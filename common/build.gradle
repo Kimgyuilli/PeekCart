@@ -1,0 +1,30 @@
+// common — 공유 라이브러리 모듈 (ADR-0011 §D1/§D2)
+// bootJar 없음. 서비스 모듈이 implementation 으로 의존한다.
+// 공통 plugin/toolchain/BOM/lombok 은 루트 subprojects 블록에서 적용.
+
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'
+}
+
+dependencies {
+    // 공유 클래스가 노출하는 타입(엔티티/페이지/예외 응답 등)은 api 로 전이 노출
+    api 'org.springframework.boot:spring-boot-starter-web'
+    api 'org.springframework.boot:spring-boot-starter-validation'
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.boot:spring-boot-starter-data-redis'
+    api 'org.springframework.boot:spring-boot-starter-security'
+    api 'org.redisson:redisson:3.27.0'
+    api 'org.springframework.kafka:spring-kafka'
+    api 'net.logstash.logback:logstash-logback-encoder:8.0'
+
+    // 공용 test support(java-test-fixtures) 용 — AbstractIntegrationTest/ServiceTest/WithMockLoginUser*
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
+    testFixturesApi 'org.springframework.security:spring-security-test'
+    testFixturesApi 'org.springframework.boot:spring-boot-testcontainers'
+    testFixturesApi 'org.testcontainers:junit-jupiter'
+    testFixturesApi 'org.testcontainers:mysql'
+    testFixturesApi 'org.testcontainers:kafka'
+    testFixturesApi 'org.springframework.kafka:spring-kafka-test'
+    testFixturesApi 'org.awaitility:awaitility'
+}

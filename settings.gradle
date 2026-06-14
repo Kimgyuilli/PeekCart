@@ -1,1 +1,7 @@
 rootProject.name = 'peekcart'
+
+// Phase 4 구현 ① 멀티모듈 전환 — PR1 (ADR-0011 §D1)
+// 과도기: 루트가 단일 app 으로 유지되며 아래 두 라이브러리 모듈을 의존한다.
+// 5개 서비스 모듈 분리는 PR2.
+include 'common'
+include 'peekcart-common-observability'   // ADR-0009 선결정
