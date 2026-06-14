@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | A1 | ADR-0010 | 서비스 분해 — §5 비준 + §4-5 정정, 5개 서비스 계약 명문화 (+ F1/F2/F3 정합) | — | ✅ [#44](https://github.com/Kimgyuilli/PeakCart/pull/44) |
 | A2 | ADR-0011 | 멀티모듈 구조 (`common`+관측성+5서비스, 의존 규칙·빌드/테스트/이미지 계약) | L-016a, D-016 | ✅ [#45](https://github.com/Kimgyuilli/PeakCart/pull/45) |
-| A3 | — | DB-per-service + 이벤트/Saga 계약 | L-008/011, L-020-2 | 🔲 |
+| A3 | ADR-0012 | DB-per-service + 이벤트/Saga 계약 (재고 예약·`stock.reservation.result`·retention) | L-008/011, L-020-2 | ✅ |
 | A4 | — | Gateway 보안 (RS256·라우팅·Rate Limit) | 보안 묶음 L-001/002/003/019 | 🔲 |
 
 ### 구현 (ADR 선행 후 PR 단위)
