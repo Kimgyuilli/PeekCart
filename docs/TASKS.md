@@ -31,11 +31,11 @@
 
 ### 구현 (ADR 선행 후 PR 단위) ← 현재 focus
 
-> **다음 착수: 구현 ① (선행 ADR-0011)**. 코드 task — work diff 大, 실제 빌드/테스트 동반. `/plan` 시 PR 분할 결정.
+> **진행 중: 구현 ① (선행 ADR-0011)** — 3-PR 분할(PR1 스켈레톤+common → PR2 서비스 5개 분리 → PR3 Dockerfile/CI/k8s). 계획서: `docs/plans/task-impl1-gradle-multimodule.md`.
 
 | 순서 | 작업 | 선행 ADR | 편입 부채 | 상태 |
 |---|---|---|---|---|
-| ① | Gradle 멀티모듈 전환 | A2 | L-016a, D-016 | 🔲 |
+| ① | Gradle 멀티모듈 전환 (PR1 ✅ [#48](https://github.com/Kimgyuilli/PeakCart/pull/48) · PR2/PR3 대기) | A2 | L-016a, D-016 | 🔄 |
 | ② | 서비스별 DB 분리 | A3 | L-008/011 | 🔲 |
 | ③ | Spring Cloud Gateway | A4 | 보안 묶음 | 🔲 |
 | ④ | Choreography Saga | A3 | — | 🔲 |
