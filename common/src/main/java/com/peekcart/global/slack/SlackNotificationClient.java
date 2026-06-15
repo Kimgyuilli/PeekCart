@@ -1,4 +1,4 @@
-package com.peekcart.notification.infrastructure.slack;
+package com.peekcart.global.slack;
 
 import com.peekcart.global.port.SlackPort;
 import lombok.extern.slf4j.Slf4j;
