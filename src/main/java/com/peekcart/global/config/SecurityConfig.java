@@ -7,8 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -25,10 +23,8 @@ public class SecurityConfig {
     private final JwtSecurityConfigurer jwtSecurityConfigurer;
 
     // 비즈니스 공개 URL — actuator permitAll 은 ActuatorSecurityConfig(ADR-0009 S4 단일 소유)에서 합친다.
+    // [PR2b] /api/v1/auth/** 는 User 서비스로 peel 됨 — root 잔여(Product/Order/Payment)만 선언.
     private static final String[] BUSINESS_PUBLIC_URLS = {
-            "/api/v1/auth/signup",
-            "/api/v1/auth/login",
-            "/api/v1/auth/refresh",
             "/api/v1/products",
             "/api/v1/products/**",
             "/api/v1/payments/webhook",
@@ -41,11 +37,5 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         jwtSecurityConfigurer.apply(http, ActuatorSecurityConfig.mergedPublicUrls(BUSINESS_PUBLIC_URLS));
         return http.build();
-    }
-
-    /** BCrypt 기반 패스워드 인코더를 빈으로 등록한다 (User 발급 경로). */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }
