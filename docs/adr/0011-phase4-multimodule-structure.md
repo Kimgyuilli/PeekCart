@@ -67,7 +67,7 @@ settings.gradle:
 | `global.outbox`, `config.ShedLockConfig` | **서비스 전속** (Order/Payment — 발행자) | outbox 폴링 소유 |
 | `config.CacheConfig`(S7) | **서비스 전속** (Product — 캐시 owner) | ADR-0009 S7 |
 | `global.idempotency`(ProcessedEvent) | **서비스별 복제** (Order/Payment/Notification 소비자) | 멱등성은 소비자별 |
-| `global.port.SlackPort` | **서비스 전속** (Notification) | — |
+| `global.port.SlackPort` (+ `SlackNotificationClient` 구현) | **common** (횡단 인프라) | outbox/kafka DLQ alerting + notification 도메인 공용. 분류 정정 — Update Log 참조 |
 | `config.KafkaConfig` 토픽/DLQ 빈 | **발행 서비스 전속** (Order: order.*, Payment: payment.*) | producer/consumer factory 는 common |
 | 이벤트 DTO (`global.outbox.dto.*`) | **common** | A2 는 공유 **위치만 common 으로 확정**(`02-architecture.md §4-4` 정합). 필드/버전/파티션 키/retention 은 A3 non-authoritative |
 
@@ -127,3 +127,7 @@ settings.gradle:
 - `docs/02-architecture.md §4-4`(모노레포 — Layer 1), §12(패키지 구조)
 - `docs/progress/phase4-design-roadmap.md §1 A2`
 - 빌드/CI 파일: `settings.gradle`, `build.gradle`, `Dockerfile`, `.github/workflows/ci.yml`(L14,78-95), `scripts/docker-health-smoke.sh`, `k8s/overlays/gke/kustomization.yml`(L37)
+
+## Update Log
+
+- **2026-06-15** (구현 ① PR2a-2): §D2 표의 `global.port.SlackPort` 분류를 **"서비스 전속(Notification)" → "common(횡단 인프라)"** 으로 정정. 사유: `SlackPort` 는 notification 도메인뿐 아니라 `global.outbox.OutboxPollingService`·`config.KafkaConfig.kafkaErrorHandler`(order/payment DLQ→Slack alerting)에서도 사용되며, 유일 구현 `SlackNotificationClient` 는 notification 도메인 의존이 0(RestClient+webhook 설정)인 횡단 인프라다. `SlackPort` 자체 javadoc 도 "Outbox, Notification 등 여러 도메인에서 사용하는 횡단 관심사이므로 global 에 위치한다" 로 명시하고 있어, 최초 분류가 코드 현실을 반영하지 못한 **사실 오류**였다. 트레이드오프/대안 변경이 아닌 분류 정정이므로 본문 정정(Update Log)으로 처리한다. §D3 의존 규칙(서비스→`:common` 허용)에는 영향 없음. 구현: `SlackPort`+`SlackNotificationClient` → `:common`(`global.port`/`global.slack`).

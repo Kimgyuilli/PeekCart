@@ -77,3 +77,46 @@
 - diff: .cache/diffs/diff-task-impl1-gradle-multimodule-1781462191.patch
 - raw: .cache/codex-reviews/diff-task-impl1-gradle-multimodule-1781462214.json
 - run_id: work:20260614T183654Z:b5c1431b-b916-4f8c-a1ad-800f9fb36a2b:1
+
+## 2026-06-14 19:05 — /ship --execute → /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/51)
+- Commits: p1 refactor(auth) 26f, p2 test(auth) 3f, p3 docs(plans), +done docs(tasks/PHASE4)
+- Push: origin/feat/task-impl1-gradle-multimodule-pr2a
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/51 (PR2a-1 — common-auth 추출 + JWT verify/sign 분리)
+- /done: TASKS.md 구현 ① 행에 PR2a-1 ✅ #51, PHASE4.md PR2a-1 이력 추가. ADR status 변경 없음(ADR-0014 이미 Accepted).
+- drift note: ship 진입 시 partially_live(rename/untracked-dir collapse 아티팩트) → git add -N 로 all_live 해소(흡수 0, 커밋 0건 확인).
+
+## 2026-06-15 — GP-2 (plan, PR2a-2 SlackPort 경계)
+- 컨텍스트: PR2a-1(#51) 후 PR2a-2(notification peel) 선결 — SlackPort 경계. state 재초기화, 계획서에 "PR2a-2 실행 세부"(N1~N9) 추가.
+- GP-1: SlackPort→:common 은 ADR-0011 §D2 사실정정(Update Log, 신규 ADR 아님) → auto-pass.
+- 결정: N1 SlackPort+SlackNotificationClient(도메인 의존 0)→:common 횡단 인프라, N2 ADR-0011 §D2 Update Log 정정.
+- attempt 1: 리뷰 2건 (P0:0, P1:1, P2:1). 사용자 선택: [전체 반영].
+- 반영: P1 — N5 KafkaConfig 경계 §D2 정합(producer/consumer factory=:common 유지, notification=listener/error-handler 서비스별 배선만). P2 — N5 'P20'→'N1' 참조 정정.
+- raw: .cache/codex-reviews/plan-task-impl1-gradle-multimodule-1781464320.json
+- run_id: plan:20260614T191200Z:672c6dd3-e1ad-4082-96c2-070cd840b38c:1
+
+## 2026-06-15 — GP-2 (plan loop 2, PR2a-2 SlackPort 추가 리뷰 — 사용자 요청)
+- attempt 2/3. 검증 중심(1차 반영 정확성 + 잔여 P0/P1). 리뷰 2건 (P0:0, P1:2, P2:0) — 전부 신규.
+- 사용자 선택: [전체 반영]
+- 반영:
+  - P1 #1 N2 — ADR-0011 §D2 표의 SlackPort 행 직접 정정 명시(common 횡단 인프라). §D3 allowlist 는 ADR-0014 가 Partially Supersede 소유 → ADR-0011 §D3 재편집 회피 명시.
+  - P1 #2 N8 — root Kafka error handler/DLQ→SlackPort mock 호출 테스트 + root·notification 테스트 프로필 slack.webhook.url 더미/SlackPort mock 빈(부팅 실패 방지+네트워크 없는 회귀).
+- raw: .cache/codex-reviews/plan-task-impl1-gradle-multimodule-1781465532.json
+- run_id: plan:20260614T193212Z:a9366f4b-e2c2-4f15-af62-3aac70b77d88:2
+
+## 2026-06-15 — GP-2 (plan loop 3, PR2a-2 SlackPort 추가 리뷰 — 사용자 요청)
+- attempt 3/3 (plan 예산 상한). 잔여 공백 탐색. 리뷰 2건 (P0:0, P1:2, P2:0) — 전부 신규.
+- 사용자 선택: [전체 반영]
+- 반영:
+  - P1 #1 N1 — SlackNotificationClient :common 이동 시 패키지 경로 결정(global.* 재배치, notification 잔류 금지) + RestClient 의존은 :common 의 spring-boot-starter-web api 로 이미 충족(추가 불필요) 명시.
+  - P1 #2 N8 — root @SpringBootTest 부팅 스모크(SlackPort :common 이동 + root webhook + KafkaConfig 주입 조합 부팅 검증, 게이트 b 직결).
+- raw: .cache/codex-reviews/plan-task-impl1-gradle-multimodule-1781465799.json
+- run_id: plan:20260614T193639Z:7320a759-76fd-4014-9957-0ec272e1705d:3
+
+## 2026-06-15 — GW-2 (work loop 1, PR2a-2a SlackPort→common)
+- 컨텍스트: PR2a-2 가 커서 PR2a-2a(SlackPort 경계 이동 + ADR 정정)로 체크포인트. notification peel(N3~N9)은 PR2a-2b 이연.
+- 구현(N1/N2): SlackPort(global.port, 경로 유지) + SlackNotificationClient(notification.infrastructure.slack→com.peekcart.global.slack) → :common git mv. ADR-0011 §D2 표 SlackPort 행 정정(서비스전속→common) + Update Log 추가.
+- 검증: ./gradlew build 그린 (272 tests, SlackPort 경로 유지로 8개 사용처 무변경).
+- diff 리뷰: 1건 (P0:0, P1:0, P2:1) → 자동 통과. P2(계획 본문 옛 SlackPort→Notification 전속 서술 모순) 반영: line 33/66/99/136 정정.
+- diff: .cache/diffs/diff-task-impl1-gradle-multimodule-1781506173.patch
+- raw: .cache/codex-reviews/diff-task-impl1-gradle-multimodule-1781506186.json
+- run_id: work:20260615T064946Z:f529ab1a-9469-4669-880b-f0bffa29e63a:1
