@@ -26,3 +26,8 @@
 - 분할: 7 partition (p1 feat user peel · p2 feat auth blacklist · p3 refactor common slack · p4 refactor security root · p5 chore build · p6 test · p7 docs)
 - dry-run 승인 후 --execute
 
+## 20260615T173429Z — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/55)
+- TASKS 구현 ① row: PR2b ✅ #55 반영 (User peel)
+- PHASE4.md: PR2b 작업 이력 추가
+- ADR 변경 없음(ADR-0011/0014 기 Accepted, 새 ADR 불필요)
+
