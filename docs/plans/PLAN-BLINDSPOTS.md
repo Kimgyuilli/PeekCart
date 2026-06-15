@@ -38,6 +38,11 @@
 - **Check**: **모든 소비자**(런타임 + 모듈별 테스트 fixture)가 클래스패스/빌드 컨텍스트로 닿을 수 있는 단일 위치를 정했는가. (Dockerfile COPY 컨텍스트도 — [[project_multimodule_dockerfile_context]])
 - **출처**: PR2a-2b — `db/migration` 이 root 에 있으면 분리된 notification 테스트가 못 읽음 → `:common` 단일 소유로 결정.
 
+## B6 — 새 서비스가 `:common` 스캔으로 떠안는 횡단 빈 / 비전이 스타터
+- **Trigger**: 새 서비스 모듈 생성/peel (진입점이 `com.peekcart.*` component-scan + `:common` 의존).
+- **Check**: 새 서비스는 `com.peekcart.*` 를 스캔하므로 **`:common` 의 모든 `@Component`/`@Configuration` 을 떠안는다**. (a) **필수 `@Value`/`@ConfigurationProperties` 를 가진 :common 빈**(예: `SlackNotificationClient` `${slack.webhook.url}`, `KafkaConfig`/auto-config)이 그 서비스에서 **미사용**이면 → 부팅 실패(`PlaceholderResolutionException`/미사용 인프라 eager 연결) 또는 더미 설정 강요. 처분(**`@ConditionalOnProperty` 로 사용 모듈만 활성** / autoconfig `exclude` / `@Value` default)을 계획서에 명시. (b) **`:common` 이 `api` 로 노출하지 않는 스타터**(validation 등)는 web/jpa 와 달리 전이 안 되므로 서비스 `build.gradle` 에 **명시 선언**.
+- **출처**: PR2b — user-service 가 `SlackNotificationClient`(@Value 필수)로 `PlaceholderResolution` 부팅 실패 → `@ConditionalOnProperty` · `KafkaAutoConfiguration` exclude · `spring-boot-starter-validation` 누락으로 @Valid 미작동 500.
+
 ---
 
 ## 자동 검사로 승격된 항목 (참고 — 더 이상 수동 점검 불필요)

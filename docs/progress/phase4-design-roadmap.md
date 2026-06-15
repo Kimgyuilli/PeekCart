@@ -52,6 +52,11 @@
 | ⑥ | Cursor 페이지네이션 (주문 조회 전환 검토) | — | — |
 | — | D-002 격리 재측정 (2차 병목 MySQL풀/Redis락 분리) | — | D-002 (Order Service 분리 후) |
 
+> **⚠️ 구현 시퀀싱 정정 (2026-06-15 — Product 동기 결합 발견)**: 위 ①~⑥ 의 순차 구분은 **Product 분리에 한해 교차된다.** 구현 ① PR2 진행 중 코드 검증으로 **Product 는 ① 단독 peel 불가**가 확인됐다 — Order 가 `ProductPort`(동기 인-프로세스 빈, `ProductPortAdapter`)로 Product 재고를 **주문 트랜잭션 내부에서 차감**(`OrderCommandService.decreaseStockAndGetUnitPrice`)하고 단가 스냅샷까지 동기로 읽는다. 모듈만 떼면 root 의 Order 가 `ProductPort` 빈을 잃어 부팅 실패. 이 결합은 **ADR-0010 F2** 가 지목하고 **ADR-0012 D3**(`stock.reservation` Saga)·⑤(로컬 캐시)가 해소하기로 이미 결정한 부분이다. 따라서 peel 순서를 결합 현실에 맞춰 재정렬한다:
+> - **independent 서비스 우선**: Notification(✅) 다음 **User 를 먼저 peel**(도메인 결합 0건 — `user.*` 를 import 하는 타 도메인 없음, 검증 완료). 기존 PR2c(User)→**PR2b 로 당김**, PR2b(Product)는 사가 클러스터로 이동.
+> - **Order/Product/Payment = 사가 클러스터**: 동기 결합 제거가 peel 의 선행조건이므로 ②(DB 분리)·④(Saga)·⑤(로컬 캐시)를 이 클러스터에 **교차 적용**한다. root 모놀리스 안에서 strangler 로 `order.created→예약→stock.reservation.result` 와 `product.updated` 로컬 가격 캐시를 먼저 배선해 `ProductPort` 동기 호출을 완전히 제거한 뒤, **Product → Order+Payment** 순으로 peel(root app 소멸). 각 strangler 단계는 모놀리스 안에서 독립 검증되어 PR 단위 롤백 가능.
+> - **새 ADR 불필요**: 경계·6토픽·Saga·CQRS 결정은 ADR-0010/0012 가 이미 보유(02-arch §99 도 반영). 바뀌는 건 *실행 순서*뿐 → 본 로드맵·TASKS 갱신으로 수렴. 클러스터 내부 PR 세부(예약 happy/실패 → 단가 로컬화 → 확정/복구 → peel)는 ②/④ 착수 시 각 plan 에서 확정.
+
 **Exit Criteria** (`07 §16` 인용):
 - 모든 서비스 독립 배포 및 정상 동작 확인
 - Saga 보상 트랜잭션 플로우 검증 (결제 실패 → 주문 취소 → 재고 복구)
@@ -69,5 +74,6 @@ L-007(주문 생성 락⊃트랜잭션) · L-013(상태전이 `@Version` 부재)
 ## 4. 다음 단계
 
 1. ~~**A1 (ADR-0010 서비스 분해)** 착수~~ ✅ 완료 (Accepted 2026-06-14) — §5 비준 + §4-5 정정 + 5개 서비스 계약 + F1/F2/F3 정합.
-2. ~~A2(ADR-0011)~~ ✅ · ~~A3(ADR-0012)~~ ✅ · ~~A4(ADR-0013)~~ ✅ 완료 — **설계 ADR(A1~A4) 전부 완료**. 다음은 **구현 단계 ①(Gradle 멀티모듈 전환)** 부터 — 실제 코드.
-3. 버킷 2 D-016은 ①(멀티모듈/배포 자동화)에 편입, D-002는 분리 완료 후 재측정.
+2. ~~A2(ADR-0011)~~ ✅ · ~~A3(ADR-0012)~~ ✅ · ~~A4(ADR-0013)~~ ✅ 완료 — **설계 ADR(A1~A4) 전부 완료**.
+3. **구현 ① 진행 중**: PR1 ✅ · PR2a(Notification peel) ✅ · **다음 = PR2b(User peel)** — independent 서비스, §2 시퀀싱 정정 참조. 그 후 Order/Product/Payment 사가 클러스터(②/④/⑤ 교차).
+4. 버킷 2 D-016은 ①(멀티모듈/배포 자동화)에 편입, D-002는 분리 완료 후 재측정.

@@ -1,0 +1,88 @@
+// user-service — independent 서비스 peel (ADR-0011 §D1 · ADR-0014 · PR2b)
+// bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth 에서만 가져온다.
+// 서비스↔서비스 project() 의존 금지 (assertNoServiceProjectDeps 로 강제).
+// User = 발급(sign/TokenIssuer)·블랙리스트 write owner (검증은 common-auth, ADR-0014).
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot'
+}
+
+bootJar {
+    archiveFileName = 'user-service.jar'
+}
+
+jar {
+    enabled = false
+}
+
+dependencies {
+    // 멀티모듈 (ADR-0011 §D3 allowlist · ADR-0014)
+    implementation project(':common')                        // web/jpa(api) + entity/response/exception
+    implementation project(':peekcart-common-observability') // actuator/micrometer-core(api) + MetricsConfig(S1)/ActuatorSecurityConfig(S4)
+    implementation project(':peekcart-common-auth')          // security(api) + JWT 검증 primitives(JwtFilter/verify/LoginUser) + JwtAuthProperties
+
+    // Bean Validation — @Valid 요청 검증 (web starter 는 Boot 3 에서 validation 미포함)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Security — User 는 발급 owner(PasswordEncoder/SecurityFilterChain 빈 소유)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // Redis — blacklist write(User) + read adapter(common-auth) 런타임 + refresh/grace 저장
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Micrometer Prometheus registry (observability 는 micrometer-core 만 api 노출)
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // Structured Logging (logback-spring.xml)
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+
+    // MySQL
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Flyway — 런타임 disabled(서비스), 공유 V1~V4 는 root flywayMigrateShared / 테스트 fixture 에서 적용
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
+
+    // JWT — User 는 발급(sign) owner 이므로 jjwt-api 가 컴파일 시그니처에 필요 (JwtTokenSigner)
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // Swagger (common-auth OpenApiConfig 의 springdoc 은 implementation → 비전이)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation testFixtures(project(':common'))
+
+    // Testcontainers (MySQL/Redis 통합)
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/dto/**',
+                '**/request/**',
+                '**/response/**',
+                '**/config/**',
+                '**/UserApplication*'
+            ])
+        })
+    }
+}

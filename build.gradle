@@ -232,10 +232,11 @@ tasks.register('assertNoDuplicateGlobalFqcn') {
 	group = 'verification'
 	description = '앱 classpath 내 com/peekcart/global/** 중복 FQCN + JwtProvider 잔존 검출 (게이트 i).'
 	dependsOn ':classes', ':common:classes', ':peekcart-common-auth:classes',
-			':peekcart-common-observability:classes', ':notification-service:classes'
+			':peekcart-common-observability:classes', ':notification-service:classes', ':user-service:classes'
 	def apps = [
 			'root-app'            : [':', ':common', ':peekcart-common-auth', ':peekcart-common-observability'],
-			'notification-service': [':notification-service', ':common', ':peekcart-common-auth', ':peekcart-common-observability']
+			'notification-service': [':notification-service', ':common', ':peekcart-common-auth', ':peekcart-common-observability'],
+			'user-service'        : [':user-service', ':common', ':peekcart-common-auth', ':peekcart-common-observability']
 	]
 	doLast {
 		def violations = []
@@ -269,7 +270,7 @@ tasks.register('assertNoDuplicateGlobalFqcn') {
 		if (!violations.isEmpty()) {
 			throw new GradleException("게이트 i 위반 (중복 FQCN / JwtProvider 잔존):\n  " + violations.join('\n  '))
 		}
-		println "assertNoDuplicateGlobalFqcn: OK (root-app·notification-service classpath 중복 FQCN/JwtProvider 없음)"
+		println "assertNoDuplicateGlobalFqcn: OK (${apps.keySet().join('·')} classpath 중복 FQCN/JwtProvider 없음)"
 	}
 }
 
