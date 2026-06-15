@@ -224,6 +224,7 @@ Step 6 (diff 캡처) 로 복귀 조건 — **모두** 만족:
 아니면 종료:
 - `hpx_state_patch "$TASK_ID" '{"stage":"work.done","updated_at":"<now ISO8601>"}' work step12.done` 저장
 - `hpx_lock_force_release "$TASK_ID"`
+- **compound capture (필터 — 기본값은 prose 저장 안 함)**: 구현이 계획과 **크게 달랐던** 항목이 있으면, prose 로 적기 전에 3-질문 라우팅(`docs/plans/PLAN-BLINDSPOTS.md` 상단)을 적용한다 — ① 반복되나 ② 재도출 어렵나 ③ 더 싼 자동검사로 못 바꾸나. **자동화 가능 → 가드/픽스("자동화 후보" 절 백로그), prose 저장 안 함** / **셋 다 Yes → `Bn` 또는 메모리** / **그 외 → 폐기**. 다음 구조 변경 계획의 plan-review 입력으로 재사용됨.
 - 사용자 보고: 구현 완료 요약, 최종 accepted/rejected/deferred/degraded, 다음 단계 `/ship` 안내
 
 ---
