@@ -166,3 +166,8 @@
 ## 2026-06-15 20:50 — GS-2 (ship, PR2a-2b)
 - 커밋 분할: 6 partition (p1 feat notification 모듈 / p2 feat observability S4 / p3 refactor common 인프라 / p4 chore build / p5 test / p6 docs)
 - dry-run 승인 후 --execute 진행. drift partially_live 는 rename 아티팩트(0 commits 확증)로 진행.
+
+## 2026-06-15 20:54 — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/53)
+- TASKS.md 구현 ① 행: PR2a-2b ✅ #53. PHASE4.md PR2a-2b 이력 추가.
+- ADR 변경 없음(ADR-0009 S4 는 기존 Accepted 결정 실현, ADR-0011/0014 불변).
+- 커밋 7개(p1~p6 + done docs). PR #53.
