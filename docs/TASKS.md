@@ -36,7 +36,7 @@
 
 | 순서 | 작업 | 선행 ADR | 편입 부채 | 상태 |
 |---|---|---|---|---|
-| ① | Gradle 멀티모듈 전환 (PR1 ✅ [#48](https://github.com/Kimgyuilli/PeakCart/pull/48) · PR2a-1 ✅ [#51](https://github.com/Kimgyuilli/PeakCart/pull/51) common-auth 추출+JWT verify/sign 분리 · PR2a-2a ✅ [#52](https://github.com/Kimgyuilli/PeakCart/pull/52) SlackPort→:common+ADR-0011 §D2 정정 · PR2a-2b notification peel/PR2b~d/PR3 대기) | A2·A4.5 | L-016a, D-016 | 🔄 |
+| ① | Gradle 멀티모듈 전환 (PR1 ✅ [#48](https://github.com/Kimgyuilli/PeakCart/pull/48) · PR2a-1 ✅ [#51](https://github.com/Kimgyuilli/PeakCart/pull/51) common-auth 추출+JWT verify/sign 분리 · PR2a-2a ✅ [#52](https://github.com/Kimgyuilli/PeakCart/pull/52) SlackPort→:common+ADR-0011 §D2 정정 · PR2a-2b ✅ [#53](https://github.com/Kimgyuilli/PeakCart/pull/53) notification-service peel(첫 서비스 분리)+ActuatorSecurityConfig(S4)+공유스키마→:common · PR2b~d/PR3 대기) | A2·A4.5 | L-016a, D-016 | 🔄 |
 | ② | 서비스별 DB 분리 | A3 | L-008/011 | 🔲 |
 | ③ | Spring Cloud Gateway | A4 | 보안 묶음 | 🔲 |
 | ④ | Choreography Saga | A3 | — | 🔲 |
