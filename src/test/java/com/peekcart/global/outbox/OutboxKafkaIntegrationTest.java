@@ -14,7 +14,6 @@ import com.peekcart.product.domain.model.Product;
 import com.peekcart.product.domain.repository.InventoryRepository;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
-import com.peekcart.user.domain.model.User;
 import jakarta.persistence.EntityManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.AfterEach;
@@ -105,10 +104,14 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
 
-        User user = User.create("test@peekcart.com", "hashed-pw", "테스트유저");
-        em.persist(user);
+        // [PR2b] User 도메인 peel → root 는 users 행을 native insert 로 시드(FK fk_orders_user 충족, root-observable)
+        em.createNativeQuery(
+                        "INSERT INTO users (email, password_hash, name, role, created_at, updated_at) " +
+                                "VALUES ('test@peekcart.com', 'hashed-pw', '테스트유저', 'USER', NOW(6), NOW(6))")
+                .executeUpdate();
         em.flush();
-        userId = user.getId();
+        userId = ((Number) em.createNativeQuery("SELECT id FROM users WHERE email = 'test@peekcart.com'")
+                .getSingleResult()).longValue();
 
         Category category = Category.create("테스트 카테고리", null);
         em.persist(category);

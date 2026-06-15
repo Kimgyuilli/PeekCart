@@ -1,7 +1,7 @@
 package com.peekcart.user.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.peekcart.global.config.SecurityConfig;
+import com.peekcart.user.infrastructure.security.UserSecurityConfig;
 import com.peekcart.global.config.TestSecurityConfig;
 import com.peekcart.support.WithMockLoginUser;
 import com.peekcart.user.application.AuthService;
@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = AuthController.class,
-        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfig.class))
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = UserSecurityConfig.class))
 @Import(TestSecurityConfig.class)
 @DisplayName("AuthController 슬라이스 테스트")
 class AuthControllerTest {
