@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: notification-service
+  profiles:
+    active: local
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    # [PR2a-2b/N6] 서비스 런타임은 마이그레이션을 실행하지 않는다.
+    # 공유 V1~V4 는 root flywayMigrateShared(단일 실행 지점) 또는 Testcontainers fixture 가 적용한다.
+    enabled: false
+    locations: classpath:db/migration
+  kafka:
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    listener:
+      ack-mode: record
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  metrics:
+    tags:
+      application: notification-service
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:peekcart-secret-key-must-be-at-least-256-bits-long-xxxxxxxxxxxxxxx}
+    access-token-expiry: 1800000    # 30분 (ms) — 검증 전용 서비스이나 단일 계약(JwtAuthProperties) 바인딩
+    refresh-token-expiry: 604800000 # 7일 (ms)
+
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/placeholder}

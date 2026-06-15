@@ -24,7 +24,8 @@ public class SecurityConfig {
 
     private final JwtSecurityConfigurer jwtSecurityConfigurer;
 
-    private static final String[] PUBLIC_URLS = {
+    // 비즈니스 공개 URL — actuator permitAll 은 ActuatorSecurityConfig(ADR-0009 S4 단일 소유)에서 합친다.
+    private static final String[] BUSINESS_PUBLIC_URLS = {
             "/api/v1/auth/signup",
             "/api/v1/auth/login",
             "/api/v1/auth/refresh",
@@ -33,14 +34,12 @@ public class SecurityConfig {
             "/api/v1/payments/webhook",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/api-docs/**",
-            "/actuator/health/**",
-            "/actuator/prometheus"
+            "/api-docs/**"
     };
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        jwtSecurityConfigurer.apply(http, PUBLIC_URLS);
+        jwtSecurityConfigurer.apply(http, ActuatorSecurityConfig.mergedPublicUrls(BUSINESS_PUBLIC_URLS));
         return http.build();
     }
 
