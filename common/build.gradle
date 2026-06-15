@@ -18,9 +18,10 @@ dependencies {
     implementation 'org.redisson:redisson:3.27.0'                             // RedissonConfig · DistributedLockManager
     implementation 'org.springframework.security:spring-security-core'        // MdcFilter(SecurityContextHolder)
 
-    // 공용 test support(java-test-fixtures) 용 — AbstractIntegrationTest/ServiceTest/WithMockLoginUser*
+    // 공용 test support(java-test-fixtures) 용 — AbstractIntegrationTest/ServiceTest/WithMockLoginUser*/TestSecurityConfig
     testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
     testFixturesApi 'org.springframework.security:spring-security-test'
+    testFixturesImplementation 'org.springframework.boot:spring-boot-starter-security'  // TestSecurityConfig(@WebMvcTest 슬라이스용 permitAll chain)
     testFixturesApi 'org.springframework.boot:spring-boot-testcontainers'
     testFixturesApi 'org.testcontainers:junit-jupiter'
     testFixturesApi 'org.testcontainers:mysql'

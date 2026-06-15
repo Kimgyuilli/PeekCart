@@ -1,7 +1,7 @@
 package com.peekcart.notification.presentation;
 
-import com.peekcart.global.config.SecurityConfig;
 import com.peekcart.global.config.TestSecurityConfig;
+import com.peekcart.notification.infrastructure.security.NotificationSecurityConfig;
 import com.peekcart.notification.application.NotificationQueryService;
 import com.peekcart.notification.application.dto.NotificationDetailDto;
 import com.peekcart.notification.domain.model.NotificationType;
@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = NotificationController.class,
-        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfig.class))
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = NotificationSecurityConfig.class))
 @Import(TestSecurityConfig.class)
 @DisplayName("NotificationController 슬라이스 테스트")
 class NotificationControllerTest {

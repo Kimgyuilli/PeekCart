@@ -1,9 +1,6 @@
 package com.peekcart.global.outbox;
 
 import com.peekcart.global.kafka.KafkaTraceHeaders;
-import com.peekcart.notification.domain.model.Notification;
-import com.peekcart.notification.domain.model.NotificationType;
-import com.peekcart.notification.infrastructure.NotificationJpaRepository;
 import com.peekcart.order.domain.model.Order;
 import com.peekcart.order.domain.model.OrderItemData;
 import com.peekcart.order.domain.model.OrderStatus;
@@ -31,7 +28,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.GenericContainer;
@@ -96,7 +92,6 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
     @Autowired OutboxEventRepository outboxEventRepository;
     @Autowired PaymentRepository paymentRepository;
     @Autowired InventoryRepository inventoryRepository;
-    @Autowired NotificationJpaRepository notificationJpaRepository;
     @Autowired OrderCancelledHeaderCapture headerCapture;
 
     private Long productId;
@@ -137,7 +132,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("order.created → Outbox 저장 → Kafka 발행 → Payment 생성 + 알림 생성")
+    @DisplayName("order.created → Outbox 저장 → Kafka 발행 → Payment 생성 (알림은 notification-service 소비)")
     void orderCreated_e2e() {
         // given
         Order order = persistOrder(OrderStatus.PENDING);
@@ -155,20 +150,16 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
         List<OutboxEvent> afterPublish = outboxEventRepository.findPendingEvents(100);
         assertThat(afterPublish).isEmpty();
 
-        // then: Consumer 처리 대기 → Payment(PENDING) 생성 + Notification(ORDER_CREATED) 생성
+        // then: 루트 Consumer 처리 대기 → Payment(PENDING) 생성 (알림 생성은 notification-service 책임)
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             Optional<Payment> payment = paymentRepository.findByOrderId(order.getId());
             assertThat(payment).isPresent();
             assertThat(payment.get().getStatus().name()).isEqualTo("PENDING");
-
-            List<Notification> notifications = notificationJpaRepository
-                    .findByUserId(userId, PageRequest.of(0, 10)).getContent();
-            assertThat(notifications).anyMatch(n -> n.getType() == NotificationType.ORDER_CREATED);
         });
     }
 
     @Test
-    @DisplayName("payment.completed → 주문 상태 PAYMENT_COMPLETED + 알림 생성")
+    @DisplayName("payment.completed → 주문 상태 PAYMENT_COMPLETED (알림은 notification-service 소비)")
     void paymentCompleted_e2e() {
         // given
         Order order = persistOrder(OrderStatus.PAYMENT_REQUESTED);
@@ -187,15 +178,11 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
             } finally {
                 em.close();
             }
-
-            List<Notification> notifications = notificationJpaRepository
-                    .findByUserId(userId, PageRequest.of(0, 10)).getContent();
-            assertThat(notifications).anyMatch(n -> n.getType() == NotificationType.PAYMENT_COMPLETED);
         });
     }
 
     @Test
-    @DisplayName("payment.failed → 주문 취소 + 재고 복구 + 알림 생성")
+    @DisplayName("payment.failed → 주문 취소 + 재고 복구 (알림은 notification-service 소비)")
     void paymentFailed_e2e() {
         // given: 주문(PAYMENT_REQUESTED) + OrderItem(productId, quantity=2), 재고 미리 차감
         Order order = persistOrderWithQuantity(2);
@@ -219,32 +206,26 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
             Inventory inventory = inventoryRepository.findByProductId(productId)
                     .orElseThrow();
             assertThat(inventory.getStock()).isEqualTo(100);
-
-            List<Notification> notifications = notificationJpaRepository
-                    .findByUserId(userId, PageRequest.of(0, 10)).getContent();
-            assertThat(notifications).anyMatch(n -> n.getType() == NotificationType.PAYMENT_FAILED);
         });
     }
 
     @Test
-    @DisplayName("order.cancelled → NotificationConsumer만 소비 (알림 생성)")
+    @DisplayName("order.cancelled → Kafka 발행 (루트는 미소비, 알림은 notification-service) + Payment 미생성")
     void orderCancelled_e2e() {
         // given: 실제 플로우처럼 주문 취소 후 이벤트 발행
         Order order = persistOrder(OrderStatus.PENDING);
         cancelOrder(order.getId());
+        String aggregateKey = order.getId().toString();
 
         // when
         orderOutboxEventPublisher.publishOrderCancelled(order);
         pollUntilPublished();
 
-        // then
-        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-            List<Notification> notifications = notificationJpaRepository
-                    .findByUserId(userId, PageRequest.of(0, 10)).getContent();
-            assertThat(notifications).anyMatch(n -> n.getType() == NotificationType.ORDER_CANCELLED);
-        });
+        // then: 이벤트가 Kafka 로 발행됨 (테스트 전용 listener 로 확인) — 루트엔 order.cancelled consumer 없음
+        ConsumerRecord<String, String> record = awaitRecordWithKey(aggregateKey);
+        assertThat(record.key()).isEqualTo(aggregateKey);
 
-        // Payment가 생성되지 않았는지 확인
+        // Payment가 생성되지 않았는지 확인 (루트 결제 consumer 는 order.cancelled 미소비)
         Optional<Payment> payment = paymentRepository.findByOrderId(order.getId());
         assertThat(payment).isEmpty();
     }
@@ -254,25 +235,23 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
     void publishedEvent_notRePublished() {
         // given
         Order order = persistOrder(OrderStatus.PENDING);
+        String aggregateKey = order.getId().toString();
         orderOutboxEventPublisher.publishOrderCancelled(order);
-        outboxPollingService.pollAndPublish();
+        pollUntilPublished();
 
-        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-            List<Notification> notifications = notificationJpaRepository
-                    .findByUserId(userId, PageRequest.of(0, 10)).getContent();
-            assertThat(notifications).hasSize(1);
-        });
+        // 1회 발행되어 테스트 listener 에 도달
+        awaitRecordWithKey(aggregateKey);
+        assertThat(countRecordsWithKey(aggregateKey)).isEqualTo(1);
 
         // when: 재폴링
         outboxPollingService.pollAndPublish();
 
-        // then: PENDING 이벤트 없음 + Notification 수 변화 없음
+        // then: PENDING 이벤트 없음 + 해당 key 발행 record 수 변화 없음 (중복 발행 금지)
         List<OutboxEvent> pending = outboxEventRepository.findPendingEvents(100);
         assertThat(pending).isEmpty();
-
-        List<Notification> notifications = notificationJpaRepository
-                .findByUserId(userId, PageRequest.of(0, 10)).getContent();
-        assertThat(notifications).hasSize(1);
+        // 재폴링 후에도 잠시 대기하여 중복 발행이 없음을 확인
+        await().during(2, TimeUnit.SECONDS).atMost(4, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(countRecordsWithKey(aggregateKey)).isEqualTo(1));
     }
 
     @Test
@@ -352,6 +331,11 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
             }
         }
         throw new AssertionError("no record with key=" + key + " arrived within timeout");
+    }
+
+    /** headerCapture 큐에서 주어진 key 와 일치하는 record 수를 센다 (중복 발행 검증용). */
+    private long countRecordsWithKey(String key) {
+        return headerCapture.records.stream().filter(r -> key.equals(r.key())).count();
     }
 
     private static String headerValue(ConsumerRecord<String, String> record, String key) {

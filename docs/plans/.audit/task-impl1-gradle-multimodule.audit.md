@@ -120,3 +120,54 @@
 - diff: .cache/diffs/diff-task-impl1-gradle-multimodule-1781506173.patch
 - raw: .cache/codex-reviews/diff-task-impl1-gradle-multimodule-1781506186.json
 - run_id: work:20260615T064946Z:f529ab1a-9469-4669-880b-f0bffa29e63a:1
+
+## 2026-06-15 07:05 — /ship --execute → /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/52)
+- Commits: p1 refactor(slack) SlackPort+client→:common, p2 fix(adr) ADR-0011 §D2 정정+Update Log, p3 docs(plans), +done docs(tasks/PHASE4)
+- Push: origin/feat/task-impl1-pr2a-2-notification
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/52 (PR2a-2a — SlackPort 경계)
+- /done: TASKS.md 구현 ① 행 PR2a-2a ✅ #52, PHASE4.md PR2a-2a 이력. ADR-0011 Update Log 본 PR 포함, status 변경 없음.
+
+## 2026-06-15 16:55 — GP-2 (plan loop 1, PR2a-2b notification peel — N3~N9)
+- 컨텍스트: PR2a-2a(#52, SlackPort→:common) 머지 후 state 재초기화. PR2a-2b(notification peel) 계획 리뷰.
+- attempt 1/3. 리뷰 4건 (P0:0, P1:2, P2:2) — 범위 N3~N9 한정(N1/N2 제외).
+- 사용자 선택: [전체 반영]
+- 반영:
+  - P1 #1 (정정 방향 보정) — JWT 설정 키: line94/게이트 h 의 `jwt.secret`/`jwt.algorithm` → `app.jwt.secret` 으로 정정. **코드 확인 결과 실제 #51 구현은 `@ConfigurationProperties(prefix=\"app.jwt\")`, algorithm 프로퍼티 부재(HS256 고정)** → 리뷰 제안 방향(jwt.* 로 변경)은 거꾸로였고 N4 의 app.jwt.* 가 옳음. N4 유지, line94/h 만 정정.
+  - P1 #2 — N5 actuator 소유권: notification PUBLIC_URLS 를 swagger(서비스 공개 API)만으로 한정, actuator permitAll 은 :peekcart-common-observability S4 기여로 합침(ADR-0009 S4 단일 소유). 서비스별 재기재 금지 명시.
+  - P2 #3 — N8 게이트 i 매핑: root/common-auth/notification jar 간 com/peekcart/global/** 중복 FQCN 실패 + JwtProvider.class 부재 확인 Gradle task/테스트 추가.
+  - P2 #4 — N8/N3 게이트 c: 독립 bootJar 실행 후 /actuator/health 200 smoke 를 Testcontainers 와 별도로 명시(N9 docker build/java -jar 단독 기동).
+- raw: .cache/codex-reviews/plan-task-impl1-gradle-multimodule-1781509449.json
+- run_id: plan:20260615T074409Z:931d6d59-3808-4d7b-a78a-3003db49ee2f:1
+
+## 2026-06-15 17:04 — GP-2b→GP-2 (plan loop 2~3, PR2a-2b 2차 검증 — 사용자 재요청)
+- attempt 2/3: 2차 검증 리뷰 codex 180s 타임아웃(exit=124, 0바이트). risk=low. 사용자 선택: [재시도].
+- attempt 3/3 (상한): 프롬프트 경량화(N1~N9 + 게이트 a~j 라인만 정독) 후 재호출 성공. 리뷰 1건 (P0:0, P1:1, P2:0) — 1차 4건 본문 일관 반영 확인.
+- 사용자 선택: [반영]
+- 반영:
+  - P1 #1 N8 — 게이트 j 완결: SecurityFilterChain 1개·JwtFilter 1회 외에 **root app 측 회귀**(root 비즈니스 endpoint 미인증 401/403 + root /actuator/health·prometheus permitAll) 명시 추가. PR2a-2b 가 root SecurityConfig 도 common-auth 모델로 재정렬하므로 root 회귀가 게이트 j 실질 일부.
+- raw: .cache/codex-reviews/plan-task-impl1-gradle-multimodule-1781510509.json
+- run_id: plan:20260615T080149Z:153645ce-1520-4f30-9ca3-bcb789dbfe82:3
+
+## 2026-06-15 18:39 — GW-2 (work loop 1, PR2a-2b notification peel — split 리뷰 c1..c3)
+- 컨텍스트: notification-service 모듈 peel 구현(N3~N9). diff 1779줄 → 3 chunk split. c1 1차 타임아웃 → lean 프롬프트 재호출 성공(동일 run_id). aggregate=ok.
+- 리뷰 run: work:20260615T091353Z:c75152d4-28d9-4a4f-977e-5d64324f95dd:1:c1 / work:20260615T091353Z:c75152d4-28d9-4a4f-977e-5d64324f95dd:1:c2 / work:20260615T091353Z:c75152d4-28d9-4a4f-977e-5d64324f95dd:1:c3
+- 항목: 6건 (P0:0, P1:3, P2:3)
+- 사용자 선택: [1] 권고대로 — 수용 c2:1·c1:2·c2:2 / 보류 c1:1·c3:1·c3:2
+- 반영(수용):
+  - c2:1 (P1) assertNoServiceProjectDeps — 위반 수집을 구성 단계→doLast 로 이동(서브프로젝트 미평가 시점 누락 버그 수정). 위반 재현 재확인 그린.
+  - c1:2 (P2) ActuatorSecurityConfig.PUBLIC_PATHS public→private(외부는 mergedPublicUrls() 만).
+  - c2:2 (P2) NotificationConsumerIntegrationTest 중복 이벤트 2번째 send .get(10s) 로 broker 전달 보장. 테스트 재실행 그린.
+- 보류 사유:
+  - c1:1 (P1) IdempotencyChecker 트랜잭션 경계 — root 에서 복제한 기존 코드 + NotificationConsumer 핸들러 전부 @Transactional(전제 충족). peel 도입 결함 아님.
+  - c3:1 (P1) JWT 기본 secret 폴백 / c3:2 (P2) k8s DB 기본 계정 — root application(-k8s).yml 동일 패턴 복제(기존). 보안 하드닝(RS256/Secret Manager)은 ADR-0013 Gateway 범위.
+- diff: .cache/diffs/diff-task-impl1-gradle-multimodule-1781514492.patch
+- raw: .cache/codex-reviews/diff-task-impl1-gradle-multimodule-1781515553.json / .cache/codex-reviews/diff-task-impl1-gradle-multimodule-1781515776.json / .cache/codex-reviews/diff-task-impl1-gradle-multimodule-1781515960.json
+
+## 2026-06-15 20:50 — GS-2 (ship, PR2a-2b)
+- 커밋 분할: 6 partition (p1 feat notification 모듈 / p2 feat observability S4 / p3 refactor common 인프라 / p4 chore build / p5 test / p6 docs)
+- dry-run 승인 후 --execute 진행. drift partially_live 는 rename 아티팩트(0 commits 확증)로 진행.
+
+## 2026-06-15 20:54 — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/53)
+- TASKS.md 구현 ① 행: PR2a-2b ✅ #53. PHASE4.md PR2a-2b 이력 추가.
+- ADR 변경 없음(ADR-0009 S4 는 기존 Accepted 결정 실현, ADR-0011/0014 불변).
+- 커밋 7개(p1~p6 + done docs). PR #53.

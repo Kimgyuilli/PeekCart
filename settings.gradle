@@ -6,4 +6,4 @@ rootProject.name = 'peekcart'
 include 'common'
 include 'peekcart-common-observability'   // ADR-0009 선결정
 include 'peekcart-common-auth'            // ADR-0014 전환기 JWT 검증 공유 모듈
-// include 'notification-service'         // PR2a — 첫 서비스 peel (모듈 골격 생성 후 활성화)
+include 'notification-service'            // PR2a-2b — 첫 서비스 peel

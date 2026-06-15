@@ -4,9 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peekcart.global.outbox.OutboxEvent;
 import com.peekcart.global.outbox.OutboxEventRepository;
 import com.peekcart.global.outbox.OutboxPollingService;
-import com.peekcart.notification.domain.model.Notification;
-import com.peekcart.notification.domain.model.NotificationType;
-import com.peekcart.notification.infrastructure.NotificationJpaRepository;
 import com.peekcart.order.domain.model.Order;
 import com.peekcart.order.domain.model.OrderItemData;
 import com.peekcart.order.domain.model.OrderStatus;
@@ -65,7 +62,6 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
     @Autowired OutboxPollingService outboxPollingService;
     @Autowired OutboxEventRepository outboxEventRepository;
     @Autowired PaymentRepository paymentRepository;
-    @Autowired NotificationJpaRepository notificationJpaRepository;
     @Autowired ProcessedEventJpaRepository processedEventJpaRepository;
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired ObjectMapper objectMapper;
@@ -123,22 +119,19 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
 
         // 처리 결과 기록
         long paymentCountBefore = countPaymentsByOrderId(order.getId());
-        long notificationCountBefore = countNotifications();
 
         // when: 동일 eventId 메시지를 KafkaTemplate으로 직접 재전송
         kafkaTemplate.send("order.created", order.getId().toString(), payload);
 
-        // then: 충분히 대기 후에도 Payment/Notification 수 변화 없음
-        await().during(3, TimeUnit.SECONDS).atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThat(countPaymentsByOrderId(order.getId())).isEqualTo(paymentCountBefore);
-            assertThat(countNotifications()).isEqualTo(notificationCountBefore);
-        });
+        // then: 충분히 대기 후에도 Payment 수 변화 없음 (consumer 멱등성)
+        await().during(3, TimeUnit.SECONDS).atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(countPaymentsByOrderId(order.getId())).isEqualTo(paymentCountBefore));
     }
 
     @Test
-    @DisplayName("동일 이벤트를 다른 consumer group에서 각각 독립 처리한다")
-    void sameEvent_differentConsumerGroups_processedIndependently() {
-        // given: order.created → PaymentEventConsumer + NotificationConsumer 모두 소비
+    @DisplayName("order.created 소비 시 consumer group 단위로 processed_events 에 기록한다 (notification 그룹은 notification-service 검증)")
+    void event_recordedPerConsumerGroup() {
+        // given: order.created → 루트 PaymentEventConsumer 소비 (NotificationConsumer 는 notification-service 로 peel)
         Order order = persistOrder();
         orderOutboxEventPublisher.publishOrderCreated(order);
 
@@ -148,27 +141,17 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
         // when
         outboxPollingService.pollAndPublish();
 
-        // then: 두 consumer group 모두 처리 완료
-        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThat(paymentRepository.findByOrderId(order.getId())).isPresent();
+        // then: payment consumer group 처리 완료
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(paymentRepository.findByOrderId(order.getId())).isPresent());
 
-            List<Notification> notifications = notificationJpaRepository
-                    .findByUserId(userId, org.springframework.data.domain.PageRequest.of(0, 10))
-                    .getContent();
-            assertThat(notifications).anyMatch(n -> n.getType() == NotificationType.ORDER_CREATED);
-        });
-
-        // processed_events에 같은 eventId로 2건 존재 (서로 다른 consumer group)
+        // processed_events 에 payment consumer group 으로 기록 (consumer group 단위 멱등성 키)
         List<ProcessedEvent> processedEvents = processedEventJpaRepository.findAll().stream()
                 .filter(pe -> pe.getEventId().equals(eventId))
                 .toList();
-        assertThat(processedEvents).hasSize(2);
         assertThat(processedEvents)
                 .extracting(ProcessedEvent::getConsumerGroup)
-                .containsExactlyInAnyOrder(
-                        "payment-svc-order-created-group",
-                        "notification-svc-order-created-group"
-                );
+                .contains("payment-svc-order-created-group");
     }
 
     // ── 헬퍼 메서드 ──
@@ -194,16 +177,6 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
             return em.createQuery(
                             "SELECT COUNT(p) FROM Payment p WHERE p.orderId = :orderId", Long.class)
                     .setParameter("orderId", orderId)
-                    .getSingleResult();
-        } finally {
-            em.close();
-        }
-    }
-
-    private long countNotifications() {
-        EntityManager em = emf.createEntityManager();
-        try {
-            return em.createQuery("SELECT COUNT(n) FROM Notification n", Long.class)
                     .getSingleResult();
         } finally {
             em.close();
