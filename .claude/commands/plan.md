@@ -56,8 +56,12 @@
 "예" → 종료. "아니오" → 진행.
 게이트 이벤트는 `hpx_gate_events_append` 로 TSV 1행 기록. 자동 통과도 기록 (`shown=false`, `auto_passed=true`).
 
+**구조 변경(모듈/경계 변경·코드 이동·peel·rename) 신호가 감지되면 (위 둘째 항목) 추가로 강제**: 초안 작성 전 `docs/plans/PLAN-BLINDSPOTS.md` 의 각 항목(특히 B1 역의존 스윕)을 수행해 그 결과를 계획서 §2(배경) 에 기록한다. 핵심은 **옮기는 대상을 밖에서 참조하는 인바운드 의존**(테스트 포함)을 `grep` 으로 뽑아 처분(이동/디커플/유지)을 한 줄씩 적는 것. 이 표가 없으면 Step 5 에서 누락으로 간주한다. (compound — 새 누락 발견 시 PLAN-BLINDSPOTS.md 에 항목 추가)
+
 ### Step 5. 계획서 초안 작성/확인
+- **원칙**: 계획의 전제는 설계문서(ADR)가 아니라 **현재 코드로 검증**한다. 특히 (a) 의존 *방향*(무엇이 무엇을 참조하나)과 (b) 인용한 구성요소가 *이미 존재하는가* 는 추측 금지 — 직접 grep/파일 확인.
 - `docs/plans/${TASK_ID}.md` 가 비어있거나 템플릿 섹션 중 필수(§1, §2, §4) 항목이 빠져있으면 초안 작성
+- **Step 4 GP-1 이 구조 변경으로 발화했으면**: `docs/plans/PLAN-BLINDSPOTS.md` 의 각 항목(B1~Bn)을 계획서에서 다뤘는지 점검. 미흡하면 보강 후 진행.
 - 작업 항목은 **stable id** (`P1.`, `P2.`, ...) 강제
 - Codex 호출 전에 `hpx_plan_lint "$TASK_ID"` 실행
   - 통과 시 `"OK"`
@@ -92,7 +96,7 @@ eval "$TIMEOUT_PREFIX" codex exec \
     --output-schema .claude/schemas/plan-review.json \
     >"$RAW" 2>"$ERR" <<EOF
 [역할] PeakCart 프로젝트의 시니어 아키텍처 리뷰어
-[참조 가능 파일] docs/adr/, docs/01-project-overview.md ~ docs/07-roadmap-portfolio.md
+[참조 가능 파일] docs/adr/, docs/01-project-overview.md ~ docs/07-roadmap-portfolio.md, docs/plans/PLAN-BLINDSPOTS.md
 [원칙]
   - Layer 1 = What, ADR = Why (결정 근거는 ADR 인용)
   - Phase Exit Criteria 와의 정합성 우선
@@ -114,6 +118,7 @@ eval "$TIMEOUT_PREFIX" codex exec \
   - 트레이드오프 누락
   - 검증 방법의 구체성
   - 작업 항목 id 규약 (P1., P2., ...) 준수
+  - (구조 변경·이동·peel 계획이면) docs/plans/PLAN-BLINDSPOTS.md 의 각 항목을 계획이 다뤘는가 — 특히 B1 역의존 스윕(옮기는 대상을 밖에서 참조하는 인바운드 의존, 테스트 포함)이 계획서에 처분과 함께 기록됐는지. 누락이면 해당 Bn 을 인용해 지적.
 [필수 필드] 응답 최상위 "run_id" 는 반드시 "${RUN_ID}" 와 문자 그대로 일치. items[].id 는 1부터 시작해 본 응답 내에서만 유일.
 EOF
 CODEX_EXIT=$?

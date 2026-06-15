@@ -224,6 +224,7 @@ Step 6 (diff 캡처) 로 복귀 조건 — **모두** 만족:
 아니면 종료:
 - `hpx_state_patch "$TASK_ID" '{"stage":"work.done","updated_at":"<now ISO8601>"}' work step12.done` 저장
 - `hpx_lock_force_release "$TASK_ID"`
+- **compound capture**: 구현이 계획과 **크게 달랐던**(계획이 놓쳤던) 항목이 있으면, 그 원인을 `docs/plans/PLAN-BLINDSPOTS.md` 에 `Bn`(Trigger·Check·출처) 한 줄로 append 한다. 자동 검사(테스트/린트)로 막은 것이면 "승격됨" 절에 기록. — 다음 구조 변경 계획의 plan-review 입력으로 재사용됨.
 - 사용자 보고: 구현 완료 요약, 최종 accepted/rejected/deferred/degraded, 다음 단계 `/ship` 안내
 
 ---
