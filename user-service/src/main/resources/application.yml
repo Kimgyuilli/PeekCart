@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: user-service
+  profiles:
+    active: local
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    # [PR2b/U6] 서비스 런타임은 마이그레이션을 실행하지 않는다.
+    # 공유 V1~V4 는 root flywayMigrateShared(단일 실행 지점) 또는 Testcontainers fixture 가 적용한다.
+    enabled: false
+    locations: classpath:db/migration
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  metrics:
+    tags:
+      application: user-service
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
+
+app:
+  jwt:
+    # 발급(sign)·검증(common-auth verify) 동일 대칭키 단일 계약 (ADR-0014 D2-a)
+    secret: ${JWT_SECRET:peekcart-secret-key-must-be-at-least-256-bits-long-xxxxxxxxxxxxxxx}
+    access-token-expiry: 1800000    # 30분 (ms)
+    refresh-token-expiry: 604800000 # 7일 (ms)
+# Slack: User 는 미사용. :common SlackNotificationClient 는 @ConditionalOnProperty(slack.webhook.url) 라
+# 키 미선언 시 로드되지 않는다 (GW-2 P2 #1) — 더미 webhook 불필요.
