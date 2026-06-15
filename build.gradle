@@ -3,6 +3,8 @@ plugins {
 	id 'org.springframework.boot' version '3.5.12'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'jacoco'
+	// [PR2a-2b/N6] 공유 V1~V4 단일 실행 지점(flywayMigrateShared). Boot 관리 Flyway 11.7.2 정합.
+	id 'org.flywaydb.flyway' version '11.7.2'
 }
 
 // ===== 전 프로젝트 공통 (ADR-0011 §D1 root: subprojects 공통 설정) =====
@@ -164,4 +166,114 @@ jacocoTestReport {
 			])
 		})
 	}
+}
+
+// ===== [PR2a-2b/N6] 공유 Flyway 단일 실행 지점 =====
+// 공유 V1~V4 는 :common 으로 단일 소유(런타임 classpath:db/migration). 본 task 는
+// Spring 컨텍스트 밖(compose/CI smoke/k8s Job)에서 호출하는 단일 마이그레이션 runner 다.
+// 서비스 런타임 flyway 는 disabled(notification), root app 런타임 flyway 는 과도기 enabled 유지.
+configurations {
+	flywayMigration
+}
+
+flyway {
+	url = System.getenv('DB_URL') ?: 'jdbc:mysql://localhost:3306/peekcart?characterEncoding=UTF-8&serverTimezone=Asia/Seoul'
+	user = System.getenv('DB_USERNAME') ?: 'peekcart'
+	password = System.getenv('DB_PASSWORD') ?: 'peekcart'
+	locations = ['filesystem:common/src/main/resources/db/migration']
+	configurations = ['flywayMigration']
+}
+
+dependencies {
+	flywayMigration 'com.mysql:mysql-connector-j'
+	flywayMigration 'org.flywaydb:flyway-mysql:11.7.2'
+}
+
+tasks.register('flywayMigrateShared') {
+	group = 'flyway'
+	description = '공유 V1~V4 단일 실행 지점 (PR2a-2b/N6). compose/CI/k8s runner 가 호출.'
+	dependsOn tasks.named('flywayMigrate')
+}
+
+// ===== [PR2a-2b/N7] 서비스 모듈 의존 위반 검출 (ADR-0011 §D3 · ADR-0014) =====
+// 각 *-service 모듈은 allowlist(:common/:peekcart-common-observability/:peekcart-common-auth) 외
+// 프로젝트(특히 서비스↔서비스)를 의존하면 빌드 실패시킨다. testFixtures(project(':common')) 는 path=:common 으로 허용.
+tasks.register('assertNoServiceProjectDeps') {
+	group = 'verification'
+	description = '서비스 모듈의 allowlist 외 project() 의존을 빌드 실패로 검출한다 (ADR-0011 §D3).'
+	def allowed = [':common', ':peekcart-common-observability', ':peekcart-common-auth'] as Set
+	// 실행 시점(doLast)에 수집한다 — task 구성 단계에서는 서브프로젝트가 아직 평가되지 않아
+	// 의존이 비어 위반을 놓칠 수 있다(전 프로젝트 구성 완료 후 평가해야 정확).
+	doLast {
+		def serviceProjects = subprojects.findAll { it.name.endsWith('-service') }
+		def violations = []
+		serviceProjects.each { svc ->
+			svc.configurations.each { cfg ->
+				cfg.dependencies.withType(ProjectDependency).each { dep ->
+					if (!allowed.contains(dep.path)) {
+						violations << "${svc.path} (${cfg.name}) -> ${dep.path}".toString()
+					}
+				}
+			}
+		}
+		if (!violations.isEmpty()) {
+			throw new GradleException(
+					"서비스 모듈 project() 의존 위반 (allowlist=${allowed}):\n  " + violations.join('\n  '))
+		}
+		println "assertNoServiceProjectDeps: ${serviceProjects*.path} OK (allowlist 외 project 의존 없음)"
+	}
+}
+
+// ===== [PR2a-2b/N8] 중복 FQCN / JwtProvider 잔존 검출 (게이트 i · ADR-0014) =====
+// 부팅 가능한 앱(root, notification-service)의 classpath 구성 모듈에서 com/peekcart/global/** 동일 FQCN 이
+// 두 모듈에 중복 존재하면(classpath 우선순위로 sign/verify 오로딩 위험) 빌드 실패. JwtProvider 잔존도 금지.
+// (idempotency 복제는 root↔notification 이 서로 다른 앱이라 같은 classpath 에 공존하지 않음 → 위반 아님)
+tasks.register('assertNoDuplicateGlobalFqcn') {
+	group = 'verification'
+	description = '앱 classpath 내 com/peekcart/global/** 중복 FQCN + JwtProvider 잔존 검출 (게이트 i).'
+	dependsOn ':classes', ':common:classes', ':peekcart-common-auth:classes',
+			':peekcart-common-observability:classes', ':notification-service:classes'
+	def apps = [
+			'root-app'            : [':', ':common', ':peekcart-common-auth', ':peekcart-common-observability'],
+			'notification-service': [':notification-service', ':common', ':peekcart-common-auth', ':peekcart-common-observability']
+	]
+	doLast {
+		def violations = []
+		apps.each { appName, projectPaths ->
+			Map<String, List<String>> fqcnToModules = [:].withDefault { [] }
+			projectPaths.each { pp ->
+				def proj = project(pp)
+				proj.sourceSets.main.output.classesDirs.each { dir ->
+					def base = new File(dir, 'com/peekcart/global')
+					if (base.exists()) {
+						base.eachFileRecurse { f ->
+							if (f.name.endsWith('.class')) {
+								def rel = dir.toPath().relativize(f.toPath()).toString()
+								def fqcn = rel.replace(File.separator, '.').replaceAll(/\.class$/, '')
+								fqcnToModules[fqcn] << proj.path
+							}
+						}
+					}
+				}
+			}
+			fqcnToModules.keySet().findAll { it.contains('JwtProvider') }.each {
+				violations << "[${appName}] 금지된 JwtProvider 잔존: ${it}".toString()
+			}
+			fqcnToModules.each { fqcn, modules ->
+				def distinct = modules.unique()
+				if (distinct.size() > 1) {
+					violations << "[${appName}] 중복 FQCN ${fqcn} in ${distinct}".toString()
+				}
+			}
+		}
+		if (!violations.isEmpty()) {
+			throw new GradleException("게이트 i 위반 (중복 FQCN / JwtProvider 잔존):\n  " + violations.join('\n  '))
+		}
+		println "assertNoDuplicateGlobalFqcn: OK (root-app·notification-service classpath 중복 FQCN/JwtProvider 없음)"
+	}
+}
+
+// build 시 자동 검증 (전체 그린 게이트에 포함)
+tasks.named('check') {
+	dependsOn 'assertNoServiceProjectDeps', 'assertNoDuplicateGlobalFqcn'
 }
