@@ -3,7 +3,6 @@ package com.peekcart.order.infrastructure.adapter;
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.order.domain.exception.OrderException;
 import com.peekcart.order.domain.model.Order;
-import com.peekcart.order.domain.model.OrderStatus;
 import com.peekcart.order.domain.repository.OrderRepository;
 import com.peekcart.payment.application.port.OrderPort;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +22,7 @@ public class OrderPortAdapter implements OrderPort {
     public void transitionToPaymentRequested(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderException(ErrorCode.ORD_001));
-        order.transitionTo(OrderStatus.PAYMENT_REQUESTED);
+        order.markPaymentRequested();
     }
 
     @Override
