@@ -23,3 +23,8 @@
 - diff: .cache/diffs/diff-task-impl-saga1-stock-reservation-1781605406.patch (1709줄)
 - note: codex work 리뷰 c2/c3 가 300s 타임아웃 → patch-only 프롬프트+450s 재시도로 성공
 
+## 2026-06-16 11:19 — /ship --execute (PR https://github.com/Kimgyuilli/PeakCart/pull/56)
+- 커밋 5 + done-reflection 1 (docs)
+- 갱신: PHASE4.md(strangler-1 이력) · TASKS.md(사가 클러스터 행)
+- 새 ADR 없음 (ADR-0010/0012 보유)
+
