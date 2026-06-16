@@ -11,6 +11,7 @@ import com.peekcart.product.domain.model.Product;
 import com.peekcart.product.domain.repository.CategoryRepository;
 import com.peekcart.product.domain.repository.InventoryRepository;
 import com.peekcart.product.domain.repository.ProductRepository;
+import com.peekcart.product.infrastructure.outbox.ProductOutboxEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
@@ -28,6 +29,7 @@ public class ProductCommandService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final InventoryRepository inventoryRepository;
+    private final ProductOutboxEventPublisher outboxEventPublisher;
 
     /**
      * 새 상품을 등록하고 초기 재고를 생성한다.
@@ -47,6 +49,10 @@ public class ProductCommandService {
 
         Inventory inventory = Inventory.create(product, command.stock());
         inventoryRepository.save(inventory);
+
+        // version 은 flush 후에야 채워진다 → product.updated 발행 전 saveAndFlush (strangler-2, 라운드3 #1)
+        productRepository.saveAndFlush(product);
+        outboxEventPublisher.publishProductUpdated(product, inventory.getStock());
 
         return ProductDetailDto.of(product, inventory.getStock());
     }
@@ -75,6 +81,10 @@ public class ProductCommandService {
                 .map(Inventory::getStock)
                 .orElse(0);
 
+        // 변경분 flush 로 version 증가 후 발행 (flush 전 읽으면 seed=0 ↔ event=0 충돌, 라운드3 #1)
+        productRepository.saveAndFlush(product);
+        outboxEventPublisher.publishProductUpdated(product, stock);
+
         return ProductDetailDto.of(product, stock);
     }
 
@@ -92,5 +102,13 @@ public class ProductCommandService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRD_001));
         product.discontinue();
+
+        int stock = inventoryRepository.findByProductId(productId)
+                .map(Inventory::getStock)
+                .orElse(0);
+
+        // 판매중단도 status 변경이므로 product.updated 발행 (status=INACTIVE, 라운드2 #3)
+        productRepository.saveAndFlush(product);
+        outboxEventPublisher.publishProductUpdated(product, stock);
     }
 }

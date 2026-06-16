@@ -37,6 +37,7 @@ public abstract class AbstractIntegrationTest {
             em.getTransaction().begin();
             em.createNativeQuery("DELETE FROM outbox_events").executeUpdate();
             em.createNativeQuery("DELETE FROM processed_events").executeUpdate();
+            em.createNativeQuery("DELETE FROM product_price_cache").executeUpdate();
             em.createNativeQuery("DELETE FROM stock_reservations").executeUpdate();
             em.createNativeQuery("DELETE FROM notifications").executeUpdate();
             em.createNativeQuery("DELETE FROM webhook_logs").executeUpdate();
