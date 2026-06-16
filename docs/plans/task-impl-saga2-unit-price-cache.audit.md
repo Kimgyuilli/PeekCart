@@ -36,3 +36,9 @@
 - diff: .cache/diffs/diff-task-impl-saga2-unit-price-cache-1781624152.patch
 - raw: .cache/codex-reviews/diff-task-impl-saga2-unit-price-cache-1781624230.json
 - run_id: work:20260616T153645Z:95f528f8-774b-4bfb-af42-a1e04f71f6e5:1
+
+## 2026-06-17 01:04 — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/57)
+- TASKS.md: 구현 ① 사가 클러스터 행에 strangler-2 ✅ (#57) 반영
+- PHASE4.md: strangler-2 progress 이력 추가(P1~P5·핵심결정·프로세스)
+- ADR 상태 변경 없음(ADR-0012 Accepted 유지, ⑤ 구현·새 ADR 불필요)
+- 커밋: 5개(feat common/product/order·test·docs) + 본 docs(tasks) 갱신
