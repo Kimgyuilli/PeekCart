@@ -37,7 +37,7 @@
 
 | 순서 | 작업 | 선행 ADR | 편입 부채 | 상태 |
 |---|---|---|---|---|
-| ① | Gradle 멀티모듈 전환 (PR1 ✅ [#48](https://github.com/Kimgyuilli/PeakCart/pull/48) · PR2a-1 ✅ [#51](https://github.com/Kimgyuilli/PeakCart/pull/51) common-auth 추출+JWT verify/sign 분리 · PR2a-2a ✅ [#52](https://github.com/Kimgyuilli/PeakCart/pull/52) SlackPort→:common+ADR-0011 §D2 정정 · PR2a-2b ✅ [#53](https://github.com/Kimgyuilli/PeakCart/pull/53) notification-service peel(첫 서비스 분리)+ActuatorSecurityConfig(S4)+공유스키마→:common · PR2b ✅ [#55](https://github.com/Kimgyuilli/PeakCart/pull/55) user-service peel(발급 owner·blacklist token-hash dual-read·SlackNotificationClient @ConditionalOnProperty) · Product/Order/Payment 사가 클러스터(②/④/⑤ 교차) · PR3 대기) | A2·A4.5 | L-016a, D-016 | 🔄 |
+| ① | Gradle 멀티모듈 전환 (PR1 ✅ [#48](https://github.com/Kimgyuilli/PeakCart/pull/48) · PR2a-1 ✅ [#51](https://github.com/Kimgyuilli/PeakCart/pull/51) common-auth 추출+JWT verify/sign 분리 · PR2a-2a ✅ [#52](https://github.com/Kimgyuilli/PeakCart/pull/52) SlackPort→:common+ADR-0011 §D2 정정 · PR2a-2b ✅ [#53](https://github.com/Kimgyuilli/PeakCart/pull/53) notification-service peel(첫 서비스 분리)+ActuatorSecurityConfig(S4)+공유스키마→:common · PR2b ✅ [#55](https://github.com/Kimgyuilli/PeakCart/pull/55) user-service peel(발급 owner·blacklist token-hash dual-read·SlackNotificationClient @ConditionalOnProperty) · **사가 클러스터 strangler-1 ✅ [#56](https://github.com/Kimgyuilli/PeakCart/pull/56) 재고 예약/복구 이벤트화(예약 원장 상태머신·all-or-nothing·CAS 복구, ADR-0010 F2·ADR-0012 D3)** · strangler-2(단가 캐시)/strangler-3(2-phase+Payment 게이트)/Product→Order+Payment peel · PR3 대기) | A2·A4.5 | L-016a, D-016 | 🔄 |
 | ② | 서비스별 DB 분리 | A3 | L-008/011 | 🔲 |
 | ③ | Spring Cloud Gateway | A4 | 보안 묶음 | 🔲 |
 | ④ | Choreography Saga | A3 | — | 🔲 |
