@@ -3,13 +3,13 @@ package com.peekcart.order.application;
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.order.application.dto.CreateOrderCommand;
 import com.peekcart.order.application.dto.OrderDetailDto;
-import com.peekcart.order.application.port.ProductPort;
 import com.peekcart.order.domain.exception.OrderException;
 import com.peekcart.order.domain.model.Cart;
 import com.peekcart.order.domain.model.Order;
 import com.peekcart.order.domain.model.OrderItemData;
 import com.peekcart.order.domain.repository.CartRepository;
 import com.peekcart.order.domain.repository.OrderRepository;
+import com.peekcart.order.domain.repository.ProductPriceCacheRepository;
 import com.peekcart.order.infrastructure.outbox.OrderOutboxEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
@@ -32,7 +32,7 @@ public class OrderCommandService {
 
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
-    private final ProductPort productPort;
+    private final ProductPriceCacheRepository priceCacheRepository;
     private final OrderOutboxEventPublisher outboxEventPublisher;
 
     /**
@@ -48,11 +48,13 @@ public class OrderCommandService {
             throw new OrderException(ErrorCode.ORD_004);
         }
 
-        // 재고 차감은 동기로 하지 않고 order.created → Product 예약 Saga 로 처리한다 (ADR-0012 D3).
-        // 단가만 스냅샷으로 읽는다 (strangler-2 에서 로컬 캐시로 대체).
+        // 재고 차감은 order.created → Product 예약 Saga 로 처리한다 (ADR-0012 D3).
+        // 단가는 Product 동기 호출 없이 로컬 가격 캐시에서 스냅샷으로 읽는다 (CQRS ⑤, strangler-2).
+        // 미수신 상품(seed·create 발행 전 경합 창)이면 ORD-007 로 명시적 실패 — 동기 fallback 없음.
         List<OrderItemData> itemDataList = cart.getItems().stream()
                 .map(cartItem -> {
-                    long unitPrice = productPort.getUnitPrice(cartItem.getProductId());
+                    long unitPrice = priceCacheRepository.findUnitPrice(cartItem.getProductId())
+                            .orElseThrow(() -> new OrderException(ErrorCode.ORD_007));
                     return new OrderItemData(cartItem.getProductId(), cartItem.getQuantity(), unitPrice);
                 })
                 .toList();
