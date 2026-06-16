@@ -45,4 +45,16 @@ public class InventoryService {
                 .orElseThrow(() -> new ProductException(ErrorCode.PRD_001));
         inventory.restore(quantity);
     }
+
+    /**
+     * 재고가 요청 수량 이상인지 확인한다 (예약 all-or-nothing 선검사용, read-only).
+     *
+     * @return 재고가 충분하면 true. 상품 재고가 없거나 부족하면 false
+     */
+    @Transactional(readOnly = true)
+    public boolean hasSufficientStock(Long productId, int quantity) {
+        return inventoryRepository.findByProductId(productId)
+                .map(inventory -> inventory.getStock() >= quantity)
+                .orElse(false);
+    }
 }
