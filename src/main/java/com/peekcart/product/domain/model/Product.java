@@ -39,6 +39,10 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private ProductStatus status;
 
+    /** 변경 순서 판정용 낙관락 버전 (strangler-2: product.updated 캐시 stale-skip 기준). */
+    @Version
+    private Long version;
+
     private Product(Category category, String name, String description, long price, String imageUrl) {
         if (price < 0) throw new IllegalArgumentException("가격은 0 이상이어야 합니다.");
         this.category = category;
