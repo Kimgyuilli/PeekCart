@@ -1,5 +1,10 @@
 {
   "enabledPlugins": {
     "codex@openai-codex": true
+  },
+  "env": {
+    "HPX_TIMEOUT_PLAN_SECONDS": "300",
+    "HPX_TIMEOUT_WORK_SECONDS": "600",
+    "HPX_TIMEOUT_DEFAULT_SECONDS": "300"
   }
 }
