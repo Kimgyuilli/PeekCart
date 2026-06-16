@@ -11,7 +11,6 @@ import com.peekcart.payment.infrastructure.outbox.PaymentOutboxEventPublisher;
 import com.peekcart.product.domain.model.Category;
 import com.peekcart.product.domain.model.Inventory;
 import com.peekcart.product.domain.model.Product;
-import com.peekcart.product.domain.repository.InventoryRepository;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
 import jakarta.persistence.EntityManager;
@@ -90,7 +89,6 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
     @Autowired OutboxPollingService outboxPollingService;
     @Autowired OutboxEventRepository outboxEventRepository;
     @Autowired PaymentRepository paymentRepository;
-    @Autowired InventoryRepository inventoryRepository;
     @Autowired OrderCancelledHeaderCapture headerCapture;
 
     private Long productId;
@@ -185,18 +183,18 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("payment.failed → 주문 취소 + 재고 복구 (알림은 notification-service 소비)")
+    @DisplayName("payment.failed → 주문 취소 (재고 복구는 Product release saga 로 이관, ADR-0012 D3)")
     void paymentFailed_e2e() {
-        // given: 주문(PAYMENT_REQUESTED) + OrderItem(productId, quantity=2), 재고 미리 차감
+        // given: 주문(PAYMENT_REQUESTED). 재고 복구는 더 이상 Order 동기 책임이 아니다
+        //        (Product 가 payment.failed 를 소비해 예약 원장 기반 release — StockReservationSagaIntegrationTest 검증).
         Order order = persistOrderWithQuantity(2);
-        decreaseStock(productId, 2);
         Payment payment = persistPayment(order.getId());
 
         // when
         paymentOutboxEventPublisher.publishPaymentFailed(payment, userId);
         outboxPollingService.pollAndPublish();
 
-        // then
+        // then: root-observable 효과 = 주문 취소
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             EntityManager em = emf.createEntityManager();
             try {
@@ -205,10 +203,6 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
             } finally {
                 em.close();
             }
-
-            Inventory inventory = inventoryRepository.findByProductId(productId)
-                    .orElseThrow();
-            assertThat(inventory.getStock()).isEqualTo(100);
         });
     }
 
@@ -377,18 +371,6 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
         em.getTransaction().begin();
         Order order = em.find(Order.class, orderId);
         order.cancel();
-        em.getTransaction().commit();
-        em.close();
-    }
-
-    private void decreaseStock(Long productId, int quantity) {
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        Inventory inv = em.createQuery(
-                        "SELECT i FROM Inventory i WHERE i.product.id = :pid", Inventory.class)
-                .setParameter("pid", productId)
-                .getSingleResult();
-        inv.decrease(quantity);
         em.getTransaction().commit();
         em.close();
     }

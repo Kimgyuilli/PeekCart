@@ -48,6 +48,11 @@ public class KafkaConfig {
         return TopicBuilder.name("order.cancelled").partitions(3).replicas(1).build();
     }
 
+    @Bean
+    public NewTopic stockReservationResultTopic() {
+        return TopicBuilder.name("stock.reservation.result").partitions(3).replicas(1).build();
+    }
+
     // --- DLQ 토픽 ---
 
     @Bean
@@ -68,6 +73,11 @@ public class KafkaConfig {
     @Bean
     public NewTopic orderCancelledDlqTopic() {
         return TopicBuilder.name("order.cancelled.dlq").partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic stockReservationResultDlqTopic() {
+        return TopicBuilder.name("stock.reservation.result.dlq").partitions(1).replicas(1).build();
     }
 
     // --- Error Handler + DLQ ---

@@ -23,8 +23,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
@@ -45,7 +43,7 @@ class OrderCommandServiceTest {
         Cart cart = OrderFixture.cartWithItem();
         CreateOrderCommand command = OrderFixture.createOrderCommand();
         given(cartRepository.findByUserId(OrderFixture.DEFAULT_USER_ID)).willReturn(Optional.of(cart));
-        given(productPort.decreaseStockAndGetUnitPrice(OrderFixture.DEFAULT_PRODUCT_ID, OrderFixture.DEFAULT_QUANTITY))
+        given(productPort.getUnitPrice(OrderFixture.DEFAULT_PRODUCT_ID))
                 .willReturn(OrderFixture.DEFAULT_UNIT_PRICE);
         given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
 
@@ -56,6 +54,8 @@ class OrderCommandServiceTest {
         assertThat(result.receiverName()).isEqualTo(OrderFixture.DEFAULT_RECEIVER_NAME);
         assertThat(result.items()).hasSize(1);
         assertThat(cart.isEmpty()).isTrue();
+        // 재고 차감은 동기로 하지 않는다 — 단가만 읽고 order.created 발행 (ADR-0012 D3)
+        then(productPort).should().getUnitPrice(OrderFixture.DEFAULT_PRODUCT_ID);
         then(outboxEventPublisher).should().publishOrderCreated(any(Order.class));
     }
 
@@ -83,7 +83,7 @@ class OrderCommandServiceTest {
     }
 
     @Test
-    @DisplayName("cancelOrder: 주문이 취소되고 재고가 복구되고 이벤트가 발행된다")
+    @DisplayName("cancelOrder: 주문이 취소되고 order.cancelled 가 발행된다 (재고 복구는 비동기)")
     void cancelOrder_success() {
         Order order = OrderFixture.orderWithId();
         given(orderRepository.findByIdAndUserId(OrderFixture.DEFAULT_ORDER_ID, OrderFixture.DEFAULT_USER_ID))
@@ -92,7 +92,7 @@ class OrderCommandServiceTest {
         orderCommandService.cancelOrder(OrderFixture.DEFAULT_USER_ID, OrderFixture.DEFAULT_ORDER_ID);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-        then(productPort).should().restoreStock(OrderFixture.DEFAULT_PRODUCT_ID, OrderFixture.DEFAULT_QUANTITY);
+        // 재고 복구는 동기로 하지 않는다 — order.cancelled → Product release Saga (ADR-0012 D3)
         then(outboxEventPublisher).should().publishOrderCancelled(any(Order.class));
     }
 
@@ -106,11 +106,11 @@ class OrderCommandServiceTest {
                 .extracting(e -> ((OrderException) e).getErrorCode())
                 .isEqualTo(ErrorCode.ORD_001);
 
-        then(productPort).should(never()).restoreStock(anyLong(), anyInt());
+        then(outboxEventPublisher).should(never()).publishOrderCancelled(any(Order.class));
     }
 
     @Test
-    @DisplayName("cancelExpiredOrder: 타임아웃 주문이 취소되고 재고가 복구되고 이벤트가 발행된다")
+    @DisplayName("cancelExpiredOrder: 타임아웃 주문이 취소되고 order.cancelled 가 발행된다 (재고 복구는 비동기)")
     void cancelExpiredOrder_success() {
         Order order = OrderFixture.paymentRequestedOrderWithId();
         given(orderRepository.findById(OrderFixture.DEFAULT_ORDER_ID)).willReturn(Optional.of(order));
@@ -118,7 +118,6 @@ class OrderCommandServiceTest {
         orderCommandService.cancelExpiredOrder(OrderFixture.DEFAULT_ORDER_ID);
 
         assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-        then(productPort).should().restoreStock(OrderFixture.DEFAULT_PRODUCT_ID, OrderFixture.DEFAULT_QUANTITY);
         then(outboxEventPublisher).should().publishOrderCancelled(any(Order.class));
     }
 
@@ -132,6 +131,6 @@ class OrderCommandServiceTest {
                 .extracting(e -> ((OrderException) e).getErrorCode())
                 .isEqualTo(ErrorCode.ORD_001);
 
-        then(productPort).should(never()).restoreStock(anyLong(), anyInt());
+        then(outboxEventPublisher).should(never()).publishOrderCancelled(any(Order.class));
     }
 }

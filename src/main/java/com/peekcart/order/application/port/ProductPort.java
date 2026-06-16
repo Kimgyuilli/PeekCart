@@ -15,21 +15,14 @@ public interface ProductPort {
     void verifyProductExists(Long productId);
 
     /**
-     * 재고를 차감하고 상품 단가를 반환한다.
+     * 상품 단가를 반환한다 (주문 시점 스냅샷, read-only).
+     * <p>
+     * 재고 차감은 더 이상 동기로 하지 않고 {@code order.created} → Product 예약 Saga 로 처리한다
+     * (ADR-0010 F2 · ADR-0012 D3). 단가는 strangler-2 에서 {@code product.updated} 로컬 캐시로 대체 예정.
      *
      * @param productId 상품 PK
-     * @param quantity  차감 수량
-     * @return 상품 단가 (주문 시점 스냅샷)
-     * @throws RuntimeException 상품 미존재 또는 재고 부족 시 예외
-     */
-    long decreaseStockAndGetUnitPrice(Long productId, int quantity);
-
-    /**
-     * 재고를 복구한다.
-     *
-     * @param productId 상품 PK
-     * @param quantity  복구 수량
+     * @return 상품 단가
      * @throws RuntimeException 상품 미존재 시 예외
      */
-    void restoreStock(Long productId, int quantity);
+    long getUnitPrice(Long productId);
 }
