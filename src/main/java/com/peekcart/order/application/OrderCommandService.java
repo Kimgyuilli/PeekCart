@@ -48,10 +48,11 @@ public class OrderCommandService {
             throw new OrderException(ErrorCode.ORD_004);
         }
 
+        // 재고 차감은 동기로 하지 않고 order.created → Product 예약 Saga 로 처리한다 (ADR-0012 D3).
+        // 단가만 스냅샷으로 읽는다 (strangler-2 에서 로컬 캐시로 대체).
         List<OrderItemData> itemDataList = cart.getItems().stream()
                 .map(cartItem -> {
-                    long unitPrice = productPort.decreaseStockAndGetUnitPrice(
-                            cartItem.getProductId(), cartItem.getQuantity());
+                    long unitPrice = productPort.getUnitPrice(cartItem.getProductId());
                     return new OrderItemData(cartItem.getProductId(), cartItem.getQuantity(), unitPrice);
                 })
                 .toList();
@@ -89,15 +90,13 @@ public class OrderCommandService {
 
         order.cancel();
 
-        for (var item : order.getOrderItems()) {
-            productPort.restoreStock(item.getProductId(), item.getQuantity());
-        }
-
+        // 재고 복구는 동기로 하지 않고 order.cancelled → Product release Saga 가 담당한다 (ADR-0012 D3).
         outboxEventPublisher.publishOrderCancelled(order);
     }
 
     /**
-     * 타임아웃된 주문을 취소하고 재고를 복구한다. 건별 독립 트랜잭션으로 처리한다.
+     * 타임아웃된 주문을 취소한다. 건별 독립 트랜잭션으로 처리한다.
+     * 재고 복구는 order.cancelled → Product release Saga 가 담당한다.
      *
      * @throws OrderException 주문이 없으면 {@code ORD-001}
      */
@@ -108,10 +107,6 @@ public class OrderCommandService {
                 .orElseThrow(() -> new OrderException(ErrorCode.ORD_001));
 
         order.cancel();
-
-        for (var item : order.getOrderItems()) {
-            productPort.restoreStock(item.getProductId(), item.getQuantity());
-        }
 
         outboxEventPublisher.publishOrderCancelled(order);
     }

@@ -45,4 +45,9 @@ public class OrderRepositoryImpl implements OrderRepository {
     public List<Order> findByStatusAndOrderedAtBefore(OrderStatus status, LocalDateTime cutoff) {
         return orderJpaRepository.findByStatusAndOrderedAtBefore(status, cutoff);
     }
+
+    @Override
+    public List<Order> findUnconfirmedReservationBefore(LocalDateTime cutoff) {
+        return orderJpaRepository.findUnconfirmedReservationBefore(cutoff);
+    }
 }

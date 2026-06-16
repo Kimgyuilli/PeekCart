@@ -15,7 +15,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * PAYMENT_REQUESTED 상태가 15분 초과된 주문을 자동 취소하는 스케줄러.
+ * 타임아웃 주문을 자동 취소하는 스케줄러.
+ * <ul>
+ *   <li>PAYMENT_REQUESTED 가 15분 초과된 주문</li>
+ *   <li>재고 예약 결과 미도착으로 확정되지 않은 채 5분 초과된 PENDING 주문 (예약 Saga 수렴, ADR-0012 D3)</li>
+ * </ul>
  */
 @Component
 @RequiredArgsConstructor
@@ -33,6 +37,20 @@ public class OrderTimeoutScheduler {
                 OrderStatus.PAYMENT_REQUESTED, cutoff);
 
         for (Order order : expiredOrders) {
+            cancelSafely(order.getId(), order.getOrderNumber());
+        }
+    }
+
+    /**
+     * 예약 미확정 PENDING 주문 수렴. 정상 예약 진행 중(확정됨) 주문은 제외되어 조기 취소되지 않는다.
+     */
+    @Scheduled(fixedDelay = 60_000)
+    @SchedulerLock(name = "orderReservationTimeoutJob", lockAtMostFor = "PT10M", lockAtLeastFor = "PT30S")
+    public void cancelUnconfirmedReservations() {
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+        List<Order> stuck = orderRepository.findUnconfirmedReservationBefore(cutoff);
+
+        for (Order order : stuck) {
             cancelSafely(order.getId(), order.getOrderNumber());
         }
     }

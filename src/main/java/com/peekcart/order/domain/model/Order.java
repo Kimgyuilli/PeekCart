@@ -52,6 +52,9 @@ public class Order {
     @Column(name = "ordered_at", nullable = false)
     private LocalDateTime orderedAt;
 
+    @Column(name = "reservation_confirmed_at")
+    private LocalDateTime reservationConfirmedAt;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -93,6 +96,14 @@ public class Order {
             throw new OrderException(ErrorCode.ORD_003);
         }
         this.status = OrderStatus.CANCELLED;
+    }
+
+    /**
+     * 재고 예약 확정을 기록한다 (stock.reservation.result reserved=true).
+     * 예약 미확정 PENDING 주문의 타임아웃 수렴에서 조기 취소를 막는 표식이다.
+     */
+    public void confirmReservation() {
+        this.reservationConfirmedAt = LocalDateTime.now();
     }
 
     /**
