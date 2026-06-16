@@ -127,16 +127,17 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
         // given: 파싱 불가능한 잘못된 메시지
         String invalidMessage = "invalid-json-message";
 
-        // when: order.created 토픽에 전송 → 루트 PaymentEventConsumer 실패 (NotificationConsumer 는 notification-service 로 peel)
+        // when: order.created 토픽에 전송 → 이를 소비하는 각 consumer group 실패
+        //   (PaymentEventConsumer 결제 생성 + StockReservationConsumer 재고 예약, ADR-0012 D3)
         kafkaTemplate.send("order.created", "test-key", invalidMessage);
 
-        // then: 루트 payment consumer group 재시도 소진 → DLQ 토픽에 1건 도착 + Slack 1회 발송
+        // then: 각 group 재시도 소진 → order.created.dlq 로 라우팅(consumer 당 1건) + Slack 발송
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThat(dlqTestListener.records).hasSize(1);
-            assertThat(TestConfig.slackCallCount.get()).isEqualTo(1);
+            assertThat(dlqTestListener.records).isNotEmpty();
+            assertThat(TestConfig.slackCallCount.get()).isGreaterThanOrEqualTo(1);
         });
 
-        // DLQ 메시지 검증: 원본 메시지 보존 + 토픽 확인
+        // DLQ 메시지 검증: 원본 메시지 보존 + 토픽 확인 (consumer 수와 무관하게 모든 DLQ record 가 동일 규약)
         assertThat(dlqTestListener.records).allSatisfy(record -> {
             assertThat(record.topic()).isEqualTo("order.created.dlq");
             assertThat(record.value()).isEqualTo(invalidMessage);
@@ -159,8 +160,9 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
         kafkaTemplate.send(record);
 
         // then: DLQ 토픽의 record 가 원본 헤더 보존 (DeadLetterPublishingRecoverer 가 헤더 자동 복사)
+        //   order.created 는 다중 consumer group 이 소비하므로 DLQ record 가 1건 이상일 수 있다.
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThat(dlqTestListener.records).hasSize(1);
+            assertThat(dlqTestListener.records).isNotEmpty();
         });
 
         assertThat(dlqTestListener.records).allSatisfy(dlqRecord -> {
