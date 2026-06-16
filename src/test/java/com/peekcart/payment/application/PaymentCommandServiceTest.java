@@ -112,4 +112,21 @@ class PaymentCommandServiceTest {
         assertThatThrownBy(() -> paymentCommandService.confirmPayment(2L, command))
                 .isInstanceOf(RuntimeException.class);
     }
+
+    @Test
+    @DisplayName("confirmPayment: 예약 미확정 게이트(ORD-008)면 Toss 호출 전 차단되고 예외가 전파된다")
+    void confirmPayment_reservationNotConfirmed_blockedBeforeToss() {
+        Payment payment = PaymentFixture.pendingPaymentWithId();
+        ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
+        given(paymentRepository.findByOrderId(command.orderId())).willReturn(Optional.of(payment));
+        doThrow(new com.peekcart.order.domain.exception.OrderException(ErrorCode.ORD_008))
+                .when(orderPort).transitionToPaymentRequested(command.orderId());
+
+        assertThatThrownBy(() -> paymentCommandService.confirmPayment(PaymentFixture.DEFAULT_USER_ID, command))
+                .isInstanceOf(com.peekcart.order.domain.exception.OrderException.class)
+                .extracting(e -> ((com.peekcart.order.domain.exception.OrderException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ORD_008);
+        then(tossPaymentClient).should(org.mockito.Mockito.never()).confirm(any(), any(), any(Long.class));
+        then(outboxEventPublisher).should(org.mockito.Mockito.never()).publishPaymentCompleted(any(), any());
+    }
 }

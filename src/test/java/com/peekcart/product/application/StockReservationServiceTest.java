@@ -2,6 +2,8 @@ package com.peekcart.product.application;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peekcart.global.outbox.dto.ReservedItemPayload;
+import com.peekcart.global.port.SlackPort;
+import com.peekcart.product.domain.model.ReservationStatus;
 import com.peekcart.product.domain.model.StockReservation;
 import com.peekcart.product.domain.repository.StockReservationRepository;
 import com.peekcart.product.infrastructure.outbox.ProductOutboxEventPublisher;
@@ -9,18 +11,23 @@ import com.peekcart.support.ServiceTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 
 @ServiceTest
@@ -31,6 +38,7 @@ class StockReservationServiceTest {
     @Mock InventoryService inventoryService;
     @Mock InventoryLockFacade inventoryLockFacade;
     @Mock ProductOutboxEventPublisher publisher;
+    @Mock SlackPort slackPort;
 
     StockReservationService service;
 
@@ -43,7 +51,7 @@ class StockReservationServiceTest {
     @BeforeEach
     void setUp() {
         service = new StockReservationService(reservationRepository, inventoryService,
-                inventoryLockFacade, publisher, new ObjectMapper());
+                inventoryLockFacade, publisher, new ObjectMapper(), slackPort);
     }
 
     @Test
@@ -140,6 +148,89 @@ class StockReservationServiceTest {
         StockReservation terminal = StockReservation.failed(ORDER_ID, "[]", EVENT_ID);
         given(reservationRepository.markReleasedIfReserved(ORDER_ID)).willReturn(0);
         given(reservationRepository.findByOrderId(ORDER_ID)).willReturn(Optional.of(terminal));
+
+        service.release(ORDER_ID);
+
+        then(inventoryService).should(never()).restoreStock(anyLong(), anyInt());
+        then(reservationRepository).should(never()).save(any(StockReservation.class));
+    }
+
+    @Test
+    @DisplayName("confirm: RESERVED → CONFIRMED CAS 1건 성공이면 확정 (조회/보상 없음)")
+    void confirm_reservedCasSucceeds() {
+        given(reservationRepository.markConfirmedIfReserved(ORDER_ID)).willReturn(1);
+
+        service.confirm(ORDER_ID);
+
+        then(reservationRepository).should(never()).findByOrderId(anyLong());
+        then(reservationRepository).should(never()).markCompensatedIfAbsent(anyLong());
+        then(slackPort).should(never()).send(anyString());
+    }
+
+    @Test
+    @DisplayName("confirm: CAS 0건 + 이미 CONFIRMED 면 중복 payment.completed 멱등 no-op")
+    void confirm_alreadyConfirmed_idempotentNoop() {
+        StockReservation confirmed = mock(StockReservation.class);
+        given(confirmed.getStatus()).willReturn(ReservationStatus.CONFIRMED);
+        given(reservationRepository.markConfirmedIfReserved(ORDER_ID)).willReturn(0);
+        given(reservationRepository.findByOrderId(ORDER_ID)).willReturn(Optional.of(confirmed));
+
+        service.confirm(ORDER_ID);
+
+        then(reservationRepository).should(never()).markCompensatedIfAbsent(anyLong());
+        then(slackPort).should(never()).send(anyString());
+    }
+
+    @Test
+    @DisplayName("confirm: CAS 0건 + 원장 없음이면 transient 로 보고 예외 throw (consumer 재시도)")
+    void confirm_noRow_throwsForRetry() {
+        given(reservationRepository.markConfirmedIfReserved(ORDER_ID)).willReturn(0);
+        given(reservationRepository.findByOrderId(ORDER_ID)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.confirm(ORDER_ID))
+                .isInstanceOf(IllegalStateException.class);
+
+        then(reservationRepository).should(never()).markCompensatedIfAbsent(anyLong());
+        then(slackPort).should(never()).send(anyString());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ReservationStatus.class, names = {"RELEASED", "CANCEL_REQUESTED", "FAILED"})
+    @DisplayName("confirm: CAS 0건 + 비-CONFIRMED 종결 원장(결제됐으나 재고 미확정)이면 최초 1회 보상 알림")
+    void confirm_paidButUnreserved_compensatesOnce(ReservationStatus status) {
+        StockReservation reservation = mock(StockReservation.class);
+        given(reservation.getStatus()).willReturn(status);
+        given(reservationRepository.markConfirmedIfReserved(ORDER_ID)).willReturn(0);
+        given(reservationRepository.findByOrderId(ORDER_ID)).willReturn(Optional.of(reservation));
+        given(reservationRepository.markCompensatedIfAbsent(ORDER_ID)).willReturn(1);
+
+        service.confirm(ORDER_ID);
+
+        then(slackPort).should().send(anyString());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ReservationStatus.class, names = {"RELEASED", "CANCEL_REQUESTED", "FAILED"})
+    @DisplayName("confirm: 보상 marker 가 이미 있으면(CAS 0건) 알림 중복 발송 안 함")
+    void confirm_alreadyCompensated_noDuplicateAlert(ReservationStatus status) {
+        StockReservation reservation = mock(StockReservation.class);
+        given(reservation.getStatus()).willReturn(status);
+        given(reservationRepository.markConfirmedIfReserved(ORDER_ID)).willReturn(0);
+        given(reservationRepository.findByOrderId(ORDER_ID)).willReturn(Optional.of(reservation));
+        given(reservationRepository.markCompensatedIfAbsent(ORDER_ID)).willReturn(0);
+
+        service.confirm(ORDER_ID);
+
+        then(slackPort).should(never()).send(anyString());
+    }
+
+    @Test
+    @DisplayName("release: 확정(CONFIRMED) 후 release 는 CAS 0건이라 재고 복구 안 함 (판매분 보호)")
+    void release_afterConfirm_noRestore() {
+        StockReservation confirmed = mock(StockReservation.class);
+        given(confirmed.getStatus()).willReturn(ReservationStatus.CONFIRMED);
+        given(reservationRepository.markReleasedIfReserved(ORDER_ID)).willReturn(0);
+        given(reservationRepository.findByOrderId(ORDER_ID)).willReturn(Optional.of(confirmed));
 
         service.release(ORDER_ID);
 
