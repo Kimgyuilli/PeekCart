@@ -43,6 +43,11 @@
 - **Check**: 새 서비스는 `com.peekcart.*` 를 스캔하므로 **`:common` 의 모든 `@Component`/`@Configuration` 을 떠안는다**. (a) **필수 `@Value`/`@ConfigurationProperties` 를 가진 :common 빈**(예: `SlackNotificationClient` `${slack.webhook.url}`, `KafkaConfig`/auto-config)이 그 서비스에서 **미사용**이면 → 부팅 실패(`PlaceholderResolutionException`/미사용 인프라 eager 연결) 또는 더미 설정 강요. 처분(**`@ConditionalOnProperty` 로 사용 모듈만 활성** / autoconfig `exclude` / `@Value` default)을 계획서에 명시. (b) **`:common` 이 `api` 로 노출하지 않는 스타터**(validation 등)는 web/jpa 와 달리 전이 안 되므로 서비스 `build.gradle` 에 **명시 선언**.
 - **출처**: PR2b — user-service 가 `SlackNotificationClient`(@Value 필수)로 `PlaceholderResolution` 부팅 실패 → `@ConditionalOnProperty` · `KafkaAutoConfiguration` exclude · `spring-boot-starter-validation` 누락으로 @Valid 미작동 500.
 
+## B7 — 버전 가드 upsert 는 단일 원자 문장 + flush 경계
+- **Trigger**: CQRS read-model / 로컬 캐시에 "더 높은 version/timestamp 일 때만 갱신"(stale-skip upsert)을 적을 때, 또는 `@Version`·`@UpdateTimestamp` 값을 이벤트 payload 에 실어 발행할 때.
+- **Check**: (a) upsert 를 `update→exists→save` 2-step 으로 적으면 **`save()` 의 UK/PK 위반이 메서드가 아니라 트랜잭션 flush/commit 시점에 터져 catch 를 우회**한다 — 낮은 version 이 먼저 커밋되면 "높은 version 만 적용" 이 깨진다. **MySQL `INSERT … ON DUPLICATE KEY UPDATE … IF(:v > source_version, …)` 단일 원자 문장**으로 명시하라. (b) `@Version` 은 **flush 시점에 증가**하므로 payload 의 version 은 반드시 **`saveAndFlush` 후 `getVersion()`** 으로 읽어야 한다(flush 전 읽으면 seed=0 ↔ 첫 이벤트=0 충돌로 첫 갱신 누락). 계획에 메커니즘을 추상("upsertIfNewer 비교")이 아닌 구체로 못박아라(→ B4).
+- **출처**: strangler-2(task-impl-saga2-unit-price-cache) — plan 은 stale-skip·flush 경계를 적었으나 *upsert 메커니즘* 을 비워둠 → 구현이 2-step race 로 작성, diff 리뷰(GW-2 #1)가 catch-밖 commit 위반 지적 → 원자 upsert 로 교체. strangler-3·향후 read-model 에 재발 가능.
+
 ---
 
 ## 자동 검사로 승격된 항목 (참고 — 더 이상 수동 점검 불필요)
