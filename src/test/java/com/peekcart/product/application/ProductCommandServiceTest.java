@@ -12,6 +12,7 @@ import com.peekcart.product.domain.model.ProductStatus;
 import com.peekcart.product.domain.repository.CategoryRepository;
 import com.peekcart.product.domain.repository.InventoryRepository;
 import com.peekcart.product.domain.repository.ProductRepository;
+import com.peekcart.product.infrastructure.outbox.ProductOutboxEventPublisher;
 import com.peekcart.support.ServiceTest;
 import com.peekcart.support.fixture.ProductFixture;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
@@ -36,6 +38,7 @@ class ProductCommandServiceTest {
     @Mock ProductRepository productRepository;
     @Mock CategoryRepository categoryRepository;
     @Mock InventoryRepository inventoryRepository;
+    @Mock ProductOutboxEventPublisher outboxEventPublisher;
 
     private final Category category = ProductFixture.categoryWithId();
 
@@ -62,6 +65,8 @@ class ProductCommandServiceTest {
         assertThat(result.status()).isEqualTo("ON_SALE");
         then(productRepository).should().save(any(Product.class));
         then(inventoryRepository).should().save(any(Inventory.class));
+        // strangler-2: product.updated 발행 (CQRS ⑤)
+        then(outboxEventPublisher).should().publishProductUpdated(any(Product.class), anyInt());
     }
 
     @Test
@@ -93,6 +98,7 @@ class ProductCommandServiceTest {
 
         assertThat(result.name()).isEqualTo("새이름");
         assertThat(result.price()).isEqualTo(2000L);
+        then(outboxEventPublisher).should().publishProductUpdated(any(Product.class), anyInt());
     }
 
     @Test
@@ -132,6 +138,7 @@ class ProductCommandServiceTest {
         productCommandService.delete(ProductFixture.DEFAULT_PRODUCT_ID);
 
         assertThat(product.getStatus()).isEqualTo(ProductStatus.DISCONTINUED);
+        then(outboxEventPublisher).should().publishProductUpdated(any(Product.class), anyInt());
     }
 
     @Test
