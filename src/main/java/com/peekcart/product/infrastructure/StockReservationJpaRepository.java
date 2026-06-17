@@ -21,4 +21,15 @@ public interface StockReservationJpaRepository extends JpaRepository<StockReserv
             + "r.releasedAt = :now WHERE r.orderId = :orderId "
             + "AND r.status = com.peekcart.product.domain.model.ReservationStatus.RESERVED")
     int markReleasedIfReserved(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE StockReservation r SET r.status = com.peekcart.product.domain.model.ReservationStatus.CONFIRMED, "
+            + "r.confirmedAt = :now WHERE r.orderId = :orderId "
+            + "AND r.status = com.peekcart.product.domain.model.ReservationStatus.RESERVED")
+    int markConfirmedIfReserved(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE StockReservation r SET r.compensatedAt = :now "
+            + "WHERE r.orderId = :orderId AND r.compensatedAt IS NULL")
+    int markCompensatedIfAbsent(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
 }

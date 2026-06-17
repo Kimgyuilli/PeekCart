@@ -33,6 +33,7 @@ public enum ErrorCode {
     ORD_005(HttpStatus.BAD_REQUEST, "ORD-005", "수량은 1 이상이어야 합니다."),
     ORD_006(HttpStatus.NOT_FOUND, "ORD-006", "장바구니를 찾을 수 없습니다."),
     ORD_007(HttpStatus.CONFLICT, "ORD-007", "상품 가격 정보를 아직 사용할 수 없습니다. 잠시 후 다시 시도해주세요."),
+    ORD_008(HttpStatus.CONFLICT, "ORD-008", "재고 예약이 아직 확정되지 않았습니다. 잠시 후 다시 시도해주세요."),
 
     // Payment
     PAY_001(HttpStatus.BAD_REQUEST, "PAY-001", "결제 금액이 일치하지 않습니다."),

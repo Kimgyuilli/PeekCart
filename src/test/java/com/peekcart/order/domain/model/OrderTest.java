@@ -118,4 +118,41 @@ class OrderTest {
                 .extracting(e -> ((OrderException) e).getErrorCode())
                 .isEqualTo(ErrorCode.ORD_003);
     }
+
+    @Test
+    @DisplayName("markPaymentRequested: 예약 확정된 PENDING 이면 PAYMENT_REQUESTED 전이 + paymentRequestedAt 기록")
+    void markPaymentRequested_reservationConfirmed_success() {
+        Order order = OrderFixture.order();
+        order.confirmReservation();
+
+        order.markPaymentRequested();
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_REQUESTED);
+        assertThat(order.getPaymentRequestedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("markPaymentRequested: 예약 미확정(in-flight) PENDING 이면 ORD-008 (재시도 가능)")
+    void markPaymentRequested_reservationNotConfirmed_throwsORD008() {
+        Order order = OrderFixture.order();
+
+        assertThatThrownBy(order::markPaymentRequested)
+                .isInstanceOf(OrderException.class)
+                .extracting(e -> ((OrderException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ORD_008);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getPaymentRequestedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("markPaymentRequested: 취소된 주문이면 ORD-003 (영구 실패, 게이트보다 전이 검사 우선)")
+    void markPaymentRequested_cancelled_throwsORD003() {
+        Order order = OrderFixture.order();
+        order.cancel();
+
+        assertThatThrownBy(order::markPaymentRequested)
+                .isInstanceOf(OrderException.class)
+                .extracting(e -> ((OrderException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ORD_003);
+    }
 }

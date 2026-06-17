@@ -1,7 +1,6 @@
 package com.peekcart.order.infrastructure;
 
 import com.peekcart.order.domain.model.Order;
-import com.peekcart.order.domain.model.OrderStatus;
 import com.peekcart.order.domain.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -42,8 +41,8 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
-    public List<Order> findByStatusAndOrderedAtBefore(OrderStatus status, LocalDateTime cutoff) {
-        return orderJpaRepository.findByStatusAndOrderedAtBefore(status, cutoff);
+    public List<Order> findExpiredPaymentRequested(LocalDateTime cutoff) {
+        return orderJpaRepository.findExpiredPaymentRequested(cutoff);
     }
 
     @Override

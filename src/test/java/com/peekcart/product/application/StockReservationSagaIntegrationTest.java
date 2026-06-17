@@ -7,6 +7,7 @@ import com.peekcart.product.domain.model.Category;
 import com.peekcart.product.domain.model.Inventory;
 import com.peekcart.product.domain.model.Product;
 import com.peekcart.product.domain.model.ReservationStatus;
+import com.peekcart.product.domain.model.StockReservation;
 import com.peekcart.product.domain.repository.InventoryRepository;
 import com.peekcart.product.domain.repository.StockReservationRepository;
 import com.peekcart.support.AbstractIntegrationTest;
@@ -26,8 +27,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 재고 예약/복구 Saga 의 서비스 레벨 통합 테스트 (ADR-0012 D3).
@@ -55,6 +61,7 @@ class StockReservationSagaIntegrationTest extends AbstractIntegrationTest {
     @Autowired InventoryRepository inventoryRepository;
     @Autowired StockReservationRepository reservationRepository;
     @Autowired OutboxEventRepository outboxEventRepository;
+    @Autowired com.peekcart.product.infrastructure.kafka.StockConfirmConsumer confirmConsumer;
 
     private Long product1;  // 재고 100
     private Long product2;  // 재고 5
@@ -153,5 +160,132 @@ class StockReservationSagaIntegrationTest extends AbstractIntegrationTest {
         assertThat(stockOf(product1)).isEqualTo(100);  // 차감 skip
         assertThat(reservationRepository.findByOrderId(5L).orElseThrow().getStatus())
                 .isEqualTo(ReservationStatus.CANCEL_REQUESTED);
+    }
+
+    @Test
+    @DisplayName("confirm: RESERVED → CONFIRMED 확정 (재고 차감 유지)")
+    void confirm_afterReserved_confirms() {
+        reservationService.reserve(6L, "evt-6", List.of(new ReservedItemPayload(product1, 10)));
+
+        reservationService.confirm(6L);
+
+        assertThat(reservationRepository.findByOrderId(6L).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.CONFIRMED);
+        assertThat(stockOf(product1)).isEqualTo(90);  // 확정 후에도 차감 유지
+    }
+
+    @Test
+    @DisplayName("확정 후 release: CONFIRMED 라 CAS 0건 → 재고 복구 안 함 (판매분 보호)")
+    void release_afterConfirm_noRestore() {
+        reservationService.reserve(7L, "evt-7", List.of(new ReservedItemPayload(product1, 10)));
+        reservationService.confirm(7L);
+
+        reservationService.release(7L);  // 지연/중복 release 도착
+
+        assertThat(stockOf(product1)).isEqualTo(90);  // 복구 안 됨
+        assertThat(reservationRepository.findByOrderId(7L).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("역순 race: release 가 confirm 보다 먼저(RELEASED) → confirm 은 commit-실패 보상 marker")
+    void releaseBeforeConfirm_compensates() {
+        reservationService.reserve(8L, "evt-8", List.of(new ReservedItemPayload(product1, 10)));
+        reservationService.release(8L);  // confirm 보다 먼저 도착 → RELEASED + 재고 복구
+        assertThat(stockOf(product1)).isEqualTo(100);
+
+        reservationService.confirm(8L);  // 결제 완료가 늦게 도착 → 재고 미확정 검출
+
+        StockReservation ledger = reservationRepository.findByOrderId(8L).orElseThrow();
+        assertThat(ledger.getStatus()).isEqualTo(ReservationStatus.RELEASED);  // 잘못된 재확정 없음
+        assertThat(ledger.getCompensatedAt()).isNotNull();                     // 보상 marker
+        assertThat(stockOf(product1)).isEqualTo(100);                          // 재고 변동 없음
+    }
+
+    @Test
+    @DisplayName("confirm 멱등: 보상 marker 가 이미 있으면 중복 보상하지 않는다")
+    void confirm_compensateOnce_idempotent() {
+        reservationService.reserve(9L, "evt-9", List.of(new ReservedItemPayload(product1, 10)));
+        reservationService.release(9L);
+        reservationService.confirm(9L);
+        var firstCompensatedAt = reservationRepository.findByOrderId(9L).orElseThrow().getCompensatedAt();
+
+        reservationService.confirm(9L);  // DLQ 재발행 등으로 재실행
+
+        assertThat(reservationRepository.findByOrderId(9L).orElseThrow().getCompensatedAt())
+                .isEqualTo(firstCompensatedAt);  // marker 갱신 안 됨
+    }
+
+    @Test
+    @DisplayName("confirm: 예약 원장 미존재면 transient 로 보고 예외 throw (consumer 재시도)")
+    void confirm_noRow_throws() {
+        assertThatThrownBy(() -> reservationService.confirm(404L))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    @DisplayName("동시성: confirm×2 + release×1 경합 → (CONFIRMED·복구0·보상0) 또는 (RELEASED·복구1·보상1) 한쪽으로만 수렴")
+    void confirmReleaseRace_convergesToSingleOutcome() throws InterruptedException {
+        reservationService.reserve(10L, "evt-10", List.of(new ReservedItemPayload(product1, 10)));
+        assertThat(stockOf(product1)).isEqualTo(90);
+
+        ExecutorService pool = Executors.newFixedThreadPool(3);
+        CountDownLatch start = new CountDownLatch(1);
+        Runnable confirm = () -> { awaitStart(start); reservationService.confirm(10L); };
+        Runnable release = () -> { awaitStart(start); reservationService.release(10L); };
+        pool.submit(confirm);
+        pool.submit(confirm);
+        pool.submit(release);
+        start.countDown();
+        pool.shutdown();
+        assertThat(pool.awaitTermination(20, TimeUnit.SECONDS)).isTrue();
+
+        StockReservation ledger = reservationRepository.findByOrderId(10L).orElseThrow();
+        if (ledger.getStatus() == ReservationStatus.CONFIRMED) {
+            assertThat(stockOf(product1)).isEqualTo(90);          // 복구 없음
+            assertThat(ledger.getCompensatedAt()).isNull();        // 보상 없음
+        } else {
+            assertThat(ledger.getStatus()).isEqualTo(ReservationStatus.RELEASED);
+            assertThat(stockOf(product1)).isEqualTo(100);          // 1회만 복구 (110 아님)
+            assertThat(ledger.getCompensatedAt()).isNotNull();     // 결제완료 검출 보상
+        }
+    }
+
+    @Test
+    @DisplayName("consumer e2e: payment.completed envelope 소비 → 원장 CONFIRMED")
+    void confirmConsumer_paymentCompleted_confirmsLedger() {
+        reservationService.reserve(11L, "evt-11", List.of(new ReservedItemPayload(product1, 10)));
+
+        confirmConsumer.handlePaymentCompleted(paymentCompletedMessage("pay-evt-11", 11L));
+
+        assertThat(reservationRepository.findByOrderId(11L).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("consumer e2e 멱등: 동일 eventId 중복 소비는 1회만 적용 (processed_events)")
+    void confirmConsumer_duplicateEvent_appliedOnce() {
+        reservationService.reserve(12L, "evt-12", List.of(new ReservedItemPayload(product1, 10)));
+        String msg = paymentCompletedMessage("pay-evt-12", 12L);
+
+        confirmConsumer.handlePaymentCompleted(msg);
+        confirmConsumer.handlePaymentCompleted(msg);  // 중복 — processed_events 로 skip
+
+        assertThat(reservationRepository.findByOrderId(12L).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.CONFIRMED);
+    }
+
+    private String paymentCompletedMessage(String eventId, long orderId) {
+        return "{\"eventId\":\"" + eventId + "\",\"eventType\":\"payment.completed\","
+                + "\"timestamp\":\"2026-01-01T00:00:00\",\"payload\":{\"orderId\":" + orderId + "}}";
+    }
+
+    private void awaitStart(CountDownLatch start) {
+        try {
+            start.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
     }
 }

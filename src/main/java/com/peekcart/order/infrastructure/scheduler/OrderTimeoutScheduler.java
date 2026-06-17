@@ -3,7 +3,6 @@ package com.peekcart.order.infrastructure.scheduler;
 import com.peekcart.order.application.OrderCommandService;
 import com.peekcart.order.domain.exception.OrderException;
 import com.peekcart.order.domain.model.Order;
-import com.peekcart.order.domain.model.OrderStatus;
 import com.peekcart.order.domain.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,8 +32,7 @@ public class OrderTimeoutScheduler {
     @SchedulerLock(name = "orderTimeoutCancelJob", lockAtMostFor = "PT10M", lockAtLeastFor = "PT30S")
     public void cancelExpiredOrders() {
         LocalDateTime cutoff = LocalDateTime.now().minusMinutes(15);
-        List<Order> expiredOrders = orderRepository.findByStatusAndOrderedAtBefore(
-                OrderStatus.PAYMENT_REQUESTED, cutoff);
+        List<Order> expiredOrders = orderRepository.findExpiredPaymentRequested(cutoff);
 
         for (Order order : expiredOrders) {
             cancelSafely(order.getId(), order.getOrderNumber());

@@ -38,8 +38,14 @@ public class StockReservation {
     @Column(name = "reserved_at")
     private LocalDateTime reservedAt;
 
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
+
     @Column(name = "released_at")
     private LocalDateTime releasedAt;
+
+    @Column(name = "compensated_at")
+    private LocalDateTime compensatedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
