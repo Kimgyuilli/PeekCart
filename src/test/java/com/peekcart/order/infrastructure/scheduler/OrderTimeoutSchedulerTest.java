@@ -4,7 +4,6 @@ import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.order.application.OrderCommandService;
 import com.peekcart.order.domain.exception.OrderException;
 import com.peekcart.order.domain.model.Order;
-import com.peekcart.order.domain.model.OrderStatus;
 import com.peekcart.order.domain.repository.OrderRepository;
 import com.peekcart.support.ServiceTest;
 import com.peekcart.support.fixture.OrderFixture;
@@ -18,7 +17,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willThrow;
@@ -39,7 +37,7 @@ class OrderTimeoutSchedulerTest {
         Order order1 = OrderFixture.paymentRequestedOrderWithId();
         Order order2 = OrderFixture.paymentRequestedOrderWithId();
         ReflectionTestUtils.setField(order2, "id", 2L);
-        given(orderRepository.findByStatusAndOrderedAtBefore(eq(OrderStatus.PAYMENT_REQUESTED), any(LocalDateTime.class)))
+        given(orderRepository.findExpiredPaymentRequested(any(LocalDateTime.class)))
                 .willReturn(List.of(order1, order2));
 
         orderTimeoutScheduler.cancelExpiredOrders();
@@ -51,7 +49,7 @@ class OrderTimeoutSchedulerTest {
     @Test
     @DisplayName("만료 주문이 없으면 cancelExpiredOrder를 호출하지 않는다")
     void cancelExpiredOrders_noExpiredOrders() {
-        given(orderRepository.findByStatusAndOrderedAtBefore(eq(OrderStatus.PAYMENT_REQUESTED), any(LocalDateTime.class)))
+        given(orderRepository.findExpiredPaymentRequested(any(LocalDateTime.class)))
                 .willReturn(List.of());
 
         orderTimeoutScheduler.cancelExpiredOrders();
@@ -65,7 +63,7 @@ class OrderTimeoutSchedulerTest {
         Order order1 = OrderFixture.paymentRequestedOrderWithId();
         Order order2 = OrderFixture.paymentRequestedOrderWithId();
         ReflectionTestUtils.setField(order2, "id", 2L);
-        given(orderRepository.findByStatusAndOrderedAtBefore(eq(OrderStatus.PAYMENT_REQUESTED), any(LocalDateTime.class)))
+        given(orderRepository.findExpiredPaymentRequested(any(LocalDateTime.class)))
                 .willReturn(List.of(order1, order2));
         willThrow(new RuntimeException("DB error")).given(orderCommandService).cancelExpiredOrder(order1.getId());
 
@@ -81,7 +79,7 @@ class OrderTimeoutSchedulerTest {
         Order order1 = OrderFixture.paymentRequestedOrderWithId();
         Order order2 = OrderFixture.paymentRequestedOrderWithId();
         ReflectionTestUtils.setField(order2, "id", 2L);
-        given(orderRepository.findByStatusAndOrderedAtBefore(eq(OrderStatus.PAYMENT_REQUESTED), any(LocalDateTime.class)))
+        given(orderRepository.findExpiredPaymentRequested(any(LocalDateTime.class)))
                 .willReturn(List.of(order1, order2));
         willThrow(new OrderException(ErrorCode.ORD_003)).given(orderCommandService).cancelExpiredOrder(order1.getId());
 
