@@ -31,4 +31,14 @@ public class StockReservationRepositoryImpl implements StockReservationRepositor
     public int markReleasedIfReserved(Long orderId) {
         return jpaRepository.markReleasedIfReserved(orderId, LocalDateTime.now());
     }
+
+    @Override
+    public int markConfirmedIfReserved(Long orderId) {
+        return jpaRepository.markConfirmedIfReserved(orderId, LocalDateTime.now());
+    }
+
+    @Override
+    public int markCompensatedIfAbsent(Long orderId) {
+        return jpaRepository.markCompensatedIfAbsent(orderId, LocalDateTime.now());
+    }
 }

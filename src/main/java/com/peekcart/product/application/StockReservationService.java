@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peekcart.global.outbox.dto.ReservedItemPayload;
+import com.peekcart.global.port.SlackPort;
 import com.peekcart.product.domain.model.ReservationStatus;
 import com.peekcart.product.domain.model.StockReservation;
 import com.peekcart.product.domain.repository.StockReservationRepository;
@@ -33,6 +34,7 @@ public class StockReservationService {
     private final InventoryLockFacade inventoryLockFacade;
     private final ProductOutboxEventPublisher publisher;
     private final ObjectMapper objectMapper;
+    private final SlackPort slackPort;
 
     /**
      * order.created 수신 시 재고를 예약(차감)한다. all-or-nothing.
@@ -100,6 +102,47 @@ public class StockReservationService {
             tryReleaseReserved(orderId);
         }
         // 그 외(RELEASED/FAILED/CANCEL_REQUESTED) → 멱등 no-op
+    }
+
+    /**
+     * payment.completed 수신 시 예약을 확정(commit)한다 (ADR-0012 ④, strangler-3).
+     * <ul>
+     *   <li>{@code RESERVED → CONFIRMED} 원자 CAS 1건 성공 → 확정. 이후 release 는 CONFIRMED 라 자연 no-op(판매분 보호)</li>
+     *   <li>CAS 0건 + 원장 CONFIRMED → 중복 payment.completed 멱등 no-op</li>
+     *   <li>CAS 0건 + 원장 없음 → 예약 원장 미도착 경합(transient) → 예외 throw 로 consumer 재시도(bounded), 한계 초과 시 DLQ</li>
+     *   <li>CAS 0건 + 원장 RELEASED/CANCEL_REQUESTED/FAILED → 결제됐으나 재고 미확정(commit-실패 최악 경로) → 보상(환불 요청+운영 알림)</li>
+     * </ul>
+     */
+    public void confirm(Long orderId) {
+        if (reservationRepository.markConfirmedIfReserved(orderId) == 1) {
+            log.debug("재고 예약 확정(commit) — orderId={}", orderId);
+            return;
+        }
+        StockReservation existing = reservationRepository.findByOrderId(orderId)
+                // 예약 원장 미도착 경합 — transient. consumer 재시도(bounded)로 수렴, 한계 초과 시 DLQ.
+                .orElseThrow(() -> new IllegalStateException(
+                        "예약 원장 미존재 — payment.completed 확정 재시도 필요: " + orderId));
+        if (existing.getStatus() == ReservationStatus.CONFIRMED) {
+            // 중복 payment.completed → 멱등 no-op
+            return;
+        }
+        // RELEASED/CANCEL_REQUESTED/FAILED — 결제됐으나 재고 미확정 → 보상
+        compensatePaidButUnreserved(orderId, existing.getStatus());
+    }
+
+    /**
+     * commit-실패(PAID_BUT_UNRESERVED) 보상 (ADR-0012 ④). {@code orderId} 기준 1회성 marker 로
+     * 멱등을 보장해 DLQ 재발행(새 eventId) 으로 confirm 이 재실행돼도 알림이 중복 발송되지 않는다.
+     * 자동 환불 플로우는 미존재 — 운영 알림 + audit 마킹까지 수행하고 수동 환불로 수렴한다.
+     */
+    private void compensatePaidButUnreserved(Long orderId, ReservationStatus status) {
+        if (reservationRepository.markCompensatedIfAbsent(orderId) == 1) {
+            log.error("PAID_BUT_UNRESERVED — 결제 완료됐으나 재고 미확정(원장={}), 수동 환불 필요. orderId={}", status, orderId);
+            slackPort.send(String.format(
+                    "[보상 필요] PAID_BUT_UNRESERVED orderId=%d 원장상태=%s — 결제 완료됐으나 재고 미확정. 수동 환불 확인 요망.",
+                    orderId, status));
+        }
+        // 이미 보상됨 → 멱등 no-op
     }
 
     private boolean tryReleaseReserved(Long orderId) {
