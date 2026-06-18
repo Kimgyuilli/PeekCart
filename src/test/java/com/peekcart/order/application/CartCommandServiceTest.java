@@ -4,10 +4,10 @@ import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.order.application.dto.AddCartItemCommand;
 import com.peekcart.order.application.dto.CartDetailDto;
 import com.peekcart.order.application.dto.UpdateCartItemCommand;
-import com.peekcart.order.application.port.ProductPort;
 import com.peekcart.order.domain.exception.OrderException;
 import com.peekcart.order.domain.model.Cart;
 import com.peekcart.order.domain.repository.CartRepository;
+import com.peekcart.order.domain.repository.ProductPriceCacheRepository;
 import com.peekcart.support.ServiceTest;
 import com.peekcart.support.fixture.OrderFixture;
 import org.junit.jupiter.api.DisplayName;
@@ -29,19 +29,20 @@ class CartCommandServiceTest {
 
     @InjectMocks CartCommandService cartCommandService;
     @Mock CartRepository cartRepository;
-    @Mock ProductPort productPort;
+    @Mock ProductPriceCacheRepository priceCacheRepository;
 
     @Test
-    @DisplayName("addItem: 기존 장바구니에 상품이 추가된다")
+    @DisplayName("addItem: 캐시에 존재하는 상품이면 기존 장바구니에 추가된다")
     void addItem_existingCart_success() {
         Cart cart = OrderFixture.cartWithId();
         AddCartItemCommand command = OrderFixture.addCartItemCommand();
+        given(priceCacheRepository.existsByProductId(OrderFixture.DEFAULT_PRODUCT_ID)).willReturn(true);
         given(cartRepository.findByUserId(OrderFixture.DEFAULT_USER_ID)).willReturn(Optional.of(cart));
 
         CartDetailDto result = cartCommandService.addItem(OrderFixture.DEFAULT_USER_ID, command);
 
         assertThat(result.items()).hasSize(1);
-        then(productPort).should().verifyProductExists(OrderFixture.DEFAULT_PRODUCT_ID);
+        then(priceCacheRepository).should().existsByProductId(OrderFixture.DEFAULT_PRODUCT_ID);
     }
 
     @Test
@@ -49,6 +50,7 @@ class CartCommandServiceTest {
     void addItem_noCart_createsNew() {
         Cart newCart = OrderFixture.cartWithId();
         AddCartItemCommand command = OrderFixture.addCartItemCommand();
+        given(priceCacheRepository.existsByProductId(OrderFixture.DEFAULT_PRODUCT_ID)).willReturn(true);
         given(cartRepository.findByUserId(OrderFixture.DEFAULT_USER_ID)).willReturn(Optional.empty());
         given(cartRepository.save(any(Cart.class))).willReturn(newCart);
 
@@ -56,6 +58,19 @@ class CartCommandServiceTest {
 
         assertThat(result.id()).isEqualTo(OrderFixture.DEFAULT_CART_ID);
         then(cartRepository).should().save(any(Cart.class));
+    }
+
+    @Test
+    @DisplayName("addItem: 상품이 로컬 캐시에 없으면 ORD-009 예외가 발생한다")
+    void addItem_productNotInCache_throwsORD009() {
+        AddCartItemCommand command = OrderFixture.addCartItemCommand();
+        given(priceCacheRepository.existsByProductId(OrderFixture.DEFAULT_PRODUCT_ID)).willReturn(false);
+
+        assertThatThrownBy(() -> cartCommandService.addItem(OrderFixture.DEFAULT_USER_ID, command))
+                .isInstanceOf(OrderException.class)
+                .extracting(e -> ((OrderException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ORD_009);
+        then(cartRepository).shouldHaveNoInteractions();
     }
 
     @Test

@@ -100,6 +100,24 @@ class CartControllerTest {
 
     @Test
     @WithMockLoginUser
+    @DisplayName("POST /api/v1/cart/items: 상품이 로컬 캐시에 없으면 409 ORD-009를 반환한다")
+    void addItem_productNotInCache_returns409() throws Exception {
+        willThrow(new OrderException(ErrorCode.ORD_009))
+                .given(cartCommandService).addItem(eq(1L), any());
+
+        AddCartItemRequest request = new AddCartItemRequest(OrderFixture.DEFAULT_PRODUCT_ID, OrderFixture.DEFAULT_QUANTITY);
+
+        mockMvc.perform(post("/api/v1/cart/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.code").value("ORD-009"))
+                .andExpect(jsonPath("$.message").value(ErrorCode.ORD_009.getMessage()));
+    }
+
+    @Test
+    @WithMockLoginUser
     @DisplayName("POST /api/v1/cart/items: 수량이 0이면 400을 반환한다")
     void addItem_zeroQuantity_returns400() throws Exception {
         AddCartItemRequest request = new AddCartItemRequest(1L, 0);
