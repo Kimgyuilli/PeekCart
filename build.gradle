@@ -274,7 +274,38 @@ tasks.register('assertNoDuplicateGlobalFqcn') {
 	}
 }
 
+// ===== [strangler-4] Order↔Product production 동기 결합 금지 (ADR-0010 F2 · ADR-0012 ⑤) =====
+// ProductPort 동기 seam 제거 후, Order 와 Product 도메인은 production 코드에서 서로의 패키지를 참조하면
+// 안 된다(이벤트/로컬 캐시로만 통신). src/main 만 스캔한다 — src/test 의 Order 통합테스트는 Product 타입을
+// 합법적으로 시드하므로(ProductPriceCacheSagaIntegrationTest 등) 가드 대상에서 제외한다. ArchUnit 등 새
+// 의존성 도입 없이 기존 source-scan 가드 패턴을 따른다.
+tasks.register('assertNoOrderProductSourceCoupling') {
+	group = 'verification'
+	description = 'src/main 의 order↔product 도메인 패키지 상호 참조를 빌드 실패로 검출한다 (strangler-4).'
+	def checks = [
+			[dir: file('src/main/java/com/peekcart/order'),   forbidden: 'com.peekcart.product', from: 'order'],
+			[dir: file('src/main/java/com/peekcart/product'), forbidden: 'com.peekcart.order',   from: 'product']
+	]
+	doLast {
+		def violations = []
+		checks.each { c ->
+			if (c.dir.exists()) {
+				c.dir.eachFileRecurse { f ->
+					if (f.name.endsWith('.java') && f.text.contains(c.forbidden)) {
+						violations << "[${c.from}] ${c.forbidden} 참조: ${file('.').toPath().relativize(f.toPath())}".toString()
+					}
+				}
+			}
+		}
+		if (!violations.isEmpty()) {
+			throw new GradleException(
+					"order↔product production 동기 결합 위반 (이벤트/로컬 캐시로만 통신해야 함):\n  " + violations.join('\n  '))
+		}
+		println "assertNoOrderProductSourceCoupling: OK (src/main order↔product 상호 참조 없음)"
+	}
+}
+
 // build 시 자동 검증 (전체 그린 게이트에 포함)
 tasks.named('check') {
-	dependsOn 'assertNoServiceProjectDeps', 'assertNoDuplicateGlobalFqcn'
+	dependsOn 'assertNoServiceProjectDeps', 'assertNoDuplicateGlobalFqcn', 'assertNoOrderProductSourceCoupling'
 }
