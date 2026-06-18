@@ -3,7 +3,6 @@ package com.peekcart.payment.application;
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.payment.application.dto.ConfirmPaymentCommand;
 import com.peekcart.payment.application.dto.PaymentDetailDto;
-import com.peekcart.payment.application.port.OrderPort;
 import com.peekcart.payment.domain.exception.PaymentException;
 import com.peekcart.payment.domain.model.Payment;
 import com.peekcart.payment.domain.repository.PaymentRepository;
@@ -28,22 +27,23 @@ public class PaymentCommandService {
 
     private final PaymentRepository paymentRepository;
     private final TossPaymentClient tossPaymentClient;
-    private final OrderPort orderPort;
     private final PaymentOutboxEventPublisher outboxEventPublisher;
 
     /**
-     * 결제를 승인한다.
+     * 결제를 승인한다. 소유자·예약 확정·취소 게이트는 모두 payment-로컬 상태로 검증하고
+     * (OrderPort 동기 호출 제거), 결제 시작은 {@code payment.requested} 이벤트로 Order 에 알린다.
      *
-     * @throws PaymentException 결제 정보 미존재 시 {@code PAY-003}, 금액 불일치 시 {@code PAY-001}
+     * @throws PaymentException 결제 정보 미존재 {@code PAY-003}, 금액 불일치 {@code PAY-001},
+     *                          소유자 불일치 {@code PAY-007}, 예약 미확정 {@code PAY-008}, 결제 불가 상태 {@code PAY-009}
      */
     public PaymentDetailDto confirmPayment(Long userId, ConfirmPaymentCommand command) {
-        orderPort.verifyOrderOwner(userId, command.orderId());
-
         Payment payment = paymentRepository.findByOrderId(command.orderId())
                 .orElseThrow(() -> new PaymentException(ErrorCode.PAY_003));
 
+        payment.verifyOwner(userId);
         payment.validateAmount(command.amount());
-        orderPort.transitionToPaymentRequested(command.orderId());
+        payment.ensureConfirmable();
+        outboxEventPublisher.publishPaymentRequested(payment, userId);
         payment.assignPaymentKey(command.paymentKey());
 
         try {

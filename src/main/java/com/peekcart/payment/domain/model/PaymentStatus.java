@@ -22,6 +22,13 @@ public enum PaymentStatus {
         public boolean canTransitionTo(PaymentStatus target) {
             return false;
         }
+    },
+    /** 결제 시작 전 주문이 취소되어 종료된 상태 (order.cancelled 소비, 로컬 전용·이벤트 미발행). */
+    CANCELLED {
+        @Override
+        public boolean canTransitionTo(PaymentStatus target) {
+            return false;
+        }
     };
 
     public abstract boolean canTransitionTo(PaymentStatus target);

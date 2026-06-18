@@ -18,13 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 결제·재고예약 관련 Kafka 이벤트를 소비하여 주문 상태를 전이하는 Consumer.
  * <p>
- * 소비 토픽: {@code payment.completed}, {@code payment.failed}, {@code stock.reservation.result}
+ * 소비 토픽: {@code payment.requested}, {@code payment.completed}, {@code payment.failed}, {@code stock.reservation.result}
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class OrderEventConsumer {
 
+    private static final String GROUP_PAYMENT_REQUESTED = "order-svc-payment-requested-group";
     private static final String GROUP_PAYMENT_COMPLETED = "order-svc-payment-completed-group";
     private static final String GROUP_PAYMENT_FAILED = "order-svc-payment-failed-group";
     private static final String GROUP_STOCK_RESULT = "order-svc-stock-result-group";
@@ -33,6 +34,37 @@ public class OrderEventConsumer {
     private final OrderOutboxEventPublisher outboxEventPublisher;
     private final IdempotencyChecker idempotencyChecker;
     private final KafkaMessageParser kafkaMessageParser;
+
+    /**
+     * 결제 시작(payment.requested)을 소비해 주문을 {@code PAYMENT_REQUESTED}로 전이한다
+     * (동기 OrderPort.transitionToPaymentRequested 대체).
+     * <p>예약 미확정 상태에서 선도착하면 ORD-008 로 DLQ 직행하는 대신 pending marker 를 기록해
+     * {@code confirmReservation()} 시점에 수렴시킨다. 종료 상태(취소 등)면 no-op.
+     */
+    @KafkaListener(topics = "payment.requested", groupId = GROUP_PAYMENT_REQUESTED)
+    @Transactional
+    public void handlePaymentRequested(String message) {
+        JsonNode root = kafkaMessageParser.parse(message);
+        String eventId = root.get("eventId").asText();
+        JsonNode payload = root.get("payload");
+
+        idempotencyChecker.executeIfNew(eventId, GROUP_PAYMENT_REQUESTED, () -> {
+            Long orderId = payload.get("orderId").asLong();
+            Order order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new OrderException(ErrorCode.ORD_001));
+            if (order.getStatus() != OrderStatus.PENDING) {
+                log.debug("payment.requested 수신했으나 주문이 PENDING 아님 — no-op, orderId={}", orderId);
+                return;
+            }
+            if (order.getReservationConfirmedAt() != null) {
+                order.markPaymentRequested();
+                log.debug("주문 상태 전이 → PAYMENT_REQUESTED — orderId={}", orderId);
+            } else {
+                order.markPaymentRequestedPending();
+                log.debug("payment.requested 선도착(예약 미확정) — pending marker 기록, orderId={}", orderId);
+            }
+        });
+    }
 
     /** 결제 성공 시 주문 상태를 {@code PAYMENT_COMPLETED}로 전이한다. */
     @KafkaListener(topics = "payment.completed", groupId = GROUP_PAYMENT_COMPLETED)
