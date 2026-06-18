@@ -231,14 +231,15 @@ tasks.register('assertNoServiceProjectDeps') {
 tasks.register('assertNoDuplicateGlobalFqcn') {
 	group = 'verification'
 	description = '앱 classpath 내 com/peekcart/global/** 중복 FQCN + JwtProvider 잔존 검출 (게이트 i).'
-	dependsOn ':classes', ':common:classes', ':peekcart-common-auth:classes',
-			':peekcart-common-observability:classes', ':notification-service:classes', ':user-service:classes'
-	def apps = [
-			'root-app'            : [':', ':common', ':peekcart-common-auth', ':peekcart-common-observability'],
-			'notification-service': [':notification-service', ':common', ':peekcart-common-auth', ':peekcart-common-observability'],
-			'user-service'        : [':user-service', ':common', ':peekcart-common-auth', ':peekcart-common-observability']
-	]
+	// 동적 구성 — *-service 모듈을 자동 포함해 이후 peel(order/payment) 때 누락되지 않게 한다(Product peel: 가드 apps 맵 하드코딩 회귀 방지).
+	def commonDeps = [':common', ':peekcart-common-auth', ':peekcart-common-observability']
+	dependsOn(([':classes'] + commonDeps.collect { "${it}:classes" }))
+	dependsOn { subprojects.findAll { it.name.endsWith('-service') }.collect { "${it.path}:classes" } }
 	doLast {
+		def apps = ['root-app': [':'] + commonDeps]
+		subprojects.findAll { it.name.endsWith('-service') }.each { svc ->
+			apps[svc.name] = [svc.path] + commonDeps
+		}
 		def violations = []
 		apps.each { appName, projectPaths ->
 			Map<String, List<String>> fqcnToModules = [:].withDefault { [] }
@@ -282,9 +283,10 @@ tasks.register('assertNoDuplicateGlobalFqcn') {
 tasks.register('assertNoOrderProductSourceCoupling') {
 	group = 'verification'
 	description = 'src/main 의 order↔product 도메인 패키지 상호 참조를 빌드 실패로 검출한다 (strangler-4).'
+	// Product peel: product 도메인이 product-service 모듈로 이동 → product 스캔 경로를 모듈로 갱신.
 	def checks = [
-			[dir: file('src/main/java/com/peekcart/order'),   forbidden: 'com.peekcart.product', from: 'order'],
-			[dir: file('src/main/java/com/peekcart/product'), forbidden: 'com.peekcart.order',   from: 'product']
+			[dir: file('src/main/java/com/peekcart/order'),                   forbidden: 'com.peekcart.product', from: 'order'],
+			[dir: file('product-service/src/main/java/com/peekcart/product'), forbidden: 'com.peekcart.order',   from: 'product']
 	]
 	doLast {
 		def violations = []
