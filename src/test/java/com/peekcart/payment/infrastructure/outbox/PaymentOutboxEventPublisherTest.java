@@ -73,6 +73,20 @@ class PaymentOutboxEventPublisherTest {
         assertThat(saved.getUserId()).isEqualTo("42");
     }
 
+    @Test
+    @DisplayName("publishPaymentRequested → payment.requested 이벤트가 orderId aggregateId 로 저장된다")
+    void publishPaymentRequested_savesEvent() {
+        Payment payment = mock(Payment.class);
+        given(payment.getOrderId()).willReturn(1L);
+
+        publisher.publishPaymentRequested(payment, 42L);
+
+        OutboxEvent saved = captureSaved();
+        assertThat(saved.getEventType()).isEqualTo("payment.requested");
+        assertThat(saved.getAggregateType()).isEqualTo("PAYMENT");
+        assertThat(saved.getAggregateId()).isEqualTo("1");  // orderId
+    }
+
     private OutboxEvent captureSaved() {
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxEventRepository).save(captor.capture());

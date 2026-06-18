@@ -379,7 +379,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
 
-        Payment payment = Payment.create(orderId, 100_000L);
+        Payment payment = Payment.create(orderId, 1L, 100_000L);
         em.persist(payment);
         em.getTransaction().commit();
         em.close();

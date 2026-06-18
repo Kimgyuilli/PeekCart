@@ -155,4 +155,55 @@ class OrderTest {
                 .extracting(e -> ((OrderException) e).getErrorCode())
                 .isEqualTo(ErrorCode.ORD_003);
     }
+
+    @Test
+    @DisplayName("선도착 수렴: payment.requested 선도착(pending marker) 후 confirmReservation 시 PAYMENT_REQUESTED 로 수렴")
+    void paymentRequestedPending_convergesOnConfirmReservation() {
+        Order order = OrderFixture.order();
+
+        order.markPaymentRequestedPending();   // 예약 미확정 상태에서 선도착
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.isPaymentRequestedPending()).isTrue();
+
+        order.confirmReservation();            // 예약 확정 → 수렴
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_REQUESTED);
+        assertThat(order.getPaymentRequestedAt()).isNotNull();
+        assertThat(order.isPaymentRequestedPending()).isFalse();
+    }
+
+    @Test
+    @DisplayName("confirmReservation: pending marker 없으면 예약 확정만 기록하고 상태는 PENDING 유지")
+    void confirmReservation_withoutPending_staysPending() {
+        Order order = OrderFixture.order();
+
+        order.confirmReservation();
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.getReservationConfirmedAt()).isNotNull();
+        assertThat(order.isPaymentRequestedPending()).isFalse();
+    }
+
+    @Test
+    @DisplayName("markPaymentRequestedPending: 종료 상태(취소) 주문엔 marker 를 기록하지 않는다")
+    void markPaymentRequestedPending_terminalOrder_noop() {
+        Order order = OrderFixture.order();
+        order.cancel();
+
+        order.markPaymentRequestedPending();
+
+        assertThat(order.isPaymentRequestedPending()).isFalse();
+    }
+
+    @Test
+    @DisplayName("cancel: 선도착 pending marker 가 켜져 있어도 취소 시 marker 를 정리한다")
+    void cancel_clearsPaymentRequestedPending() {
+        Order order = OrderFixture.order();
+        order.markPaymentRequestedPending();
+
+        order.cancel();
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.isPaymentRequestedPending()).isFalse();
+    }
 }
