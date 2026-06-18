@@ -11,6 +11,12 @@ public interface ProductPriceCacheRepository {
     Optional<Long> findUnitPrice(Long productId);
 
     /**
+     * 상품이 로컬 캐시에 존재하는지 검증한다 (장바구니 추가 검증용, strangler-4).
+     * 캐시 존재 = product.updated 수신/seed 완료된 주문 가능 상품. 미수신이면 false.
+     */
+    boolean existsByProductId(Long productId);
+
+    /**
      * {@code product.updated} 를 캐시에 반영한다 (upsert).
      * 더 높은 {@code version} 일 때만 적용하여 역순/replay 이벤트의 과거 version 덮어쓰기를 막는다.
      */

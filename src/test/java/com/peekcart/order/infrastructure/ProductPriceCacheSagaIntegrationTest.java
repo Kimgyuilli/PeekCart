@@ -189,16 +189,18 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("e2e: 가격 캐시 미스이면 createOrder 가 ORD-007 로 실패한다")
-    void endToEnd_cacheMiss_throwsORD007() {
-        // product.updated 미수신(relay 안 함) → 캐시 비어있음. addItem 은 동기 verifyProductExists 만.
+    @DisplayName("e2e: 가격 캐시 미스이면 addItem 이 ORD-009 로 실패한다 (strangler-4)")
+    void endToEnd_cacheMiss_throwsORD009() {
+        // product.updated 미수신(relay 안 함) → 로컬 캐시 비어있음. strangler-4 부터 addItem 의 존재
+        // 검증이 로컬 캐시 기반이므로 캐시 미수신 상품은 addItem 단계에서 ORD-009 로 거절된다(createOrder 도달 전).
         Long productId = productCommandService.create(
                 new CreateProductCommand(categoryId, "상품2", "설명", 30_000L, null, 100)).id();
-        cartCommandService.addItem(userId, new AddCartItemCommand(productId, 1));
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> orderCommandService.createOrder(
-                        userId, new CreateOrderCommand("받는사람", "01012345678", "12345", "주소")))
-                .isInstanceOf(com.peekcart.order.domain.exception.OrderException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        cartCommandService.addItem(userId, new AddCartItemCommand(productId, 1)))
+                .isInstanceOf(com.peekcart.order.domain.exception.OrderException.class)
+                .extracting(e -> ((com.peekcart.order.domain.exception.OrderException) e).getErrorCode())
+                .isEqualTo(com.peekcart.global.exception.ErrorCode.ORD_009);
     }
 
     /** create/update 가 발행한 가장 최신 product.updated outbox 이벤트를 consumer 에 전달한다. */

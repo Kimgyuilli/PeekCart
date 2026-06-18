@@ -22,6 +22,11 @@ public class ProductPriceCacheRepositoryImpl implements ProductPriceCacheReposit
     }
 
     @Override
+    public boolean existsByProductId(Long productId) {
+        return jpaRepository.existsById(productId);
+    }
+
+    @Override
     public void applyUpdate(Long productId, long unitPrice, long version) {
         jpaRepository.upsertIfNewer(productId, unitPrice, version, LocalDateTime.now());
     }
