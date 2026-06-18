@@ -8,9 +8,6 @@ import com.peekcart.order.infrastructure.outbox.OrderOutboxEventPublisher;
 import com.peekcart.payment.domain.model.Payment;
 import com.peekcart.payment.domain.repository.PaymentRepository;
 import com.peekcart.payment.infrastructure.outbox.PaymentOutboxEventPublisher;
-import com.peekcart.product.domain.model.Category;
-import com.peekcart.product.domain.model.Inventory;
-import com.peekcart.product.domain.model.Product;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
 import jakarta.persistence.EntityManager;
@@ -111,17 +108,20 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
         userId = ((Number) em.createNativeQuery("SELECT id FROM users WHERE email = 'test@peekcart.com'")
                 .getSingleResult()).longValue();
 
-        Category category = Category.create("테스트 카테고리", null);
-        em.persist(category);
-        em.flush();
-
-        Product product = Product.create(category, "테스트 상품", "설명", 50_000L, null);
-        em.persist(product);
-        em.flush();
-        productId = product.getId();
-
-        Inventory inventory = Inventory.create(product, 100);
-        em.persist(inventory);
+        // Product 도메인 peel → root 는 category/product/inventory 행을 native insert 로 시드(FK 충족, root-observable)
+        em.createNativeQuery("INSERT INTO categories (name) VALUES ('테스트 카테고리')").executeUpdate();
+        Long categoryId = ((Number) em.createNativeQuery("SELECT id FROM categories WHERE name = '테스트 카테고리'")
+                .getSingleResult()).longValue();
+        em.createNativeQuery(
+                        "INSERT INTO products (category_id, name, description, price, image_url, status, created_at, version) "
+                                + "VALUES (?1, '테스트 상품', '설명', 50000, NULL, 'ON_SALE', NOW(6), 0)")
+                .setParameter(1, categoryId)
+                .executeUpdate();
+        productId = ((Number) em.createNativeQuery("SELECT id FROM products WHERE name = '테스트 상품' ORDER BY id DESC LIMIT 1")
+                .getSingleResult()).longValue();
+        em.createNativeQuery("INSERT INTO inventories (product_id, stock, version, updated_at) VALUES (?1, 100, 0, NOW(6))")
+                .setParameter(1, productId)
+                .executeUpdate();
 
         em.getTransaction().commit();
         em.close();
@@ -140,7 +140,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
 
         // when: Outbox에 이벤트 저장
         orderOutboxEventPublisher.publishOrderCreated(order);
-        List<OutboxEvent> pending = outboxEventRepository.findPendingEvents(100);
+        List<OutboxEvent> pending = outboxEventRepository.findPendingEvents(java.util.List.of("ORDER", "PAYMENT"), 100);
         assertThat(pending).hasSize(1);
         assertThat(pending.get(0).getStatus()).isEqualTo(OutboxEventStatus.PENDING);
 
@@ -148,7 +148,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
         outboxPollingService.pollAndPublish();
 
         // then: OutboxEvent PUBLISHED 전이
-        List<OutboxEvent> afterPublish = outboxEventRepository.findPendingEvents(100);
+        List<OutboxEvent> afterPublish = outboxEventRepository.findPendingEvents(java.util.List.of("ORDER", "PAYMENT"), 100);
         assertThat(afterPublish).isEmpty();
 
         // then: 루트 Consumer 처리 대기 → Payment(PENDING) 생성 (알림 생성은 notification-service 책임)
@@ -244,7 +244,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
         outboxPollingService.pollAndPublish();
 
         // then: PENDING 이벤트 없음 + 해당 key 발행 record 수 변화 없음 (중복 발행 금지)
-        List<OutboxEvent> pending = outboxEventRepository.findPendingEvents(100);
+        List<OutboxEvent> pending = outboxEventRepository.findPendingEvents(java.util.List.of("ORDER", "PAYMENT"), 100);
         assertThat(pending).isEmpty();
         // 재폴링 후에도 잠시 대기하여 중복 발행이 없음을 확인
         await().during(2, TimeUnit.SECONDS).atMost(4, TimeUnit.SECONDS).untilAsserted(() ->
@@ -303,7 +303,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
     private void pollUntilPublished() {
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             outboxPollingService.pollAndPublish();
-            assertThat(outboxEventRepository.findPendingEvents(100)).isEmpty();
+            assertThat(outboxEventRepository.findPendingEvents(java.util.List.of("ORDER", "PAYMENT"), 100)).isEmpty();
         });
     }
 

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
@@ -29,6 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Testcontainers
+@TestPropertySource(properties = {
+        "spring.flyway.enabled=true",
+        "spring.flyway.locations=classpath:db/migration"
+})
 @DisplayName("상품 캐싱 통합 테스트 (Testcontainers Redis)")
 class ProductCacheIntegrationTest extends AbstractIntegrationTest {
 
