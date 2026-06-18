@@ -59,6 +59,11 @@
 - **Check (복제 시 후속)**: outbox poller 를 복제하면서 **공유 DB 전환기**(DB-per-service 전)라면, root·신규 서비스 두 poller 가 같은 `outbox_events` 를 본다. 기존 쿼리가 `status='PENDING'` 만 필터하고 ShedLock 이름이 단일이면 → 소유권 붕괴(한쪽이 전체 발행) 또는 중복 발행. **poller 별 eventType/aggregateType allowlist + ShedLock 이름 분리**를 계획에 명시(스키마 변경 불요 — `OutboxEvent` 에 컬럼 기존재). DB 가 실제 분리되면 자연 해소되나 전환기엔 필수.
 - **출처**: task-impl-product-peel — plan 이 "`src/main/.../product/**` 만 이동, `:common` 가 global 커버" 로 전제했으나 `ProductOutboxEventPublisher`/consumer 가 root 전속 `global.outbox`/`idempotency` 에 의존(plan-review 1차 P1 #1). 복제 후엔 공유 DB poller 경합(2차 P1 #1) — root/product 두 poller 가 같은 PENDING 행 경합. notification 은 consume-only 라 idempotency 만 복제했고, product 는 첫 *발행* 서비스 peel. order/payment peel 에 재발.
 
+## B9 — 이벤트 역전(reorder) 게이트 누수: 종료/취소 이벤트가 생성 이벤트보다 선도착
+- **Trigger**: 어떤 도메인이 다른 도메인의 이벤트로 로컬 게이트/플래그/상태를 세팅하는데, 그 게이트가 **별도 토픽의 "생성" 이벤트로 만들어진 로컬 엔티티**에 의존할 때(예: order.created 로 Payment 생성 → order.cancelled 로 취소 게이트). 서로 다른 토픽은 **같은 파티션 키여도 소비 순서 보장 없음**(consumer group 별 독립).
+- **Check**: "취소/종료 이벤트가 생성 이벤트보다 **선도착**하면?" 을 명시 점검. 생성 엔티티가 아직 없으면 `findById().ifPresent()` 는 **조용히 no-op** 되고 멱등 체커가 처리완료로 기록 → 게이트 영구 유실. **throw-재시도만으로는 부족**: Kafka retry window(backoff) 초과 시 DLQ 로 빠지고, 이후 생성+준비 이벤트가 도착하면 게이트 없이 통과(돈/보안이면 silent 사고). 처분: **aggregate id 기준 영속 marker(별 테이블/컬럼)** 를 두고 **생성 시점(create 핸들러)에서 marker 를 적용**해, 선도착이 DLQ 로 빠져도 누수 0. throw-retry 는 안전 방향(준비 플래그처럼 미설정이 "차단"인 경우)에만 허용.
+- **출처**: task-impl-order-payment-decouple — Payment 가 order.cancelled 로 취소 게이트를 두는데, order.created 선후 역전 시 Payment 미존재 → throw-retry 가 DLQ 초과 시 누수(work GW-2 loop2 P1#1). `payment_cancellations` 영속 marker + handleOrderCreated 적용으로 봉합. 반대로 reserve-게이트(ready 플래그)는 미설정=차단이라 throw-retry 로 충분(비대칭 주의).
+
 ---
 
 ## 자동 검사로 승격된 항목 (참고 — 더 이상 수동 점검 불필요)
