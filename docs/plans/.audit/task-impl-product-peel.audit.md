@@ -27,3 +27,11 @@
 - 디커플 부산물(FQCN-grep B1 이 놓친 string-level 결합): ShedLock 락이름·ObservabilityMetrics(/api/v1/products·products 캐시→product-service 이관)·outbox probe aggregateType·product 통합테스트 flyway.enabled.
 - diff: .cache/diffs/diff-task-impl-product-peel-1781766650.patch
 - raw: .cache/codex-reviews/diff-task-impl-product-peel-1781766680.json
+
+## 2026-06-18 09:32 — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/62)
+- 커밋: 5개 (feat src / chore build / test / docs plan / docs progress)
+- TASKS.md 구현① 셀: Product peel #62 추가 (Order+Payment peel·PR3 잔존)
+- roadmap §4: Product peel 완료, 다음 = Order+Payment peel → PR3
+- PHASE4.md: Product peel 이력 추가
+- ADR: 신규 없음 (ADR-0010 F2·ADR-0011·ADR-0012·ADR-0014 기보유)
+- 구현 ① 상태: 🔄 유지
