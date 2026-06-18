@@ -25,3 +25,11 @@
 - 구현 검증: ./gradlew assertNoOrderProductSourceCoupling test BUILD SUCCESSFUL (7m20s). seam 잔존(src/main+src/test)·order↔product FQCN 경계 전부 0건
 - diff: .cache/diffs/diff-task-impl-strangler4-verify-product-cache-1781756310.patch
 - raw: .cache/codex-reviews/diff-task-impl-strangler4-verify-product-cache-*.json
+
+## 2026-06-18 14:10 — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/61)
+- 커밋: 6개 (feat src / chore build / test / docs order / docs plan / docs progress)
+- TASKS.md 구현 ① 셀: strangler-4 #61 추가 (Order↔Product production 동기 결합 0)
+- roadmap §78: strangler-4 완료, 다음 = Product peel
+- PHASE4.md: strangler-4 이력 추가
+- ADR: 신규 없음 (ADR-0010 F2 / ADR-0012 ⑤ 기보유, roadmap §58)
+- 구현 ① 상태: 🔄 유지 (Product peel + PR3 잔존)
