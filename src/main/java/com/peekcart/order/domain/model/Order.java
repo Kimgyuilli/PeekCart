@@ -58,6 +58,13 @@ public class Order {
     @Column(name = "payment_requested_at")
     private LocalDateTime paymentRequestedAt;
 
+    /**
+     * payment.requested 가 재고 예약 확정(stock.reservation.result)보다 선도착했을 때의 수렴 marker.
+     * confirmReservation() 시점에 PAYMENT_REQUESTED 로 수렴한다.
+     */
+    @Column(name = "payment_requested_pending", nullable = false)
+    private boolean paymentRequestedPending;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -99,14 +106,30 @@ public class Order {
             throw new OrderException(ErrorCode.ORD_003);
         }
         this.status = OrderStatus.CANCELLED;
+        this.paymentRequestedPending = false;
     }
 
     /**
      * 재고 예약 확정을 기록한다 (stock.reservation.result reserved=true).
      * 예약 미확정 PENDING 주문의 타임아웃 수렴에서 조기 취소를 막는 표식이다.
+     * payment.requested 가 선도착해 pending marker 가 켜져 있으면 여기서 PAYMENT_REQUESTED 로 수렴한다.
      */
     public void confirmReservation() {
         this.reservationConfirmedAt = LocalDateTime.now();
+        if (this.paymentRequestedPending && this.status == OrderStatus.PENDING) {
+            this.paymentRequestedPending = false;
+            markPaymentRequested();
+        }
+    }
+
+    /**
+     * payment.requested 선도착(예약 미확정) 시 수렴 marker 를 기록한다 (ORD-008 DLQ 직행 방지).
+     * 종료 상태 주문에는 기록하지 않는다.
+     */
+    public void markPaymentRequestedPending() {
+        if (this.status == OrderStatus.PENDING) {
+            this.paymentRequestedPending = true;
+        }
     }
 
     /**

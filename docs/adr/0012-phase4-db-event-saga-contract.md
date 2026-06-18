@@ -68,14 +68,21 @@ choreography 단계:
 
 | 토픽 | producer | consumer | consumer group | 파티션 키 |
 |---|---|---|---|---|
-| `order.created` | Order | Product, Notification | `product-svc-order-created-group`, `notification-svc-order-created-group` | orderId |
+| `order.created` | Order | Product, Payment, Notification | `product-svc-order-created-group`, `payment-svc-order-created-group`, `notification-svc-order-created-group` | orderId |
 | `stock.reservation.result` (신규) | Product | Order, Payment | `order-svc-stock-result-group`, `payment-svc-stock-result-group` | orderId |
+| `payment.requested` (신규, Order↔Payment 디커플) | Payment | Order | `order-svc-payment-requested-group` | orderId |
 | `payment.completed` | Payment | Order, Product, Notification | `order-svc-payment-completed-group`, `product-svc-payment-completed-group`, `notification-svc-payment-completed-group` | orderId |
 | `payment.failed` | Payment | Order, Product, Notification | `order-svc-payment-failed-group`, `product-svc-payment-failed-group`, `notification-svc-payment-failed-group` | orderId |
-| `order.cancelled` | Order | Product, Notification | `product-svc-order-cancelled-group`, `notification-svc-order-cancelled-group` | orderId |
+| `order.cancelled` | Order | Product, Payment, Notification | `product-svc-order-cancelled-group`, `payment-svc-order-cancelled-group`, `notification-svc-order-cancelled-group` | orderId |
 | `product.updated` (신규, CQRS) | Product | Order | `order-svc-product-updated-group` | productId |
 
 > **ADR-0010 토폴로지 refine**: ADR-0010 §D2 는 Product 가 `order.cancelled` 만 소비했으나, 재고 예약 모델상 Product 가 `order.created`/`payment.completed`/`payment.failed` 도 소비하고 `stock.reservation.result`/`product.updated` 를 발행한다. 이는 ADR-0010 의 Saga 골격을 구체화한 refine 이며 모순이 아니다(Layer 1 `02 §5` 토폴로지 갱신). consumer group 라벨은 ADR-0009 Kafka lag surface(L-020-2) 로 독립 관측.
+>
+> **Order↔Payment 동기 결합 제거 refine (2026-06-18, peel 선행 strangler)**: Payment 가 Order 의 동기 인-프로세스 빈 `OrderPort`(`verifyOrderOwner`·`transitionToPaymentRequested`)에 묶여 독립 peel 불가였다 → 두 호출을 payment-로컬 상태 + 이벤트로 대체한다.
+> - **7번째 토픽 `payment.requested`**(Payment 발행 → Order 소비): 동기 `transitionToPaymentRequested` 대체. Order 는 이를 소비해 `PAYMENT_REQUESTED` 전이(`paymentRequestedAt` 앵커). 예약 미확정 선도착 시 ORD-008 DLQ 직행 대신 order 로컬 pending marker 로 `confirmReservation()` 시점 수렴.
+> - **ORD-008 reserve→pay 게이트는 불변**: 동기 `markPaymentRequested`(PENDING + `reservationConfirmedAt!=null`) 게이트를 payment-로컬로 복원 — Payment 가 `stock.reservation.result(reserved=true)` 소비로 `ready_for_payment` 표시(이 행은 본 ADR 이 이미 Payment consumer 로 둠), `order.cancelled` 소비로 취소 게이트. reserve→pay 순서(§D3 ①) 보존.
+> - **잔여 race**: 게이트 통과↔Toss 사이 취소 커밋은 `@Version` 으로 last-write-wins 차단하되 과금-후-취소(APPROVED) 는 덮지 않고 §D3 ④ 환불+운영 알림으로 수렴. 새 ADR 불요(GP-1, 본 refine 으로 수렴). `02 §5` 토픽 수 6→7 갱신은 Layer 1 동기화로 처리.
+> - **D4 정합 보정**: 기존 표가 `order.created` consumer 에 Payment(`payment-svc-order-created-group`, Payment(PENDING) 생성)를 누락하고 있던 드리프트를 함께 정정.
 
 ### D5. retention = 멱등성 창 상한 (L-008/011)
 

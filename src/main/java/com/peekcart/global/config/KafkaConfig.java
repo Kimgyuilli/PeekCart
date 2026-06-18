@@ -58,6 +58,11 @@ public class KafkaConfig {
         return TopicBuilder.name("product.updated").partitions(3).replicas(1).build();
     }
 
+    @Bean
+    public NewTopic paymentRequestedTopic() {
+        return TopicBuilder.name("payment.requested").partitions(3).replicas(1).build();
+    }
+
     // --- DLQ 토픽 ---
 
     @Bean
@@ -88,6 +93,11 @@ public class KafkaConfig {
     @Bean
     public NewTopic productUpdatedDlqTopic() {
         return TopicBuilder.name("product.updated.dlq").partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic paymentRequestedDlqTopic() {
+        return TopicBuilder.name("payment.requested.dlq").partitions(1).replicas(1).build();
     }
 
     // --- Error Handler + DLQ ---

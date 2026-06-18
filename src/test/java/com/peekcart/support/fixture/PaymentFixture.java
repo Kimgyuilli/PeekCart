@@ -26,7 +26,7 @@ public class PaymentFixture {
     // ── Domain 객체 ──
 
     public static Payment pendingPayment() {
-        return Payment.create(DEFAULT_ORDER_ID, DEFAULT_AMOUNT);
+        return Payment.create(DEFAULT_ORDER_ID, DEFAULT_USER_ID, DEFAULT_AMOUNT);
     }
 
     public static Payment pendingPaymentWithId() {
@@ -35,8 +35,15 @@ public class PaymentFixture {
         return payment;
     }
 
-    public static Payment approvedPayment() {
+    /** 재고 예약이 확정되어 결제 진행 가능한(reserve→pay 게이트 통과) PENDING 결제. */
+    public static Payment readyPaymentWithId() {
         Payment payment = pendingPaymentWithId();
+        payment.markReadyForPayment();
+        return payment;
+    }
+
+    public static Payment approvedPayment() {
+        Payment payment = readyPaymentWithId();
         payment.assignPaymentKey(DEFAULT_PAYMENT_KEY);
         payment.approve(DEFAULT_METHOD, DEFAULT_APPROVED_AT);
         return payment;

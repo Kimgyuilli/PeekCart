@@ -307,7 +307,33 @@ tasks.register('assertNoOrderProductSourceCoupling') {
 	}
 }
 
+tasks.register('assertNoOrderPaymentSourceCoupling') {
+	group = 'verification'
+	description = 'src/main 의 order↔payment 도메인 패키지 상호 참조를 빌드 실패로 검출한다 (Order/Payment peel 선행 strangler).'
+	def checks = [
+			[dir: file('src/main/java/com/peekcart/order'),   forbidden: 'com.peekcart.payment', from: 'order'],
+			[dir: file('src/main/java/com/peekcart/payment'), forbidden: 'com.peekcart.order',   from: 'payment']
+	]
+	doLast {
+		def violations = []
+		checks.each { c ->
+			if (c.dir.exists()) {
+				c.dir.eachFileRecurse { f ->
+					if (f.name.endsWith('.java') && f.text.contains(c.forbidden)) {
+						violations << "[${c.from}] ${c.forbidden} 참조: ${file('.').toPath().relativize(f.toPath())}".toString()
+					}
+				}
+			}
+		}
+		if (!violations.isEmpty()) {
+			throw new GradleException(
+					"order↔payment production 동기 결합 위반 (이벤트/로컬 상태로만 통신해야 함):\n  " + violations.join('\n  '))
+		}
+		println "assertNoOrderPaymentSourceCoupling: OK (src/main order↔payment 상호 참조 없음)"
+	}
+}
+
 // build 시 자동 검증 (전체 그린 게이트에 포함)
 tasks.named('check') {
-	dependsOn 'assertNoServiceProjectDeps', 'assertNoDuplicateGlobalFqcn', 'assertNoOrderProductSourceCoupling'
+	dependsOn 'assertNoServiceProjectDeps', 'assertNoDuplicateGlobalFqcn', 'assertNoOrderProductSourceCoupling', 'assertNoOrderPaymentSourceCoupling'
 }

@@ -27,6 +27,9 @@ public class Payment {
     @Column(name = "order_id", nullable = false, unique = true)
     private Long orderId;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @Column(name = "payment_key", nullable = false, unique = true)
     private String paymentKey;
 
@@ -37,6 +40,10 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status;
 
+    /** reserve→pay 게이트: stock.reservation.result(reserved=true) 수신 시 true (ADR-0012 §D3). */
+    @Column(name = "ready_for_payment", nullable = false)
+    private boolean readyForPayment;
+
     @Column
     private String method;
 
@@ -46,16 +53,22 @@ public class Payment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private Payment(Long orderId, long amount) {
+    /** approve ↔ cancelBeforePayment 동시 전이의 last-write-wins 차단. */
+    @Version
+    private long version;
+
+    private Payment(Long orderId, Long userId, long amount) {
         this.orderId = orderId;
+        this.userId = userId;
         this.paymentKey = UUID.randomUUID().toString();
         this.amount = amount;
         this.status = PaymentStatus.PENDING;
+        this.readyForPayment = false;
         this.createdAt = LocalDateTime.now();
     }
 
-    public static Payment create(Long orderId, long amount) {
-        return new Payment(orderId, amount);
+    public static Payment create(Long orderId, Long userId, long amount) {
+        return new Payment(orderId, userId, amount);
     }
 
     /**
@@ -106,5 +119,50 @@ public class Payment {
         if (this.amount != requestedAmount) {
             throw new PaymentException(ErrorCode.PAY_001);
         }
+    }
+
+    /**
+     * 결제가 해당 사용자 소유인지 검증한다 (OrderPort.verifyOrderOwner 동기 호출 대체, Seam 1).
+     *
+     * @throws PaymentException 소유자 불일치 시 {@code PAY-007}
+     */
+    public void verifyOwner(Long userId) {
+        if (this.userId == null || !this.userId.equals(userId)) {
+            throw new PaymentException(ErrorCode.PAY_007);
+        }
+    }
+
+    /** 재고 예약 확정(reserved=true)을 로컬에 반영한다 (reserve→pay 게이트, ADR-0012 §D3). */
+    public void markReadyForPayment() {
+        this.readyForPayment = true;
+    }
+
+    /**
+     * 결제 진행 가능 여부를 검증한다 (동기 {@code markPaymentRequested} 게이트의 payment-로컬 복원).
+     *
+     * @throws PaymentException 취소/종료 상태면 {@code PAY-009}, 예약 미확정이면 {@code PAY-008}
+     */
+    public void ensureConfirmable() {
+        if (this.status != PaymentStatus.PENDING) {
+            throw new PaymentException(ErrorCode.PAY_009);
+        }
+        if (!this.readyForPayment) {
+            throw new PaymentException(ErrorCode.PAY_008);
+        }
+    }
+
+    /**
+     * 결제 시작 전 주문 취소(order.cancelled)를 반영한다.
+     * PENDING 에서만 CANCELLED 로 종료하고, APPROVED/FAILED/CANCELLED 는 no-op 이다
+     * (과금-후-취소는 APPROVED 를 덮지 않고 보상 경로로 수렴 — ADR-0012 §D3 ④).
+     *
+     * @return APPROVED 인데 취소가 도착한 보상 필요 케이스면 true
+     */
+    public boolean cancelBeforePayment() {
+        if (this.status == PaymentStatus.PENDING) {
+            this.status = PaymentStatus.CANCELLED;
+            return false;
+        }
+        return this.status == PaymentStatus.APPROVED;
     }
 }

@@ -187,4 +187,102 @@ class PaymentTest {
                     .isEqualTo(ErrorCode.PAY_001);
         }
     }
+
+    @Nested
+    @DisplayName("verifyOwner (Seam 1 — payment-로컬 소유자 검증)")
+    class VerifyOwner {
+
+        @Test
+        @DisplayName("소유자가 일치하면 예외가 발생하지 않는다")
+        void matchingOwner_noException() {
+            Payment payment = PaymentFixture.pendingPayment();
+            payment.verifyOwner(PaymentFixture.DEFAULT_USER_ID);
+        }
+
+        @Test
+        @DisplayName("소유자가 불일치하면 PAY-007 예외가 발생한다")
+        void mismatchOwner_throwsPAY007() {
+            Payment payment = PaymentFixture.pendingPayment();
+
+            assertThatThrownBy(() -> payment.verifyOwner(2L))
+                    .isInstanceOf(PaymentException.class)
+                    .extracting(e -> ((PaymentException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.PAY_007);
+        }
+    }
+
+    @Nested
+    @DisplayName("ensureConfirmable (reserve→pay + 취소 게이트)")
+    class EnsureConfirmable {
+
+        @Test
+        @DisplayName("예약 확정(ready)된 PENDING 이면 통과한다")
+        void readyPending_passes() {
+            Payment payment = PaymentFixture.pendingPayment();
+            payment.markReadyForPayment();
+            payment.ensureConfirmable();
+        }
+
+        @Test
+        @DisplayName("예약 미확정이면 PAY-008 예외가 발생한다")
+        void notReady_throwsPAY008() {
+            Payment payment = PaymentFixture.pendingPayment();
+
+            assertThatThrownBy(payment::ensureConfirmable)
+                    .isInstanceOf(PaymentException.class)
+                    .extracting(e -> ((PaymentException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.PAY_008);
+        }
+
+        @Test
+        @DisplayName("취소(CANCELLED)된 결제면 PAY-009 예외가 발생한다")
+        void cancelled_throwsPAY009() {
+            Payment payment = PaymentFixture.pendingPayment();
+            payment.markReadyForPayment();
+            payment.cancelBeforePayment();
+
+            assertThatThrownBy(payment::ensureConfirmable)
+                    .isInstanceOf(PaymentException.class)
+                    .extracting(e -> ((PaymentException) e).getErrorCode())
+                    .isEqualTo(ErrorCode.PAY_009);
+        }
+    }
+
+    @Nested
+    @DisplayName("cancelBeforePayment (취소 게이트 + 상태머신 닫기)")
+    class CancelBeforePayment {
+
+        @Test
+        @DisplayName("PENDING 이면 CANCELLED 로 종료하고 보상 불필요(false)")
+        void fromPending_cancels() {
+            Payment payment = PaymentFixture.pendingPayment();
+
+            boolean compensationNeeded = payment.cancelBeforePayment();
+
+            assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CANCELLED);
+            assertThat(compensationNeeded).isFalse();
+        }
+
+        @Test
+        @DisplayName("APPROVED 면 덮어쓰지 않고 보상 필요(true) 를 반환한다 (과금-후-취소)")
+        void fromApproved_noOverwrite_needsCompensation() {
+            Payment payment = PaymentFixture.approvedPayment();
+
+            boolean compensationNeeded = payment.cancelBeforePayment();
+
+            assertThat(payment.getStatus()).isEqualTo(PaymentStatus.APPROVED);
+            assertThat(compensationNeeded).isTrue();
+        }
+
+        @Test
+        @DisplayName("FAILED 면 no-op (덮어쓰지 않고 보상도 불필요)")
+        void fromFailed_noop() {
+            Payment payment = PaymentFixture.failedPayment();
+
+            boolean compensationNeeded = payment.cancelBeforePayment();
+
+            assertThat(payment.getStatus()).isEqualTo(PaymentStatus.FAILED);
+            assertThat(compensationNeeded).isFalse();
+        }
+    }
 }

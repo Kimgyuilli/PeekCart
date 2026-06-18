@@ -8,6 +8,7 @@ import com.peekcart.global.outbox.OutboxEventRepository;
 import com.peekcart.global.outbox.dto.KafkaEventEnvelope;
 import com.peekcart.global.outbox.dto.PaymentCompletedPayload;
 import com.peekcart.global.outbox.dto.PaymentFailedPayload;
+import com.peekcart.global.outbox.dto.PaymentRequestedPayload;
 import com.peekcart.payment.domain.model.Payment;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,9 +22,16 @@ public class PaymentOutboxEventPublisher {
     private static final String AGGREGATE_TYPE = "PAYMENT";
     private static final String PAYMENT_COMPLETED = "payment.completed";
     private static final String PAYMENT_FAILED = "payment.failed";
+    private static final String PAYMENT_REQUESTED = "payment.requested";
 
     private final OutboxEventRepository outboxEventRepository;
     private final ObjectMapper objectMapper;
+
+    /** 결제 시작을 Order 에 알린다 (동기 OrderPort.transitionToPaymentRequested 대체). */
+    public void publishPaymentRequested(Payment payment, Long userId) {
+        PaymentRequestedPayload payload = new PaymentRequestedPayload(payment.getOrderId(), userId);
+        saveOutboxEvent(PAYMENT_REQUESTED, payment.getOrderId().toString(), payload);
+    }
 
     public void publishPaymentCompleted(Payment payment, Long userId) {
         PaymentCompletedPayload payload = new PaymentCompletedPayload(

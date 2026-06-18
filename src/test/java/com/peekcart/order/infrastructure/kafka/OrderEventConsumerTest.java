@@ -49,6 +49,59 @@ class OrderEventConsumerTest {
         });
     }
 
+    private void stubPaymentRequested() {
+        ObjectNode root = om.createObjectNode();
+        root.put("eventId", "evt-pr-1");
+        ObjectNode payload = root.putObject("payload");
+        payload.put("orderId", OrderFixture.DEFAULT_ORDER_ID);
+        given(kafkaMessageParser.parse("msg")).willReturn((JsonNode) root);
+        given(idempotencyChecker.executeIfNew(any(), any(), any())).willAnswer(inv -> {
+            ((Runnable) inv.getArgument(2)).run();
+            return true;
+        });
+    }
+
+    @Test
+    @DisplayName("payment.requested: 예약 확정된 PENDING → PAYMENT_REQUESTED 전이")
+    void paymentRequested_reservationConfirmed_transitions() {
+        Order order = OrderFixture.orderWithId();
+        order.confirmReservation();
+        given(orderRepository.findById(OrderFixture.DEFAULT_ORDER_ID)).willReturn(Optional.of(order));
+        stubPaymentRequested();
+
+        consumer.handlePaymentRequested("msg");
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_REQUESTED);
+        assertThat(order.getPaymentRequestedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("payment.requested: 예약 미확정 선도착 → pending marker 기록(DLQ 직행 없이 PENDING 유지)")
+    void paymentRequested_beforeReservation_marksPending() {
+        Order order = OrderFixture.orderWithId();
+        given(orderRepository.findById(OrderFixture.DEFAULT_ORDER_ID)).willReturn(Optional.of(order));
+        stubPaymentRequested();
+
+        consumer.handlePaymentRequested("msg");
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
+        assertThat(order.isPaymentRequestedPending()).isTrue();
+    }
+
+    @Test
+    @DisplayName("payment.requested: 종료 상태(취소) 주문 → no-op")
+    void paymentRequested_terminalOrder_noop() {
+        Order order = OrderFixture.orderWithId();
+        order.cancel();
+        given(orderRepository.findById(OrderFixture.DEFAULT_ORDER_ID)).willReturn(Optional.of(order));
+        stubPaymentRequested();
+
+        consumer.handlePaymentRequested("msg");
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(order.isPaymentRequestedPending()).isFalse();
+    }
+
     @Test
     @DisplayName("reserved=false + PENDING → 주문 취소 + order.cancelled 발행")
     void reservedFalse_pending_cancels() {
