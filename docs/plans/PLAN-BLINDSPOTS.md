@@ -18,6 +18,11 @@
 - **Check**: 옮기는 대상을 **밖에서** 참조하는 모든 곳을 `grep -rn "<옮기는 FQCN/패키지>"`(대상 폴더 제외)로 뽑아, **각 인바운드 간선마다 "이동/디커플/유지" 처분을 계획서 §2 에 한 줄씩** 적었는가. **테스트는 컴파일러가 강제하므로 특히** 누락 금지.
 - **출처**: PR2a-2b — root `IdempotencyIntegrationTest`/`OutboxKafkaIntegrationTest`/`DlqIntegrationTest` 가 떼어낸 notification 도메인을 검증 proxy 로 쓰고 있었음(미계획 3개 테스트 재작성).
 
+## B1b — 역의존 스윕은 FQCN import 만으로 부족: string-level 결합도 쓸어라
+- **Trigger**: 도메인/서비스를 peel 하는데 그 도메인이 URL prefix·캐시 이름·락 이름·이벤트 타입/aggregateType **문자열**로 다른 모듈에서 참조될 때.
+- **Check**: `grep "com.peekcart.<domain>"`(FQCN import) 만으로는 **컴파일은 통과하지만 런타임에 깨지는** 결합을 놓친다. 옮기는 도메인의 **문자열 식별자**도 함께 스윕하라: REST 경로(`/api/v1/<domain>` — SecurityConfig permitAll·관측성/통합 테스트가 프록시로 사용), 캐시 이름(`"products"` 등 cache 메트릭 테스트), ShedLock/스케줄러 락 이름, 이벤트 토픽/aggregateType 리터럴. 특히 **테스트가 peel 대상 엔드포인트/캐시를 "메트릭·E2E 생성용 프록시"로 쓰는 경우** 컴파일러가 못 잡으므로 명시 점검.
+- **출처**: task-impl-product-peel — FQCN grep 으로 src/main 0건·src/test 5건만 처분했으나, 빌드에서 `ObservabilityMetricsIntegrationTest`(`/api/v1/products`·`"products"` 캐시 프록시)·`ShedLockIntegrationTest`(`outboxPollingJob` 락 이름)·outbox probe aggregateType·product 통합테스트 `flyway.enabled` 4부류가 런타임 실패. peel 대상의 string-level 식별자 미스윕.
+
 ## B2 — ADR 타깃 ≠ 현재 코드
 - **Trigger**: 계획이 ADR 의 목표 위치/구성요소를 인용할 때("X 는 모듈 Y 가 소유").
 - **Check**: 그 타깃이 **이미 코드에 존재하는지** 1줄로 확인(파일 존재/grep). 없으면(또는 "이연" 주석이면) "만든다"를 **명시 작업 항목으로 승격**. ADR 은 목표(should), 코드는 현재(is) — 둘을 합치지 말 것.
@@ -47,6 +52,12 @@
 - **Trigger**: CQRS read-model / 로컬 캐시에 "더 높은 version/timestamp 일 때만 갱신"(stale-skip upsert)을 적을 때, 또는 `@Version`·`@UpdateTimestamp` 값을 이벤트 payload 에 실어 발행할 때.
 - **Check**: (a) upsert 를 `update→exists→save` 2-step 으로 적으면 **`save()` 의 UK/PK 위반이 메서드가 아니라 트랜잭션 flush/commit 시점에 터져 catch 를 우회**한다 — 낮은 version 이 먼저 커밋되면 "높은 version 만 적용" 이 깨진다. **MySQL `INSERT … ON DUPLICATE KEY UPDATE … IF(:v > source_version, …)` 단일 원자 문장**으로 명시하라. (b) `@Version` 은 **flush 시점에 증가**하므로 payload 의 version 은 반드시 **`saveAndFlush` 후 `getVersion()`** 으로 읽어야 한다(flush 전 읽으면 seed=0 ↔ 첫 이벤트=0 충돌로 첫 갱신 누락). 계획에 메커니즘을 추상("upsertIfNewer 비교")이 아닌 구체로 못박아라(→ B4).
 - **출처**: strangler-2(task-impl-saga2-unit-price-cache) — plan 은 stale-skip·flush 경계를 적었으나 *upsert 메커니즘* 을 비워둠 → 구현이 2-step race 로 작성, diff 리뷰(GW-2 #1)가 catch-밖 commit 위반 지적 → 원자 upsert 로 교체. strangler-3·향후 read-model 에 재발 가능.
+
+## B8 — `:common` 가정 금지: producer 전속 실행 인프라는 모듈과 함께 안 따라온다
+- **Trigger**: *발행*(outbox) 또는 *멱등*(idempotency) 또는 스케줄러(ShedLock) 를 쓰는 도메인을 서비스로 peel 할 때.
+- **Check**: 그 도메인이 import 하는 `com.peekcart.global.{outbox,idempotency,config}` 가 **`:common` 에 있는지 root `src/main` 전속인지** grep 으로 확인(`find common/src/main -path "*global/outbox*"` vs `find src/main -path ...`). `:common` 에는 보통 **payload DTO 만** 있고 **실행 세트**(`OutboxEvent*`·`OutboxPollingService/Scheduler`·`ProcessedEvent*`·`IdempotencyChecker`·`ShedLockConfig`)는 root 전속이다 → 모듈만 떼면 **컴파일 실패**. 처분(서비스로 **복제** vs `:common` 이관)을 계획서에 명시하고, 복제면 ShedLock 등 전이 안 되는 의존성도 build.gradle 에 추가. consume-only 서비스는 idempotency 만, *발행* 서비스는 outbox 실행 세트까지 필요.
+- **Check (복제 시 후속)**: outbox poller 를 복제하면서 **공유 DB 전환기**(DB-per-service 전)라면, root·신규 서비스 두 poller 가 같은 `outbox_events` 를 본다. 기존 쿼리가 `status='PENDING'` 만 필터하고 ShedLock 이름이 단일이면 → 소유권 붕괴(한쪽이 전체 발행) 또는 중복 발행. **poller 별 eventType/aggregateType allowlist + ShedLock 이름 분리**를 계획에 명시(스키마 변경 불요 — `OutboxEvent` 에 컬럼 기존재). DB 가 실제 분리되면 자연 해소되나 전환기엔 필수.
+- **출처**: task-impl-product-peel — plan 이 "`src/main/.../product/**` 만 이동, `:common` 가 global 커버" 로 전제했으나 `ProductOutboxEventPublisher`/consumer 가 root 전속 `global.outbox`/`idempotency` 에 의존(plan-review 1차 P1 #1). 복제 후엔 공유 DB poller 경합(2차 P1 #1) — root/product 두 poller 가 같은 PENDING 행 경합. notification 은 consume-only 라 idempotency 만 복제했고, product 는 첫 *발행* 서비스 peel. order/payment peel 에 재발.
 
 ---
 
