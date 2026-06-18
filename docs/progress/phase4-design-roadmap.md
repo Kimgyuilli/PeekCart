@@ -75,5 +75,5 @@ L-007(주문 생성 락⊃트랜잭션) · L-013(상태전이 `@Version` 부재)
 
 1. ~~**A1 (ADR-0010 서비스 분해)** 착수~~ ✅ 완료 (Accepted 2026-06-14) — §5 비준 + §4-5 정정 + 5개 서비스 계약 + F1/F2/F3 정합.
 2. ~~A2(ADR-0011)~~ ✅ · ~~A3(ADR-0012)~~ ✅ · ~~A4(ADR-0013)~~ ✅ 완료 — **설계 ADR(A1~A4) 전부 완료**.
-3. **구현 ① 진행 중**: PR1 ✅ · PR2a(Notification peel) ✅ · PR2b(User peel) ✅ · 사가 클러스터 strangler-1(재고 예약/복구) ✅ [#56] · strangler-2(단가 캐시 CQRS) ✅ [#57] · **strangler-3(2-phase 확정/보상 + 결제 게이트) ✅ [#58]** — **다음 = `verifyProductExists` 캐시화 → Product→Order+Payment peel(② DB 분리 동반) → PR3**.
+3. **구현 ① 진행 중**: PR1 ✅ · PR2a(Notification peel) ✅ · PR2b(User peel) ✅ · 사가 클러스터 strangler-1(재고 예약/복구) ✅ [#56] · strangler-2(단가 캐시 CQRS) ✅ [#57] · strangler-3(2-phase 확정/보상 + 결제 게이트) ✅ [#58] · **strangler-4(`verifyProductExists` 로컬 캐시화·ProductPort 동기 seam 제거·캐시 미스 ORD-009) ✅ [#61] → Order↔Product production 동기 결합 0(컴파일타임·런타임), source-scan 가드로 회귀 고정** — **다음 = Product→Order+Payment peel(② DB 분리 동반) → PR3**.
 4. 버킷 2 D-016은 ①(멀티모듈/배포 자동화)에 편입, D-002는 분리 완료 후 재측정.
