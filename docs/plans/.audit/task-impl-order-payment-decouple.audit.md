@@ -60,3 +60,10 @@
 - diff: .cache/diffs/diff-task-impl-order-payment-decouple-1781793372.patch
 - raw: .cache/codex-reviews/diff-task-impl-order-payment-decouple-1781793391.json
 - 비고: attempts_by_command.work=2. 3차는 §7-6 권장 상한.
+
+## 2026-06-19 00:05 — /ship --execute ([PR #63](https://github.com/Kimgyuilli/PeakCart/pull/63))
+- precheck: ok(0 warnings, GS-1 자동통과). drift=all_live.
+- 커밋 4개: p1 feat(payment) seam 제거+게이트+migration · p2 test(payment) · p3 docs(adr) ADR-0012 §D4 refine · p4 docs(plan) 계획서·audit·B9. (+ done docs(progress) 커밋)
+- push origin/feat/task-impl-order-payment-decouple → PR #63 생성.
+- /done: TASKS.md 구현① 체인에 strangler-5 ✅ 추가, PHASE4.md strangler-5 엔트리, roadmap §4.3 갱신. ADR-0012 §D4 refine 은 p3 커밋에 포함.
+- state archive + lock 해제.
