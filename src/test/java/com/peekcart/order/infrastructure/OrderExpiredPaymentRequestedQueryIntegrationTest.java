@@ -4,8 +4,6 @@ import com.peekcart.order.domain.model.Order;
 import com.peekcart.order.domain.model.OrderItemData;
 import com.peekcart.order.domain.model.OrderStatus;
 import com.peekcart.order.domain.repository.OrderRepository;
-import com.peekcart.product.domain.model.Category;
-import com.peekcart.product.domain.model.Product;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
 import jakarta.persistence.EntityManager;
@@ -64,14 +62,17 @@ class OrderExpiredPaymentRequestedQueryIntegrationTest extends AbstractIntegrati
         cleanDatabase();
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
-        // category + product 시드 (order_items FK fk_order_items_product 충족)
-        Category category = Category.create("카테고리", null);
-        em.persist(category);
-        em.flush();
-        Product product = Product.create(category, "상품", "설명", 1_000L, null);
-        em.persist(product);
-        em.flush();
-        productId = product.getId();
+        // Product 도메인 peel → root 는 category/product 행을 native insert 로 시드(order_items FK fk_order_items_product 충족, root-observable)
+        em.createNativeQuery("INSERT INTO categories (name) VALUES ('카테고리')").executeUpdate();
+        Long categoryId = ((Number) em.createNativeQuery("SELECT id FROM categories WHERE name = '카테고리'")
+                .getSingleResult()).longValue();
+        em.createNativeQuery(
+                "INSERT INTO products (category_id, name, description, price, image_url, status, created_at, version) "
+                        + "VALUES (?1, '상품', '설명', 1000, NULL, 'ON_SALE', NOW(6), 0)")
+                .setParameter(1, categoryId)
+                .executeUpdate();
+        productId = ((Number) em.createNativeQuery("SELECT id FROM products WHERE name = '상품' ORDER BY id DESC LIMIT 1")
+                .getSingleResult()).longValue();
         // User 도메인 peel → root 는 users 행을 native insert 로 시드(orders FK fk_orders_user 충족)
         em.createNativeQuery(
                 "INSERT INTO users (email, password_hash, name, role, created_at, updated_at) "

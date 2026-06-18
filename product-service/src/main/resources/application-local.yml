@@ -1,0 +1,24 @@
+# [ADR-0007] 로컬 프로파일 — 연결 정보(datasource/redis/kafka)만.
+# jpa.show-sql / format_sql / logging.level 은 로컬 디버깅 전용 예외.
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/peekcart?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: peekcart
+    password: peekcart
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  kafka:
+    bootstrap-servers: localhost:9092
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    com.peekcart: DEBUG
+    org.springframework.security: DEBUG

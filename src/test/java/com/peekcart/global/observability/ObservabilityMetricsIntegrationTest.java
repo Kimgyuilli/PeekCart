@@ -20,7 +20,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -55,9 +54,11 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
     OutboxPollingService outboxPollingService;
 
     @Test
-    @DisplayName("비즈니스 엔드포인트 호출 후 /actuator/prometheus에 histogram bucket + application 태그가 노출된다")
+    @DisplayName("엔드포인트 호출 후 /actuator/prometheus에 histogram bucket + application 태그가 노출된다")
     void prometheusEndpoint_exposesHistogramBucketAndApplicationTag() {
-        ResponseEntity<String> businessResponse = restTemplate.getForEntity("/api/v1/products", String.class);
+        // Product peel: /api/v1/products 는 product-service 로 이동 → root 잔존 엔드포인트(actuator/health, permitAll)로
+        // http_server_requests 메트릭을 생성한다(notification-service 관측성 테스트 선례). 상품 URI 별 histogram 은 product-service 가 검증.
+        ResponseEntity<String> businessResponse = restTemplate.getForEntity("/actuator/health", String.class);
         assertThat(businessResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         ResponseEntity<String> prometheusResponse = restTemplate.getForEntity("/actuator/prometheus", String.class);
@@ -71,34 +72,17 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
                 .contains("application=\"peekcart\"");
 
         assertThat(body)
-                .as("비즈니스 URI 에 대한 http_server_requests histogram bucket 이 노출되어야 한다 (D-001: MetricsConfig MeterFilter)")
-                .containsPattern("http_server_requests_seconds_bucket\\{[^}]*uri=\"/api/v1/products\"[^}]*le=\"[^\"]+\"[^}]*\\}");
-    }
-
-    @Test
-    @DisplayName("상품 목록 캐시 호출 후 /actuator/prometheus에 cache hit/miss 메트릭이 노출된다 (D-014/L-005)")
-    void prometheusEndpoint_exposesCacheMetrics() {
-        assertThat(restTemplate.getForEntity("/api/v1/products", String.class).getStatusCode())
-                .isEqualTo(HttpStatus.OK);
-        assertThat(restTemplate.getForEntity("/api/v1/products", String.class).getStatusCode())
-                .isEqualTo(HttpStatus.OK);
-
-        ResponseEntity<String> prometheusResponse = restTemplate.getForEntity("/actuator/prometheus", String.class);
-        assertThat(prometheusResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-
-        String body = prometheusResponse.getBody();
-        assertThat(body).isNotNull();
-
-        assertCacheGetLine(body, "products", "miss");
-        assertCacheGetLine(body, "products", "hit");
+                .as("http_server_requests histogram bucket 이 노출되어야 한다 (D-001: MetricsConfig MeterFilter)")
+                .contains("http_server_requests_seconds_bucket");
     }
 
     @Test
     @DisplayName("outbox 발행 후 /actuator/prometheus에 backlog gauge + publish timer 메트릭이 노출된다 (D-014/L-009)")
     void prometheusEndpoint_exposesOutboxPipelineMetrics() {
-        // probe 토픽(consumer 없음)으로 PENDING 이벤트 1건 발행 → publish success 경로 생성
+        // probe 토픽(consumer 없음)으로 PENDING 이벤트 1건 발행 → publish success 경로 생성.
+        // Product peel: root poller 는 ORDER/PAYMENT aggregateType 만 발행하므로 probe 도 ORDER 로 둔다.
         outboxEventRepository.save(OutboxEvent.create(
-                "Observability", "probe", "observability.outbox.probe", null, null, eventId -> "{}"));
+                "ORDER", "probe", "observability.outbox.probe", null, null, eventId -> "{}"));
         outboxPollingService.pollAndPublish();
 
         ResponseEntity<String> prometheusResponse = restTemplate.getForEntity("/actuator/prometheus", String.class);
@@ -156,18 +140,4 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
                 .sum();
     }
 
-    private static void assertCacheGetLine(String prometheusBody, String cacheName, String result) {
-        List<String> lines = prometheusBody.lines()
-                .filter(line -> line.startsWith("cache_gets_total"))
-                .filter(line -> line.contains("name=\"" + cacheName + "\""))
-                .filter(line -> line.contains("result=\"" + result + "\""))
-                .toList();
-
-        assertThat(lines)
-                .as("cache_gets_total name=%s result=%s 는 중복 없이 한 시계열만 노출되어야 한다", cacheName, result)
-                .hasSize(1);
-        assertThat(lines.get(0))
-                .as("Spring Boot CacheMetricsAutoConfiguration 이 CacheManager 빈 이름을 cache_manager 라벨로 사용한다")
-                .contains("cache_manager=\"cacheManager\"");
-    }
 }

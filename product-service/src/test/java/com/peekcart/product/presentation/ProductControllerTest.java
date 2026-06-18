@@ -1,6 +1,6 @@
 package com.peekcart.product.presentation;
 
-import com.peekcart.global.config.SecurityConfig;
+import com.peekcart.product.infrastructure.security.ProductSecurityConfig;
 import com.peekcart.global.config.TestSecurityConfig;
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.product.application.ProductQueryService;
@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = ProductController.class,
-        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfig.class))
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = ProductSecurityConfig.class))
 @Import(TestSecurityConfig.class)
 @DisplayName("ProductController 슬라이스 테스트")
 class ProductControllerTest {

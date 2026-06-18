@@ -1,5 +1,6 @@
-package com.peekcart.global.config;
+package com.peekcart.product.infrastructure.security;
 
+import com.peekcart.global.config.ActuatorSecurityConfig;
 import com.peekcart.global.security.JwtSecurityConfigurer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -10,22 +11,26 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * 전환기 root app(User/Product/Order/Payment 잔류)의 Spring Security 설정.
- * 공통 JWT 정책은 common-auth {@link JwtSecurityConfigurer}로 위임하고,
- * 본 모듈은 {@code SecurityFilterChain} 빈을 정확히 1개 생성한다 (ADR-0014 D1).
+ * Product 서비스의 thin Spring Security 설정 (ADR-0014 D1 · ADR-0011 §D2).
+ * <p>공통 JWT 검증 정책은 common-auth {@link JwtSecurityConfigurer} 로 위임하고,
+ * 본 모듈은 {@code SecurityFilterChain} 빈을 <b>정확히 1개</b> 생성한다.
+ * <p>{@link EnableMethodSecurity} 는 관리자 API({@code AdminProductController})의
+ * {@code @PreAuthorize("hasRole('ADMIN')")} 구동용. Product 는 발급자가 아니라 검증 전용이다.
+ * <p>상품 조회 API(GET /api/v1/products)는 공개, 관리자 API(/api/v1/admin/products)는 인증+ADMIN.
+ * actuator permitAll 은 {@link ActuatorSecurityConfig}(ADR-0009 S4 단일 소유)에서 합친다.
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class ProductSecurityConfig {
 
     private final JwtSecurityConfigurer jwtSecurityConfigurer;
 
-    // 비즈니스 공개 URL — actuator permitAll 은 ActuatorSecurityConfig(ADR-0009 S4 단일 소유)에서 합친다.
-    // [PR2b] /api/v1/auth/** 는 User 로, [Product peel] /api/v1/products 는 Product 로 peel 됨 — root 잔여(Order/Payment)만 선언.
+    /** 서비스별 공개 API — actuator 는 ActuatorSecurityConfig 가 합친다. */
     private static final String[] BUSINESS_PUBLIC_URLS = {
-            "/api/v1/payments/webhook",
+            "/api/v1/products",
+            "/api/v1/products/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/api-docs/**"

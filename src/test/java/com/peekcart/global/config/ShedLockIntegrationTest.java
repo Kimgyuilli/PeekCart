@@ -65,13 +65,13 @@ class ShedLockIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("outboxPollingJob 락 레코드가 생성된다")
+    @DisplayName("rootOutboxPollingJob 락 레코드가 생성된다 (Product peel: 공유 DB poller 소유권 분리로 root 락 이름 분리)")
     void outboxPollingJobLockRecordCreated() {
         await().atMost(Duration.ofSeconds(15))
                 .pollInterval(Duration.ofSeconds(1))
                 .untilAsserted(() -> {
                     Integer count = jdbcTemplate.queryForObject(
-                            "SELECT COUNT(*) FROM shedlock WHERE name = 'outboxPollingJob'",
+                            "SELECT COUNT(*) FROM shedlock WHERE name = 'rootOutboxPollingJob'",
                             Integer.class);
                     assertThat(count).isEqualTo(1);
                 });
