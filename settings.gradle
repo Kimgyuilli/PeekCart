@@ -8,3 +8,4 @@ include 'peekcart-common-observability'   // ADR-0009 선결정
 include 'peekcart-common-auth'            // ADR-0014 전환기 JWT 검증 공유 모듈
 include 'notification-service'            // PR2a-2b — 첫 서비스 peel
 include 'user-service'                    // PR2b — independent 서비스 peel (발급 owner, ADR-0014)
+include 'product-service'                 // Product peel — 첫 발행 서비스 peel (outbox/idempotency 복제, ADR-0010 F2·ADR-0012)
