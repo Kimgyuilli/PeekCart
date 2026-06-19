@@ -32,3 +32,17 @@
 - 검증: :order-service:test 전체 그린(132+3) · :test(root) 그린 · 가드 4종 그린 · 전체 compile 그린
 - diff: .cache/diffs/diff-task-impl-order-payment-peel-1781855750.patch
 - raw: .cache/codex-reviews/diff-task-impl-order-payment-peel-1781855819.json
+
+## 2026-06-19 08:17 — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/64)
+- TASKS.md 구현 ① 행에 Order peel PR-a ✅ [#64] 추가 (구현 ① 은 PR-b 미완으로 🔄 유지)
+- PHASE4.md: Order peel PR-a 이력 엔트리 (P1~P8·핵심결정·검증·B10)
+- ship: 5 커밋(feat order / test order / chore build / test root / docs) + docs(progress) 1 커밋, push, PR #64
+
+## 2026-06-19 11:47 — GW-2 (work loop 1, PR-b)
+- 리뷰 run: work:20260619T113924Z:5cdb3f9c-f8c3-4a8e-9641-b8d6d90f5397:1 (single, diff 1188줄 — 대부분 root global 삭제 + git-mv 이동)
+- 항목: 2건 (P0:0, P1:1, P2:1) — 둘 다 반영(타당)
+  - #1(P1) root 해체(src 삭제·bootJar disabled)로 root Dockerfile(COPY src/·app.jar)이 깨지고 CI PR Docker build/smoke 가 PR 게이트를 막음(메모리 multimodule_dockerfile_context 예측). → root Dockerfile 삭제 + ci.yml Docker 블록(PR build/smoke·GHCR push) 제거(PR3 노트). per-service 이미지는 PR3.
+  - #2(P2) 02-arch 동기화 문장 \"Product 가 payment.* 소비\" 가 payment.requested 까지 포함하는 듯 읽힘(실제 product 는 payment.completed/failed 만, payment.requested 는 order 만). → \"payment.completed/payment.failed\" 로 좁힘(ADR-0012 D4·실제 listener 정합).
+- 검증: :common:test·:order-service:test·:payment-service:test·:product-service:test 그린 · 가드 4종(payment-service 편입) · build -x test(5 서비스 bootJar 산출·root SKIPPED) · src 소멸(0)
+- diff: .cache/diffs/diff-task-impl-order-payment-peel-1781869144.patch
+- raw: .cache/codex-reviews/diff-task-impl-order-payment-peel-1781869189.json
