@@ -8,9 +8,11 @@ spring:
       ddl-auto: validate
     open-in-view: false
   flyway:
-    # 서비스 런타임은 마이그레이션을 실행하지 않는다. 공유 V1~V9 는 root flywayMigrateShared 또는 Testcontainers fixture 가 적용.
-    # (PR-b 에서 root app 소멸 시 order-service 가 전환기 공유스키마 migrator 로 enable 전환 예정 — B5)
-    enabled: false
+    # [B5 전환기 migrator] root app 소멸(PR-b)로 공유 스키마 런타임 적용 주체가 사라져, order-service 가 그 역할을 승계한다.
+    # 공유 DB(② 물리분리 전)의 V1~V13 을 런타임에 적용한다. 나머지 서비스(payment/product/user/notification)는
+    # flyway.enabled=false + ddl-auto=validate 로 유지하므로, cold-start 시 order-service 가 먼저 마이그레이션해야 한다
+    # (런타임 순서/readiness 형식화는 PR3 k8s/compose). ② DB 물리분리 시 서비스별 독립 이력으로 정리.
+    enabled: true
     locations: classpath:db/migration
   kafka:
     producer:
