@@ -64,6 +64,11 @@
 - **Check**: "취소/종료 이벤트가 생성 이벤트보다 **선도착**하면?" 을 명시 점검. 생성 엔티티가 아직 없으면 `findById().ifPresent()` 는 **조용히 no-op** 되고 멱등 체커가 처리완료로 기록 → 게이트 영구 유실. **throw-재시도만으로는 부족**: Kafka retry window(backoff) 초과 시 DLQ 로 빠지고, 이후 생성+준비 이벤트가 도착하면 게이트 없이 통과(돈/보안이면 silent 사고). 처분: **aggregate id 기준 영속 marker(별 테이블/컬럼)** 를 두고 **생성 시점(create 핸들러)에서 marker 를 적용**해, 선도착이 DLQ 로 빠져도 누수 0. throw-retry 는 안전 방향(준비 플래그처럼 미설정이 "차단"인 경우)에만 허용.
 - **출처**: task-impl-order-payment-decouple — Payment 가 order.cancelled 로 취소 게이트를 두는데, order.created 선후 역전 시 Payment 미존재 → throw-retry 가 DLQ 초과 시 누수(work GW-2 loop2 P1#1). `payment_cancellations` 영속 marker + handleOrderCreated 적용으로 봉합. 반대로 reserve-게이트(ready 플래그)는 미설정=차단이라 throw-retry 로 충분(비대칭 주의).
 
+## B10 — @SpringBootTest 통합테스트를 flyway-disabled 서비스 모듈로 옮기면 스키마 적용 주체가 사라진다
+- **Trigger**: root(또는 `flyway.enabled:true` 모듈)에 있던 `@SpringBootTest`(+`ddl-auto:validate`) 통합테스트를 **`flyway.enabled:false` 서비스 모듈**(peel 대상)로 이동할 때.
+- **Check**: 옮긴 `@SpringBootTest` 테스트가 **자기 `@TestPropertySource(spring.flyway.enabled=true, locations=classpath:db/migration)`** 를 갖는지 확인. 서비스 모듈은 런타임 Flyway disabled 라, root 의 `flyway.enabled:true` 에 무임승차하던 테스트는 이동 후 컨텍스트 로드 시 **`SchemaManagementException`(validate 실패)** 으로 깨진다(빈 testcontainer DB 에 스키마 미적용). 슬라이스(`@DataJpaTest`)/단위 테스트는 불요 — `@SpringBootTest` 만 해당. 선례 패턴: `product-service` 의 5개 통합테스트가 이미 이 override 보유.
+- **출처**: task-impl-order-payment-peel PR-a — root→order-service 로 옮긴 `ProductPriceCacheSagaIntegrationTest`·`OrderExpiredPaymentRequestedQueryIntegrationTest` 가 flyway override 누락으로 10개 메서드 context-load 실패. plan P6/§5 가 "testFixtures 로 마이그레이션 적용" 만 적고 *per-test flyway enable* 을 비워둠(→ B4). PR-b 가 payment `@SpringBootTest` 9개 이동 시 재발 — P14 에 명시 필요.
+
 ---
 
 ## 자동 검사로 승격된 항목 (참고 — 더 이상 수동 점검 불필요)
