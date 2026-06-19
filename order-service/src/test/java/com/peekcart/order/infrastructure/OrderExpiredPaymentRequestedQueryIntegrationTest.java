@@ -12,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.testcontainers.containers.GenericContainer;
@@ -33,6 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @Testcontainers
+@TestPropertySource(properties = {
+        "spring.flyway.enabled=true",
+        "spring.flyway.locations=classpath:db/migration"
+})
 @Import(IntegrationTestConfig.class)
 @DisplayName("findExpiredPaymentRequested 쿼리 통합 테스트")
 class OrderExpiredPaymentRequestedQueryIntegrationTest extends AbstractIntegrationTest {

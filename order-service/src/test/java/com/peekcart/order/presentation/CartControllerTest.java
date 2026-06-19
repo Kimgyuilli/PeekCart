@@ -1,7 +1,7 @@
 package com.peekcart.order.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.peekcart.global.config.SecurityConfig;
+import com.peekcart.order.infrastructure.security.OrderSecurityConfig;
 import com.peekcart.global.config.TestSecurityConfig;
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.order.application.CartCommandService;
@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         controllers = CartController.class,
         excludeFilters = @ComponentScan.Filter(
                 type = FilterType.ASSIGNABLE_TYPE,
-                classes = SecurityConfig.class))
+                classes = OrderSecurityConfig.class))
 @Import(TestSecurityConfig.class)
 @DisplayName("CartController 슬라이스 테스트")
 class CartControllerTest {
