@@ -18,6 +18,10 @@ dependencies {
     implementation 'org.redisson:redisson:3.27.0'                             // RedissonConfig · DistributedLockManager
     implementation 'org.springframework.security:spring-security-core'        // MdcFilter(SecurityContextHolder)
 
+    // :common 자체 단위 테스트(src/test) — global.kafka/outbox/cache SUT 의 단위 테스트가 SUT 모듈(:common)에 동거
+    // (Payment peel PR-b: root 에서 이관 — MdcSnapshot/MdcRecordInterceptor/FixedSequenceBackOff/KafkaEventEnvelope/HarnessSmokeTtl).
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
     // 공용 test support(java-test-fixtures) 용 — AbstractIntegrationTest/ServiceTest/WithMockLoginUser*/TestSecurityConfig
     testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
     testFixturesApi 'org.springframework.security:spring-security-test'

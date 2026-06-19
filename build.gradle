@@ -56,122 +56,22 @@ subprojects {
 	}
 }
 
-// ===== 루트 = app 모듈 (과도기 — PR2 에서 5개 서비스 모듈로 분해) =====
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
-	}
-}
-
+// ===== 루트 = 빌드/가드 aggregator (Payment peel PR-b — root app 해체, src 소멸) =====
+// 5개 서비스 풀 분해(ADR-0010 §5) 완료로 root 는 더 이상 Spring Boot app 이 아니다.
+// root 는 (a) subprojects 공통 설정 (b) 가드 태스크 (c) 공유 Flyway 단일 실행 지점(flywayMigrateShared) 만 호스팅한다.
+// java 플러그인은 유지하되 src 가 없어 컴파일/테스트는 no-op, bootJar 는 비활성한다.
 bootJar {
-	archiveFileName = 'app.jar'
+	enabled = false
 }
 
 jar {
 	enabled = false
 }
 
-dependencies {
-	// 멀티모듈 (ADR-0011 §D3 · ADR-0014) — 전환기 root app 은 검증 공유 모듈도 의존
-	implementation project(':common')
-	implementation project(':peekcart-common-observability')
-	implementation project(':peekcart-common-auth')
-	testImplementation testFixtures(project(':common'))
-
-	// Web
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
-
-	// Security
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-
-	// JPA
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-	// Redis
-	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-	implementation 'org.redisson:redisson:3.27.0'
-
-	// Cache
-	implementation 'org.springframework.boot:spring-boot-starter-cache'
-
-	// Actuator
-	implementation 'org.springframework.boot:spring-boot-starter-actuator'
-
-	// Micrometer Prometheus
-	implementation 'io.micrometer:micrometer-registry-prometheus'
-
-	// Structured Logging
-	implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
-
-	// Kafka
-	implementation 'org.springframework.kafka:spring-kafka'
-
-	// ShedLock
-	implementation 'net.javacrumbs.shedlock:shedlock-spring:6.3.1'
-	implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.3.1'
-
-	// MySQL
-	runtimeOnly 'com.mysql:mysql-connector-j'
-
-	// Flyway
-	implementation 'org.flywaydb:flyway-core'
-	implementation 'org.flywaydb:flyway-mysql'
-
-	// JWT
-	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
-	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
-
-	// Lombok
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
-
-	// Swagger
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
-
-	// Test
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-	// Testcontainers
-	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-	testImplementation 'org.testcontainers:junit-jupiter'
-	testImplementation 'org.testcontainers:mysql'
-	testImplementation 'org.testcontainers:kafka'
-	testImplementation 'org.springframework.kafka:spring-kafka-test'
-	testImplementation 'org.awaitility:awaitility'
-}
-
-tasks.named('test') {
-	useJUnitPlatform()
-	finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-	dependsOn test
-	reports {
-		xml.required = true
-		html.required = true
-	}
-	afterEvaluate {
-		classDirectories = files(classDirectories.files.collect {
-			fileTree(dir: it, exclude: [
-				'**/dto/**',
-				'**/request/**',
-				'**/response/**',
-				'**/config/**',
-				'**/PeekcartApplication*'
-			])
-		})
-	}
-}
-
 // ===== [PR2a-2b/N6] 공유 Flyway 단일 실행 지점 =====
 // 공유 V1~V4 는 :common 으로 단일 소유(런타임 classpath:db/migration). 본 task 는
 // Spring 컨텍스트 밖(compose/CI smoke/k8s Job)에서 호출하는 단일 마이그레이션 runner 다.
-// 서비스 런타임 flyway 는 disabled(notification), root app 런타임 flyway 는 과도기 enabled 유지.
+// 서비스 런타임 flyway 는 disabled, 공유 스키마 런타임 적용은 order-service(전환기 migrator, B5)가 승계.
 configurations {
 	flywayMigration
 }
@@ -312,7 +212,7 @@ tasks.register('assertNoOrderPaymentSourceCoupling') {
 	description = 'src/main 의 order↔payment 도메인 패키지 상호 참조를 빌드 실패로 검출한다 (Order/Payment peel 선행 strangler).'
 	def checks = [
 			[dir: file('order-service/src/main/java/com/peekcart/order'),   forbidden: 'com.peekcart.payment', from: 'order'],
-			[dir: file('src/main/java/com/peekcart/payment'), forbidden: 'com.peekcart.order',   from: 'payment']
+			[dir: file('payment-service/src/main/java/com/peekcart/payment'), forbidden: 'com.peekcart.order',   from: 'payment']
 	]
 	doLast {
 		def violations = []

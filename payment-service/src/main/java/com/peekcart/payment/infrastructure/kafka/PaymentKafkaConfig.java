@@ -1,4 +1,4 @@
-package com.peekcart.product.infrastructure.kafka;
+package com.peekcart.payment.infrastructure.kafka;
 
 import com.peekcart.global.kafka.FixedSequenceBackOff;
 import com.peekcart.global.kafka.MdcPayloadExtractor;
@@ -20,41 +20,52 @@ import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 
 /**
- * Product 서비스의 Kafka 소비 배선 (ADR-0011 §D2 — producer/consumer factory 는 :common/auto-config,
- * 서비스는 listener container factory·error-handler 등 자기 소비 경로만 소유).
- * <p><b>NewTopic(producer-owns-topic, ADR-0011 §토픽=발행 서비스 전속 · ADR-0012 D4)</b>: Product 는 자기가 발행하는
- * {@code product.updated}·{@code stock.reservation.result}(각 {@code .dlq} 포함)의 {@link NewTopic} 을 소유한다.
- * Payment peel(PR-b)로 root app 이 소멸하기 전엔 root 가 전 토픽을 생성했으나, root 해체 후 자기 토픽 생성자가
- * 사라지므로 본 서비스가 떠안는다. 소비 실패 시 {@code topic.dlq} 로 발행 + {@link SlackPort}(:common) 알림.
+ * Payment 서비스의 Kafka 배선 (ADR-0011 §D2 · ADR-0012 D4).
+ * <p><b>NewTopic(producer-owns-topic)</b>: Payment 는 자기가 발행하는 토픽 {@code payment.completed}·{@code payment.failed}·
+ * {@code payment.requested}(각 {@code .dlq} 포함)의 {@link NewTopic} 만 소유한다. {@code order.*}·{@code product.*}·
+ * {@code stock.reservation.result} 는 각 발행 서비스가 소유(ADR-0011 §토픽=발행 서비스 전속).
+ * <p>consumer 측: 소비 실패 시 {@code topic.dlq} 로 발행 + {@link SlackPort}(:common) 알림.
  */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-public class ProductKafkaConfig {
+public class PaymentKafkaConfig {
 
     private final SlackPort slackPort;
 
-    // --- 발행 토픽(producer-owns-topic) — Payment peel 로 root 소멸 후 자기 토픽 생성 책임 승계 ---
+    // --- 발행 토픽(producer-owns-topic) ---
     @Bean
-    public NewTopic productUpdatedTopic() {
-        return TopicBuilder.name("product.updated").partitions(3).replicas(1).build();
+    public NewTopic paymentCompletedTopic() {
+        return TopicBuilder.name("payment.completed").partitions(3).replicas(1).build();
     }
 
     @Bean
-    public NewTopic stockReservationResultTopic() {
-        return TopicBuilder.name("stock.reservation.result").partitions(3).replicas(1).build();
+    public NewTopic paymentFailedTopic() {
+        return TopicBuilder.name("payment.failed").partitions(3).replicas(1).build();
     }
 
     @Bean
-    public NewTopic productUpdatedDlqTopic() {
-        return TopicBuilder.name("product.updated.dlq").partitions(1).replicas(1).build();
+    public NewTopic paymentRequestedTopic() {
+        return TopicBuilder.name("payment.requested").partitions(3).replicas(1).build();
+    }
+
+    // --- 발행 토픽 DLQ ---
+    @Bean
+    public NewTopic paymentCompletedDlqTopic() {
+        return TopicBuilder.name("payment.completed.dlq").partitions(1).replicas(1).build();
     }
 
     @Bean
-    public NewTopic stockReservationResultDlqTopic() {
-        return TopicBuilder.name("stock.reservation.result.dlq").partitions(1).replicas(1).build();
+    public NewTopic paymentFailedDlqTopic() {
+        return TopicBuilder.name("payment.failed.dlq").partitions(1).replicas(1).build();
     }
 
+    @Bean
+    public NewTopic paymentRequestedDlqTopic() {
+        return TopicBuilder.name("payment.requested.dlq").partitions(1).replicas(1).build();
+    }
+
+    // --- Error Handler + DLQ ---
     @Bean
     public CommonErrorHandler kafkaErrorHandler(KafkaTemplate<String, String> kafkaTemplate) {
         DeadLetterPublishingRecoverer dlqRecoverer = new DeadLetterPublishingRecoverer(
