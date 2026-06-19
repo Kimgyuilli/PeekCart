@@ -54,14 +54,15 @@ app:
     access-token-expiry: 1800000    # 30분 (ms)
     refresh-token-expiry: 604800000 # 7일 (ms)
   outbox:
-    # 공유 DB 전환기 poller 소유권 분리 (Product peel): root 는 ORDER/PAYMENT 이벤트만 발행.
+    # 공유 DB 전환기 poller 소유권 분리 (Order peel PR-a): order 가 order-service 로 peel 되어 자가발행 →
+    # root 잔여 app 은 PAYMENT 이벤트만 발행한다(ORDER 는 order-service 의 orderOutboxPollingJob 이 소유).
     lock-name: rootOutboxPollingJob
     polling:
       batch-size: 100
       max-retry: 5
       publish-timeout: 6s
       cycle-timeout: 4m
-      aggregate-types: ORDER,PAYMENT
+      aggregate-types: PAYMENT
 
 slack:
   webhook:

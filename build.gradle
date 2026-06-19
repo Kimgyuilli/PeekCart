@@ -285,7 +285,7 @@ tasks.register('assertNoOrderProductSourceCoupling') {
 	description = 'src/main 의 order↔product 도메인 패키지 상호 참조를 빌드 실패로 검출한다 (strangler-4).'
 	// Product peel: product 도메인이 product-service 모듈로 이동 → product 스캔 경로를 모듈로 갱신.
 	def checks = [
-			[dir: file('src/main/java/com/peekcart/order'),                   forbidden: 'com.peekcart.product', from: 'order'],
+			[dir: file('order-service/src/main/java/com/peekcart/order'),                   forbidden: 'com.peekcart.product', from: 'order'],
 			[dir: file('product-service/src/main/java/com/peekcart/product'), forbidden: 'com.peekcart.order',   from: 'product']
 	]
 	doLast {
@@ -311,7 +311,7 @@ tasks.register('assertNoOrderPaymentSourceCoupling') {
 	group = 'verification'
 	description = 'src/main 의 order↔payment 도메인 패키지 상호 참조를 빌드 실패로 검출한다 (Order/Payment peel 선행 strangler).'
 	def checks = [
-			[dir: file('src/main/java/com/peekcart/order'),   forbidden: 'com.peekcart.payment', from: 'order'],
+			[dir: file('order-service/src/main/java/com/peekcart/order'),   forbidden: 'com.peekcart.payment', from: 'order'],
 			[dir: file('src/main/java/com/peekcart/payment'), forbidden: 'com.peekcart.order',   from: 'payment']
 	]
 	doLast {
