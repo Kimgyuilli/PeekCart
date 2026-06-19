@@ -1,8 +1,0 @@
-# [ADR-0007] 테스트 프로파일.
-# jwt.secret 은 자격증명(원칙 부합).
-# access-token-expiry 는 테스트 전용 단축 예외 — 운영 프로파일 금지.
-app:
-  jwt:
-    secret: test-secret-key-that-is-at-least-32-bytes-long-ok
-    access-token-expiry: 3600000    # 1시간
-    refresh-token-expiry: 604800000 # 7일
