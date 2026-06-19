@@ -46,3 +46,8 @@
 - 검증: :common:test·:order-service:test·:payment-service:test·:product-service:test 그린 · 가드 4종(payment-service 편입) · build -x test(5 서비스 bootJar 산출·root SKIPPED) · src 소멸(0)
 - diff: .cache/diffs/diff-task-impl-order-payment-peel-1781869144.patch
 - raw: .cache/codex-reviews/diff-task-impl-order-payment-peel-1781869189.json
+
+## 2026-06-19 12:14 — /done applied (PR https://github.com/Kimgyuilli/PeekCart/pull/65)
+- TASKS.md 구현 ① 행에 Payment peel + root 해체 PR-b ✅ [#65] 추가 → 5개 서비스 풀 분해 완료(root app 소멸). 단 ① 셀에 PR3 잔여로 상태 🔄 유지.
+- PHASE4.md: PR-b 이력 엔트리(P9~P18·핵심결정·검증·B10).
+- ship: 7 커밋 + docs(progress) 1, push, PR #65.
