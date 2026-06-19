@@ -1,14 +1,8 @@
 package com.peekcart.global.idempotency;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.peekcart.global.outbox.OutboxEvent;
-import com.peekcart.global.outbox.OutboxEventRepository;
-import com.peekcart.global.outbox.OutboxPollingService;
-import com.peekcart.order.domain.model.Order;
-import com.peekcart.order.domain.model.OrderItemData;
-import com.peekcart.order.domain.model.OrderStatus;
-import com.peekcart.order.infrastructure.outbox.OrderOutboxEventPublisher;
-import com.peekcart.payment.domain.model.Payment;
+import com.peekcart.global.outbox.dto.KafkaEventEnvelope;
+import com.peekcart.global.outbox.dto.OrderCreatedPayload;
 import com.peekcart.payment.domain.repository.PaymentRepository;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
@@ -28,12 +22,22 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+/**
+ * Consumer 멱등성 통합 테스트 (Order peel PR-a 후 — root 잔류 {@code PaymentEventConsumer} 대상).
+ *
+ * <p>root {@code PaymentEventConsumer.handleOrderCreated} 가 {@code order.created} 를 소비해 {@code PENDING}
+ * Payment 를 생성하는 경로의 멱등성(동일 eventId 재소비 시 1회만 처리·consumer group 단위 processed_events 기록)을 검증한다.
+ * order.created 발행자는 order-service 로 peel 되었으므로, 본 테스트는 {@link KafkaTemplate} 로 envelope 을
+ * 직접 produce 해 root consumer 만 독립 검증한다(cross-service 의존 제거).</p>
+ */
 @SpringBootTest
 @Testcontainers
 @TestPropertySource(properties = "spring.task.scheduling.pool.size=1")
@@ -55,16 +59,12 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
     @ServiceConnection
     static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
-    @Autowired OrderOutboxEventPublisher orderOutboxEventPublisher;
-    @Autowired OutboxPollingService outboxPollingService;
-    @Autowired OutboxEventRepository outboxEventRepository;
     @Autowired PaymentRepository paymentRepository;
     @Autowired ProcessedEventJpaRepository processedEventJpaRepository;
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired ObjectMapper objectMapper;
 
     private Long userId;
-    private Long productId;
 
     @BeforeEach
     void setUp() {
@@ -72,8 +72,7 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
 
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
-
-        // [PR2b] User 도메인 peel → root 는 users 행을 native insert 로 시드(FK 충족, root-observable)
+        // [PR2b] User 도메인 peel → root 는 users 행을 native insert 로 시드(orders FK fk_orders_user 충족, root-observable)
         em.createNativeQuery(
                         "INSERT INTO users (email, password_hash, name, role, created_at, updated_at) " +
                                 "VALUES ('test@peekcart.com', 'hashed-pw', '테스트유저', 'USER', NOW(6), NOW(6))")
@@ -81,22 +80,6 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
         em.flush();
         userId = ((Number) em.createNativeQuery("SELECT id FROM users WHERE email = 'test@peekcart.com'")
                 .getSingleResult()).longValue();
-
-        // Product 도메인 peel → root 는 category/product/inventory 행을 native insert 로 시드(FK 충족, root-observable)
-        em.createNativeQuery("INSERT INTO categories (name) VALUES ('테스트 카테고리')").executeUpdate();
-        Long categoryId = ((Number) em.createNativeQuery("SELECT id FROM categories WHERE name = '테스트 카테고리'")
-                .getSingleResult()).longValue();
-        em.createNativeQuery(
-                        "INSERT INTO products (category_id, name, description, price, image_url, status, created_at, version) "
-                                + "VALUES (?1, '테스트 상품', '설명', 50000, NULL, 'ON_SALE', NOW(6), 0)")
-                .setParameter(1, categoryId)
-                .executeUpdate();
-        productId = ((Number) em.createNativeQuery("SELECT id FROM products WHERE name = '테스트 상품' ORDER BY id DESC LIMIT 1")
-                .getSingleResult()).longValue();
-        em.createNativeQuery("INSERT INTO inventories (product_id, stock, version, updated_at) VALUES (?1, 100, 0, NOW(6))")
-                .setParameter(1, productId)
-                .executeUpdate();
-
         em.getTransaction().commit();
         em.close();
     }
@@ -104,50 +87,36 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("동일 이벤트를 같은 consumer group에서 2회 소비하면 1회만 처리된다")
     void duplicateEvent_sameConsumerGroup_processedOnce() {
-        // given: order.created 이벤트 발행 → Consumer 처리 대기
-        Order order = persistOrder();
-        orderOutboxEventPublisher.publishOrderCreated(order);
+        // given: order.created 를 KafkaTemplate 로 produce → root PaymentEventConsumer 소비 대기
+        Long orderId = seedOrder();
+        String eventId = UUID.randomUUID().toString();
+        String payload = orderCreatedEnvelope(eventId, orderId);
+        kafkaTemplate.send("order.created", orderId.toString(), payload);
 
-        // Outbox에서 eventId 추출
-        List<OutboxEvent> pending = outboxEventRepository.findPendingEvents(java.util.List.of("ORDER", "PAYMENT"), 100);
-        assertThat(pending).hasSize(1);
-        String eventId = pending.get(0).getEventId();
-        String payload = pending.get(0).getPayload();
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(paymentRepository.findByOrderId(orderId)).isPresent());
 
-        // Kafka로 발행 + Consumer 처리 대기
-        outboxPollingService.pollAndPublish();
+        long paymentCountBefore = countPaymentsByOrderId(orderId);
 
-        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThat(paymentRepository.findByOrderId(order.getId())).isPresent();
-        });
-
-        // 처리 결과 기록
-        long paymentCountBefore = countPaymentsByOrderId(order.getId());
-
-        // when: 동일 eventId 메시지를 KafkaTemplate으로 직접 재전송
-        kafkaTemplate.send("order.created", order.getId().toString(), payload);
+        // when: 동일 eventId 메시지를 직접 재전송
+        kafkaTemplate.send("order.created", orderId.toString(), payload);
 
         // then: 충분히 대기 후에도 Payment 수 변화 없음 (consumer 멱등성)
         await().during(3, TimeUnit.SECONDS).atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
-                assertThat(countPaymentsByOrderId(order.getId())).isEqualTo(paymentCountBefore));
+                assertThat(countPaymentsByOrderId(orderId)).isEqualTo(paymentCountBefore));
     }
 
     @Test
     @DisplayName("order.created 소비 시 consumer group 단위로 processed_events 에 기록한다 (notification 그룹은 notification-service 검증)")
     void event_recordedPerConsumerGroup() {
         // given: order.created → 루트 PaymentEventConsumer 소비 (NotificationConsumer 는 notification-service 로 peel)
-        Order order = persistOrder();
-        orderOutboxEventPublisher.publishOrderCreated(order);
-
-        List<OutboxEvent> pending = outboxEventRepository.findPendingEvents(java.util.List.of("ORDER", "PAYMENT"), 100);
-        String eventId = pending.get(0).getEventId();
-
-        // when
-        outboxPollingService.pollAndPublish();
+        Long orderId = seedOrder();
+        String eventId = UUID.randomUUID().toString();
+        kafkaTemplate.send("order.created", orderId.toString(), orderCreatedEnvelope(eventId, orderId));
 
         // then: payment consumer group 처리 완료
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
-                assertThat(paymentRepository.findByOrderId(order.getId())).isPresent());
+                assertThat(paymentRepository.findByOrderId(orderId)).isPresent());
 
         // processed_events 에 payment consumer group 으로 기록 (consumer group 단위 멱등성 키)
         List<ProcessedEvent> processedEvents = processedEventJpaRepository.findAll().stream()
@@ -160,19 +129,36 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
 
     // ── 헬퍼 메서드 ──
 
-    private Order persistOrder() {
+    /** payments.order_id FK(fk_payments_order) 충족용 orders 행 시드 → orderId 반환. */
+    private Long seedOrder() {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
-
-        List<OrderItemData> items = List.of(new OrderItemData(productId, 2, 50_000L));
-        Order order = Order.create(userId, "ORD-TEST-" + System.nanoTime(),
-                "홍길동", "010-1234-5678", "12345", "서울시 강남구", items);
-        order.transitionTo(OrderStatus.PAYMENT_REQUESTED);
-
-        em.persist(order);
+        String orderNumber = "ORD-TEST-" + System.nanoTime();
+        em.createNativeQuery(
+                        "INSERT INTO orders (user_id, order_number, total_amount, status, receiver_name, phone, zipcode, address, ordered_at) " +
+                                "VALUES (?1, ?2, 100000, 'PAYMENT_REQUESTED', '홍길동', '010-1234-5678', '12345', '서울시 강남구', NOW(6))")
+                .setParameter(1, userId)
+                .setParameter(2, orderNumber)
+                .executeUpdate();
+        em.flush();
+        Long orderId = ((Number) em.createNativeQuery("SELECT id FROM orders WHERE order_number = ?1")
+                .setParameter(1, orderNumber)
+                .getSingleResult()).longValue();
         em.getTransaction().commit();
         em.close();
-        return order;
+        return orderId;
+    }
+
+    /** order.created envelope(JSON) 직렬화 — consumer 는 eventId/payload.orderId/userId/totalAmount 만 읽는다. */
+    private String orderCreatedEnvelope(String eventId, Long orderId) {
+        OrderCreatedPayload payload = new OrderCreatedPayload(
+                orderId, "ORD-" + orderId, userId, 100_000L, List.of(), "홍길동", "서울시 강남구");
+        try {
+            return objectMapper.writeValueAsString(
+                    new KafkaEventEnvelope(eventId, "order.created", LocalDateTime.now(), payload));
+        } catch (Exception e) {
+            throw new IllegalStateException("envelope 직렬화 실패", e);
+        }
     }
 
     private long countPaymentsByOrderId(Long orderId) {

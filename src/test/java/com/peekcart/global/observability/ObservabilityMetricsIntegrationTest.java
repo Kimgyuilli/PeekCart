@@ -80,9 +80,9 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("outbox 발행 후 /actuator/prometheus에 backlog gauge + publish timer 메트릭이 노출된다 (D-014/L-009)")
     void prometheusEndpoint_exposesOutboxPipelineMetrics() {
         // probe 토픽(consumer 없음)으로 PENDING 이벤트 1건 발행 → publish success 경로 생성.
-        // Product peel: root poller 는 ORDER/PAYMENT aggregateType 만 발행하므로 probe 도 ORDER 로 둔다.
+        // Order peel(PR-a): root poller 는 PAYMENT aggregateType 만 발행하므로(ORDER 는 order-service 소유) probe 를 PAYMENT 로 둔다.
         outboxEventRepository.save(OutboxEvent.create(
-                "ORDER", "probe", "observability.outbox.probe", null, null, eventId -> "{}"));
+                "PAYMENT", "probe", "observability.outbox.probe", null, null, eventId -> "{}"));
         outboxPollingService.pollAndPublish();
 
         ResponseEntity<String> prometheusResponse = restTemplate.getForEntity("/actuator/prometheus", String.class);
