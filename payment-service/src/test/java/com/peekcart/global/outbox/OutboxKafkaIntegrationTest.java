@@ -45,7 +45,7 @@ import static org.awaitility.Awaitility.await;
  */
 @SpringBootTest
 @Testcontainers
-@TestPropertySource(properties = "spring.task.scheduling.pool.size=1")
+@TestPropertySource(properties = {"spring.task.scheduling.pool.size=1", "spring.flyway.enabled=true", "spring.flyway.locations=classpath:db/migration"})
 @Import({IntegrationTestConfig.class, OutboxKafkaIntegrationTest.TraceCaptureConfig.class})
 @DisplayName("Outbox → Kafka E2E 통합 테스트 (Order peel 후 payment-observable)")
 class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {

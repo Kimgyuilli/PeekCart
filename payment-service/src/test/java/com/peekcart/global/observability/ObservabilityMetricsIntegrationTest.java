@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureObservability
-@TestPropertySource(properties = "management.endpoint.health.probes.enabled=true")
+@TestPropertySource(properties = {"management.endpoint.health.probes.enabled=true", "spring.flyway.enabled=true", "spring.flyway.locations=classpath:db/migration"})
 @Testcontainers
 @DisplayName("관측성 계약 회귀 테스트 (D-001/D-005 재발 방지)")
 class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
@@ -68,8 +68,8 @@ class ObservabilityMetricsIntegrationTest extends AbstractIntegrationTest {
         assertThat(body).isNotNull();
 
         assertThat(body)
-                .as("common tag application=peekcart 이 모든 메트릭에 부여되어야 한다 (P0-B: base management.metrics.tags.application)")
-                .contains("application=\"peekcart\"");
+                .as("common tag application=payment-service 가 모든 메트릭에 부여되어야 한다 (P0-B: base management.metrics.tags.application)")
+                .contains("application=\"payment-service\"");
 
         assertThat(body)
                 .as("http_server_requests histogram bucket 이 노출되어야 한다 (D-001: MetricsConfig MeterFilter)")

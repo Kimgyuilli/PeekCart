@@ -23,7 +23,9 @@ import java.time.Duration;
 @Testcontainers
 @TestPropertySource(properties = {
         "spring.task.scheduling.pool.size=1",
-        "toss.payments.secret-key=test_sk_fake"
+        "toss.payments.secret-key=test_sk_fake",
+        "spring.flyway.enabled=true",
+        "spring.flyway.locations=classpath:db/migration"
 })
 @DisplayName("ShedLock 통합 테스트")
 class ShedLockIntegrationTest extends AbstractIntegrationTest {
@@ -65,13 +67,13 @@ class ShedLockIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("rootOutboxPollingJob 락 레코드가 생성된다 (Product peel: 공유 DB poller 소유권 분리로 root 락 이름 분리)")
+    @DisplayName("paymentOutboxPollingJob 락 레코드가 생성된다 (Payment peel: 공유 DB poller 소유권 분리로 payment-service 락 이름)")
     void outboxPollingJobLockRecordCreated() {
         await().atMost(Duration.ofSeconds(15))
                 .pollInterval(Duration.ofSeconds(1))
                 .untilAsserted(() -> {
                     Integer count = jdbcTemplate.queryForObject(
-                            "SELECT COUNT(*) FROM shedlock WHERE name = 'rootOutboxPollingJob'",
+                            "SELECT COUNT(*) FROM shedlock WHERE name = 'paymentOutboxPollingJob'",
                             Integer.class);
                     assertThat(count).isEqualTo(1);
                 });

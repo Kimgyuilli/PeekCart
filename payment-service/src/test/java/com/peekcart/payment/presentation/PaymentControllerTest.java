@@ -1,7 +1,7 @@
 package com.peekcart.payment.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.peekcart.global.config.SecurityConfig;
+import com.peekcart.payment.infrastructure.security.PaymentSecurityConfig;
 import com.peekcart.global.config.TestSecurityConfig;
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.payment.application.PaymentCommandService;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = PaymentController.class,
-        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = SecurityConfig.class))
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = PaymentSecurityConfig.class))
 @Import(TestSecurityConfig.class)
 @DisplayName("PaymentController 슬라이스 테스트")
 class PaymentControllerTest {
