@@ -1,0 +1,95 @@
+// order-service — Order peel (PR-a, ADR-0011 §D1 · ADR-0014 · ADR-0010 · ADR-0012)
+// bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth 에서만 가져온다.
+// 서비스↔서비스 project() 의존 금지 (assertNoServiceProjectDeps 로 강제).
+// Order = publisher+consumer 양방향 서비스 — outbox 실행 세트 + idempotency + ShedLockConfig 자체 복제(product peel 선례).
+// 공유 DB 전환기: order·payment·product 세 poller 가 같은 outbox_events 를 보므로 aggregateType allowlist + ShedLock 이름으로 소유권 분리(app yml).
+// data-redis 는 무조건(@Cacheable 미사용이나 common-auth blacklist read fail-closed 가 RedisTemplate 필수 — ADR-0014). cache starter 는 불요(@Cacheable 없음).
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot'
+}
+
+bootJar {
+    archiveFileName = 'order-service.jar'
+}
+
+jar {
+    enabled = false
+}
+
+dependencies {
+    // 멀티모듈 (ADR-0011 §D3 allowlist · ADR-0014)
+    implementation project(':common')                        // web/jpa/kafka(api) + entity/response/exception/SlackPort/DistributedLockManager
+    implementation project(':peekcart-common-observability') // actuator/micrometer-core(api) + MetricsConfig(S1)/ActuatorSecurityConfig(S4)
+    implementation project(':peekcart-common-auth')          // security(api) + JWT 검증 primitives(JwtFilter/verify/LoginUser)
+
+    // Bean Validation — @Valid 요청 검증 (web starter 는 Boot 3 에서 validation 미포함, B6 선례)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Redis — common-auth blacklist read adapter(RedisTokenBlacklistLookupAdapter) 가 RedisTemplate 필수 (ADR-0014 fail-closed, 무조건)
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // ShedLock — 자체 outbox poller(@SchedulerLock) + OrderTimeoutScheduler + ShedLockConfig 복제
+    implementation 'net.javacrumbs.shedlock:shedlock-spring:6.3.1'
+    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.3.1'
+
+    // Micrometer Prometheus registry (observability 는 micrometer-core 만 api 노출)
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // Structured Logging (logback-spring.xml)
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
+
+    // MySQL
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // Flyway — 런타임 disabled(서비스), 공유 V1~V9 는 root flywayMigrateShared / 테스트 fixture 에서 적용
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
+
+    // JWT 검증 런타임 (common-auth 의 jjwt-impl/jackson 은 runtimeOnly → 비전이). Order 는 발급 아님 → jjwt-api 컴파일 불요.
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // Swagger (common-auth OpenApiConfig 의 springdoc 은 implementation → 비전이)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation testFixtures(project(':common'))
+    // cross-module JWT(게이트 h) — root signer 와 동일 HS256/app.jwt.secret 으로 토큰 발급해 인증 검증
+    testImplementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+
+    // Testcontainers (MySQL/Redis/Kafka 통합)
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.testcontainers:kafka'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'
+    testImplementation 'org.awaitility:awaitility'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    afterEvaluate {
+        classDirectories = files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/dto/**',
+                '**/request/**',
+                '**/response/**',
+                '**/config/**',
+                '**/OrderApplication*'
+            ])
+        })
+    }
+}

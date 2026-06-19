@@ -207,7 +207,8 @@ class OutboxPollingServiceTest {
     }
 
     private OutboxPollingService service(Duration publishTimeout, Duration cycleTimeout) {
+        // order-service poller 는 자기 도메인 ORDER aggregateType 만 발행한다(공유 DB 소유권 분리, application.yml 와 일치).
         return new OutboxPollingService(outboxEventRepository, kafkaTemplate, slackPort,
-                meterRegistry, 100, 5, publishTimeout, cycleTimeout, List.of("ORDER", "PAYMENT"));
+                meterRegistry, 100, 5, publishTimeout, cycleTimeout, List.of("ORDER"));
     }
 }

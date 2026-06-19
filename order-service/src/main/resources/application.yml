@@ -1,6 +1,6 @@
 spring:
   application:
-    name: peekcart
+    name: order-service
   profiles:
     active: local
   jpa:
@@ -8,7 +8,9 @@ spring:
       ddl-auto: validate
     open-in-view: false
   flyway:
-    enabled: true
+    # 서비스 런타임은 마이그레이션을 실행하지 않는다. 공유 V1~V9 는 root flywayMigrateShared 또는 Testcontainers fixture 가 적용.
+    # (PR-b 에서 root app 소멸 시 order-service 가 전환기 공유스키마 migrator 로 enable 전환 예정 — B5)
+    enabled: false
     locations: classpath:db/migration
   kafka:
     producer:
@@ -40,7 +42,7 @@ management:
         include: health,prometheus
   metrics:
     tags:
-      application: peekcart
+      application: order-service
 
 springdoc:
   swagger-ui:
@@ -51,24 +53,18 @@ springdoc:
 app:
   jwt:
     secret: ${JWT_SECRET:peekcart-secret-key-must-be-at-least-256-bits-long-xxxxxxxxxxxxxxx}
-    access-token-expiry: 1800000    # 30분 (ms)
+    access-token-expiry: 1800000    # 30분 (ms) — 검증 전용이나 단일 계약(JwtAuthProperties) 바인딩
     refresh-token-expiry: 604800000 # 7일 (ms)
   outbox:
-    # 공유 DB 전환기 poller 소유권 분리 (Order peel PR-a): order 가 order-service 로 peel 되어 자가발행 →
-    # root 잔여 app 은 PAYMENT 이벤트만 발행한다(ORDER 는 order-service 의 orderOutboxPollingJob 이 소유).
-    lock-name: rootOutboxPollingJob
+    # 공유 DB 전환기 poller 소유권 분리 (Order peel): order 는 ORDER 이벤트만 발행.
+    lock-name: orderOutboxPollingJob
     polling:
       batch-size: 100
       max-retry: 5
       publish-timeout: 6s
       cycle-timeout: 4m
-      aggregate-types: PAYMENT
+      aggregate-types: ORDER
 
 slack:
   webhook:
     url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/placeholder}
-
-toss:
-  payments:
-    secret-key: ${TOSS_SECRET_KEY:test_sk_placeholder}
-    webhook-secret: ${TOSS_WEBHOOK_SECRET:test_webhook_secret_placeholder}

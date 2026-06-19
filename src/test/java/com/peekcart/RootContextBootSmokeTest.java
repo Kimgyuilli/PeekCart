@@ -62,8 +62,8 @@ class RootContextBootSmokeTest {
     void rootSecurity_regression() {
         assertThat(securityFilterChains).hasSize(1);
 
-        // 비즈니스 endpoint 미인증 거부
-        assertThat(restTemplate.getForEntity("/api/v1/orders", String.class).getStatusCode())
+        // 비즈니스 endpoint 미인증 거부 (Order peel: /api/v1/orders → order-service 로 이동 → root 잔여 /api/v1/payments 로 검증)
+        assertThat(restTemplate.getForEntity("/api/v1/payments", String.class).getStatusCode())
                 .isEqualTo(HttpStatus.UNAUTHORIZED);
 
         // actuator permitAll (ADR-0009 S4 단일 소유 — root 도 ActuatorSecurityConfig 로 합침)
