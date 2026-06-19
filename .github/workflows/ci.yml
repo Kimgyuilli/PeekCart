@@ -42,9 +42,13 @@ jobs:
         run: |
           bash scripts/kustomize-namespace-lint.sh
           bash scripts/image-contract-lint.sh
-          bash scripts/observability-ssot-lint.sh
           bash scripts/servicemonitor-selector-lint.sh
-          bash scripts/observability-promql-lint.sh
+          # [Payment peel PR-b] observability-ssot/promql lint 는 root `src/main/resources/application.yml`
+          # (단일 모놀리스 base yml)을 SSOT 로 가정한다. root app 해체로 그 파일이 사라졌고, 관측성 SSOT 는
+          # 이제 서비스별(application=<service>)로 분산된다. 모놀리스 전제 lint 와 alert ground-truth(application=peekcart)
+          # 의 per-service 재설계는 PR3(관측성/CI 재구성)에서 수행한다 — 그때까지 두 lint 는 비활성.
+          # bash scripts/observability-ssot-lint.sh
+          # bash scripts/observability-promql-lint.sh
 
       - run: ./gradlew build --no-daemon
         env:
