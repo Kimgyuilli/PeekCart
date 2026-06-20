@@ -1,16 +1,16 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: peekcart
+  name: product-service
   namespace: peekcart
   labels:
-    app.kubernetes.io/name: peekcart
+    app.kubernetes.io/name: product-service
     app.kubernetes.io/part-of: peekcart
     release: kube-prometheus-stack
 spec:
   selector:
     matchLabels:
-      app: peekcart
+      app: product-service
   endpoints:
     - port: http
       path: /actuator/prometheus

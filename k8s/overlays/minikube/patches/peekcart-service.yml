@@ -1,7 +1,0 @@
-# minikube: NodePort 30080 으로 외부 노출 (`minikube service` 접속용)
-- op: replace
-  path: /spec/type
-  value: NodePort
-- op: add
-  path: /spec/ports/0/nodePort
-  value: 30080

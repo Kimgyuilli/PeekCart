@@ -1,35 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: peekcart
+  name: order-service
   namespace: peekcart
   labels:
-    app.kubernetes.io/name: peekcart
+    app.kubernetes.io/name: order-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: peekcart
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: peekcart
+      app: order-service
   template:
     metadata:
       labels:
-        app: peekcart
-        app.kubernetes.io/name: peekcart
+        app: order-service
+        app.kubernetes.io/name: order-service
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: peekcart
     spec:
       containers:
-        - name: peekcart
-          image: ghcr.io/kimgyuilli/peekcart:latest
+        - name: order-service
+          image: ghcr.io/kimgyuilli/peekcart-order-service:latest
           ports:
             - containerPort: 8080
           envFrom:
             - configMapRef:
-                name: peekcart-config
+                name: order-service-config
             - secretRef:
-                name: peekcart-secret
+                name: order-service-secret
           resources:
             requests:
               cpu: 250m
@@ -57,14 +57,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: peekcart
+  name: order-service
   namespace: peekcart
   labels:
-    app: peekcart
+    app: order-service
 spec:
   type: ClusterIP
   selector:
-    app: peekcart
+    app: order-service
   ports:
     - name: http
       port: 8080

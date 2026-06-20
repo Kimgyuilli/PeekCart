@@ -12,10 +12,29 @@ kind: Kustomization
 
 resources:
   - namespace.yml
+  - infra/mysql/secret.yml
   - infra/mysql/mysql.yml
   - infra/redis/redis.yml
   - infra/kafka/kafka.yml
-  - services/peekcart/deployment.yml
-  - services/peekcart/configmap.yml
-  - services/peekcart/secret.yml
-  - services/peekcart/servicemonitor.yml
+  # 5개 서비스 per-service 매니페스트 (PR3b — 단일 peekcart 분해). 비-order 4서비스 deployment 는
+  # order-service readiness 폴링 initContainer 보유(공유 DB 전환기 cold-start ordering).
+  - services/notification-service/deployment.yml
+  - services/notification-service/configmap.yml
+  - services/notification-service/secret.yml
+  - services/notification-service/servicemonitor.yml
+  - services/user-service/deployment.yml
+  - services/user-service/configmap.yml
+  - services/user-service/secret.yml
+  - services/user-service/servicemonitor.yml
+  - services/product-service/deployment.yml
+  - services/product-service/configmap.yml
+  - services/product-service/secret.yml
+  - services/product-service/servicemonitor.yml
+  - services/order-service/deployment.yml
+  - services/order-service/configmap.yml
+  - services/order-service/secret.yml
+  - services/order-service/servicemonitor.yml
+  - services/payment-service/deployment.yml
+  - services/payment-service/configmap.yml
+  - services/payment-service/secret.yml
+  - services/payment-service/servicemonitor.yml

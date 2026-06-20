@@ -1,0 +1,13 @@
+# minikube: NodePort 30081 로 로컬 노출 (gateway ③ 이전 전환기 — 서비스별 직접 접근용).
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: peekcart
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 30081

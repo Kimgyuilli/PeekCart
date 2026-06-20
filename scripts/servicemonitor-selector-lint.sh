@@ -89,6 +89,20 @@ for d in docs:
         })
 
 violations = []
+
+# canonical 5서비스 ServiceMonitor 집합 강제 (PR3b GP-2 #1) — 0개/축소 시 selector 매칭이
+# vacuous-green 되는 false-negative 차단. ground truth 는 CI matrix 가 아닌 고정 5서비스.
+CANONICAL = {"notification-service", "user-service", "product-service", "order-service", "payment-service"}
+monitor_names = {m["name"] for m in monitors}
+if monitor_names != CANONICAL:
+    violations.append(
+        f"[D5-V5] ServiceMonitor 집합 불일치 ({overlay}):\n"
+        f"  expected(canonical 5): {sorted(CANONICAL)}\n"
+        f"  actual: {sorted(monitor_names)}\n"
+        f"  missing: {sorted(CANONICAL - monitor_names)} / extra: {sorted(monitor_names - CANONICAL)}\n"
+        f"  → PR3b GP-2 #1: 5서비스 ServiceMonitor 필수 — 0개/축소 시 selector-lint vacuous-green 차단.\n"
+    )
+
 for sm in monitors:
     # endpoints / port presence 우선 검증 — empty endpoints[] 또는 port 없는 endpoint 가
     # selector 매칭 통과로 위반 없이 exit 0 되는 false negative 차단.

@@ -23,15 +23,37 @@ resources:
   - hpa.yml
 
 patches:
-  # Deployment / Service 는 strategic merge (gvk + name 기반 자동 매칭, target 불필요)
-  - path: patches/peekcart-deployment.yml
-  - path: patches/peekcart-service.yml
+  # Deployment / Service 는 strategic merge (gvk + metadata.name 자동 매칭, target 불필요). 5서비스 × 2.
+  - path: patches/notification-service-deployment.yml
+  - path: patches/notification-service-service.yml
+  - path: patches/user-service-deployment.yml
+  - path: patches/user-service-service.yml
+  - path: patches/product-service-deployment.yml
+  - path: patches/product-service-service.yml
+  - path: patches/order-service-deployment.yml
+  - path: patches/order-service-service.yml
+  - path: patches/payment-service-deployment.yml
+  - path: patches/payment-service-service.yml
   # PVC 는 JSON6902 — base 의 mysql/redis/kafka PVC 3 건에 동일 storageClassName 일괄 적용
   - path: patches/pvc-storageclass.yml
     target:
       kind: PersistentVolumeClaim
 
+# GHCR → Artifact Registry 경로 재작성 (D-016 image promotion). 5서비스 per-image.
+# PROJECT_ID 치환은 README 참고 (scripts/promote-images.sh 가 승격·digest 산출).
 images:
-  - name: ghcr.io/kimgyuilli/peekcart
-    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/peekcart
+  - name: ghcr.io/kimgyuilli/peekcart-notification-service
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/notification-service
+    newTag: latest
+  - name: ghcr.io/kimgyuilli/peekcart-user-service
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/user-service
+    newTag: latest
+  - name: ghcr.io/kimgyuilli/peekcart-product-service
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/product-service
+    newTag: latest
+  - name: ghcr.io/kimgyuilli/peekcart-order-service
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/order-service
+    newTag: latest
+  - name: ghcr.io/kimgyuilli/peekcart-payment-service
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/payment-service
     newTag: latest

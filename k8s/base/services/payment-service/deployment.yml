@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: peekcart
+  labels:
+    app.kubernetes.io/name: payment-service
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: peekcart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+        app.kubernetes.io/name: payment-service
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: peekcart
+    spec:
+      # 공유 DB 전환기(② 이전): order-service 가 런타임 Flyway 마이그레이터(#65 P13)이므로
+      # 그 readiness 200 = 공유 스키마 적용 완료 신호. 비-order 서비스(Flyway disabled+ddl validate)는
+      # 빈 DB 에서 validate 부팅 실패를 피하기 위해 스키마 준비까지 기동을 지연한다.
+      # (② DB 물리분리 시 각 서비스 자가 마이그레이션 → 본 initContainer 제거)
+      initContainers:
+        - name: wait-for-order-migration
+          image: curlimages/curl:8.11.1@sha256:c1fe1679c34d9784c1b0d1e5f62ac0a79fca01fb6377cdd33e90473c6f9f9a69
+          command:
+            - sh
+            - -c
+            - |
+              until curl -fsS -o /dev/null http://order-service.peekcart.svc:8080/actuator/health/readiness; do
+                echo "waiting for order-service schema migration..."
+                sleep 2
+              done
+      containers:
+        - name: payment-service
+          image: ghcr.io/kimgyuilli/peekcart-payment-service:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: payment-service-config
+            - secretRef:
+                name: payment-service-secret
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: peekcart
+  labels:
+    app: payment-service
+spec:
+  type: ClusterIP
+  selector:
+    app: payment-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

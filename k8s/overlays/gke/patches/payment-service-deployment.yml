@@ -1,0 +1,18 @@
+# GKE: e2-standard-4 기준 resources 상향. strategic merge — container name(payment-service) 매칭.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      containers:
+        - name: payment-service
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi

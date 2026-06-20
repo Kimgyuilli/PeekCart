@@ -1,0 +1,10 @@
+# GKE: Internal LoadBalancer 노출 (VPC 내부). gateway ③ 도입 시 단일 ingress 로 통합 예정 — 전환기.
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: peekcart
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+spec:
+  type: LoadBalancer
