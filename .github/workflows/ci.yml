@@ -10,15 +10,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/peekcart
-
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
 
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +35,10 @@ jobs:
         uses: azure/setup-kubectl@v4
 
       - name: Run CI policy lints
+        # IMAGE_CONTRACT_TRANSITION: PR3a~PR3b 전환기 동안만 image-contract-lint 를 SUSPENDED 로 통과시킨다
+        # (per-service k8s 매니페스트가 PR3b 에서 생기기 전까지). PR3b 에서 이 env 를 제거하면 3-way 가 강제된다.
+        env:
+          IMAGE_CONTRACT_TRANSITION: "1"
         run: |
           bash scripts/kustomize-namespace-lint.sh
           bash scripts/image-contract-lint.sh
@@ -60,6 +60,101 @@ jobs:
           name: test-reports
           path: build/reports/
 
-      # [Payment peel PR-b] root app 해체로 단일 root 이미지(app.jar)가 소멸했다.
-      # 기존 root Dockerfile 기반 PR build/smoke·GHCR push 스텝은 더 이상 빌드할 산출물이 없어 제거한다.
-      # 서비스별(order/payment/product/user/notification) 이미지 + CI 매트릭스 재구성은 PR3(Dockerfile/CI/k8s)에서 도입한다.
+  # [PR3a] 서비스별 이미지 — 단일 Dockerfile + ARG SERVICE 매트릭스.
+  # build/smoke(PR+push, contents:read 만) 와 publish(main push 한정, packages:write) 를 **분리**한다.
+  # 권한은 job 단위라, PR 의 build/smoke 가 write 토큰 범위에서 돌지 않게 하려면 job 을 나눠야 한다.
+  # 중복 빌드 회피: build/smoke 가 smoke 통과한 *바로 그 이미지* 를 docker save → artifact 로 넘기고,
+  # publish 가 load 후 push 한다(재빌드/divergence 없음).
+  images:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - notification-service
+          - user-service
+          - product-service
+          - order-service
+          - payment-service
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build --build-arg SERVICE=${{ matrix.service }} -t ${{ matrix.service }}:ci .
+
+      - name: Health smoke
+        run: bash scripts/docker-health-smoke.sh ${{ matrix.service }}:ci
+
+      - name: Save image for publish (main push only)
+        if: github.event_name == 'push'
+        run: docker save ${{ matrix.service }}:ci | gzip > image.tar.gz
+
+      - name: Upload image artifact (main push only)
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-${{ matrix.service }}
+          path: image.tar.gz
+          retention-days: 1
+
+  # GHCR publish — main push 한정. smoke 를 통과한 이미지를 load 후 push 한다.
+  # packages:write 는 이 job 에만 부여되어 PR build/smoke 경로엔 write 토큰이 닿지 않는다.
+  publish:
+    needs: images
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - notification-service
+          - user-service
+          - product-service
+          - order-service
+          - payment-service
+
+    steps:
+      - name: Download image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-${{ matrix.service }}
+
+      - name: Load image
+        run: docker load < <(gunzip -c image.tar.gz)
+
+      - name: Resolve image name
+        id: img
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: echo "name=ghcr.io/${OWNER,,}/peekcart-${{ matrix.service }}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        # L-016a/D-016: push 후 registry digest 를 산출하고, 비어 있으면 실패시킨다(digest 누락 green 차단).
+        run: |
+          IMG="${{ steps.img.outputs.name }}"
+          docker tag ${{ matrix.service }}:ci "$IMG:${{ github.sha }}"
+          docker tag ${{ matrix.service }}:ci "$IMG:latest"
+          push_out="$(docker push "$IMG:${{ github.sha }}")"
+          echo "$push_out"
+          docker push "$IMG:latest"
+          DIGEST="$(printf '%s\n' "$push_out" | grep -oE 'sha256:[0-9a-f]{64}' | head -1)"
+          if [[ -z "$DIGEST" ]]; then
+            echo "::error::[L-016a] ${IMG} push digest 산출 실패 — D-016 image promotion 계약 위반" >&2
+            exit 1
+          fi
+          echo "pushed: ${IMG}@${DIGEST} (tags: ${{ github.sha }}, latest)"
+          echo "pushed digest: $(docker inspect --format='{{index .RepoDigests 0}}' "$IMG:latest" 2>/dev/null || echo n/a)"
