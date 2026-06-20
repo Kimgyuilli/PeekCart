@@ -129,3 +129,10 @@
 - run_id: work:20260620T070019Z:f746e5a3-8d31-4f9d-a942-5f739d4b5ff9:2
 - tokens: 168,469
 - stage → **work.done** (work_attempts=2). 다음: /ship (커밋/PR/done).
+
+## 2026-06-20 16:?? — /ship --execute → /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/67)
+- precheck: warnings 1 — [MISS] ADR-0015 ignore-with-reason(PR3c forward reference·PR3a #66 선례). PR 본문 Skipped consistency checks 기록.
+- drift: Step1 partially_live = **false-positive**(신규 untracked 디렉토리를 git status 가 collapse → diff 파일이 status 와 unmatched). 커밋 0건·전부 live 확인 후 진행.
+- 커밋 5 partition: p1 feat(slack) real↔no-op 게이팅+yml fail-fast · p2 test(slack) 4케이스 · p3 feat(k8s) 5서비스 매니페스트·overlays·HPA · p4 chore(ci) lint/smoke/promote · p5 docs(plan). + p6 docs(progress) TASKS·PHASE4.
+- /done: TASKS.md 구현 ① 행 PR3b ✅ [#67] 추가(🔄 유지 — PR3c 미완)·PHASE4.md PR3b 이력 엔트리. ADR 신규 없음(forward ref ADR-0015 는 PR3c).
+- ship: 6 커밋 push, PR #67.
