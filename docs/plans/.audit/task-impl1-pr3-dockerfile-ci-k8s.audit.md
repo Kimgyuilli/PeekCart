@@ -55,3 +55,9 @@
 - run_id: work:20260620T000846Z:113b83d3-6f8c-4fee-a59f-0e6b182552d1:3
 - tokens: 171,184
 - 비고: attempts_by_command.work=3 (권장 cap 도달). 4차 리뷰는 명시 확인 필요(§7-6).
+
+## 2026-06-20 09:23 — /done applied (PR https://github.com/Kimgyuilli/PeekCart/pull/66)
+- TASKS.md 구현 ① 행에 PR3a ✅ [#66] 추가 (구현 ① 은 PR3b/3c 미완으로 🔄 유지)
+- PHASE4.md: PR3a 이력 엔트리(P1·P2·P3·핵심결정·검증·후속부채·다음 PR3b/3c)
+- GS-1: [MISS] ADR-0015 ignore-with-reason (PR3c 작성 예정 forward reference)
+- ship: 2 커밋(chore(ci) / docs(plan)) + docs(progress) 1 커밋, push, PR #66
