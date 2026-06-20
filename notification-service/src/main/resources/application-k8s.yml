@@ -21,3 +21,9 @@ management:
 logging:
   level:
     com.peekcart: INFO
+
+# Slack webhook (자격증명) — k8s 에서는 기본값 없이 강제. 누락 시 placeholder 미해석으로 부팅 실패(fail-fast).
+# notification 은 실 발송 주체라 no-op fallback 을 켜지 않는다 (PR3b GP-2 loop2 — silent 알림 유실 방지).
+slack:
+  webhook:
+    url: ${SLACK_WEBHOOK_URL}

@@ -59,6 +59,9 @@ app:
       cycle-timeout: 4m
       aggregate-types: PRODUCT
 
+# Slack: product 는 DLQ·에러 알림에 SlackPort 를 생성자 주입하나 발송은 비핵심.
+# webhook 미설정 + no-op fallback 으로 부팅 보장 (PR3b GP-2 loop3 — presence-based
+# @ConditionalOnProperty(slack.webhook.url) 가 placeholder 기본값에 항상 매치되던 문제 제거).
 slack:
-  webhook:
-    url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/placeholder}
+  noop-fallback:
+    enabled: true

@@ -21,3 +21,10 @@ management:
 logging:
   level:
     com.peekcart: INFO
+
+# Toss 자격증명 — k8s 에서는 기본값 없이 강제. 누락 시 placeholder 미해석으로 부팅 실패(fail-fast).
+# (PR3b GP-2 #3 — base application.yml 의 test placeholder 가 운영에 새지 않도록 stub 금지.)
+toss:
+  payments:
+    secret-key: ${TOSS_SECRET_KEY}
+    webhook-secret: ${TOSS_WEBHOOK_SECRET}
