@@ -11,13 +11,14 @@ Phase 3 Task 3-4 부하 테스트 및 Phase 4 운영 환경용 Kustomize overlay
 
 ## 이미지 경로 치환 (PROJECT_ID)
 
-커밋된 `kustomization.yml` 의 `images:` 는 `PROJECT_ID_PLACEHOLDER` 를 사용합니다.
-apply 전에 로컬에서 치환하되 **커밋하지 마세요** (operator 로컬 상태).
+커밋된 `kustomization.yml` 의 `images:` 는 5개 서비스 각각에 `PROJECT_ID_PLACEHOLDER` 를 사용합니다 (PR3b — 단일 peekcart 분해). apply 전에 로컬에서 치환하되 **커밋하지 마세요** (operator 로컬 상태).
 
 ```bash
 cd k8s/overlays/gke
-kustomize edit set image \
-  ghcr.io/kimgyuilli/peekcart=asia-northeast3-docker.pkg.dev/<YOUR_PROJECT>/peekcart/peekcart:latest
+for svc in notification-service user-service product-service order-service payment-service; do
+  kustomize edit set image \
+    "ghcr.io/kimgyuilli/peekcart-${svc}=asia-northeast3-docker.pkg.dev/<YOUR_PROJECT>/peekcart/${svc}:latest"
+done
 
 # 렌더링 확인
 kubectl kustomize .
@@ -26,23 +27,21 @@ kubectl kustomize .
 git restore kustomization.yml
 ```
 
-## 이미지 운반 (일회성 수동 push)
+## 이미지 운반 (GHCR → Artifact Registry 승격, D-016)
 
-CI 는 GHCR 로 push 합니다 (`.github/workflows/ci.yml`). Phase 3 부하 테스트는 측정 빈도가 낮아 CI 자동화 대신 수동 복사를 사용합니다.
+CI 는 5개 서비스 이미지를 GHCR 로 push 합니다 (`.github/workflows/ci.yml` `publish` job). GKE 는 AR 에서 pull 하므로 승격이 필요합니다. 승격은 `scripts/promote-images.sh` 로 형식화됩니다 (수동 트리거 · crane 우선, docker 폴백 · 승격 후 AR digest 산출 → L-016a digest 고정 근거). 완전 자동 트리거는 후속.
 
 ```bash
-# Artifact Registry 인증
+# Artifact Registry 인증 + 리포지토리 생성 (최초 1회)
 gcloud auth configure-docker asia-northeast3-docker.pkg.dev
+gcloud artifacts repositories create peekcart --repository-format=docker --location=asia-northeast3
 
-# 리포지토리 생성 (최초 1회)
-gcloud artifacts repositories create peekcart \
-  --repository-format=docker \
-  --location=asia-northeast3
+# 승격 미리보기 (실행 안 함 — GHCR→AR 매핑 확인)
+scripts/promote-images.sh --dry-run --project <YOUR_PROJECT>
 
-# GHCR → Artifact Registry 복사 (crane 권장, 또는 docker pull/tag/push)
-crane copy \
-  ghcr.io/kimgyuilli/peekcart:latest \
-  asia-northeast3-docker.pkg.dev/<YOUR_PROJECT>/peekcart/peekcart:latest
+# 5개 서비스 승격 + 각 AR digest 출력
+scripts/promote-images.sh --project <YOUR_PROJECT> --tag latest
+# 단일 서비스만: scripts/promote-images.sh --project <YOUR_PROJECT> --service order-service
 ```
 
 ## 배포 순서
@@ -68,8 +67,8 @@ kubectl apply -k k8s/monitoring/shared/
 kubectl apply -k k8s/overlays/gke/
 ```
 
-> **HPA 전제**: 4단계 적용에 포함된 `HorizontalPodAutoscaler/peekcart` (`hpa.yml`) 는 CPU Utilization 기반이며 metrics-server API (`metrics.k8s.io`) 가 필요합니다. GKE Standard 는 기본 제공이므로 추가 설치 없이 동작합니다. minikube 에서는 본 overlay 범위 밖입니다 (overlays/minikube 에는 HPA 미포함).
-> HPA 상태 확인: `kubectl get hpa -n peekcart peekcart` · `kubectl top pods -n peekcart`.
+> **HPA 전제**: 4단계 적용에 포함된 `HorizontalPodAutoscaler/order-service` (`hpa.yml`) 는 CPU Utilization 기반이며 metrics-server API (`metrics.k8s.io`) 가 필요합니다. GKE Standard 는 기본 제공이므로 추가 설치 없이 동작합니다. **PR3b: HPA 는 order-service 단일**(GP-2 #4 · 로드맵 §16 "Phase 4 이후 HPA=Order Service HPA") — 타 4서비스는 HPA 미적용(필요 시 후속). minikube overlay 에는 HPA 미포함.
+> HPA 상태 확인: `kubectl get hpa -n peekcart order-service` · `kubectl top pods -n peekcart`.
 
 ## 정리 (ADR-0004 운영 체크리스트)
 

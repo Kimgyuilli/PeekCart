@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-service-config
+  namespace: peekcart
+data:
+  SPRING_PROFILES_ACTIVE: k8s
+  # Phase 3 부하 테스트 — 캐싱 전/후 TPS 비교 토글 (D-002 격리 재측정, product 전용).
+  # product CacheConfig @ConditionalOnProperty(peekcart.cache.enabled). baseline 측정 시 "false".
+  PEEKCART_CACHE_ENABLED: "true"

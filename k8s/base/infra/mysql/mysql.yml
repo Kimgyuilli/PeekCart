@@ -41,19 +41,19 @@ spec:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: peekcart-secret
+                  name: mysql-secret
                   key: DB_PASSWORD
             - name: MYSQL_DATABASE
               value: peekcart
             - name: MYSQL_USER
               valueFrom:
                 secretKeyRef:
-                  name: peekcart-secret
+                  name: mysql-secret
                   key: DB_USERNAME
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: peekcart-secret
+                  name: mysql-secret
                   key: DB_PASSWORD
           resources:
             requests:

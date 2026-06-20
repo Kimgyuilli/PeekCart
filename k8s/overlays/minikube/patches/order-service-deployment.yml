@@ -1,0 +1,12 @@
+# minikube: 로컬 빌드 이미지 사용 (레지스트리 pull 안 함). strategic merge — container name 매칭.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      containers:
+        - name: order-service
+          imagePullPolicy: Never

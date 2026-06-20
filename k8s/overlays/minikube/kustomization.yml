@@ -10,12 +10,15 @@ kind: Kustomization
 resources:
   - ../../base
 
+# strategic merge patch — gvk + metadata.name 자동 매칭(target 불필요). 5서비스 × {deployment,service}.
 patches:
-  - path: patches/peekcart-deployment.yml
-    target:
-      kind: Deployment
-      name: peekcart
-  - path: patches/peekcart-service.yml
-    target:
-      kind: Service
-      name: peekcart
+  - path: patches/notification-service-deployment.yml
+  - path: patches/notification-service-service.yml
+  - path: patches/user-service-deployment.yml
+  - path: patches/user-service-service.yml
+  - path: patches/product-service-deployment.yml
+  - path: patches/product-service-service.yml
+  - path: patches/order-service-deployment.yml
+  - path: patches/order-service-service.yml
+  - path: patches/payment-service-deployment.yml
+  - path: patches/payment-service-service.yml

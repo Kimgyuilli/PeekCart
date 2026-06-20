@@ -1,4 +1,0 @@
-# minikube: 로컬 빌드 이미지를 사용하므로 레지스트리에서 pull 하지 않음
-- op: add
-  path: /spec/template/spec/containers/0/imagePullPolicy
-  value: Never

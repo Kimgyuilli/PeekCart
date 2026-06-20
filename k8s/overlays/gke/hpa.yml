@@ -1,17 +1,19 @@
+# GKE HPA — order-service 만 (PR3b GP-2 #4 · 로드맵 §16 "Phase 4 이후 HPA=Order Service HPA").
+# 5서비스 균일 HPA 는 기각(로드맵 What 정합·simplicity). 타 서비스 HPA 는 필요 시 후속.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: peekcart
+  name: order-service
   namespace: peekcart
   labels:
-    app.kubernetes.io/name: peekcart
+    app.kubernetes.io/name: order-service
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: peekcart
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: peekcart
+    name: order-service
   minReplicas: 1
   maxReplicas: 3
   metrics:
