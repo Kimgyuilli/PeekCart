@@ -61,3 +61,71 @@
 - PHASE4.md: PR3a 이력 엔트리(P1·P2·P3·핵심결정·검증·후속부채·다음 PR3b/3c)
 - GS-1: [MISS] ADR-0015 ignore-with-reason (PR3c 작성 예정 forward reference)
 - ship: 2 커밋(chore(ci) / docs(plan)) + docs(progress) 1 커밋, push, PR #66
+
+## 2026-06-20 14:30 — GP-2 (plan loop 1, PR3b 착수 전 재리뷰)
+- 리뷰 run: plan:20260620T052322Z:b3eae52b-7cfd-4541-a160-b67acec16b86:1 — PR3b(P4~P9) 준비 상태. order-service 런타임 Flyway 마이그레이터 전제는 코드 일치 확인됨(Codex).
+- 리뷰 항목: 7건 (P0:0, P1:3, P2:4) — 전부 코드 grep 근거, 노이즈 0.
+- 사용자 선택: [전체 반영] (권고대로) + HPA 결정 게이트 → **order-service만**(로드맵 §16 정합).
+  - #1(P1) ServiceMonitor PR3c→**PR3b 당김**(ADR-0006 소속 불변식·P9 이동·selector-lint 실질검증 P8).
+  - #2(P1) `IMAGE_CONTRACT_TRANSITION` 제거→**full 5/5** P8 명시.
+  - #3(P1) Secret 표 코드정정 — SlackPort 를 notification/product/order/payment **4서비스 생성자 주입**(no-op fallback 부재) → webhook 미설정 시 4서비스 부팅 실패. 처분: (b·권고) :common `@ConditionalOnMissingBean` no-op SlackPort. Toss k8s 프로파일 기본값 제거 fail-fast.
+  - #4(P2) HPA **order-service 단일**(5서비스 균일 기각·로드맵 §16 What 정합·문서 무수정).
+  - #5(P2) minikube/gke overlay **per-service patch 확정**(components 기각·B4).
+  - #6(P2) flywayMigrateShared 후속부채 명문화 — k8s cold-start=order-service Boot Flyway 정본·smoke=공식 flyway 이미지·root task 재사용 금지.
+  - #7(P2) `PEEKCART_CACHE_ENABLED` **product 전용 ConfigMap 유지**(D-002 🔄 살아있음).
+- 반영 위치: 헤더 PR분할/B1표 row4/§2 HPA 트레이드오프/P4·P5·P6·P7·P8·P9/§4 영향파일/§5 검증/§6 완료조건.
+- 부산물: PLAN-BLINDSPOTS **B6 확장**(역방향 함정 — `@ConditionalOnProperty` 빈을 생성자 주입하는 서비스 다수면 secret 미공급 시 부팅 실패; no-op fallback vs 전 서비스 주입).
+- raw: .cache/codex-reviews/plan-task-impl1-pr3-dockerfile-ci-k8s-1781933041.json
+- run_id: plan:20260620T052322Z:b3eae52b-7cfd-4541-a160-b67acec16b86:1
+- tokens: 134,998
+
+## 2026-06-20 14:46 — GP-2 (plan loop 2, loop1 반영 정확성 재리뷰·사용자 재리뷰 요청)
+- 리뷰 run: plan:20260620T054349Z:b3eae52b-7cfd-4541-a160-b67acec16b86:2
+- 리뷰 항목: 4건 (P0:0, P1:2, P2:2) — 전부 loop1 반영분의 정확성 결함, 노이즈 0. 전체 반영.
+  - #1(P1) `servicemonitor-selector-lint` 가 ServiceMonitor 0개면 vacuous-green → P8 "실질검증" 거짓. 처분: lint 에 count==5+canonical name-set 강제 보강 + P9(매니페스트)→P8(검증) 실행순서 명시. §4 에서 해당 lint 를 불변→수정 이동.
+  - #2(P1) loop1 의 no-op SlackPort fallback 권고에 구멍 — 전역 @ConditionalOnMissingBean 은 notification webhook 누락 시에도 주입돼 알림 silent 유실. 처분: fallback 을 property-gate(`slack.noop-fallback.enabled`)로 product/order/payment 한정, notification 은 off→fail-fast. 검증 테스트 2종 추가.
+  - #3(P2) P2·트레이드오프 줄이 아직 flywayMigrateShared 선행 훅으로 적힘(§4/§5 와 모순) → 공식 flyway 이미지로 통일, root task 후속부채로만.
+  - #4(P2) §1 성공기준(5)가 "ADR-0009 §Decision 명문화"로 읽혀 본문 수정처럼 보임 → "ADR-0015 §Decision 명문화 + ADR-0009 Status=Partially Superseded"로 정정.
+- 반영 위치: 헤더 loop2 줄/§1 성공기준/§2 트레이드오프·P2/P5 SLACK 행/P8·P9/§4 B1표 row12·불변·수정/§5 PR3b.
+- raw: .cache/codex-reviews/plan-task-impl1-pr3-dockerfile-ci-k8s-1781934259.json
+- run_id: plan:20260620T054349Z:b3eae52b-7cfd-4541-a160-b67acec16b86:2
+- tokens: 127,849
+- 비고: attempts_by_command.plan=2. 사용자가 loop3 재리뷰 요청 → attempt 3(권장 cap 도달).
+
+## 2026-06-20 15:06 — GP-2 (plan loop 3, 수렴 확인·사용자 재리뷰 요청)
+- 리뷰 run: plan:20260620T060324Z:b3eae52b-7cfd-4541-a160-b67acec16b86:3
+- 리뷰 항목: 2건 (P0:0, P1:1, P2:1) — loop2 반영분의 잔여 결함. 전체 반영.
+  - #1(P1) loop2 의 no-op property-gate 가 여전히 안 닫힘 — 4서비스 base yml `slack.webhook.url: ${SLACK_WEBHOOK_URL:placeholder}` 기본값 + presence-based `@ConditionalOnProperty(name=...)`(havingValue 없음) → property 항상 존재 → real bean 무조건 등록 → notification fail-fast·product/order/payment no-op 둘 다 깨짐. 처분: base yml placeholder 기본값 제거 + notification(no-default fail-fast)/product·order·payment(`slack.noop-fallback.enabled=true` no-op)·real↔no-op 명시 property 상호배타. local/test 동반 처분. 코드 grep 확인(4 yml line 인용).
+  - #2(P2) D-016 P14 PR 경계 미정(PR3b/3c/후속 모호) → PR3b 배치(gke images[] AR rewrite 동반)+§5 dry-run 검증+§6 머지조건 명시.
+- 반영 위치: 헤더 loop3 줄/P5 SLACK 행/§4 신규·수정/P14·§5·§6/PLAN-BLINDSPOTS B6 함정².
+- 부산물: PLAN-BLINDSPOTS **B6 함정²**(presence-based @ConditionalOnProperty + base 기본값 → 조건 항상 true → fail-fast/no-op 게이팅 붕괴; 기본값 제거 선결·명시 property 상호배타).
+- raw: .cache/codex-reviews/plan-task-impl1-pr3-dockerfile-ci-k8s-1781935430.json
+- run_id: plan:20260620T060324Z:b3eae52b-7cfd-4541-a160-b67acec16b86:3
+- tokens: 111,933
+- 비고: **attempts_by_command.plan=3 (권장 cap 도달)**. 추가 loop4 는 §7-6 명시 확인 필요. P1 추세 3→2→2→... 수렴 중이나 loop3 도 P1 1건(이전 반영의 잔여) — Slack 게이팅이 반복 핫스팟.
+
+## 2026-06-20 15:48 — GW-2 (work loop 1, PR3b 구현 diff 리뷰)
+- 리뷰 run: work:20260620T064507Z:f746e5a3-8d31-4f9d-a942-5f739d4b5ff9:1 (single, diff 1954줄) — kustomize 양 overlay·namespace-lint·image-contract full 5/5 통과 확인됨(Codex).
+- 항목: 5건 (P0:1, P1:3, P2:1) — 전부 유효, 전체 반영.
+  - #1(P0) **MySQL 이 삭제된 peekcart-secret 참조** → CreateContainerConfigError, 클러스터 부팅 불가(B1 스윕이 infra→secret 간선 누락). → `infra/mysql/secret.yml`(mysql-secret) 신설 + mysql.yml secretKeyRef + base kustomization.
+  - #2(P1) notification base secret/yml 의 SLACK placeholder 가 k8s fail-fast 무력화 → committed secret 에서 `SLACK_WEBHOOK_URL` 제거(operator/external 주입). base application.yml 기본값은 테스트/local 유지.
+  - #3(P1) payment base secret 의 TOSS placeholder 동일 → committed secret 에서 `TOSS_*` 제거.
+  - #4(P1) promote-images digest 미결합·gke newTag latest mutable → 승격 후 `kustomize edit set image ...@digest` 고정 명령 출력 + README operator pin 절차. full lint-digest 강제는 후속 명시.
+  - #5(P2) promote-images.sh --help sed 범위 오류로 코드 출력 → usage() heredoc 교체.
+- **부수 수정(연쇄)**: #2/#3 로 smoke(profile k8s, SLACK/TOSS no-default fail-fast)가 깨지므로 `docker-health-smoke.sh` 가 SLACK_WEBHOOK_URL/TOSS_* dummy 를 **런타임 주입**(operator secret 시뮬레이션, 렌더 manifest 엔 안 샘).
+- 검증: kustomize 양 overlay 렌더·peekcart-secret dangling 0·SLACK/TOSS placeholder 렌더 0·lint 3종·promote help/dry-run·**notification+payment 이미지 build+smoke green**(fail-fast+dummy 주입 e2e)·`./gradlew build` 전체 그린(구현 시점).
+- diff: .cache/diffs/diff-task-impl1-pr3-dockerfile-ci-k8s-1781937809.patch
+- raw: .cache/codex-reviews/diff-task-impl1-pr3-dockerfile-ci-k8s-1781937937.json
+- run_id: work:20260620T064507Z:f746e5a3-8d31-4f9d-a942-5f739d4b5ff9:1
+- tokens: 125,224
+- 부산물: B1 스윕에 **infra→app-secret 간선**(인프라가 앱 secret 의 키를 참조) 누락 패턴 — 단일→per-service 분해 시 공유 secret 을 쪼개면 인프라(MySQL 등)의 secretKeyRef 가 dangling. → **PLAN-BLINDSPOTS B1b 에 반영**(인프라→공유리소스 이름 간선).
+
+## 2026-06-20 16:00 — GW-2 (work loop 2, 1차 반영 수렴 확인) → work.done
+- 리뷰 run: work:20260620T070019Z:f746e5a3-8d31-4f9d-a942-5f739d4b5ff9:2 (single, diff 2084줄)
+- 항목: **0건 — 수렴**. Codex 확인: mysql-secret 분리 정합(redis/kafka 도 peekcart-secret 참조 없음·렌더 dangling 0)·SLACK/TOSS committed 제거가 fail-fast 실효+렌더 placeholder/stub 누출 0·smoke dummy 런타임 주입 ADR-0007 정합·promote/lint 통과.
+- 검증: kustomize 양 overlay·lint 3종·promote help/dry-run·(1차에서 notification+payment build+smoke green·gradle build 전체 green).
+- diff: .cache/diffs/diff-task-impl1-pr3-dockerfile-ci-k8s-1781938819.patch
+- raw: .cache/codex-reviews/diff-task-impl1-pr3-dockerfile-ci-k8s-1781938851.json
+- run_id: work:20260620T070019Z:f746e5a3-8d31-4f9d-a942-5f739d4b5ff9:2
+- tokens: 168,469
+- stage → **work.done** (work_attempts=2). 다음: /ship (커밋/PR/done).
