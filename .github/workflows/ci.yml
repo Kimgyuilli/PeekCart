@@ -35,10 +35,8 @@ jobs:
         uses: azure/setup-kubectl@v4
 
       - name: Run CI policy lints
-        # IMAGE_CONTRACT_TRANSITION: PR3a~PR3b 전환기 동안만 image-contract-lint 를 SUSPENDED 로 통과시킨다
-        # (per-service k8s 매니페스트가 PR3b 에서 생기기 전까지). PR3b 에서 이 env 를 제거하면 3-way 가 강제된다.
-        env:
-          IMAGE_CONTRACT_TRANSITION: "1"
+        # PR3b: per-service k8s 매니페스트(5) 완성으로 IMAGE_CONTRACT_TRANSITION(SUSPENDED) 제거.
+        # image-contract-lint 가 ci↔base↔gke 3-way 를 full 5/5 로 강제한다.
         run: |
           bash scripts/kustomize-namespace-lint.sh
           bash scripts/image-contract-lint.sh

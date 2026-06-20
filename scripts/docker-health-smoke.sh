@@ -90,11 +90,18 @@ done
 "${COMPOSE[@]}" exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null
 
 echo "[D-012/L-015] starting app container"
+# 자격증명 런타임 주입(GP-2 work #2/#3): k8s 프로파일은 SLACK_WEBHOOK_URL(notification)·TOSS_*(payment)
+# 를 no-default 로 강제(fail-fast). committed Secret 에는 placeholder 를 두지 않으므로(operator/external
+# 주입), smoke 는 그 operator 주입을 dummy 값으로 시뮬레이션한다. 사용 안 하는 서비스는 무시한다.
+# (이 값들은 smoke 런타임 전용 — 렌더 산출 manifest 에 새지 않는다.)
 docker run -d \
     --name "$APP_CONTAINER" \
     --network "${COMPOSE_PROJECT_NAME}_default" \
     -p "${APP_PORT}:8080" \
     -e SPRING_PROFILES_ACTIVE=k8s \
+    -e SLACK_WEBHOOK_URL="${SMOKE_SLACK_WEBHOOK_URL:-https://hooks.slack.com/services/smoke}" \
+    -e TOSS_SECRET_KEY="${SMOKE_TOSS_SECRET_KEY:-test_sk_smoke}" \
+    -e TOSS_WEBHOOK_SECRET="${SMOKE_TOSS_WEBHOOK_SECRET:-test_webhook_smoke}" \
     "$IMAGE" >/dev/null
 
 echo "[D-012/L-015] waiting for /actuator/health"
