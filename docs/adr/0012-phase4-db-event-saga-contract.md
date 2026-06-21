@@ -1,7 +1,14 @@
 # ADR-0012: Phase 4 DB-per-service + 이벤트/Saga 계약
 
-- **Status**: Accepted
-- **Decided**: 2026-06-14 (Proposed) → 2026-06-14 (Accepted)
+- **Status**: Partially Superseded by [ADR-0016](./0016-reservation-and-payment-table-model.md)
+
+> **무효화 범위 (ADR-0016)**: 본 ADR 의 **D1 소유표 중 두 행**과 **D3 재고 예약 모델**이 구현 실제와 달라 ADR-0016 으로 재기록된다.
+> - **D1 Product 행**: `inventories(+예약 컬럼, D3)` → 별도 **`stock_reservations`** 테이블(예약 원장)을 채택. inventories 에 예약 컬럼을 두지 않음.
+> - **D1 Payment 행**: `payment_failures` 미구현 → 별도 목적의 **`payment_cancellations`**(취소 marker) 가 실재.
+> - **D3 예약 모델**: "재검토" 대안(별도 reservation 테이블)이 strangler-1(#56)에서 채택됨.
+> 그 외 본 ADR 의 결정(DB-per-service 경계 원칙·교차 FK 제거·이벤트/Saga 계약 D2/D4·retention floor D5)은 유효하다.
+
+- **Decided**: 2026-06-14 (Proposed) → 2026-06-14 (Accepted) → 2026-06-22 (Partially Superseded by ADR-0016)
 - **Deciders**: 프로젝트 오너
 - **관련 Phase**: Phase 4 (MSA 분리)
 
