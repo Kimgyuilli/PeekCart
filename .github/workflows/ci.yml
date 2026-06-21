@@ -34,19 +34,35 @@ jobs:
       - name: Set up kubectl (for ServiceMonitor lint)
         uses: azure/setup-kubectl@v4
 
+      - name: Install promtool (for PromQL syntax lint)
+        # PR3c: observability-promql-lint 의 PromQL syntax 검증 정본(ADR-0015 D5-V6).
+        # promtool 미설치 시 lint 가 exit 2 로 명확히 실패한다 — balance 검사로 대체 금지.
+        run: |
+          PROM_VERSION=3.12.0
+          curl -fsSL -o /tmp/prometheus.tar.gz \
+            "https://github.com/prometheus/prometheus/releases/download/v${PROM_VERSION}/prometheus-${PROM_VERSION}.linux-amd64.tar.gz"
+          tar -xzf /tmp/prometheus.tar.gz -C /tmp
+          sudo install "/tmp/prometheus-${PROM_VERSION}.linux-amd64/promtool" /usr/local/bin/promtool
+          promtool --version
+
       - name: Run CI policy lints
         # PR3b: per-service k8s 매니페스트(5) 완성으로 IMAGE_CONTRACT_TRANSITION(SUSPENDED) 제거.
         # image-contract-lint 가 ci↔base↔gke 3-way 를 full 5/5 로 강제한다.
+        # PR3c: observability-ssot/promql lint 재활성 — root 단일 yml 전제를 per-service ground truth
+        # (5서비스 application.yml + k8s Service metadata.name)로 재작성 완료(ADR-0015).
         run: |
           bash scripts/kustomize-namespace-lint.sh
           bash scripts/image-contract-lint.sh
           bash scripts/servicemonitor-selector-lint.sh
-          # [Payment peel PR-b] observability-ssot/promql lint 는 root `src/main/resources/application.yml`
-          # (단일 모놀리스 base yml)을 SSOT 로 가정한다. root app 해체로 그 파일이 사라졌고, 관측성 SSOT 는
-          # 이제 서비스별(application=<service>)로 분산된다. 모놀리스 전제 lint 와 alert ground-truth(application=peekcart)
-          # 의 per-service 재설계는 PR3(관측성/CI 재구성)에서 수행한다 — 그때까지 두 lint 는 비활성.
-          # bash scripts/observability-ssot-lint.sh
-          # bash scripts/observability-promql-lint.sh
+          bash scripts/observability-ssot-lint.sh
+          bash scripts/observability-promql-lint.sh
+          # PR3c sweep — 단일 'peekcart' 관측성 식별자(application/service) 잔존 0 강제.
+          # escaped-quote(JSON/embedded-yaml) + 형제 라벨(service) 양쪽 매치(PLAN-BLINDSPOTS B11).
+          # uid/tags 의 peekcart-* 브랜드 문자열은 라벨 값(="peekcart")이 아니므로 매치 대상 외.
+          if grep -rnE '(application|service)=\\?"peekcart"|application: ?peekcart|service: ?peekcart' k8s/monitoring scripts; then
+            echo "::error::단일 'peekcart' 관측성 라벨 값 잔존 — per-service 로 전환 필요 (ADR-0015)"
+            exit 1
+          fi
 
       - run: ./gradlew build --no-daemon
         env:

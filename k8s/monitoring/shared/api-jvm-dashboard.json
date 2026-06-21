@@ -12,7 +12,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"peekcart\", uri!~\"/actuator.*\"}[5m])) by (le, uri))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=~\"$application\", uri!~\"/actuator.*\"}[5m])) by (le, uri))",
           "legendFormat": "p95 {{uri}}"
         }
       ],
@@ -38,7 +38,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"peekcart\", uri!~\"/actuator.*\"}[5m])) by (le, uri))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=~\"$application\", uri!~\"/actuator.*\"}[5m])) by (le, uri))",
           "legendFormat": "p99 {{uri}}"
         }
       ],
@@ -54,7 +54,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "(sum(rate(http_server_requests_seconds_count{application=\"peekcart\", status=~\"5..\"}[5m])) / (sum(rate(http_server_requests_seconds_count{application=\"peekcart\"}[5m])) > 0) * 100) or vector(0)",
+          "expr": "(sum(rate(http_server_requests_seconds_count{application=~\"$application\", status=~\"5..\"}[5m])) / (sum(rate(http_server_requests_seconds_count{application=~\"$application\"}[5m])) > 0) * 100) or vector(0)",
           "legendFormat": "5xx error rate %"
         }
       ],
@@ -79,7 +79,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{application=\"peekcart\", uri!~\"/actuator.*\"}[5m])) by (uri)",
+          "expr": "sum(rate(http_server_requests_seconds_count{application=~\"$application\", uri!~\"/actuator.*\"}[5m])) by (uri)",
           "legendFormat": "{{uri}}"
         }
       ],
@@ -95,11 +95,11 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{application=\"peekcart\", area=\"heap\"}",
+          "expr": "jvm_memory_used_bytes{application=~\"$application\", area=\"heap\"}",
           "legendFormat": "Used ({{id}})"
         },
         {
-          "expr": "jvm_memory_max_bytes{application=\"peekcart\", area=\"heap\"}",
+          "expr": "jvm_memory_max_bytes{application=~\"$application\", area=\"heap\"}",
           "legendFormat": "Max ({{id}})"
         }
       ],
@@ -115,7 +115,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{application=\"peekcart\"}[5m])",
+          "expr": "rate(jvm_gc_pause_seconds_sum{application=~\"$application\"}[5m])",
           "legendFormat": "{{action}} ({{cause}})"
         }
       ],
@@ -160,7 +160,29 @@
   ],
   "schemaVersion": 39,
   "tags": ["peekcart", "api", "jvm"],
-  "templating": { "list": [] },
+  "templating": {
+    "list": [
+      {
+        "name": "application",
+        "label": "Application",
+        "type": "custom",
+        "query": "notification-service,order-service,payment-service,product-service,user-service",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": ["All"], "value": ["$__all"] },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "notification-service", "value": "notification-service", "selected": false },
+          { "text": "order-service", "value": "order-service", "selected": false },
+          { "text": "payment-service", "value": "payment-service", "selected": false },
+          { "text": "product-service", "value": "product-service", "selected": false },
+          { "text": "user-service", "value": "user-service", "selected": false }
+        ],
+        "hide": 0
+      }
+    ]
+  },
   "time": { "from": "now-30m", "to": "now" },
   "title": "PeekCart — API & JVM",
   "uid": "peekcart-api-jvm"

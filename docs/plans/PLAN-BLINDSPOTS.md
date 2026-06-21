@@ -72,6 +72,11 @@
 - **Check**: 옮긴 `@SpringBootTest` 테스트가 **자기 `@TestPropertySource(spring.flyway.enabled=true, locations=classpath:db/migration)`** 를 갖는지 확인. 서비스 모듈은 런타임 Flyway disabled 라, root 의 `flyway.enabled:true` 에 무임승차하던 테스트는 이동 후 컨텍스트 로드 시 **`SchemaManagementException`(validate 실패)** 으로 깨진다(빈 testcontainer DB 에 스키마 미적용). 슬라이스(`@DataJpaTest`)/단위 테스트는 불요 — `@SpringBootTest` 만 해당. 선례 패턴: `product-service` 의 5개 통합테스트가 이미 이 override 보유.
 - **출처**: task-impl-order-payment-peel PR-a — root→order-service 로 옮긴 `ProductPriceCacheSagaIntegrationTest`·`OrderExpiredPaymentRequestedQueryIntegrationTest` 가 flyway override 누락으로 10개 메서드 context-load 실패. plan P6/§5 가 "testFixtures 로 마이그레이션 적용" 만 적고 *per-test flyway enable* 을 비워둠(→ B4). PR-b 가 payment `@SpringBootTest` 9개 이동 시 재발 — P14 에 명시 필요.
 
+## B11 — 식별자 일괄 치환 검증 grep 이 escaped-quote/형제 라벨을 놓쳐 false-green
+- **Trigger**: 단일 식별자(`application="peekcart"` 등)를 per-service 로 일괄 치환하고, "잔존 0" 을 grep sweep 으로 검증할 때 — 특히 대상이 **JSON/embedded-YAML**(escape 됨)이거나 식별자가 **여러 라벨 키**(`application` + `service` + `namespace`)에 걸쳐 있을 때.
+- **Check**: (1) sweep 패턴이 **escaped quote** 를 매치하는가 — JSON(`grafana-*.json`)·ConfigMap 내장 yaml(`data["alerts.yaml"]`)은 `application=\"peekcart\"` 로 저장돼 literal `application="peekcart"` grep 이 **0 을 반환해도 실제로는 잔존**(false-green). `grep -E 'key=\\?"val"'` 로 escaped/unescaped 양쪽 매치. (2) 치환 대상 라벨이 **하나가 아니다** — `application` 만 sweep 하면 `service="peekcart"`·`namespace="peekcart"` 형제 라벨 잔존을 놓침. 완료 조건이 "application/service 고정값 0" 이면 sweep 도 `(application|service)` 둘 다 봐야 함. (3) **브랜드 문자열 제외** — uid/tags 의 `peekcart-high-error-rate` 같은 네이밍은 라벨 값이 아니므로 sweep 매치에서 배제(`="peekcart"` 형태만 대상).
+- **출처**: task-impl1-pr3c-observability — 모계획 PR3c 검증이 `grep 'application="peekcart"' → 0` 을 제시했으나 alert/dashboard 는 `application=\"peekcart\"`(escaped) 12+회 + `service=\"peekcart\"`(`grafana-alerts.yml:101,128`) 잔존. literal grep 이 false-green. Codex GP-2 #5 가 `service` 누락 지적 → sweep 을 `(application|service)` + escaped 패턴으로 확장.
+
 ---
 
 ## 자동 검사로 승격된 항목 (참고 — 더 이상 수동 점검 불필요)
