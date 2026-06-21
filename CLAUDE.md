@@ -137,7 +137,7 @@ com.peekcart.global.{config|exception|jwt|response}
 - **금지**(프로파일): `management.metrics.*` (식별자/분포 설정), `management.endpoints.web.exposure.include` (최소 노출은 base), `spring.kafka.producer/consumer.properties.*`, `spring.jpa.hibernate.ddl-auto`, `spring.application.name`
 - **회색지대 예외**: `logging.level.*`, `spring.jpa.show-sql`, 테스트 전용 타임아웃 등 관용적 환경 차이는 허용하되 YAML 상단에 `# [ADR-0007 exception] ...` 주석으로 의도 명시
 - **Java Config 우선 케이스**: 최상위 키 트리(예: `management.*`)가 base/프로파일 간 병합 충돌 위험이 있거나, 조건부 활성화/타입 안전성이 필요한 경우 `@Configuration` 클래스로 선언 (D-001 재발 방지, 예시: `MetricsConfig.java`)
-- **관측성 계약 SSOT**: 메트릭 정책/태그/노출/보안/scrape/alerts 의 surface 별 SSOT 위치는 ADR-0009 §Decision 표가 단일 결정 (see ADR-0009)
+- **관측성 계약 SSOT**: 메트릭 정책/태그/노출/보안/scrape/alerts 의 surface 별 SSOT 위치는 ADR-0009 §Decision 표가 단일 결정. 5서비스 분리 완료 후 per-service 정정(태그/alert/lint = `<svc>-service`)은 ADR-0015 (see ADR-0009, ADR-0015)
 
 ### 테스트 규칙 (`docs/06-testing-strategy.md` 참고)
 

@@ -1,6 +1,7 @@
 # ADR-0009: 관측성 계약 SSOT 결정
 
-- **Status**: Accepted
+- **Status**: Partially Superseded by ADR-0015
+  > 무효화 범위(ADR-0015): §Context "현 위치" 서술의 root `application.yml`·`application=peekcart`·`base/services/peekcart/servicemonitor.yml` 경로, §Decision 표 "현 SSOT(파일:라인)" 컬럼의 모놀리스 경로(S1/S2/S5/S6), 회귀 검증의 `application=peekcart` 단일값 전제(D5-V1/D5-V2 단일 root yml 가정), S5 단일 ServiceMonitor 경로. **§Decision "Phase 4 owner" 컬럼(per-service owner 결정)은 유효** — ADR-0015 가 실현·확정.
 - **Date**: 2026-05-04
 - **Deciders**: 프로젝트 오너
 - **관련 Phase**: 전체 (Phase 4 모듈 분리 진입 전 결정)
