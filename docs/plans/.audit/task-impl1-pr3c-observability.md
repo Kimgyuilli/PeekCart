@@ -32,3 +32,10 @@
 - diff: .cache/diffs/diff-task-impl1-pr3c-observability-1782045199.patch
 - raw: .cache/codex-reviews/diff-task-impl1-pr3c-observability-1782045306.json
 
+## 2026-06-21 21:50 — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/68)
+- TASKS.md: 구현 ① PR3c ✅ + 구현 ① 전체 종료(이미지#66·k8s#67·관측성#68)
+- PHASE4.md: PR3c 엔트리(P1~P6·핵심결정·negative test 6종·프로세스)
+- ADR-0015 Accepted(신규) · ADR-0009 Partially Superseded(p3 커밋에 반영)
+- 커밋: 5개(feat observability·chore observability·docs adr·docs plan·docs progress)
+- 부산물: PLAN-BLINDSPOTS B11
+
