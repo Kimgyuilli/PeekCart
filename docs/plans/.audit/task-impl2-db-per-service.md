@@ -34,3 +34,8 @@
 - precheck: warnings — [MISS] ADR-0016
 - 선택: [2] 무시하고 진행
 - 사유: ADR-0016 은 PR2(P14) 산출물 — PR1 범위 아님. 계획서가 선참조한 것이며 PR2 에서 생성됨
+
+## 2026-06-21 14:11 — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/69)
+- TASKS.md ② → 🔄 (PR1 #69 링크)
+- PHASE4.md 구현 ② PR1 이력 추가
+- 커밋 3개(feat(db) V13 · docs(plan) · docs(progress))
