@@ -110,7 +110,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
 
         // when: Outbox 에 이벤트 저장
         paymentOutboxEventPublisher.publishPaymentCompleted(payment, USER_ID);
-        List<OutboxEvent> pending = outboxEventRepository.findPendingEvents(List.of("PAYMENT"), 100);
+        List<OutboxEvent> pending = outboxEventRepository.findPendingEvents(100);
         assertThat(pending).hasSize(1);
         assertThat(pending.get(0).getStatus()).isEqualTo(OutboxEventStatus.PENDING);
 
@@ -118,7 +118,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
         pollUntilPublished();
 
         // then: PENDING 비워짐 + Kafka 로 발행되어 테스트 listener 수신(key=orderId)
-        assertThat(outboxEventRepository.findPendingEvents(List.of("PAYMENT"), 100)).isEmpty();
+        assertThat(outboxEventRepository.findPendingEvents(100)).isEmpty();
         ConsumerRecord<String, String> record = awaitRecordWithKey(aggregateKey);
         assertThat(record.key()).isEqualTo(aggregateKey);
     }
@@ -140,7 +140,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
         outboxPollingService.pollAndPublish();
 
         // then: PENDING 없음 + 해당 key 발행 record 수 변화 없음 (중복 발행 금지)
-        assertThat(outboxEventRepository.findPendingEvents(List.of("PAYMENT"), 100)).isEmpty();
+        assertThat(outboxEventRepository.findPendingEvents(100)).isEmpty();
         await().during(2, TimeUnit.SECONDS).atMost(4, TimeUnit.SECONDS).untilAsserted(() ->
                 assertThat(countRecordsWithKey(aggregateKey)).isEqualTo(1));
     }
@@ -193,7 +193,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
     private void pollUntilPublished() {
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             outboxPollingService.pollAndPublish();
-            assertThat(outboxEventRepository.findPendingEvents(List.of("PAYMENT"), 100)).isEmpty();
+            assertThat(outboxEventRepository.findPendingEvents(100)).isEmpty();
         });
     }
 

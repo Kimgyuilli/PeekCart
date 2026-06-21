@@ -98,7 +98,7 @@ class StockReservationSagaIntegrationTest extends AbstractIntegrationTest {
     }
 
     private long resultEventCount() {
-        return outboxEventRepository.findPendingEvents(java.util.List.of("PRODUCT"), 100).stream()
+        return outboxEventRepository.findPendingEvents(100).stream()
                 .filter(e -> e.getEventType().equals("stock.reservation.result"))
                 .count();
     }

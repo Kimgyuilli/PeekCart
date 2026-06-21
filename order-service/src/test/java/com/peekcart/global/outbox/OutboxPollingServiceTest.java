@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.times;
@@ -50,7 +49,7 @@ class OutboxPollingServiceTest {
     @DisplayName("Slack 알림 실패 시에도 FAILED 상태 저장이 수행되고 예외가 전파되지 않는다")
     void slackFailureIsIsolated() {
         OutboxEvent event = retryableEvent(null, null);
-        given(outboxEventRepository.findPendingEvents(anyList(), anyInt())).willReturn(List.of(event));
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
         given(kafkaTemplate.send(any(ProducerRecord.class)))
                 .willThrow(new RuntimeException("Kafka down"));
         willThrow(new RuntimeException("Slack down")).given(slackPort).send(any(String.class));
@@ -68,7 +67,7 @@ class OutboxPollingServiceTest {
     @DisplayName("MAX_RETRY 도달 시 Slack 알림이 정상 발송되면 FAILED 상태로 저장된다")
     void slackNotifiedOnMaxRetryReached() {
         OutboxEvent event = retryableEvent(null, null);
-        given(outboxEventRepository.findPendingEvents(anyList(), anyInt())).willReturn(List.of(event));
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
         given(kafkaTemplate.send(any(ProducerRecord.class)))
                 .willThrow(new RuntimeException("Kafka down"));
 
@@ -85,7 +84,7 @@ class OutboxPollingServiceTest {
     @DisplayName("Kafka 발행 실패 시 outbox.publish result=failure timer 가 증가하고 success 는 기록되지 않는다 (D-014/L-009)")
     void publishFailureRecordsFailureTimer() {
         OutboxEvent event = pendingEvent(null, null);
-        given(outboxEventRepository.findPendingEvents(anyList(), anyInt())).willReturn(List.of(event));
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
         given(kafkaTemplate.send(any(ProducerRecord.class)))
                 .willThrow(new RuntimeException("Kafka down"));
 
@@ -99,7 +98,7 @@ class OutboxPollingServiceTest {
     @DisplayName("trace_id / user_id 가 set 된 OutboxEvent 발행 시 ProducerRecord 헤더에 두 키 모두 포함된다")
     void producerRecordCarriesTraceHeadersWhenSet() throws Exception {
         OutboxEvent event = pendingEvent("trace-abc", "42");
-        given(outboxEventRepository.findPendingEvents(anyList(), anyInt())).willReturn(List.of(event));
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
         given(kafkaTemplate.send(any(ProducerRecord.class)))
                 .willReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
 
@@ -116,7 +115,7 @@ class OutboxPollingServiceTest {
     @DisplayName("trace_id / user_id 가 둘 다 null 이면 ProducerRecord 헤더에 두 키 모두 미주입된다")
     void producerRecordOmitsTraceHeadersWhenNull() {
         OutboxEvent event = pendingEvent(null, null);
-        given(outboxEventRepository.findPendingEvents(anyList(), anyInt())).willReturn(List.of(event));
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
         given(kafkaTemplate.send(any(ProducerRecord.class)))
                 .willReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
 
@@ -133,7 +132,7 @@ class OutboxPollingServiceTest {
     @DisplayName("trace_id / user_id 가 빈 문자열이면 ProducerRecord 헤더에 두 키 모두 미주입된다 (ADR-0008 blank 정책)")
     void producerRecordOmitsTraceHeadersWhenBlank() {
         OutboxEvent event = pendingEvent("", "  ");
-        given(outboxEventRepository.findPendingEvents(anyList(), anyInt())).willReturn(List.of(event));
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
         given(kafkaTemplate.send(any(ProducerRecord.class)))
                 .willReturn(java.util.concurrent.CompletableFuture.completedFuture(null));
 
@@ -151,7 +150,7 @@ class OutboxPollingServiceTest {
     void publishTimeoutIncrementsRetryAndPersistsEvent() {
         outboxPollingService = service(Duration.ofMillis(10), Duration.ofSeconds(1));
         OutboxEvent event = pendingEvent(null, null);
-        given(outboxEventRepository.findPendingEvents(anyList(), anyInt())).willReturn(List.of(event));
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
         given(kafkaTemplate.send(any(ProducerRecord.class))).willReturn(new CompletableFuture<>());
 
         outboxPollingService.pollAndPublish();
@@ -167,7 +166,7 @@ class OutboxPollingServiceTest {
         outboxPollingService = service(Duration.ofMillis(10), Duration.ofMillis(5));
         OutboxEvent first = pendingEvent(null, null);
         OutboxEvent remaining = pendingEvent(null, null);
-        given(outboxEventRepository.findPendingEvents(anyList(), anyInt())).willReturn(List.of(first, remaining));
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(first, remaining));
         given(kafkaTemplate.send(any(ProducerRecord.class))).willReturn(new CompletableFuture<>());
 
         outboxPollingService.pollAndPublish();
@@ -207,8 +206,8 @@ class OutboxPollingServiceTest {
     }
 
     private OutboxPollingService service(Duration publishTimeout, Duration cycleTimeout) {
-        // order-service poller 는 자기 도메인 ORDER aggregateType 만 발행한다(공유 DB 소유권 분리, application.yml 와 일치).
+        // DB-per-service(구현 ② PR2): poller 는 자기 스키마 outbox_events 의 PENDING 전체를 발행한다(allowlist 제거).
         return new OutboxPollingService(outboxEventRepository, kafkaTemplate, slackPort,
-                meterRegistry, 100, 5, publishTimeout, cycleTimeout, List.of("ORDER"));
+                meterRegistry, 100, 5, publishTimeout, cycleTimeout);
     }
 }

@@ -21,15 +21,15 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * 공유 DB 전환기 outbox poller 소유권 분리 검증 (Product peel P4 완료 조건).
- * <p>product-service poller(aggregate-types=PRODUCT)가 자기 소유 PRODUCT 이벤트만 Kafka 로 발행하고
- * ORDER/PAYMENT 이벤트 행은 무시한다(root poller 가 발행). backlog gauge 의 집계 메서드도 자기 소유 aggregateType 만 센다.
+ * DB-per-service(구현 ② PR2) outbox poller 발행 범위 검증.
+ * <p>스키마 물리 분리로 소유권이 보장되므로 poller 는 더 이상 aggregateType allowlist 로 필터하지 않고,
+ * 자기 스키마(peekcart_product)의 PENDING 이벤트를 aggregateType 무관하게 전부 발행한다(B8b allowlist 제거).
+ * backlog gauge 집계 메서드도 자기 스키마 전체를 센다(countByStatus).
  */
 @SpringBootTest
 @Testcontainers
@@ -38,7 +38,7 @@ import static org.awaitility.Awaitility.await;
         "spring.flyway.locations=classpath:db/migration"
 })
 @Import(IntegrationTestConfig.class)
-@DisplayName("outbox poller 소유권 분리 통합 테스트 (PRODUCT 발행 · ORDER 무시)")
+@DisplayName("outbox poller 통합 테스트 (DB-per-service: 자기 스키마 PENDING 전체 발행)")
 class ProductOutboxOwnershipIntegrationTest extends AbstractIntegrationTest {
 
     @Container
@@ -62,26 +62,23 @@ class ProductOutboxOwnershipIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("product poller 는 PRODUCT 이벤트만 발행하고 ORDER 이벤트는 PENDING 으로 무시한다 + gauge 는 PRODUCT 만 집계")
-    void productPoller_publishesOnlyProduct_ignoresOrder() {
+    @DisplayName("poller 는 자기 스키마의 PENDING 을 aggregateType 무관하게 전부 발행한다 (allowlist 제거) + gauge 는 자기 스키마 전체 집계")
+    void poller_publishesAllPendingInOwnSchema() {
         outboxEventRepository.save(OutboxEvent.create(
                 "PRODUCT", "p1", "product.test.probe", null, null, eventId -> "{}"));
+        // 다른 aggregateType 행도 더 이상 필터되지 않고 발행된다(스키마 분리가 소유권을 보장 → allowlist 불필요).
         outboxEventRepository.save(OutboxEvent.create(
                 "ORDER", "o1", "order.test.probe", null, null, eventId -> "{}"));
 
-        // backlog gauge 집계 메서드(소유권 분리): 자기 소유 aggregateType 만 센다
-        assertThat(outboxEventRepository.countByStatusAndAggregateTypeIn(
-                OutboxEventStatus.PENDING, List.of("PRODUCT"))).isEqualTo(1);
-        assertThat(outboxEventRepository.countByStatusAndAggregateTypeIn(
-                OutboxEventStatus.PENDING, List.of("ORDER"))).isEqualTo(1);
+        // backlog gauge 집계 메서드: 자기 스키마 전체를 센다(소유권 분리는 스키마가 보장).
+        assertThat(outboxEventRepository.countByStatus(OutboxEventStatus.PENDING)).isEqualTo(2);
 
-        // product poller(aggregate-types=PRODUCT) 발행 → PRODUCT 만 PUBLISHED 로 비워진다
+        // poller 발행 → 자기 스키마의 PENDING 이 모두 비워진다(aggregateType 무관).
         await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
             outboxPollingService.pollAndPublish();
-            assertThat(outboxEventRepository.findPendingEvents(List.of("PRODUCT"), 100)).isEmpty();
+            assertThat(outboxEventRepository.findPendingEvents(100)).isEmpty();
         });
 
-        // ORDER 이벤트는 product poller 가 무시 → 여전히 PENDING (root poller 소유)
-        assertThat(outboxEventRepository.findPendingEvents(List.of("ORDER"), 100)).hasSize(1);
+        assertThat(outboxEventRepository.countByStatus(OutboxEventStatus.PENDING)).isZero();
     }
 }

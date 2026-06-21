@@ -7,7 +7,6 @@ import com.peekcart.notification.domain.model.NotificationType;
 import com.peekcart.notification.infrastructure.NotificationJpaRepository;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +23,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -65,12 +63,13 @@ class NotificationConsumerIntegrationTest extends AbstractIntegrationTest {
     @Autowired NotificationJpaRepository notificationJpaRepository;
     @Autowired ProcessedEventJpaRepository processedEventJpaRepository;
 
-    private Long userId;
+    // DB-per-service(구현 ② PR2): notification 스키마에 users 테이블이 없고 교차 FK 도 제거됨(V13) →
+    // 실제 user 행을 시드하지 않고 임의 userId(ID 참조)만 사용한다.
+    private final Long userId = 42L;
 
     @BeforeEach
     void setUp() {
         cleanDatabase();
-        userId = insertUser();
     }
 
     @Test
@@ -118,19 +117,4 @@ class NotificationConsumerIntegrationTest extends AbstractIntegrationTest {
                 """.formatted(eventId, userId, eventId.substring(0, 8));
     }
 
-    private Long insertUser() {
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        em.createNativeQuery("""
-                INSERT INTO users (email, password_hash, name, role, created_at, updated_at)
-                VALUES (:email, 'hashed', '테스트유저', 'USER', :now, :now)
-                """)
-                .setParameter("email", "noti-" + UUID.randomUUID() + "@peekcart.com")
-                .setParameter("now", LocalDateTime.now())
-                .executeUpdate();
-        Long id = ((Number) em.createNativeQuery("SELECT LAST_INSERT_ID()").getSingleResult()).longValue();
-        em.getTransaction().commit();
-        em.close();
-        return id;
-    }
 }

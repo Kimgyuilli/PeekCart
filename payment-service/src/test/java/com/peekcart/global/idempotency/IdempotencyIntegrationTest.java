@@ -64,24 +64,14 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired ObjectMapper objectMapper;
 
-    private Long userId;
+    // DB-per-service(구현 ② PR2): payment 스키마엔 users/orders 테이블이 없고 교차 FK 도 제거됨(V13) →
+    // 실제 행을 시드하지 않고 임의 ID 참조만 쓴다(payments.user_id·order_id 는 plain ID).
+    private final Long userId = 42L;
+    private final java.util.concurrent.atomic.AtomicLong orderIdSeq = new java.util.concurrent.atomic.AtomicLong(1000);
 
     @BeforeEach
     void setUp() {
         cleanDatabase();
-
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        // [PR2b] User 도메인 peel → root 는 users 행을 native insert 로 시드(orders FK fk_orders_user 충족, root-observable)
-        em.createNativeQuery(
-                        "INSERT INTO users (email, password_hash, name, role, created_at, updated_at) " +
-                                "VALUES ('test@peekcart.com', 'hashed-pw', '테스트유저', 'USER', NOW(6), NOW(6))")
-                .executeUpdate();
-        em.flush();
-        userId = ((Number) em.createNativeQuery("SELECT id FROM users WHERE email = 'test@peekcart.com'")
-                .getSingleResult()).longValue();
-        em.getTransaction().commit();
-        em.close();
     }
 
     @Test
@@ -129,24 +119,9 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
 
     // ── 헬퍼 메서드 ──
 
-    /** payments.order_id FK(fk_payments_order) 충족용 orders 행 시드 → orderId 반환. */
+    /** DB-per-service: orders 테이블이 payment 스키마에 없으므로(FK 제거) 고유 합성 orderId 만 발급한다. */
     private Long seedOrder() {
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        String orderNumber = "ORD-TEST-" + System.nanoTime();
-        em.createNativeQuery(
-                        "INSERT INTO orders (user_id, order_number, total_amount, status, receiver_name, phone, zipcode, address, ordered_at) " +
-                                "VALUES (?1, ?2, 100000, 'PAYMENT_REQUESTED', '홍길동', '010-1234-5678', '12345', '서울시 강남구', NOW(6))")
-                .setParameter(1, userId)
-                .setParameter(2, orderNumber)
-                .executeUpdate();
-        em.flush();
-        Long orderId = ((Number) em.createNativeQuery("SELECT id FROM orders WHERE order_number = ?1")
-                .setParameter(1, orderNumber)
-                .getSingleResult()).longValue();
-        em.getTransaction().commit();
-        em.close();
-        return orderId;
+        return orderIdSeq.incrementAndGet();
     }
 
     /** order.created envelope(JSON) 직렬화 — consumer 는 eventId/payload.orderId/userId/totalAmount 만 읽는다. */

@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 
+import java.util.List;
+
 /**
  * 통합 테스트 공통 베이스 클래스.
  *
@@ -25,8 +27,11 @@ public abstract class AbstractIntegrationTest {
     protected EntityManagerFactory emf;
 
     /**
-     * FK 의존 역순으로 전체 비즈니스 테이블 DELETE.
-     * shedlock 테이블은 제외 (Flyway 관리, 비즈니스 데이터 아님).
+     * 현재 스키마의 전체 비즈니스 테이블 DELETE (DB-per-service: 자기 스키마 테이블만 존재).
+     * 테이블 목록을 information_schema 에서 동적으로 조회하므로, 각 서비스 Testcontainer 는
+     * 자기 모듈 마이그레이션으로 생성한 테이블만 비운다(공유 스키마 가정 제거 — 구현 ② PR2/B10).
+     * flyway_schema_history(Flyway 관리)·shedlock(락 레코드, 비즈니스 데이터 아님)은 제외.
+     * FK 의존 순서를 신경 쓰지 않도록 cleanup 동안 FOREIGN_KEY_CHECKS 를 끈다.
      *
      * <p>데이터에 의존하는 통합 테스트는 반드시 {@code @BeforeEach}에서 이 메서드를 호출해야 한다.
      * cleanup이 불필요한 테스트(ShedLock 레코드 검증, 메트릭 노출 검증 등)는 호출하지 않는다.</p>
@@ -35,29 +40,32 @@ public abstract class AbstractIntegrationTest {
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
-            em.createNativeQuery("DELETE FROM outbox_events").executeUpdate();
-            em.createNativeQuery("DELETE FROM processed_events").executeUpdate();
-            em.createNativeQuery("DELETE FROM product_price_cache").executeUpdate();
-            em.createNativeQuery("DELETE FROM stock_reservations").executeUpdate();
-            em.createNativeQuery("DELETE FROM notifications").executeUpdate();
-            em.createNativeQuery("DELETE FROM webhook_logs").executeUpdate();
-            em.createNativeQuery("DELETE FROM payments").executeUpdate();
-            em.createNativeQuery("DELETE FROM order_items").executeUpdate();
-            em.createNativeQuery("DELETE FROM orders").executeUpdate();
-            em.createNativeQuery("DELETE FROM cart_items").executeUpdate();
-            em.createNativeQuery("DELETE FROM carts").executeUpdate();
-            em.createNativeQuery("DELETE FROM inventories").executeUpdate();
-            em.createNativeQuery("DELETE FROM products").executeUpdate();
-            em.createNativeQuery("DELETE FROM categories").executeUpdate();
-            em.createNativeQuery("DELETE FROM refresh_tokens").executeUpdate();
-            em.createNativeQuery("DELETE FROM addresses").executeUpdate();
-            em.createNativeQuery("DELETE FROM users").executeUpdate();
+            @SuppressWarnings("unchecked")
+            List<String> tables = em.createNativeQuery(
+                    "SELECT table_name FROM information_schema.tables "
+                            + "WHERE table_schema = DATABASE() "
+                            + "AND table_name NOT IN ('flyway_schema_history', 'shedlock')")
+                    .getResultList();
+            em.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
+            for (String table : tables) {
+                em.createNativeQuery("DELETE FROM `" + table + "`").executeUpdate();
+            }
             em.getTransaction().commit();
         } catch (Exception e) {
             if (em.getTransaction().isActive()) em.getTransaction().rollback();
             throw e;
         } finally {
-            em.close();
+            // FOREIGN_KEY_CHECKS 는 세션 변수라 rollback 으로 복구되지 않는다 — FK 체크가 꺼진 커넥션이
+            // 풀에 반환돼 후속 테스트를 오염시키지 않도록 close 전에 best-effort 로 복구한다.
+            try {
+                if (!em.getTransaction().isActive()) em.getTransaction().begin();
+                em.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
+                em.getTransaction().commit();
+            } catch (Exception ignored) {
+                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            } finally {
+                em.close();
+            }
         }
     }
 
