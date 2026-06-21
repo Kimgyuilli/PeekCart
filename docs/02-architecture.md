@@ -515,4 +515,5 @@ peekcart/
 | Outbox | 도메인별 개별 구현 | `common/outbox/` 공유 모듈 |
 | 인증 처리 | `global/jwt/` | `api-gateway` JWT 필터로 이동 |
 | 인프라 | `docker-compose.yml` + (Phase 3) `k8s/` Kustomize 단일 서비스 | `k8s/` Kustomize 서비스별 디렉토리 + Helm (kube-prometheus-stack) |
-| DB 마이그레이션 | Flyway (단일 DB) | Flyway (서비스별 독립 마이그레이션) |
+| DB 구성 | 단일 DB (모든 도메인) | DB-per-service — 5 스키마(`peekcart_<svc>`) + 계정/권한 격리, 1 인스턴스 (see ADR-0012 §D1·ADR-0016) |
+| DB 마이그레이션 | Flyway (단일 DB) | Flyway (서비스별 독립 마이그레이션 `V1__init_<svc>.sql`) |

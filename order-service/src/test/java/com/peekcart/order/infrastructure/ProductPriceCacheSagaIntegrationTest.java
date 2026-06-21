@@ -12,7 +12,6 @@ import com.peekcart.order.domain.repository.ProductPriceCacheRepository;
 import com.peekcart.order.infrastructure.kafka.ProductPriceCacheConsumer;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
-import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -70,35 +69,16 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired ObjectMapper objectMapper;
 
-    private Long categoryId;
-    private Long userId;
-    private Long productId;
+    // DB-per-service(구현 ② PR2): order 스키마엔 categories/products/users 테이블이 없고 교차 FK 도 제거됨(V13).
+    // 본 테스트는 order-side 소비자 계약만 보므로(product.updated 직접 주입), 실제 행 없이 임의 ID 참조만 쓴다.
+    // product_price_cache/carts/cart_items/orders 는 plain ID(product_id/user_id) 로 동작.
+    private final Long categoryId = 7L;
+    private final Long userId = 42L;
+    private final Long productId = 100L;
 
     @BeforeEach
     void setUp() {
         cleanDatabase();
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        // Product/User 도메인 peel → root 는 category/product/user 행을 native insert 로 시드(FK 충족, root-observable).
-        // product.updated 를 발행하는 product-side 는 product-service 가 검증 — 여기선 페이로드 직접 주입으로 소비자만 본다.
-        em.createNativeQuery("INSERT INTO categories (name) VALUES ('카테고리')").executeUpdate();
-        categoryId = ((Number) em.createNativeQuery("SELECT id FROM categories WHERE name = '카테고리'")
-                .getSingleResult()).longValue();
-        em.createNativeQuery(
-                "INSERT INTO products (category_id, name, description, price, image_url, status, created_at, version) "
-                        + "VALUES (?1, '상품', '설명', 50000, NULL, 'ON_SALE', NOW(6), 0)")
-                .setParameter(1, categoryId)
-                .executeUpdate();
-        productId = ((Number) em.createNativeQuery("SELECT id FROM products WHERE name = '상품' ORDER BY id DESC LIMIT 1")
-                .getSingleResult()).longValue();
-        em.createNativeQuery(
-                "INSERT INTO users (email, password_hash, name, role, created_at, updated_at) "
-                        + "VALUES ('cache@peekcart.com', 'hashed-pw', '캐시유저', 'USER', NOW(6), NOW(6))")
-                .executeUpdate();
-        userId = ((Number) em.createNativeQuery("SELECT id FROM users WHERE email = 'cache@peekcart.com'")
-                .getSingleResult()).longValue();
-        em.getTransaction().commit();
-        em.close();
     }
 
     @Test

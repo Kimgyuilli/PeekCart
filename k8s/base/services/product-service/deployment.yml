@@ -20,21 +20,8 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: peekcart
     spec:
-      # 공유 DB 전환기(② 이전): order-service 가 런타임 Flyway 마이그레이터(#65 P13)이므로
-      # 그 readiness 200 = 공유 스키마 적용 완료 신호. 비-order 서비스(Flyway disabled+ddl validate)는
-      # 빈 DB 에서 validate 부팅 실패를 피하기 위해 스키마 준비까지 기동을 지연한다.
-      # (② DB 물리분리 시 각 서비스 자가 마이그레이션 → 본 initContainer 제거)
-      initContainers:
-        - name: wait-for-order-migration
-          image: curlimages/curl:8.11.1@sha256:c1fe1679c34d9784c1b0d1e5f62ac0a79fca01fb6377cdd33e90473c6f9f9a69
-          command:
-            - sh
-            - -c
-            - |
-              until curl -fsS -o /dev/null http://order-service.peekcart.svc:8080/actuator/health/readiness; do
-                echo "waiting for order-service schema migration..."
-                sleep 2
-              done
+      # DB-per-service (구현 ② PR2): 각 서비스가 자기 스키마를 독립 Flyway 마이그레이션하므로
+      # order-service readiness 게이트(전환기 initContainer)를 제거한다 — cross-service cold-start 순서 의존 소멸.
       containers:
         - name: product-service
           image: ghcr.io/kimgyuilli/peekcart-product-service:latest

@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://mysql:3306/peekcart?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
-    username: ${DB_USERNAME:peekcart}
-    password: ${DB_PASSWORD:peekcart}
+    url: jdbc:mysql://mysql:3306/peekcart_order?characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: ${DB_USERNAME:peekcart_order}
+    password: ${DB_PASSWORD:peekcart_order}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:

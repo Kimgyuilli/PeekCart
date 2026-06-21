@@ -59,34 +59,14 @@ class OrderExpiredPaymentRequestedQueryIntegrationTest extends AbstractIntegrati
     private static final LocalDateTime PAST = LocalDateTime.now().minusMinutes(20);
     private static final LocalDateTime RECENT = LocalDateTime.now().minusMinutes(5);
 
-    private Long userId;
-    private Long productId;
+    // DB-per-service(구현 ② PR2): order 스키마엔 users/products 테이블이 없고 교차 FK 도 제거됨(V13) →
+    // 실제 행을 시드하지 않고 임의 ID 참조만 사용한다(orders.user_id·order_items.product_id 는 plain ID).
+    private final Long userId = 42L;
+    private final Long productId = 100L;
 
     @BeforeEach
     void setUp() {
         cleanDatabase();
-        EntityManager em = emf.createEntityManager();
-        em.getTransaction().begin();
-        // Product 도메인 peel → root 는 category/product 행을 native insert 로 시드(order_items FK fk_order_items_product 충족, root-observable)
-        em.createNativeQuery("INSERT INTO categories (name) VALUES ('카테고리')").executeUpdate();
-        Long categoryId = ((Number) em.createNativeQuery("SELECT id FROM categories WHERE name = '카테고리'")
-                .getSingleResult()).longValue();
-        em.createNativeQuery(
-                "INSERT INTO products (category_id, name, description, price, image_url, status, created_at, version) "
-                        + "VALUES (?1, '상품', '설명', 1000, NULL, 'ON_SALE', NOW(6), 0)")
-                .setParameter(1, categoryId)
-                .executeUpdate();
-        productId = ((Number) em.createNativeQuery("SELECT id FROM products WHERE name = '상품' ORDER BY id DESC LIMIT 1")
-                .getSingleResult()).longValue();
-        // User 도메인 peel → root 는 users 행을 native insert 로 시드(orders FK fk_orders_user 충족)
-        em.createNativeQuery(
-                "INSERT INTO users (email, password_hash, name, role, created_at, updated_at) "
-                        + "VALUES ('timeout@peekcart.com', 'hashed-pw', '타임아웃유저', 'USER', NOW(6), NOW(6))")
-                .executeUpdate();
-        userId = ((Number) em.createNativeQuery("SELECT id FROM users WHERE email = 'timeout@peekcart.com'")
-                .getSingleResult()).longValue();
-        em.getTransaction().commit();
-        em.close();
     }
 
     @Test

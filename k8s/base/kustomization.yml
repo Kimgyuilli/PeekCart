@@ -13,11 +13,12 @@ kind: Kustomization
 resources:
   - namespace.yml
   - infra/mysql/secret.yml
+  - infra/mysql/init-configmap.yml
   - infra/mysql/mysql.yml
   - infra/redis/redis.yml
   - infra/kafka/kafka.yml
-  # 5개 서비스 per-service 매니페스트 (PR3b — 단일 peekcart 분해). 비-order 4서비스 deployment 는
-  # order-service readiness 폴링 initContainer 보유(공유 DB 전환기 cold-start ordering).
+  # 5개 서비스 per-service 매니페스트. DB-per-service(구현 ② PR2)로 각 서비스가 자기 스키마를
+  # 독립 Flyway 마이그레이션 → 전환기 order-service readiness initContainer 게이트 제거.
   - services/notification-service/deployment.yml
   - services/notification-service/configmap.yml
   - services/notification-service/secret.yml

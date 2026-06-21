@@ -174,8 +174,9 @@ erDiagram
 ### Phase 4 — 서비스별 DB 분리 (MSA)
 
 > DB 간 FK 제약 없음 — 필요한 데이터는 이벤트 수신 시점에 스냅샷으로 저장합니다.
-각 서비스 DB에 `outbox_events` 테이블이 포함됩니다.
+발행/소비 서비스 DB에 `outbox_events`/`processed_events` 테이블이 포함됩니다(소비 전용 notification 은 `processed_events` 만).
 >
+> **물리 구성 (구현 ② PR2, see ADR-0012 §D1·ADR-0016)**: 5개 서비스가 각자 독립 스키마(`peekcart_user`/`peekcart_product`/`peekcart_order`/`peekcart_payment`/`peekcart_notification`) + 독립 계정·권한(자기 스키마에만 GRANT) + 독립 Flyway 이력(`V1__init_<svc>.sql`)을 소유합니다. 현재는 **1 MySQL 인스턴스 + 5 스키마**(논리 분리)이며, 인스턴스 물리 분리는 datasource URL 교체만으로 가역 승격 가능합니다. 교차 도메인 FK 6개는 PR1(V13)에서 제거하고 ID 참조로 대체했습니다.
 
 ### User DB
 
@@ -241,12 +242,44 @@ erDiagram
     int version
     timestamp updated_at
   }
+  stock_reservations {
+    bigint id PK
+    bigint order_id UK
+    string status
+    string items
+    string source_event_id UK
+    timestamp reserved_at
+    timestamp confirmed_at
+    timestamp released_at
+    timestamp compensated_at
+    timestamp created_at
+    timestamp updated_at
+  }
+  outbox_events {
+    bigint id PK
+    string aggregate_type
+    string aggregate_id
+    string event_type
+    string event_id UK
+    string payload
+    string status
+    int retry_count
+    timestamp last_attempted_at
+    timestamp created_at
+    timestamp published_at
+  }
+  processed_events {
+    bigint id PK
+    string event_id "UK(event_id, consumer_group)"
+    string consumer_group
+    timestamp processed_at
+  }
   categories ||--o{ products : contains
   categories ||--o{ categories : parent
   products ||--|| inventories : tracks
 ```
 
-> Product 가 Phase 4 에서 `product.updated`/`stock.reservation.result` 발행 + `order.created`/`payment.*` 소비를 하므로 `outbox_events`/`processed_events` 를 소유하고, `inventories` 에 예약 컬럼(available/reserved)을 도입한다 (see ADR-0012 §D1/§D3). DDL 은 구현 ②.
+> Product 가 Phase 4 에서 `product.updated`/`stock.reservation.result` 발행 + `order.created`/`payment.*` 소비를 하므로 `outbox_events`/`processed_events` 를 소유한다. 재고 예약은 `inventories` 의 예약 컬럼이 아니라 **별도 `stock_reservations` 테이블**(orderId 단위 예약 원장)로 구현됐다 (see ADR-0012 §D1/§D3, **ADR-0016** — 재기록). `order_id`/`source_event_id` 는 교차 도메인 ID 참조(FK 없음, 구현 ② PR1 V13).
 
 ### Order DB
 
@@ -278,14 +311,22 @@ erDiagram
     string zipcode
     string address
     timestamp ordered_at
+    timestamp reservation_confirmed_at
+    timestamp payment_requested_at
+    boolean payment_requested_pending
   }
   order_items {
     bigint id PK
     bigint order_id FK
     bigint product_id
-    string product_name
     int quantity
     bigint unit_price
+  }
+  product_price_cache {
+    bigint product_id PK
+    bigint unit_price
+    bigint source_version
+    timestamp updated_at
   }
   outbox_events {
     bigint id PK
@@ -299,6 +340,8 @@ erDiagram
     timestamp last_attempted_at
     timestamp created_at
     timestamp published_at
+    string trace_id
+    string user_id
   }
   processed_events {
     bigint id PK
@@ -310,27 +353,28 @@ erDiagram
   orders ||--o{ order_items : contains
 ```
 
+> Order DB 는 strangler 컬럼(V6 `reservation_confirmed_at`·V9 `payment_requested_at`·V11 `payment_requested_pending`)과 로컬 가격 캐시 `product_price_cache`(CQRS ⑤, strangler-2 — product.updated 구독으로 채워짐)를 소유합니다. `user_id`/`product_id` 는 교차 도메인 ID 참조(FK 없음, 구현 ② PR1 V13). outbox_events 의 `trace_id`/`user_id` 는 ADR-0008 trace context.
+
 ### Payment DB
 
 ```mermaid
 erDiagram
   payments {
     bigint id PK
-    bigint order_id
-    string order_number
+    bigint order_id UK
+    bigint user_id
     string payment_key UK
     bigint amount
     string status
+    boolean ready_for_payment
     string method
     timestamp approved_at
     timestamp created_at
+    bigint version
   }
-  payment_failures {
-    bigint id PK
-    bigint payment_id FK
-    string reason
-    string raw_response
-    timestamp failed_at
+  payment_cancellations {
+    bigint order_id PK
+    timestamp cancelled_at
   }
   outbox_events {
     bigint id PK
@@ -360,8 +404,9 @@ erDiagram
     string status
     timestamp received_at
   }
-  payments ||--o{ payment_failures : logs
 ```
+
+> **`payment_failures` 미구현 → `payment_cancellations`**: ADR-0012 D1 은 Payment 에 `payment_failures` 를 두었으나 구현은 `payments.status='FAILED'` 로 실패를 표현하고, 대신 `payment_cancellations`(order.cancelled 선도착 silent-charge 방지 marker, strangler)를 둔다 (see ADR-0012 §D1, **ADR-0016** — 재기록). `order_id`/`user_id` 는 교차 도메인 ID 참조(FK 없음, 구현 ② PR1 V13).
 
 ### Notification DB
 
