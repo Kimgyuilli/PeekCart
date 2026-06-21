@@ -12,7 +12,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "kafka_consumer_fetch_manager_records_lag_max{application=\"peekcart\"}",
+          "expr": "kafka_consumer_fetch_manager_records_lag_max{application=~\"$application\"}",
           "legendFormat": "{{client_id}} — {{topic}}"
         }
       ],
@@ -38,7 +38,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "rate(kafka_consumer_fetch_manager_records_consumed_total{application=\"peekcart\"}[5m])",
+          "expr": "rate(kafka_consumer_fetch_manager_records_consumed_total{application=~\"$application\"}[5m])",
           "legendFormat": "{{client_id}} — {{topic}}"
         }
       ],
@@ -54,7 +54,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "rate(kafka_consumer_fetch_manager_fetch_total{application=\"peekcart\"}[5m])",
+          "expr": "rate(kafka_consumer_fetch_manager_fetch_total{application=~\"$application\"}[5m])",
           "legendFormat": "{{client_id}}"
         }
       ],
@@ -66,7 +66,29 @@
   ],
   "schemaVersion": 39,
   "tags": ["peekcart", "kafka"],
-  "templating": { "list": [] },
+  "templating": {
+    "list": [
+      {
+        "name": "application",
+        "label": "Application",
+        "type": "custom",
+        "query": "notification-service,order-service,payment-service,product-service,user-service",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": ["All"], "value": ["$__all"] },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "notification-service", "value": "notification-service", "selected": false },
+          { "text": "order-service", "value": "order-service", "selected": false },
+          { "text": "payment-service", "value": "payment-service", "selected": false },
+          { "text": "product-service", "value": "product-service", "selected": false },
+          { "text": "user-service", "value": "user-service", "selected": false }
+        ],
+        "hide": 0
+      }
+    ]
+  },
   "time": { "from": "now-30m", "to": "now" },
   "title": "PeekCart — Kafka Consumer Lag",
   "uid": "peekcart-kafka-lag"

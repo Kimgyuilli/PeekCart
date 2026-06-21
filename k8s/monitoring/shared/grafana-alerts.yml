@@ -31,7 +31,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "sum(rate(http_server_requests_seconds_count{application=\"peekcart\", status=~\"5..\"}[5m]))"
+                  expr: "sum by (application)(rate(http_server_requests_seconds_count{application=~\"notification-service|order-service|payment-service|product-service|user-service\", status=~\"5..\"}[5m]))"
                   instant: false
                   range: true
               - refId: B
@@ -40,7 +40,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "sum(rate(http_server_requests_seconds_count{application=\"peekcart\"}[5m]))"
+                  expr: "sum by (application)(rate(http_server_requests_seconds_count{application=~\"notification-service|order-service|payment-service|product-service|user-service\"}[5m]))"
                   instant: false
                   range: true
               - refId: C
@@ -55,8 +55,8 @@ data:
             labels:
               severity: critical
             annotations:
-              summary: "PeekCart 5xx 에러율 5% 초과"
-              description: "최근 5분간 5xx 에러율이 5%를 초과했습니다."
+              summary: "PeekCart 5xx 에러율 5% 초과 — {{ $labels.application }}"
+              description: "{{ $labels.application }} 의 최근 5분간 5xx 에러율이 5%를 초과했습니다."
           - uid: peekcart-slow-response
             title: "Slow API Response (p95 > 2s)"
             condition: B
@@ -67,7 +67,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"peekcart\", uri!~\"/actuator.*\"}[5m])) by (le))"
+                  expr: "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=~\"notification-service|order-service|payment-service|product-service|user-service\", uri!~\"/actuator.*\"}[5m])) by (le, application))"
                   instant: false
                   range: true
               - refId: B
@@ -86,8 +86,8 @@ data:
             labels:
               severity: warning
             annotations:
-              summary: "PeekCart API p95 응답시간 2초 초과"
-              description: "최근 5분간 API p95 응답시간이 2초를 초과했습니다."
+              summary: "PeekCart API p95 응답시간 2초 초과 — {{ $labels.application }}"
+              description: "{{ $labels.application }} 의 최근 5분간 API p95 응답시간이 2초를 초과했습니다."
           - uid: peekcart-target-down
             title: "Peekcart Target Down (up == 0)"
             condition: B
@@ -98,7 +98,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "count(up{namespace=\"peekcart\", service=\"peekcart\"} == 0) or on() vector(0)"
+                  expr: "count by (service)(up{namespace=\"peekcart\"} == 0) or on() vector(0)"
                   instant: true
                   range: false
               - refId: B
@@ -113,10 +113,10 @@ data:
             labels:
               severity: critical
             annotations:
-              summary: "PeekCart 타겟 스크랩 실패 (up == 0)"
-              description: "Prometheus 가 peekcart 엔드포인트를 스크랩 시도했으나 실패 (네트워크, 인증, /actuator/prometheus 500 등). up 시계열은 존재하되 0. Error Rate 패널의 강제 0% 표시와 구분하는 신호."
-          - uid: peekcart-scrape-absent
-            title: "Peekcart Metrics Scrape Absent"
+              summary: "PeekCart 타겟 스크랩 실패 (up == 0) — {{ $labels.service }}"
+              description: "{{ $labels.service }} 의 타겟을 Prometheus 가 스크랩 시도했으나 실패 (네트워크, 인증, /actuator/prometheus 500 등). up 시계열은 존재하되 0. Error Rate 패널의 강제 0% 표시와 구분하는 신호."
+          - uid: peekcart-scrape-absent-notification-service
+            title: "Peekcart Metrics Scrape Absent — notification-service"
             condition: B
             data:
               - refId: A
@@ -125,7 +125,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "absent(up{namespace=\"peekcart\", service=\"peekcart\"}) or on() vector(0)"
+                  expr: "absent(up{namespace=\"peekcart\", service=\"notification-service\"}) or on() vector(0)"
                   instant: true
                   range: false
               - refId: B
@@ -139,6 +139,119 @@ data:
             for: 2m
             labels:
               severity: critical
+              service: notification-service
             annotations:
-              summary: "PeekCart up 시계열 부재 (ServiceMonitor 미매칭 / 네임스페이스·서비스 삭제)"
-              description: "up 메트릭 series 자체가 존재하지 않음. ServiceMonitor selector 미스매치, 네임스페이스·서비스 삭제, Prometheus 설정 문제 등 구조적 부재를 의미. 스크랩 실패(up == 0) 는 `peekcart-target-down` 에서 별도 감지."
+              summary: "PeekCart up 시계열 부재 — notification-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+              description: "notification-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+          - uid: peekcart-scrape-absent-order-service
+            title: "Peekcart Metrics Scrape Absent — order-service"
+            condition: B
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: "absent(up{namespace=\"peekcart\", service=\"order-service\"}) or on() vector(0)"
+                  instant: true
+                  range: false
+              - refId: B
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: math
+                  expression: "$A > 0"
+            for: 2m
+            labels:
+              severity: critical
+              service: order-service
+            annotations:
+              summary: "PeekCart up 시계열 부재 — order-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+              description: "order-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+          - uid: peekcart-scrape-absent-payment-service
+            title: "Peekcart Metrics Scrape Absent — payment-service"
+            condition: B
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: "absent(up{namespace=\"peekcart\", service=\"payment-service\"}) or on() vector(0)"
+                  instant: true
+                  range: false
+              - refId: B
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: math
+                  expression: "$A > 0"
+            for: 2m
+            labels:
+              severity: critical
+              service: payment-service
+            annotations:
+              summary: "PeekCart up 시계열 부재 — payment-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+              description: "payment-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+          - uid: peekcart-scrape-absent-product-service
+            title: "Peekcart Metrics Scrape Absent — product-service"
+            condition: B
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: "absent(up{namespace=\"peekcart\", service=\"product-service\"}) or on() vector(0)"
+                  instant: true
+                  range: false
+              - refId: B
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: math
+                  expression: "$A > 0"
+            for: 2m
+            labels:
+              severity: critical
+              service: product-service
+            annotations:
+              summary: "PeekCart up 시계열 부재 — product-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+              description: "product-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+          - uid: peekcart-scrape-absent-user-service
+            title: "Peekcart Metrics Scrape Absent — user-service"
+            condition: B
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: "absent(up{namespace=\"peekcart\", service=\"user-service\"}) or on() vector(0)"
+                  instant: true
+                  range: false
+              - refId: B
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: math
+                  expression: "$A > 0"
+            for: 2m
+            labels:
+              severity: critical
+              service: user-service
+            annotations:
+              summary: "PeekCart up 시계열 부재 — user-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+              description: "user-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
