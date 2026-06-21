@@ -78,3 +78,9 @@
 - raw: .cache/codex-reviews/plan-task-impl2-db-per-service-1782062563.json
 - run_id: plan:20260621T172243Z:b8f23d3d-4781-4734-b670-b1cecbaa4949:2
 - tokens: 106,126
+
+## 2026-06-22 04:40 — /done applied (PR https://github.com/Kimgyuilli/PeakCart/pull/71)
+- TASKS.md ② PR2 ✅ (#71 링크) — ② 전체는 PR3(retention) 남아 🔄 유지
+- PHASE4.md 구현 ② PR2 이력 추가 (P4~P14·핵심결정·프로세스)
+- ADR-0016 신규(Accepted)·ADR-0012 Partially Superseded·README 인덱스 (P14 에서 반영 완료)
+- 커밋 9개(feat(db)·refactor(outbox)·chore(config)·chore(build)·chore(k8s)·test·docs(adr)·docs + docs(progress) done)
