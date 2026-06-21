@@ -8,8 +8,8 @@ spring:
       ddl-auto: validate
     open-in-view: false
   flyway:
-    # 서비스 런타임은 마이그레이션을 실행하지 않는다. 공유 V1~V13 은 order-service(전환기 migrator, B5) 또는 Testcontainers fixture 가 적용.
-    enabled: false
+    # DB-per-service (구현 ② PR2): 자기 스키마(peekcart_payment)에 자기 모듈 마이그레이션만 적용.
+    enabled: true
     locations: classpath:db/migration
   kafka:
     producer:
@@ -62,7 +62,6 @@ app:
       max-retry: 5
       publish-timeout: 6s
       cycle-timeout: 4m
-      aggregate-types: PAYMENT
 
 # Slack: payment 는 DLQ·결제 알림에 SlackPort 를 생성자 주입하나 발송은 비핵심.
 # webhook 미설정 + no-op fallback 으로 부팅 보장 (PR3b GP-2 loop3 — presence-based

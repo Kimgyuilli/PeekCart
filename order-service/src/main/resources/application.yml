@@ -8,10 +8,8 @@ spring:
       ddl-auto: validate
     open-in-view: false
   flyway:
-    # [B5 전환기 migrator] root app 소멸(PR-b)로 공유 스키마 런타임 적용 주체가 사라져, order-service 가 그 역할을 승계한다.
-    # 공유 DB(② 물리분리 전)의 V1~V13 을 런타임에 적용한다. 나머지 서비스(payment/product/user/notification)는
-    # flyway.enabled=false + ddl-auto=validate 로 유지하므로, cold-start 시 order-service 가 먼저 마이그레이션해야 한다
-    # (런타임 순서/readiness 형식화는 PR3 k8s/compose). ② DB 물리분리 시 서비스별 독립 이력으로 정리.
+    # DB-per-service (구현 ② PR2): 자기 스키마(peekcart_order)에 자기 모듈 마이그레이션만 적용.
+    # B5 전환기 단일 마이그레이터 역할 소멸 — 각 서비스가 자기 DB 를 독립 마이그레이션(cold-start ordering 의존 제거).
     enabled: true
     locations: classpath:db/migration
   kafka:
@@ -65,7 +63,6 @@ app:
       max-retry: 5
       publish-timeout: 6s
       cycle-timeout: 4m
-      aggregate-types: ORDER
 
 # Slack: order 는 DLQ·업무 알림에 SlackPort 를 생성자 주입하나 발송은 비핵심.
 # webhook 미설정 + no-op fallback 으로 부팅 보장 (PR3b GP-2 loop3 — presence-based

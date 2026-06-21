@@ -8,9 +8,8 @@ spring:
       ddl-auto: validate
     open-in-view: false
   flyway:
-    # [PR2a-2b/N6] 서비스 런타임은 마이그레이션을 실행하지 않는다.
-    # 공유 V1~V4 는 root flywayMigrateShared(단일 실행 지점) 또는 Testcontainers fixture 가 적용한다.
-    enabled: false
+    # DB-per-service (구현 ② PR2): 자기 스키마(peekcart_notification)에 자기 모듈 마이그레이션만 적용.
+    enabled: true
     locations: classpath:db/migration
   kafka:
     consumer:
