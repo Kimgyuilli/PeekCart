@@ -2,15 +2,14 @@ services:
   mysql:
     image: mysql:8.0
     container_name: peekcart-mysql
+    # DB-per-service (구현 ② PR2): 단일 MYSQL_DATABASE 대신 init 스크립트가 5 스키마+5 계정을 생성한다.
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: peekcart
-      MYSQL_USER: peekcart
-      MYSQL_PASSWORD: peekcart
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+      - ./scripts/mysql-init:/docker-entrypoint-initdb.d:ro
 
   redis:
     image: redis:7.2

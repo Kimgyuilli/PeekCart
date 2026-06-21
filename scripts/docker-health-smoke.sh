@@ -49,27 +49,10 @@ for _ in {1..60}; do
 done
 "${COMPOSE[@]}" exec -T mysql env MYSQL_PWD=root mysqladmin ping -h 127.0.0.1 -uroot --silent >/dev/null
 
-# [PR3a] 공유 스키마 선행 마이그레이션 (Codex GP-2 #1).
-# 비-order 서비스는 Flyway disabled + JPA ddl-auto:validate 라, 빈 DB 에 스키마가 없으면
-# health 200 전에 schema validate 로 죽는다(런타임 마이그레이터는 order-service 단독).
-# 앱 컨테이너 실행 전에 공유 스키마(common/.../db/migration V1~Vn)를 적용한다(멱등).
-# ⚠️ 마이그레이션 정본 메모(전환기): root gradle `flywayMigrateShared`(flyway 11.7.2) 가 현재
-#    깨져 있다(gradle flyway 플러그인이 mysql DB 플러그인 미해석 — "No Flyway database plugin found").
-#    런타임 마이그레이션은 Spring Boot 관리 Flyway(order-service)라 별개 경로로 동작한다. smoke 는
-#    공식 flyway 이미지(DB 플러그인 번들·호스트 JDK 무의존)를 정본으로 쓴다. flywayMigrateShared
-#    수복은 후속 부채(plan §5/audit 에 기록). 이미지는 repo flyway 와 동일 11.7.2 를 digest 로 고정한다.
-#    SMOKE_MIGRATE=0 으로 끌 수 있다(DB-per-service 분리 후 등).
-if [[ "${SMOKE_MIGRATE:-1}" != "0" ]]; then
-    echo "[D-012/L-015] applying shared schema (flyway image 11.7.2)"
-    # allowPublicKeyRetrieval=true&useSSL=false — MySQL 8 caching_sha2_password 의 non-TLS
-    # 비밀번호 교환(RSA public key) 처리. baselineOnMigrate — 빈 스키마/기존 객체에 무해.
-    docker run --rm \
-        --network "${COMPOSE_PROJECT_NAME}_default" \
-        -v "${REPO_ROOT}/common/src/main/resources/db/migration:/flyway/sql:ro" \
-        flyway/flyway:11.7.2@sha256:8ace7d9825bb3ad1d6e14ee27b3a830b638ac841ba424b99b2d92aa65a99d484 \
-        -url="jdbc:mysql://mysql:3306/peekcart?allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Seoul" \
-        -user=peekcart -password=peekcart -connectRetries=15 -baselineOnMigrate=true migrate
-fi
+# [구현 ② PR2] DB-per-service: 별도 flyway 선적용 스텝 제거.
+# compose mysql init(scripts/mysql-init/01-init-databases.sql)이 5 스키마+5 계정을 첫 부팅에 생성하고,
+# 각 <svc>:ci 앱이 부팅 시 자기 스키마에 자기 모듈 Flyway(flyway.enabled=true)를 적용한다.
+# (전환기 flyway 이미지 선적용·flywayMigrateShared 우회는 소멸.)
 
 echo "[D-012/L-015] waiting for Redis"
 for _ in {1..30}; do

@@ -3,8 +3,6 @@ plugins {
 	id 'org.springframework.boot' version '3.5.12'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'jacoco'
-	// [PR2a-2b/N6] 공유 V1~V4 단일 실행 지점(flywayMigrateShared). Boot 관리 Flyway 11.7.2 정합.
-	id 'org.flywaydb.flyway' version '11.7.2'
 }
 
 // ===== 전 프로젝트 공통 (ADR-0011 §D1 root: subprojects 공통 설정) =====
@@ -58,7 +56,9 @@ subprojects {
 
 // ===== 루트 = 빌드/가드 aggregator (Payment peel PR-b — root app 해체, src 소멸) =====
 // 5개 서비스 풀 분해(ADR-0010 §5) 완료로 root 는 더 이상 Spring Boot app 이 아니다.
-// root 는 (a) subprojects 공통 설정 (b) 가드 태스크 (c) 공유 Flyway 단일 실행 지점(flywayMigrateShared) 만 호스팅한다.
+// root 는 (a) subprojects 공통 설정 (b) 가드 태스크만 호스팅한다.
+// 공유 Flyway 단일 실행 지점(flywayMigrateShared)은 DB-per-service(구현 ② PR2)로 소멸 —
+// 각 서비스가 자기 모듈 마이그레이션을 런타임 적용(flyway.enabled=true)한다.
 // java 플러그인은 유지하되 src 가 없어 컴파일/테스트는 no-op, bootJar 는 비활성한다.
 bootJar {
 	enabled = false
@@ -66,33 +66,6 @@ bootJar {
 
 jar {
 	enabled = false
-}
-
-// ===== [PR2a-2b/N6] 공유 Flyway 단일 실행 지점 =====
-// 공유 V1~V4 는 :common 으로 단일 소유(런타임 classpath:db/migration). 본 task 는
-// Spring 컨텍스트 밖(compose/CI smoke/k8s Job)에서 호출하는 단일 마이그레이션 runner 다.
-// 서비스 런타임 flyway 는 disabled, 공유 스키마 런타임 적용은 order-service(전환기 migrator, B5)가 승계.
-configurations {
-	flywayMigration
-}
-
-flyway {
-	url = System.getenv('DB_URL') ?: 'jdbc:mysql://localhost:3306/peekcart?characterEncoding=UTF-8&serverTimezone=Asia/Seoul'
-	user = System.getenv('DB_USERNAME') ?: 'peekcart'
-	password = System.getenv('DB_PASSWORD') ?: 'peekcart'
-	locations = ['filesystem:common/src/main/resources/db/migration']
-	configurations = ['flywayMigration']
-}
-
-dependencies {
-	flywayMigration 'com.mysql:mysql-connector-j'
-	flywayMigration 'org.flywaydb:flyway-mysql:11.7.2'
-}
-
-tasks.register('flywayMigrateShared') {
-	group = 'flyway'
-	description = '공유 V1~V4 단일 실행 지점 (PR2a-2b/N6). compose/CI/k8s runner 가 호출.'
-	dependsOn tasks.named('flywayMigrate')
 }
 
 // ===== [PR2a-2b/N7] 서비스 모듈 의존 위반 검출 (ADR-0011 §D3 · ADR-0014) =====
