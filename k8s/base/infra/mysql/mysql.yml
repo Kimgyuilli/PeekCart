@@ -37,24 +37,17 @@ spec:
           image: mysql:8.0
           ports:
             - containerPort: 3306
+          # DB-per-service (구현 ② PR2): 단일 MYSQL_DATABASE/USER 생성 책임을 init ConfigMap(5 DB/계정)으로
+          # 이관. root 비밀번호만 명시하고, init .sh 가 쓰는 *_DB_PASSWORD 는 envFrom 으로 노출.
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: DB_PASSWORD
-            - name: MYSQL_DATABASE
-              value: peekcart
-            - name: MYSQL_USER
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: DB_USERNAME
-            - name: MYSQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mysql-secret
-                  key: DB_PASSWORD
+          envFrom:
+            - secretRef:
+                name: mysql-secret
           resources:
             requests:
               cpu: 250m
@@ -65,6 +58,8 @@ spec:
           volumeMounts:
             - name: mysql-data
               mountPath: /var/lib/mysql
+            - name: mysql-init
+              mountPath: /docker-entrypoint-initdb.d
           readinessProbe:
             exec:
               command:
@@ -87,6 +82,10 @@ spec:
         - name: mysql-data
           persistentVolumeClaim:
             claimName: mysql-pvc
+        - name: mysql-init
+          configMap:
+            name: mysql-init-config
+            defaultMode: 0755
 ---
 apiVersion: v1
 kind: Service
