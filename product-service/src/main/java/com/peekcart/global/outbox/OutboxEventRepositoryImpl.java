@@ -18,12 +18,12 @@ public class OutboxEventRepositoryImpl implements OutboxEventRepository {
     }
 
     @Override
-    public List<OutboxEvent> findPendingEvents(List<String> aggregateTypes, int limit) {
-        return outboxEventJpaRepository.findPendingEvents(aggregateTypes, PageRequest.of(0, limit));
+    public List<OutboxEvent> findPendingEvents(int limit) {
+        return outboxEventJpaRepository.findPendingEvents(PageRequest.of(0, limit));
     }
 
     @Override
-    public long countByStatusAndAggregateTypeIn(OutboxEventStatus status, List<String> aggregateTypes) {
-        return outboxEventJpaRepository.countByStatusAndAggregateTypeIn(status, aggregateTypes);
+    public long countByStatus(OutboxEventStatus status) {
+        return outboxEventJpaRepository.countByStatus(status);
     }
 }

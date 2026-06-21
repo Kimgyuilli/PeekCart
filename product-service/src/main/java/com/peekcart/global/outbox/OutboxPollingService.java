@@ -27,7 +27,6 @@ public class OutboxPollingService {
     private final int maxRetry;
     private final Duration publishTimeout;
     private final Duration cycleTimeout;
-    private final List<String> aggregateTypes;
     private final Timer publishSuccessTimer;
     private final Timer publishFailureTimer;
 
@@ -39,13 +38,10 @@ public class OutboxPollingService {
             @Value("${app.outbox.polling.batch-size:100}") int batchSize,
             @Value("${app.outbox.polling.max-retry:5}") int maxRetry,
             @Value("${app.outbox.polling.publish-timeout:6s}") Duration publishTimeout,
-            @Value("${app.outbox.polling.cycle-timeout:4m}") Duration cycleTimeout,
-            // 공유 DB 전환기 소유권 분리: 이 앱이 발행할 aggregateType allowlist (root=ORDER,PAYMENT / product=PRODUCT)
-            @Value("${app.outbox.polling.aggregate-types}") List<String> aggregateTypes) {
+            @Value("${app.outbox.polling.cycle-timeout:4m}") Duration cycleTimeout) {
         this.outboxEventRepository = outboxEventRepository;
         this.kafkaTemplate = kafkaTemplate;
         this.slackPort = slackPort;
-        this.aggregateTypes = requireNonEmpty(aggregateTypes);
         this.batchSize = requirePositive(batchSize, "batchSize");
         this.maxRetry = requirePositive(maxRetry, "maxRetry");
         this.publishTimeout = requirePositive(publishTimeout, "publishTimeout");
@@ -65,14 +61,14 @@ public class OutboxPollingService {
     }
 
     private void registerBacklogGauge(MeterRegistry meterRegistry, OutboxEventStatus status, String tag) {
-        Gauge.builder("outbox.backlog", outboxEventRepository, repo -> repo.countByStatusAndAggregateTypeIn(status, aggregateTypes))
+        Gauge.builder("outbox.backlog", outboxEventRepository, repo -> repo.countByStatus(status))
                 .description("발행 대기/소진 outbox 이벤트 수 (scrape 시점 집계)")
                 .tag("status", tag)
                 .register(meterRegistry);
     }
 
     public void pollAndPublish() {
-        List<OutboxEvent> pendingEvents = outboxEventRepository.findPendingEvents(aggregateTypes, batchSize);
+        List<OutboxEvent> pendingEvents = outboxEventRepository.findPendingEvents(batchSize);
         long cycleDeadlineNanos = System.nanoTime() + cycleTimeout.toNanos();
 
         for (OutboxEvent event : pendingEvents) {
@@ -141,13 +137,6 @@ public class OutboxPollingService {
             throw new IllegalArgumentException(name + " must be positive");
         }
         return value;
-    }
-
-    private static List<String> requireNonEmpty(List<String> aggregateTypes) {
-        if (aggregateTypes == null || aggregateTypes.isEmpty()) {
-            throw new IllegalArgumentException("app.outbox.polling.aggregate-types must be set");
-        }
-        return aggregateTypes;
     }
 
     private static Duration requirePositive(Duration value, String name) {

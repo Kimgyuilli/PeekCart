@@ -6,7 +6,7 @@ public interface OutboxEventRepository {
 
     OutboxEvent save(OutboxEvent outboxEvent);
 
-    List<OutboxEvent> findPendingEvents(List<String> aggregateTypes, int limit);
+    List<OutboxEvent> findPendingEvents(int limit);
 
-    long countByStatusAndAggregateTypeIn(OutboxEventStatus status, List<String> aggregateTypes);
+    long countByStatus(OutboxEventStatus status);
 }
