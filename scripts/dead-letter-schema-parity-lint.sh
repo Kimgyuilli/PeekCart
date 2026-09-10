@@ -429,7 +429,9 @@ if [[ "${1:-}" == "--self-test" ]]; then
             # **per-service 파일은 fixture 에서도 서비스마다 달라야 한다.** 전부 order 사본으로 채우면
             # 실제로는 토픽·group 이 다른 파일들이 fixture 안에서만 byte 동일해져 DLQ-PARITY-014 가
             # 오탐한다 — fixture 가 현실을 왜곡하면 self-test 가 검사하는 대상이 현실이 아니게 된다.
-            for per_service in DeadLetterConsumer DeadLetterQuarantineConsumer; do
+            # ④-c-2b-3b P15-f 가 LedgerOwnerConfig 를 더했다 — 서비스마다 PeekcartService 값이 다르다.
+            # 목록에 안 넣으면 fixture 안에서만 4벌이 byte 동일해져 DLQ-PARITY-014 가 오탐한다.
+            for per_service in DeadLetterConsumer DeadLetterQuarantineConsumer LedgerOwnerConfig; do
                 echo "// $svc 고유 배선 (토픽·group 이 서비스마다 다르다)" \
                     >> "$TMP/$svc/src/main/java/com/peekcart/global/deadletter/${per_service}.java"
             done
