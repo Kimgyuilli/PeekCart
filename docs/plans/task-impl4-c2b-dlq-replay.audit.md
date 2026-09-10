@@ -324,3 +324,112 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
 - 커밋 4개: 계획(검증표+2R 반영) · 계획(3a/3b 분할) · feat(P14 구현) · docs(검증 결과+리뷰 미실행)
 - 갱신: TASKS.md ④ 행 · PHASE4.md 작업 이력 · 계획서 진행 상태(2b-2 를 ✅ 로 정정 — #102 머지 반영 누락분)
 - 미충족(PR 본문 §미충족 6항): diff 리뷰 미측정 · 계획 3R 미측정 · digest writer 부재(2b-4) · 상관 로직 부재(2b-3b) · 운영 클러스터 미적용 · 로컬 e2e 미실행
+
+## 2026-09-07 — 계획 리뷰 라운드 3 (④-c-2b-3b 구간) — **실행됨**
+- 항목: 8건 (P0:0, P1:4, P2:4)
+- 처리: 반영 8건 / 기각 0건
+- 2R 수정이 만든 새 결함 (P1 4건 중 3건이 여기 해당):
+  - **3자 group 대조를 도입하고 매트릭스를 안 늘렸다** — 축 3 은 독립 equality 가 둘인데 V-19d 는 한 행뿐이라
+    어느 값을 바꾸느냐에 따라 equality 하나를 지워도 green → V-19d(3-①)/V-19d2(3-②) 로 분리
+  - **drain 4조건이 문구에만 반영됐다** — 실행 항목 P24 와 V-28 은 여전히 `PENDING` 단일 조건이라
+    2R 이 든 반례(ack 후 PUBLISHED + 소비 재시도 중)가 preflight 를 통과 → ⓐ~ⓓ 1:1 확장 + V-28 을 4 fixture 로
+  - **V-30 ID 중복 배정** — 2R 이 P21 관통 검증을 V-30 으로 새로 만들며 기존 `record_kind IS NULL` 호환성과 충돌.
+    `ADR-0021:101` 이 관통 쪽을 V-30 으로 참조하므로 **호환성 쪽을 V-34 로** 옮겨 ADR 개정 없이 해소
+- 그 밖의 P1:
+  - 음성 기대값이 "독립 root" 뿐 → 집계가 `root_record_id IS NULL` 도 root 로 세므로(`repository:89`)
+    `assignSelfRoot()` 누락이 green. **`root_record_id == 자기 id` 단언**을 공통 계약으로 승격
+  - `LedgerOwner` 빈 4개의 서비스 배선 검증 항목 부재 → parity lint 밖이라 아무도 값을 안 본다.
+    4서비스 context 테스트에서 `LedgerOwner.service()` 대조를 별도 완료 조건으로
+- P2 4건: Counter meter명/tag schema/결과별 delta 표 확정 · 알림을 결과별 4행으로 못박음(상관된 자식에 신규 알림 0회) ·
+  V-30 재번호 · C-29 "조회 3종뿐" 과장 한정 + C-36 writer 소유권을 P19/P21/P15 로 분리
+- 뒤집힌 전제: C-29(조회 3종뿐 — 과장, 핵심 결론은 유지) · C-36(deadline/policy writer 는 P19 가 아니라 P21)
+- 수렴 판정: **미달** — P1 4건이었고 수정이 새 표면을 만들었다(V-19d2/n/o · Counter 스키마 · 알림 결과 표 ·
+  preflight ⓐ~ⓓ · V-34). 4R 필요.
+- raw: .cache/codex-reviews/plan-task-impl4-c2b-dlq-replay-2b3b-r3.json
+
+## 2026-09-07 — 계획 리뷰 라운드 4 (④-c-2b-3b 구간)
+- 항목: 9건 (P0:0, P1:8, P2:1) — **3R(4건) 대비 증가 = 발산**
+- 처리: 반영 5건 / **범위 되돌림 4건** (사용자 결정)
+- **3R 수정이 만든 새 결함이 8건 중 5건**:
+  - #1 `V-19o`(digest 양쪽 NULL 양성 상관)가 **도달 불가** — ADR-0020 §D5-2 가 `event_id IS NULL` 을 replay
+    금지축으로 정하고, 4서비스 `outbox_events.payload` 가 `TEXT NOT NULL` 이다 → V-19o 철회, 축 9 를 **필수 대조**로
+  - #2 3R 이 V-19d2/n/o 를 추가하고 §6·완료 조건의 집계("13종", "V-19b~V-19j 9종", "V-1~V-28b")를 안 고쳤다
+    → 명시 집합 15 ID(실행 16회, V-19h 양방향)로, V-29 범위는 표에서 유도
+  - #3 attempt 변이 지점이 **셋**(로케이터·잠긴 root 대조·재조회 후 재확인)이라 상호 은폐 → **단계 3 단일 대조**로 확정.
+    V-19b = 로케이터 탐색 실패, V-19m = 단계 3 비교. 단계 5 는 detach 복구 전용(TOCTOU 방어 아님)
+  - #4 `V-34` 재번호가 **머지된 코드에 전파 안 됨** — `OutboxReplayPublicationIntegrationTest:44·122` 가 호환성
+    테스트를 `V-30` 으로 부른다 → **재번호 방향을 뒤집었다**: 호환성 = `V-30` 원복, 아직 코드 없는 관통 = `V-35`.
+    `ADR-0021:101` 참조는 Update Log 1줄 정정으로 처리(트레이드오프 변경 아님)
+  - #9 duplicate 계측 근거가 실행 순서와 모순 — 대조는 INSERT 보다 먼저라 "대조를 하지 않으므로 0" 은 거짓
+    → Counter 기준을 **`inserted == 1` 확정 상관 결과**로, 중복은 대조는 하되 계측·알림·재개방 생략
+- **범위 되돌림 (P1 4건, 전부 P24 안)**: 3R #3 이 drain 4조건을 3b 에서 확장한 것이 **범위 위반**이었다.
+  P24 는 2b-4 항목이고, 열자마자 3b 가 답할 수 없는 표면 넷이 딸려 나왔다 —
+  #5 ⓐ 판정이 두 테이블(`outbox_events.record_kind` / `dead_letter_records.publication_status`)에 걸쳐 미정 ·
+  #6 ⓓ 식 불가(`FixedSequenceBackOff` 에 `maxAttempts` 없음, 마지막 attempt 시각의 내구적 기준점도 없음) ·
+  #7 preflight 를 배포 진입점에 연결하는 작업 부재(실제 명령은 `kubectl apply -k`) ·
+  #8 P24 의 ADR-0020 Update Log 지시가 `adr/README.md:8-14` 및 ADR-0021 과 충돌.
+  → **drain 조건의 판정식·진입점·ADR 처분을 2b-4 착수 시 결정**으로 이관. 3b 는 "4서비스 배포 후 진입점 활성화"
+  순서 하나만 책임진다.
+- 뒤집힌 전제: V-19o 도달 가능(거짓) · `FixedSequenceBackOff` 에 maxAttempts 존재(거짓) · V-30 이 계획서에만 있음(거짓)
+- 수렴 판정: **미달**. 라운드 상한 3회를 넘겨 **사용자에게 확인** → "범위 되돌리고 5R" 채택.
+- raw: .cache/codex-reviews/plan-task-impl4-c2b-dlq-replay-2b3b-r4.json
+
+## 2026-09-07 — 계획 리뷰 라운드 5 (④-c-2b-3b 구간, 범위 되돌린 뒤)
+- 항목: 6건 (P0:0, P1:5, P2:1) — 4R 9건(P1 8)에서 감소, 그러나 **수렴 아님**
+- 처리: 반영 6건 / 기각 0건
+- **5건이 4R 반영 자체의 결함**(= 내 편집이 덜 끝났거나 월권):
+  - #1 축 9 를 "필수 대조" 로 바꾼 것이 **Accepted ADR 침범**. `ADR-0021 §D2:71` 이 "tombstone 은 digest 도 null,
+    양쪽 null 이면 일치" 를 이미 결정했다. **도달 불가라는 사실이 결정의 의미를 바꿀 권한은 아니다**
+    → null-safe 원복, `V-19o` 를 **계약 고정 테스트**로 복원(fixture 전용임을 명시).
+    ADR-0021 §D2 ↔ ADR-0020 §D5-2 의 어긋남은 §미해결로 (새 ADR 필요, 3b 범위 밖)
+  - #2 실행 순서 5 의 "attempt 를 한 번 더 확인" 문장을 **안 지웠다** — 4R #3 으로 단계 3 단일 대조를 확정해 놓고
+    본문·축 표는 그대로라 V-19m 단독 red 가 다시 깨졌다 → 문장 삭제 + 축 1 비고를 "단계 3 유일 대조" 로
+  - #5 P24 확장은 철회했으나 **P17 롤백 절의 4조건·자동 preflight 문장이 그대로 남아** 3b 경계를 다시 열고 있었다
+    → 판정식·조건 수·진입점을 2b-4 로 넘기고, 3b 는 "REQUESTED==0 만으로 불충분" 이라는 사실까지만 보유
+  - #6 V-30/V-35 배정은 맞으나 **ADR-0021:101 참조 정정에 담당이 없었다** → **P17-b** 신설(Update Log 1줄,
+    호환성=V-30 불변 · 관통=V-35 · V-34 철회). 결정 변경이 아니라 참조 오기 정정이라 새 ADR 불요
+- 신규 결함 2건 (4R 반영과 무관, 진짜 설계 갭):
+  - #3 단계 5 재조회가 **current read 로 확정되지 않아** 재개방 race 가 남는다 — 일반 `findById` 면 단계 1 이 연
+    REPEATABLE READ 스냅샷을 다시 읽어 **과거 OPEN 을 보고 재개방을 건너뛴다**(`repository:141-145` 가 같은 함정 경고)
+    → `findByIdForUpdate` 명시 + **V-15c 신설**(로케이터 직후 타 트랜잭션이 root 종결 → 최종 OPEN 영속 단언)
+  - #4 `V-19g`(eventId) fixture 가 **축 6·9 를 동시에 변이**한다 — 자식 eventId 는 payload 에서 뽑으므로
+    (`DeadLetterRecorder:61`) payload 를 바꾸면 digest 도 바뀌어 eventId predicate 제거가 false-green
+    → **root 의 `event_id` 컬럼만** 변이 + 실행 전 자식/root digest 동일 단언
+- 뒤집힌 전제: "축 9 를 필수 대조로 바꿔도 된다"(거짓 — ADR 침범) · "P24 확장만 되돌리면 경계가 닫힌다"(거짓 — P17 잔존)
+- 수렴 판정: **미달** (P1 5). 다만 4R 대비 P1 8→5 이고 **범위 이탈 지적은 #5 하나로 축소**됐다. 6R 진행.
+- raw: .cache/codex-reviews/plan-task-impl4-c2b-dlq-replay-2b3b-r5.json
+
+## 2026-09-07 — 계획 리뷰 라운드 6 — **중단 (사용자 지시)**
+- 항목: 0건 — 실행 중 중단. **P1=0 이 아니라 미측정**이다.
+- 사유: 사용자 판단 — "리뷰 라운드가 전체적으로 너무 많다". 수렴 조건(새 계약 표면 무추가 + P1=0)이
+  아니라 **비용으로 종료**한다. 이 구간의 라운드 이력: 1R 17 · 2R 9 · 3R 8 · 4R 9 · 5R 6 (P1: -·6·4·8·5).
+- 착수 시점의 계획서 상태: 5R 6건 전량 반영 완료. 5R 이 지적한 것 중 **미해소로 남는 것은 없다**.
+  다만 5R 반영이 만든 새 표면(V-19o 복원 · V-15c 신설 · 단계 5 current read · P17-b)은 **검토되지 않았다**.
+- 이 미측정분은 **3b diff 리뷰에서 함께 본다** — 계획 리뷰를 늘리는 대신 구현 후 실물 diff 로 확인하는 쪽으로 옮긴다.
+- raw: 없음 (중단)
+
+## 2026-09-10 — diff 리뷰 라운드 1 (④-c-2b-3b) — **실행됨**
+- 항목: 8건 (P0:0, P1:5, P2:3)
+- 처리: 반영 8건 / 기각 0건
+- **리뷰가 실제 실패 2건을 잡았다.** 내가 "구현 완료" 로 보고하기 직전 상태에서 리뷰어가 테스트를 직접 돌렸고
+  `DlqReplayCorrelationIntegrationTest` 25건 중 2건이 red 였다. 로컬 `./gradlew test` 는 XML 결과 파일
+  쓰기 실패로 BUILD FAILED 만 남기고 **테스트 실패를 가리고 있었다** — 그 신호만 봤으면 놓쳤다.
+  - #1 `V-19m`: fixture 를 recorder **진입 전에** 바꿔 로케이터가 root 를 못 찾았다 → `attempt_not_found`.
+    TOCTOU 창을 만들지 못했고 단계 3 의 비교는 타지도 않았다
+  - #2 `V-19o`: `payload=null` 인데 root `eventId` 는 `evt-1` 이라 **축 6 까지 동시에 어긋났다**
+- 그 밖의 P1 3건 (전부 "테스트가 계약이 아니라 통과를 기술" 유형):
+  - #3 `V-15c` 가 recorder 진입 전에 root 를 닫아 단계 1·2 가 **둘 다 terminal 을 봤다** → 단계 5 를
+    일반 read 로 바꿔도 통과하는 vacuous 테스트였다
+  - #4 `V-21c`(purge 경합)가 **아예 없었다** — 계획이 이 PR 필수로 지정한 항목
+  - #5 rollback delta·V-16·duplicate 대조 실행 확인이 없었다
+- P2 3건: P17 이 원장만 보고 DLT 헤더를 안 봄 + `deleteAll()` 부재 · 배선 테스트가 `new LedgerOwnerConfig()`
+  직접 호출이라 스캔/중복/조건 오류를 못 잡음 · 계획서 §6 이 V-19o 철회 상태로 남아 본문과 충돌
+- **seam 구현에서 두 번 막혔다**: Spring Data 리포지토리는 인터페이스 프록시라 `callRealMethod()` 가
+  성립하지 않는다 → 알려진 값을 반환하는 seam 으로 전환. 그리고 로케이터를 stub 하자 **평문 읽기가 사라져
+  consistent-read 스냅샷이 열리지 않았고** V-15c 가 다시 vacuous 해졌다(M12 가 green) →
+  seam 이 `repository.count()` 로 평문 읽기를 재현하도록 고쳐 M12 가 red 로 전환됐다.
+- 검증: **변이 16종 red** — M1(attempt) M2(owner) M3/M4(group 3자 각 equality) M5(root-id) M6(topic)
+  M7/M8/M9(fingerprint 3축) M10(digest) M11(digest null-safe) M12(단계5 current read) M13(assignSelfRoot,
+  13건 red) M14(purge 재검사) M15(CommitAwareMetrics 우회) M16(owner 오배선).
+  **M3/M4 가 각각 V-19d/V-19d2 만 red** — 3R 이 지적한 "3자 대조에 행이 하나뿐" 이 실제로 해소됐다.
+- raw: .cache/codex-reviews/diff-c2b3b-r1.json
