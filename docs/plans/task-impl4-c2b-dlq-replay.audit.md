@@ -433,3 +433,14 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
   13건 red) M14(purge 재검사) M15(CommitAwareMetrics 우회) M16(owner 오배선).
   **M3/M4 가 각각 V-19d/V-19d2 만 red** — 3R 이 지적한 "3자 대조에 행이 하나뿐" 이 실제로 해소됐다.
 - raw: .cache/codex-reviews/diff-c2b3b-r1.json
+
+## 2026-09-10 — /ship (④-c-2b-3b)
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/104
+- precheck: ok (warnings 0)
+- 커밋 5개: `fix(adr)` ADR-0021 Update Log · `feat(dlq)` P15 · `test(dlq)` P16·P17 ·
+  `chore(lint)` parity fixture per-service 등재 · `docs(impl4-c2b3b)` 계획/audit
+  (커밋 2 제목의 `3a` 오타를 replay 로 정정 — 이 레포는 이 ID 로 이력을 추적한다)
+- 갱신: `TASKS.md` ④ 행 · `PHASE4.md` 작업 이력 · 계획서 진행표 · ADR-0021 Update Log
+- **PR 생성 시점에 전 모듈 스위트가 아직 실행 중이었다** — 부분 XML 219건 0실패까지만 관측.
+  본문·progress 양쪽에 "판정 아님, **미측정**" 으로 명시하고 CI 를 머지 게이트로 삼았다.
+- 미충족 8항은 PR 본문 §미충족 참조. 머지하지 않았다.
