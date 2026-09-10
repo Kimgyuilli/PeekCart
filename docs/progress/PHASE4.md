@@ -1785,7 +1785,7 @@ consistent-read 스냅샷이 열리지 않았고** `V-15c` 가 다시 vacuous �
 ### 검증
 
 `DlqReplayCorrelationIntegrationTest` 28건 · `LedgerOwnerWiringTest` ×4 · payment `DlqIntegrationTest`
-전부 green. lint 15종 green(parity 본실행 + self-test 23종). **변이 16종 red** — M3/M4 가 각각
+전부 green. **전 모듈 스위트 1043 tests 0 실패**(8모듈). lint 15종 green(parity 본실행 + self-test 23종). **변이 16종 red** — M3/M4 가 각각
 `V-19d`/`V-19d2` 만 red 라 3자 대조 매트릭스 분리가 실효임이 확인된다. M13(assignSelfRoot 제거)은
 13건 red — 집계가 `root_record_id IS NULL` 도 root 로 세므로 그 단언이 없으면 전부 green 이었다.
 
@@ -1799,10 +1799,11 @@ consistent-read 스냅샷이 열리지 않았고** `V-15c` 가 다시 vacuous �
 1. **#103 diff 재리뷰 스킵**(사용자 지시) — #102·#103 의 P0/P1 은 **0 이 아니라 미측정**으로 남는다.
 2. **계획 리뷰 수렴 미달** — 6R 중단(사용자 지시)으로 P1=0 을 확인하지 못했다. 5R 반영이 만든 새 표면
    (`V-19o` 복원 · `V-15c` · 단계 5 current read · `P17-b`)은 계획 리뷰를 거치지 않고 diff 리뷰로만 검증됐다.
-3. **로컬 전 모듈 스위트 완주 미관측** — 동시 실행 두 번에서 `NotificationOutboxIntegrationTest`
-   (`ContainerLaunchException`)와 `gateway` `InternalTokenIssuer` RSA p95 가 실패. 둘 다 단독 재실행은
-   통과하고 `gateway` 는 이 diff 에 변경 0줄이라 자원 경합으로 판단했으나 **완주를 직접 보지 못한 채
-   PR 을 열었다**. → **CI 를 머지 게이트로 삼는다.**
+3. ~~**로컬 전 모듈 스위트 완주 미관측**~~ → **해소 (PR 생성 후, 2026-09-10)**.
+   `./gradlew test --continue` **BUILD SUCCESSFUL (1h 25m)** · **1043 tests · 0 failures · 0 errors**.
+   동시 실행 두 번에서 났던 `NotificationOutboxIntegrationTest`(`ContainerLaunchException`)와
+   `gateway` `InternalTokenIssuer` RSA p95 실패는 **자원 경합이 맞았다**(완주 실행에서 둘 다 통과).
+   PR 은 이것이 미측정인 상태에서 열었고 본문에 그렇게 적었다 — 지금은 관측됐고 본문도 정정했다.
 4. **`V-19o` 는 fixture 전용** — ADR-0021 §D2(tombstone null-safe)와 ADR-0020 §D5-2(`event_id IS NULL`
    금지축) + `payload TEXT NOT NULL` 이 어긋난다. 해소는 새 ADR 이 필요하고 범위 밖.
 5. **진입점 관통 미검증** — 앵커를 fixture 로만 심는다. 전 구간은 `V-35`(2b-4).

@@ -444,3 +444,11 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
 - **PR 생성 시점에 전 모듈 스위트가 아직 실행 중이었다** — 부분 XML 219건 0실패까지만 관측.
   본문·progress 양쪽에 "판정 아님, **미측정**" 으로 명시하고 CI 를 머지 게이트로 삼았다.
 - 미충족 8항은 PR 본문 §미충족 참조. 머지하지 않았다.
+
+## 2026-09-10 — 전 모듈 스위트 완주 (PR #104 생성 후)
+- `./gradlew test --continue` **BUILD SUCCESSFUL (1h 25m)** — **1043 tests · 0 failures · 0 errors**
+  (common 92 · gateway 80 · notification 47 · order 352 · payment 171 · common-auth 52 · product 188 · user 61)
+- PR 생성 시점의 미충족 3번("로컬 완주 미관측")이 **해소**됐다. 앞선 동시 실행 2회의 실패
+  (`NotificationOutboxIntegrationTest` ContainerLaunchException · `gateway` RSA p95)는 **자원 경합이 맞았다**.
+- 정정 반영: PR 본문(#104) · `PHASE4.md` · `TASKS.md` · 계획서 진행표
+- **미측정으로 적었다가 관측 후 정정한 것**이지, 처음부터 통과였다고 고쳐 쓰지 않았다.
