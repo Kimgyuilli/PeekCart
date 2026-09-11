@@ -4,6 +4,7 @@ import com.peekcart.global.port.SlackPort;
 import com.peekcart.support.AbstractIntegrationTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +62,7 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired DlqTestListener dlqTestListener;
+    @Autowired com.peekcart.global.deadletter.DeadLetterRecordJpaRepository deadLetterRepository;
 
     @TestConfiguration
     static class TestConfig {
@@ -114,6 +116,8 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
         MDC.clear();
         dlqTestListener.records.clear();
         TestConfig.slackCallCount.set(0);
+        // 원장 행을 남기면 다음 테스트의 await 가 기존 행을 보고 즉시 끝난다 (④-c-2b-3b P17).
+        deadLetterRepository.deleteAll();
     }
 
     @AfterEach
@@ -171,6 +175,50 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
             assertThat(headerValue(dlqRecord, KafkaTraceHeaders.USER_ID))
                     .isEqualTo("77");
         });
+    }
+
+    @Test
+    @DisplayName("DLT 의 original timestamp 가 원장 original_timestamp 로 정확히 저장된다 (④-c-2b-3b P17)")
+    void dlqLedgerPersistsOriginalTimestampExactly() {
+        // **non-null 단언으로는 부족하다** — 재발행 시각이나 엉뚱한 헤더 값을 저장해도 green 이 된다.
+        // 그래서 고정 timestamp 를 실은 ProducerRecord 로 발행하고 **그 값과 정확히 같은지**를 본다.
+        //
+        // 이 값은 replay 상관의 fingerprint 축(④-c-2b-3b P15-b 축 8)이다. 조용히 NULL 이 되거나
+        // 재발행 시각으로 덮이면 **모든 상관이 실패해 사건이 갈라진다** — backlog=1 계약이 그 자리에서 깨진다.
+        // (NULL 비율 측정은 P22 소관이고, 여기서 고정하는 것은 계약이다.)
+        long fixedTimestamp = 1_757_000_123_456L;
+        String uniqueKey = "ts-key-" + java.util.UUID.randomUUID();
+        ProducerRecord<String, String> record = new ProducerRecord<>(
+                "order.created", null, fixedTimestamp, uniqueKey, "invalid-json-message");
+
+        kafkaTemplate.send(record);
+
+        // **DLT 헤더와 원장 양쪽을 본다.** 원장만 보면 "그 값이 DLT 에서 온 것" 이 증명되지 않는다 —
+        // 재발행 시각을 넣어도, 다른 경로로 같은 값이 들어와도 통과한다.
+        await().atMost(20, TimeUnit.SECONDS).untilAsserted(() -> {
+            assertThat(dlqTestListener.records)
+                    .anySatisfy(r -> assertThat(r.key()).isEqualTo(uniqueKey));
+            assertThat(deadLetterRepository.findAll())
+                    .anySatisfy(row -> assertThat(row.getOriginalKey()).isEqualTo(uniqueKey));
+        });
+
+        ConsumerRecord<String, String> dlt = dlqTestListener.records.stream()
+                .filter(r -> uniqueKey.equals(r.key()))
+                .findFirst().orElseThrow();
+        assertThat(headerLong(dlt, KafkaHeaders.DLT_ORIGINAL_TIMESTAMP)).isEqualTo(fixedTimestamp);
+
+        // **고유 key 로 이 테스트가 만든 행만 고른다** — 같은 클래스의 다른 테스트가 남긴 행이 섞이면
+        // allSatisfy 가 엉뚱한 이유로 실패하거나, 기존 행 때문에 await 가 즉시 끝난다.
+        assertThat(deadLetterRepository.findAll())
+                .filteredOn(row -> uniqueKey.equals(row.getOriginalKey()))
+                .isNotEmpty()
+                .allSatisfy(row -> assertThat(row.getOriginalTimestamp()).isEqualTo(fixedTimestamp));
+    }
+
+    /** DLT 헤더의 8-byte big-endian long. {@code DLT_ORIGINAL_TIMESTAMP} 는 문자열이 아니다. */
+    private static Long headerLong(ConsumerRecord<String, String> record, String key) {
+        var header = record.headers().lastHeader(key);
+        return header == null ? null : java.nio.ByteBuffer.wrap(header.value()).getLong();
     }
 
     private static String headerValue(ConsumerRecord<String, String> record, String key) {

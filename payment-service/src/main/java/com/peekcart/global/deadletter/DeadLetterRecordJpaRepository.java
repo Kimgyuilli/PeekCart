@@ -136,6 +136,25 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
     Optional<Long> findRootIdOf(@Param("id") Long id);
 
     /**
+     * replay attempt-id 로 그 시도를 개시한 <b>canonical root 의 id</b>. 없으면 empty
+     * (계획 ④-c-2b-3b P15 단계 1 — 로케이터).
+     *
+     * <p><b>대조가 아니라 탐색이다.</b> 여기서 못 찾으면 상관 자체를 시도하지 않고 독립 root 로 적재한다.
+     * attempt 값의 <b>대조</b>는 잠금 후 단 한 곳(P15 단계 3)에서만 한다 — 관측점을 늘리면
+     * "predicate 하나를 지우면 정확히 그 행만 red" 가 attempt 축에서 성립하지 않는다.
+     *
+     * <p><b>{@link #findRootIdOf} 와 같은 이유로 id 만 돌려준다</b> — 엔티티로 읽으면 그 인스턴스가
+     * 영속성 컨텍스트에 적재돼 뒤이은 {@code FOR UPDATE} 가 잠금만 얻고 상태를 refresh 하지 않는다.
+     *
+     * <p><b>canonical root 로 한정한다</b>({@code rootRecordId IS NULL OR = id}). 자식 행에 앵커가
+     * 실릴 일은 없지만 조건을 좁혀 둔다 — 앵커의 writer 는 replay 진입점 하나이고 대상은 root 다.
+     */
+    @Query("SELECT r.id FROM DeadLetterRecord r "
+            + "WHERE r.lastReplayAttemptId = :attemptId "
+            + "AND (r.rootRecordId IS NULL OR r.rootRecordId = r.id)")
+    Optional<Long> findRootIdByReplayAttemptId(@Param("attemptId") String attemptId);
+
+    /**
      * incident 의 <b>활성</b> 자식(재발행 재실패분)을 잠그고 읽는다. root 자신은 제외한다.
      *
      * <p><b>잠금이 정확성의 일부다.</b> 잠금 없는 조회는 MySQL REPEATABLE READ 에서 이 트랜잭션이

@@ -1718,3 +1718,97 @@ payment 168 · notification 45) · **lint 15종** green · parity self-test **23
    (CI 의 `saga_e2e.py` 가 `EXPECTED_MIGRATIONS` `10/8/8/6` 으로 4 DB 실적용을 확인한다).
 
 **다음**: ④-c-2b-3b (원자 대조 + 재개방, 계획 P15~P17)
+
+---
+
+## ④-c-2b-3b — 원자 상관 + 재개방 (PR [#104](https://github.com/Kimgyuilli/PeakCart/pull/104))
+
+**2026-09-10** · 계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3b (P15·P16·P17·P17-b)
+
+3a 가 세운 상관 **표면** 위에 **판정과 전이**를 얹었다. 진입점(claim·digest writer)은 2b-4 소관이라
+이 PR 은 **소비 측만** 바꾼다 — 앵커를 쓰는 주체가 없으면 상관 경로가 아예 타지 않아 단독 배포가 안전하다.
+
+### 실행 순서를 초안에서 바꾼 것이 이 PR 의 중심이다
+
+초안은 "root 잠금 → 대조 → 자식 INSERT + 재개방" 이었다. 그러면 **재개방이 저장되지 않는다**:
+`insertIfAbsent` 가 `@Modifying(clearAutomatically)` 라 INSERT 직후 컨텍스트를 비우고 앞서 잠근 root 가
+**detach** 된다. 그 뒤의 `reopen()` 은 dirty checking 대상이 아니라 UPDATE 가 나가지 않는다 —
+**자식 연결만 보는 테스트라면 green 인 채로 재개방이 사라진다.**
+
+채택한 순서: 로케이터(id projection) → root `FOR UPDATE` → **9축 대조(유일)** → 자식 INSERT →
+**current read 재조회** → 연결·재개방.
+
+- **단계 5 는 `findByIdForUpdate` 여야 한다.** 일반 `findById` 면 REPEATABLE READ 에서 단계 1 이 연
+  스냅샷을 다시 읽어, 그 사이 닫힌 root 를 `OPEN` 으로 보고 **재개방을 건너뛴다**.
+- **attempt 대조는 단계 3 한 곳뿐이다.** 계획 3R 이 이를 "조회 predicate / 잠금 후 재확인" 둘로 나눴는데
+  실행 순서상 관측점이 **셋**이 되어 서로 은폐했다(4R #3). 로케이터는 **탐색**이지 대조가 아니다.
+- **group 3자 대조.** 헤더를 빼고 둘만 비교하면 `pc-replay-target-group` 판독이 **죽은 데이터**가 되어
+  4헤더 계약 중 하나가 아무것도 지키지 않는다.
+- **digest 는 절단 전 전문**의 SHA-256. 원장 `payload` 는 `maxLength` 로 잘려 저장돼 그 값으로 대조하면
+  **상한 밖 변조를 통과**시킨다. null-safe 는 ADR-0021 §D2 결정 그대로 유지했다.
+
+### 그 밖의 결정
+
+- **`LedgerOwner` 빈 주입** — 이 파일은 4서비스 byte 동일 복제라 하드코딩 불가. 인자로 받으면
+  **호출자가 소유자를 고를 수 있어** 신뢰 경계가 약해진다. `record(DlqOrigin)` 시그니처 불변(호출부 44곳 그대로).
+  parity lint 밖이라 **오배선의 증상이 실패가 아니라 침묵**이다 → `LedgerOwnerWiringTest` ×4 로 배선을 따로 고정.
+- **알림을 afterCommit + 결과별 4행으로.** 기존 코드는 `@Transactional` 안에서 Slack 을 불러
+  **commit 실패 전에 알림이 먼저 나갈 수 있었고**, 상관된 자식에도 "신규 미결 1건" 을 보내
+  backlog 가 늘지 않았는데 늘었다고 보고했다.
+- **Counter 2종은 `CommitAwareMetrics` 경유.** 트랜잭션 안에서 올리면 rollback 된 상관까지 세도 green 이다.
+  `reason` 은 enum bounded — 입력 문자열이 태그가 되면 cardinality 가 터진다(ADR-0015).
+- **ADR-0021 Update Log(P17-b)** — §D2 가 관통 검증을 `V-30` 으로 참조했으나 그 ID 는 ④-c-2b-2 에서
+  **이미 머지된** `OutboxReplayPublicationIntegrationTest`(`:44·122`)가 쓰고 있었다. 관통=`V-35`,
+  호환성=`V-30` 유지, `V-34` 철회. 결정이 아니라 **참조 번호 정정**이라 새 ADR 대상이 아니다.
+
+### 리뷰에서 배운 것
+
+**계획 리뷰 4R 이 P1 8건으로 발산했다.** 원인은 리뷰 부족이 아니라 **3R 반영이 3b 경계를 넘어
+2b-4 의 P24 를 확장한 것**이었다 — 열자마자 3b 가 답할 수 없는 표면 넷이 딸려 나왔고
+(`FixedSequenceBackOff` 에 `maxAttempts` 가 없어 계획의 식 자체가 불가였다), 4R 의 P1 4건이 전부 거기 있었다.
+**drain 판정식·preflight 진입점을 통째로 2b-4 로 되돌리자** 5R 에서 범위 이탈 지적이 1건으로 줄었다.
+
+**5R 6건 중 5건이 4R 반영 자체의 결함**이었다. 특히 축 9 를 "필수 대조" 로 바꾼 것이
+**Accepted `ADR-0021 §D2` 침범**이었다 — 도달 불가라는 *사실*이 결정의 *의미*를 바꿀 권한은 아니다.
+
+**diff 리뷰 1R 이 실제 테스트 실패 2건을 잡았다.** 로컬 `gradle test` 가 XML 쓰기 실패로 `BUILD FAILED`
+만 남기고 **테스트 실패를 가리고 있었다** — 그 신호만 보고 "인프라 실패, 테스트는 통과" 로 보고했었다.
+나머지 P1 3건도 *"테스트가 계약이 아니라 통과를 기술"* 유형이었다(`V-15c` vacuous · `V-21c` 부재 ·
+rollback/V-16 누락).
+
+**seam 구현에서 두 번 막혔다.** ① Spring Data 리포지토리는 인터페이스 프록시라 `callRealMethod()` 가
+성립하지 않는다 → 알려진 값을 반환하는 seam 으로 전환. ② 로케이터를 stub 하자 **평문 읽기가 사라져
+consistent-read 스냅샷이 열리지 않았고** `V-15c` 가 다시 vacuous 해졌다(M12 가 green) → seam 이
+`repository.count()` 로 그 읽기를 재현하게 고쳐 M12 가 red 로 전환됐다. **변이 검사를 안 돌렸으면
+"고쳤다" 고 잘못 보고했을 지점이다.**
+
+### 검증
+
+`DlqReplayCorrelationIntegrationTest` 28건 · `LedgerOwnerWiringTest` ×4 · payment `DlqIntegrationTest`
+전부 green. **전 모듈 스위트 1043 tests 0 실패**(8모듈). lint 15종 green(parity 본실행 + self-test 23종). **변이 16종 red** — M3/M4 가 각각
+`V-19d`/`V-19d2` 만 red 라 3자 대조 매트릭스 분리가 실효임이 확인된다. M13(assignSelfRoot 제거)은
+13건 red — 집계가 `root_record_id IS NULL` 도 root 로 세므로 그 단언이 없으면 전부 green 이었다.
+
+**구현 중 자체 발견**: `LedgerOwnerConfig` 는 per-service 인데 parity self-test fixture 가 order 사본을
+4벌 복사해 **fixture 안에서만 byte 동일**해져 `DLQ-PARITY-014` 가 오탐했다. fixture 의 per-service 목록에
+등재해 해소. `git stash` 로 baseline 을 볼 때 **untracked 신규 파일이 남아 판정이 오염**됐던 것도
+겪었다 — `-u` 를 붙이고서야 선재 결함이 아니라 내 변경의 fallout 임이 드러났다.
+
+### 미충족
+
+1. **#103 diff 재리뷰 스킵**(사용자 지시) — #102·#103 의 P0/P1 은 **0 이 아니라 미측정**으로 남는다.
+2. **계획 리뷰 수렴 미달** — 6R 중단(사용자 지시)으로 P1=0 을 확인하지 못했다. 5R 반영이 만든 새 표면
+   (`V-19o` 복원 · `V-15c` · 단계 5 current read · `P17-b`)은 계획 리뷰를 거치지 않고 diff 리뷰로만 검증됐다.
+3. ~~**로컬 전 모듈 스위트 완주 미관측**~~ → **해소 (PR 생성 후, 2026-09-10)**.
+   `./gradlew test --continue` **BUILD SUCCESSFUL (1h 25m)** · **1043 tests · 0 failures · 0 errors**.
+   동시 실행 두 번에서 났던 `NotificationOutboxIntegrationTest`(`ContainerLaunchException`)와
+   `gateway` `InternalTokenIssuer` RSA p95 실패는 **자원 경합이 맞았다**(완주 실행에서 둘 다 통과).
+   PR 은 이것이 미측정인 상태에서 열었고 본문에 그렇게 적었다 — 지금은 관측됐고 본문도 정정했다.
+4. **`V-19o` 는 fixture 전용** — ADR-0021 §D2(tombstone null-safe)와 ADR-0020 §D5-2(`event_id IS NULL`
+   금지축) + `payload TEXT NOT NULL` 이 어긋난다. 해소는 새 ADR 이 필요하고 범위 밖.
+5. **진입점 관통 미검증** — 앵커를 fixture 로만 심는다. 전 구간은 `V-35`(2b-4).
+6. **drain 판정식·preflight 진입점 미정**(2b-4 이관) · **`replay_deadline`/`replay_policy` 엔티티 매핑 없음**
+   (컬럼은 V8, writer/reader 는 2b-4) · **`NOT NULL` contract·backfill**(2b-4 P23) · **운영 클러스터 미적용**
+
+**다음**: ④-c-2b-4 (진입점 + 좌표 reader + fence + backfill, 계획 P18~P24). 착수 시 drain 4조건의
+판정식·preflight 진입점·ADR 처분을 **먼저 결정**해야 한다(4R 이 이관한 미결).

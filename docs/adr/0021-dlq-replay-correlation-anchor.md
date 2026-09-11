@@ -126,3 +126,21 @@ ADR-0020 §D5-4 의 음성 테스트 목록에서 **`record_kind` 불일치**를
 - [ADR-0012](./0012-phase4-db-event-saga-contract.md) — DB-per-service (4벌 복제의 근거)
 - 계획서: `docs/plans/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3 (P14·P15)
 - 코드: `common/.../kafka/ReplayHeaders.java` · `common/.../kafka/DlqHeaders.java` · `*/global/deadletter/DeadLetterRecord.java` · `scripts/dead-letter-schema-parity-lint.sh`
+
+---
+
+## Update Log
+
+### 2026-09-08 — 검증 ID 참조 정정 (④-c-2b-3b P17-b)
+
+§D2 의 "진입점을 실제로 거치는 관통 테스트를 별도로 요구한다(계획서 **V-30**)" 에서 **V-30 은 잘못된 참조**였다.
+그 ID 는 ④-c-2b-2 에서 **이미 머지된** `OutboxReplayPublicationIntegrationTest`(`:44·122`)가
+`record_kind IS NULL` 호환성 테스트 이름으로 쓰고 있다 — 계획서에서 같은 ID 가 두 곳에 배정돼 있었다.
+
+- `record_kind IS NULL` 호환성 = **`V-30`** (불변 — 코드가 이미 그렇게 부른다)
+- P21 진입점 관통(digest writer 검증) = **`V-35`**
+- `V-34` = **철회**(미사용 ID)
+
+**결정은 바뀌지 않았다.** digest writer 가 진입점 하나라는 §D2 도, 관통 테스트를 요구한다는 것도 그대로다 —
+바뀐 것은 그 테스트를 가리키는 **번호**뿐이다. 그래서 `adr/README.md:14` 가 새 ADR 을 요구하는
+"트레이드오프·결정 변경" 에 해당하지 않는다.

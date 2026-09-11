@@ -332,6 +332,34 @@ public class DeadLetterRecord {
      *
      * @return 실제로 전이했으면 true
      */
+    /**
+     * 종결된 incident 를 다시 연다 (계획 ④-c-2b-3b P15-d, ADR-0020 §D6-2b I-2).
+     *
+     * <p><b>이 전이만 사람이 아니라 시스템이 개시한다.</b> 운영자가 닫은 사건을 되돌리는 유일한 경로이므로
+     * 운영 알림 대상이고({@code DeadLetterMetrics} 의 재개방 Counter), 근거를 반드시 남긴다.
+     *
+     * <p><b>{@code resolvedAt}/{@code discardedAt} 을 지우지 않는다</b> — 감사 이력이다. purge 는
+     * <b>현재 상태에 해당하는 시각만</b> 보므로({@code findPurgeableRootIds} 의 status 분기)
+     * {@code OPEN} 으로 돌아온 행은 그 시각이 남아 있어도 삭제 후보에서 빠진다.
+     *
+     * <p><b>terminal 인 행만 전이한다.</b> 이미 {@code OPEN}/{@code ACKED} 인 root 에 자식이 붙는 것은
+     * 정상이고 재개방이 아니다 — 그 경우까지 재개방으로 세면 알림과 Counter 가 사건을 과대 보고한다.
+     *
+     * @return 실제로 재개방했으면 true, terminal 이 아니어서 no-op 이면 false
+     */
+    public boolean reopen(String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("재개방은 사유 기록이 필수입니다");
+        }
+        if (!statusValue().isTerminal()) {
+            return false;
+        }
+        this.status = DeadLetterStatus.OPEN.name();
+        this.reopenedAt = LocalDateTime.now().truncatedTo(ChronoUnit.MICROS);
+        this.reopenedReason = reason;
+        return true;
+    }
+
     public boolean discard(String actor, String reason) {
         if (reason == null || reason.isBlank()) {
             throw new IllegalArgumentException("DISCARDED 는 사유 기록이 필수입니다");
