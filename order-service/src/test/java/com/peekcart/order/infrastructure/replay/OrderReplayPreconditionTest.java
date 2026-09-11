@@ -118,7 +118,12 @@ class OrderReplayPreconditionTest {
             "{\"payload\":{\"reserved\":true}}",
             "{\"payload\":{\"orderId\":1}}",
             "{\"payload\":{\"orderId\":\"문자열\",\"reserved\":true}}",
-            "{\"payload\":{\"orderId\":1,\"reserved\":\"참\"}}"
+            "{\"payload\":{\"orderId\":1,\"reserved\":\"참\"}}",
+            // 소수·지수형: canConvertToLong() 만 보면 통과하고 asLong() 이 절삭해 **다른 주문**을 조회한다.
+            "{\"payload\":{\"orderId\":1.5,\"reserved\":true}}",
+            "{\"payload\":{\"orderId\":1e2,\"reserved\":true}}",
+            // long 범위 초과
+            "{\"payload\":{\"orderId\":99999999999999999999,\"reserved\":true}}"
     })
     @DisplayName("필드 부재·타입 오류 → deny (소비 코드는 NPE 로 터진다 — 그 실패를 재생산하지 않는다)")
     void malformedPayload(String body) {

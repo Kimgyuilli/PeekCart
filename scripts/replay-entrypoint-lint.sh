@@ -25,6 +25,19 @@ done < <(grep -rl "OutboxEvent\.replay(" --include="*.java" \
             order-service/src/main product-service/src/main payment-service/src/main notification-service/src/main \
             2>/dev/null || true)
 
+# --- (1b) DeadLetterReplayService.replay(...) 호출자는 DeadLetterEndpoint 하나뿐 ---
+# (1) 만으로는 부족하다 (diff 리뷰 1R #8): 다른 scheduler/controller 가 replayService.replay(...) 를
+# 부르면 적격성·fence 는 공유하지만 **사람이 Endpoint 에서만 개시한다**(N14)는 단일성이 깨진다.
+# 그 경로는 kill-switch 외에 아무 운영 통제도 받지 않는다.
+while IFS= read -r file; do
+    base="$(basename "$file")"
+    [[ "$base" == "DeadLetterReplayService.java" ]] && continue
+    [[ "$base" == "DeadLetterEndpoint.java" ]] && continue
+    violations+=("[REPLAY-ENTRY-005] replay 개시 호출자가 Endpoint 밖에 있다: $file")
+done < <(grep -rlE "replayService\.replay\(|DeadLetterReplayService[[:space:]]+[a-zA-Z]+" --include="*.java" \
+            order-service/src/main product-service/src/main payment-service/src/main notification-service/src/main \
+            2>/dev/null || true)
+
 # --- (2) 진입점은 4서비스 전부에 있어야 한다 (한 서비스만 빠지면 그 원장은 replay 불가) ---
 for svc in order product payment notification; do
     path="${svc}-service/src/main/java/com/peekcart/global/deadletter/DeadLetterReplayService.java"

@@ -54,7 +54,9 @@ public class OrderReplayPrecondition implements ReplayPreconditionPort {
 
         JsonNode orderIdNode = body.get("orderId");
         JsonNode reservedNode = body.get("reserved");
-        if (orderIdNode == null || !orderIdNode.canConvertToLong()
+        // **isIntegralNumber 가 필요하다** (diff 리뷰 1R #2): `canConvertToLong()` 만 쓰면 `1.5` 같은
+        // DecimalNode 도 통과하고 `asLong()` 이 1 로 절삭해 **엉뚱한 aggregate 를 조회**한다.
+        if (orderIdNode == null || !orderIdNode.isIntegralNumber() || !orderIdNode.canConvertToLong()
                 || reservedNode == null || !reservedNode.isBoolean()) {
             // 소비 코드는 get(...) 직접 접근이라 부재 시 NPE 로 터진다. 그 실패를 replay 로 재생산하지 않는다.
             return "payload 의 orderId/reserved 가 없거나 타입이 다르다";

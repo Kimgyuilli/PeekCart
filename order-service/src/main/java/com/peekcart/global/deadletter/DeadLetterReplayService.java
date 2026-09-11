@@ -16,7 +16,6 @@ import com.peekcart.global.replay.ReplayPolicyRegistry;
 import com.peekcart.global.retention.IdempotencyRetentionProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -118,7 +117,7 @@ public class DeadLetterReplayService {
 
         String attemptId = UUID.randomUUID().toString();
         String targetGroup = root.getFailedConsumerGroup();
-        ConsumerRecord<String, String> original = eligibility.original();
+        OriginalRecordReader.Original original = eligibility.original();
         String digest = PayloadDigest.sha256Hex(original.value());
 
         repository.stampReplayAnchor(rootId, attemptId, targetGroup, digest,
@@ -148,7 +147,7 @@ public class DeadLetterReplayService {
 
     // --- 적격성 ---
 
-    private record Eligibility(List<String> reasons, ConsumerRecord<String, String> original,
+    private record Eligibility(List<String> reasons, OriginalRecordReader.Original original,
                                String originalEventId, LocalDateTime deadline, String audit) {
     }
 
@@ -208,7 +207,7 @@ public class DeadLetterReplayService {
         }
 
         // 원본 레코드 — 축 4(좌표 유효성)의 나머지이자 fence(§D8-3)의 입력.
-        ConsumerRecord<String, String> original = null;
+        OriginalRecordReader.Original original = null;
         String originalEventId = null;
         if (root.getOriginKind() == DlqOriginKind.RESOLVED_ORIGIN) {
             OriginalRecordReader.Result read = originalRecordReader.read(
@@ -230,7 +229,7 @@ public class DeadLetterReplayService {
      *
      * @return 원본 payload 안의 eventId
      */
-    private String fence(DeadLetterRecord root, ConsumerRecord<String, String> original,
+    private String fence(DeadLetterRecord root, OriginalRecordReader.Original original,
                          ReplayPolicy policy, List<String> reasons) {
         if (original.partition() != root.getOriginPartition()) {
             reasons.add(String.format("[fence] 파티션이 원장과 다르다 — 원장=%d, 원본=%d",

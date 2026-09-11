@@ -97,6 +97,13 @@ class PaymentReplayPreconditionTest {
     @DisplayName("필드 부재·파싱 실패·대상 아닌 토픽 → deny")
     void failClosedInputs() {
         assertThat(precondition.reject(TOPIC, "{\"payload\":{}}")).contains("orderId/reserved");
+        // 소수·지수·범위 초과 — canConvertToLong() 만 보면 통과해 다른 aggregate 를 조회한다(1R #2).
+        assertThat(precondition.reject(TOPIC, "{\"payload\":{\"orderId\":1.5,\"reserved\":true}}"))
+                .contains("orderId/reserved");
+        assertThat(precondition.reject(TOPIC, "{\"payload\":{\"orderId\":1e2,\"reserved\":true}}"))
+                .contains("orderId/reserved");
+        assertThat(precondition.reject(TOPIC, "{\"payload\":{\"orderId\":99999999999999999999,\"reserved\":true}}"))
+                .contains("orderId/reserved");
         assertThat(precondition.reject(TOPIC, "{not json")).contains("파싱하지 못했다");
         assertThat(precondition.reject("order.created", payload(true))).contains("판정 대상이 아닌 토픽");
     }

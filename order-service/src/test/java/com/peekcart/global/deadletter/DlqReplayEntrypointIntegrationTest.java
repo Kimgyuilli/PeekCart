@@ -2,6 +2,13 @@ package com.peekcart.global.deadletter;
 
 import com.peekcart.global.kafka.DlqOrigin;
 import com.peekcart.global.kafka.DlqOriginKind;
+import com.peekcart.global.kafka.PayloadDigest;
+import com.peekcart.global.kafka.ReplayHeaders;
+import com.peekcart.order.domain.model.Order;
+import com.peekcart.order.domain.model.OrderItemData;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import com.peekcart.global.outbox.OutboxEventJpaRepository;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
@@ -21,7 +28,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,7 +62,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.flyway.locations=classpath:db/migration",
         // 배경 잡이 fixture 상태를 바꾸면 단언이 관측 전에 무너진다.
         "app.outbox.polling.delay=1h",
-        "app.dead-letter.reconcile.delay=1h"
+        "app.dead-letter.reconcile.delay=1h",
 })
 @Import(IntegrationTestConfig.class)
 @DisplayName("DLQ replay 개시 진입점")
@@ -74,9 +85,13 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
     @Autowired DeadLetterRecordJpaRepository ledgerRepository;
     @Autowired OutboxEventJpaRepository outboxEventJpaRepository;
     @Autowired DeadLetterRecorder recorder;
+    @Autowired DeadLetterPublicationReconciler reconciler;
+    @Autowired com.peekcart.global.outbox.OutboxPollingService pollingService;
+    @Autowired com.peekcart.order.infrastructure.OrderJpaRepository orderJpaRepository;
     @Autowired DeadLetterProperties properties;
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired JdbcTemplate jdbcTemplate;
+    @Autowired org.springframework.kafka.config.KafkaListenerEndpointRegistry listenerRegistry;
     @Autowired org.springframework.transaction.support.TransactionTemplate transactionTemplate;
 
     /** order 가 소비하고 정책이 allow 인 토픽. */
@@ -85,6 +100,9 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
     /** order 가 소비하지만 정책이 **deny** 인 토픽 — 늦은 재적용이 이중 과금 경로다. */
     private static final String DENIED_TOPIC = "payment.requested";
     private static final String DENIED_GROUP = "order-svc-payment-requested-group";
+    /** 사전조건(도메인 상태 조회)을 요구하는 유일한 토픽. */
+    private static final String STOCK_TOPIC = "stock.reservation.result";
+    private static final String STOCK_GROUP = "order-svc-stock-result-group";
 
     @BeforeEach
     void setUp() {
@@ -93,6 +111,16 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         outboxEventJpaRepository.deleteAll();
         // 기본값은 false 다. 여는 것은 각 테스트가 명시적으로 한다 — 기본값이 뒤집히면 V-38 이 red 가 된다.
         properties.getReplay().setEnabled(false);
+        // **업무 리스너를 세운다.** 살아 있는 @KafkaListener 가 fixture 레코드를 실제로 소비해
+        // 도메인 상태를 바꾼다 — 실측: stock.reservation.result 를 심자 consumer 가 먼저
+        // confirmReservation 을 적용해 "사전조건 allow" 케이스가 deny 로 뒤집혔다.
+        // `spring.kafka.listener.auto-startup` 은 듣지 않는다 — 서비스가 container factory 를
+        // 직접 만들어(OrderKafkaConfig) Boot 의 listener 속성을 적용하지 않기 때문이다.
+        listenerRegistry.stop();
+        // lockAtLeastFor(PT4S) 가 남아 있으면 두 번째 이후의 reconcile() 호출이 통째로 건너뛰어지고,
+        // 그 테스트는 "아무 일도 안 일어났다" 를 관측하며 green 이 된다.
+        jdbcTemplate.update("UPDATE shedlock SET lock_until = NOW() - INTERVAL 1 DAY WHERE name = ?",
+                "deadLetterPublicationReconcileJob");
     }
 
     // ---------- V-38: kill-switch ----------
@@ -259,6 +287,123 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         assertThat(resolved.rejectedReason()).isNull();
     }
 
+    // ---------- drain 앵커 (diff 리뷰 1R #6) ----------
+
+    @Test
+    @DisplayName("발행 축이 PUBLISHED 로 종착하면 drain 앵커가 DB 시각으로 찍힌다")
+    void anchorStampedOnPublished() {
+        Long ledgerId = replayedIncident("order-8");
+        assertThat(ledgerRepository.findById(ledgerId).orElseThrow().getLastReplaySettledAt()).isNull();
+
+        settleOutboxAs("PUBLISHED", ledgerId);
+        reconciler.reconcile();
+
+        DeadLetterRecord after = ledgerRepository.findById(ledgerId).orElseThrow();
+        assertThat(after.getPublicationStatus()).isEqualTo(PublicationStatus.PUBLISHED);
+        assertThat(after.getLastReplaySettledAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("PUBLISH_FAILED 로 종착해도 앵커를 찍는다 — '발행되지 않았다' 의 증명이 아니기 때문")
+    void anchorStampedOnPublishFailed() {
+        Long ledgerId = replayedIncident("order-9");
+
+        settleOutboxAs("FAILED", ledgerId);
+        reconciler.reconcile();
+
+        DeadLetterRecord after = ledgerRepository.findById(ledgerId).orElseThrow();
+        assertThat(after.getPublicationStatus()).isEqualTo(PublicationStatus.PUBLISH_FAILED);
+        // FAILED 분기에서만 앵커를 빼면 drain 이 재시도 중에 통과한다 — 그 변이가 여기서 red 가 된다.
+        assertThat(after.getLastReplaySettledAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("PENDING 이면 종착도 앵커도 없다 — 발행 중인 건을 조기 종결하지 않는다")
+    void pendingIsNotSettled() {
+        Long ledgerId = replayedIncident("order-10");
+
+        reconciler.reconcile();
+
+        DeadLetterRecord after = ledgerRepository.findById(ledgerId).orElseThrow();
+        assertThat(after.getPublicationStatus()).isEqualTo(PublicationStatus.REQUESTED);
+        assertThat(after.getLastReplaySettledAt()).isNull();
+    }
+
+    // ---------- V-35: 진입점 → 발행 → 재실패 → 상관 관통 (diff 리뷰 1R #4) ----------
+
+    @Test
+    @DisplayName("진입점이 만든 앵커로 재발행분이 실제 발행되고, 그 재실패가 같은 root 에 상관된다")
+    void entrypointToCorrelation() throws Exception {
+        Published published = publish(ALLOWED_TOPIC, "order-11");
+        Long rootId = ledgerRow(ALLOWED_TOPIC, ALLOWED_GROUP, published);
+        properties.getReplay().setEnabled(true);
+        DeadLetterReplayService.Result accepted = replay(rootId);
+        assertThat(accepted.accepted()).isTrue();
+
+        // 1) poller 가 replay 행을 실제로 발행한다.
+        pollingService.pollAndPublish();
+
+        ConsumerRecord<String, String> republished = lastRecordWithHeader(ALLOWED_TOPIC,
+                ReplayHeaders.ATTEMPT_ID, accepted.attemptId());
+        assertThat(republished).as("재발행 레코드를 찾지 못했다").isNotNull();
+        // 2) 진입점이 만든 헤더가 그대로 실린다 — fixture 가 아니라 실제 값이다.
+        assertThat(header(republished, ReplayHeaders.LEDGER_OWNER)).isEqualTo("order");
+        assertThat(header(republished, ReplayHeaders.TARGET_GROUP)).isEqualTo(ALLOWED_GROUP);
+        assertThat(header(republished, ReplayHeaders.ROOT_ID)).isEqualTo(String.valueOf(rootId));
+        // 3) 원본 좌표·payload 가 보존된다(§D8-3 fence 가 주장하는 것).
+        assertThat(republished.value()).isEqualTo(originalValue(ALLOWED_TOPIC, published.offset()));
+        assertThat(republished.timestamp()).isEqualTo(originalTimestamp(ALLOWED_TOPIC, published.offset()));
+        // 4) root 의 digest 가 **재발행된 payload** 의 digest 와 같다 — 상관 대조 축 9의 정본이다.
+        assertThat(ledgerRepository.findById(rootId).orElseThrow().getLastReplayPayloadDigest())
+                .isEqualTo(PayloadDigest.sha256Hex(republished.value()));
+
+        // 5) 그 재발행분이 표적 group 에서 다시 실패했다고 보고 DLT 를 적재한다.
+        //    헤더는 fixture 가 아니라 **방금 발행된 레코드에서 읽은 실제 값**이다.
+        recorder.record(new DlqOrigin(DlqOriginKind.RESOLVED_ORIGIN, ALLOWED_TOPIC,
+                republished.partition(), republished.offset(), ALLOWED_GROUP, republished.key(),
+                republished.timestamp(), "java.lang.IllegalStateException", "재실패", republished.value(),
+                header(republished, ReplayHeaders.ATTEMPT_ID),
+                header(republished, ReplayHeaders.LEDGER_OWNER),
+                header(republished, ReplayHeaders.TARGET_GROUP),
+                Long.valueOf(header(republished, ReplayHeaders.ROOT_ID))));
+
+        // 6) **독립 incident 로 갈라지지 않고** 같은 root 에 자식으로 붙는다.
+        List<DeadLetterRecord> all = ledgerRepository.findAll();
+        assertThat(all).hasSize(2);
+        DeadLetterRecord child = all.stream().filter(r -> !r.getId().equals(rootId)).findFirst().orElseThrow();
+        assertThat(child.getRootRecordId()).isEqualTo(rootId);
+        // 사건은 여전히 1건이다 — 재실패가 backlog 를 늘리면 운영자가 같은 사건을 두 번 센다.
+        assertThat(ledgerRepository.countUnresolved()).isEqualTo(1);
+    }
+
+    // ---------- V-28d 배선: 실제 adapter 를 거친다 (diff 리뷰 1R #5) ----------
+
+    @Test
+    @DisplayName("stock.reservation.result 는 실제 Order 를 조회해 갈린다 — adapter 가 배선돼 있어야 한다")
+    void preconditionUsesRealOrderAdapter() {
+        properties.getReplay().setEnabled(true);
+
+        Order pending = orderJpaRepository.save(Order.create(1L, "ORD-" + UUID.randomUUID(), "받는이",
+                "010-0000-0000", "12345", "주소", List.of(new OrderItemData(1L, 1, 1000L))));
+        Published allowed = publishReservationResult(pending.getId(), true);
+        Long allowedLedger = ledgerRow(STOCK_TOPIC, STOCK_GROUP, allowed);
+
+        assertThat(replay(allowedLedger).rejections())
+                .as("PENDING·미확정 주문은 통과해야 한다 — adapter 가 없으면 fail-closed 로 거부된다")
+                .isEmpty();
+
+        // 같은 토픽이라도 주문 상태가 다르면 갈린다 — 상태 검사를 지우면 이 단언이 red 가 된다.
+        Order cancelled = orderJpaRepository.save(Order.create(1L, "ORD-" + UUID.randomUUID(), "받는이",
+                "010-0000-0000", "12345", "주소", List.of(new OrderItemData(1L, 1, 1000L))));
+        cancelled.cancel();
+        orderJpaRepository.save(cancelled);
+        Published denied = publishReservationResult(cancelled.getId(), true);
+        Long deniedLedger = ledgerRow(STOCK_TOPIC, STOCK_GROUP, denied);
+
+        assertThat(replay(deniedLedger).rejections())
+                .anyMatch(r -> r.contains("사전조건 불충족"));
+    }
+
     // ---------- V-14: 잠금이 I-1 원자성의 근거다 ----------
 
     @Test
@@ -311,13 +456,91 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
 
     // ---------- helper ----------
 
+    /** replay 를 개시해 REQUESTED 상태의 incident 를 만든다. */
+    private Long replayedIncident(String key) {
+        Published published = publish(ALLOWED_TOPIC, key);
+        Long ledgerId = ledgerRow(ALLOWED_TOPIC, ALLOWED_GROUP, published.offset(), published.eventId());
+        properties.getReplay().setEnabled(true);
+        assertThat(replay(ledgerId).accepted()).isTrue();
+        return ledgerId;
+    }
+
+    /** 해당 incident 에 연결된 replay outbox 행을 지정 상태로 종착시킨다(발행 결과를 흉내낸다). */
+    private void settleOutboxAs(String outboxStatus, Long ledgerId) {
+        Long outboxEventId = jdbcTemplate.queryForObject(
+                "SELECT outbox_event_id FROM dead_letter_records WHERE id = ?", Long.class, ledgerId);
+        jdbcTemplate.update("UPDATE outbox_events SET status = ?, published_at = NOW(6) WHERE id = ?",
+                outboxStatus, outboxEventId);
+    }
+
+    private Published publishReservationResult(Long orderId, boolean reserved) {
+        String eventId = UUID.randomUUID().toString();
+        String value = "{\"eventId\":\"" + eventId + "\",\"eventType\":\"" + STOCK_TOPIC
+                + "\",\"payload\":{\"orderId\":" + orderId + ",\"reserved\":" + reserved + "}}";
+        try {
+            var metadata = kafkaTemplate.send(STOCK_TOPIC, 0, "order-" + orderId, value)
+                    .get().getRecordMetadata();
+            return new Published(metadata.offset(), eventId, metadata.timestamp(), "order-" + orderId);
+        } catch (Exception e) {
+            throw new IllegalStateException("테스트 레코드 발행 실패", e);
+        }
+    }
+
+    private String header(ConsumerRecord<String, String> record, String key) {
+        var header = record.headers().lastHeader(key);
+        return header == null ? null : new String(header.value(), StandardCharsets.UTF_8);
+    }
+
+    /** 지정 헤더 값을 가진 마지막 레코드를 찾는다. */
+    private ConsumerRecord<String, String> lastRecordWithHeader(String topic, String headerKey, String expected) {
+        ConsumerRecord<String, String> found = null;
+        for (ConsumerRecord<String, String> record : readAll(topic)) {
+            if (expected.equals(header(record, headerKey))) {
+                found = record;
+            }
+        }
+        return found;
+    }
+
+    private String originalValue(String topic, long offset) {
+        return readAll(topic).stream().filter(r -> r.offset() == offset).findFirst().orElseThrow().value();
+    }
+
+    private long originalTimestamp(String topic, long offset) {
+        return readAll(topic).stream().filter(r -> r.offset() == offset).findFirst().orElseThrow().timestamp();
+    }
+
+    private List<ConsumerRecord<String, String>> readAll(String topic) {
+        Properties props = new Properties();
+        props.put("bootstrap.servers", kafka.getBootstrapServers());
+        props.put("group.id", "test-read-" + UUID.randomUUID());
+        props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
+            // assign 전용 — group 조율 지연이라는 변수를 없앤다(기존 테스트와 같은 이유).
+            List<TopicPartition> partitions = consumer.partitionsFor(topic).stream()
+                    .map(info -> new TopicPartition(topic, info.partition()))
+                    .toList();
+            consumer.assign(partitions);
+            consumer.seekToBeginning(partitions);
+            List<ConsumerRecord<String, String>> collected = new ArrayList<>();
+            long deadline = System.currentTimeMillis() + 15_000;
+            long end = consumer.endOffsets(partitions).values().stream().mapToLong(Long::longValue).sum();
+            while (collected.size() < end && System.currentTimeMillis() < deadline) {
+                consumer.poll(Duration.ofMillis(500)).records(topic).forEach(collected::add);
+            }
+            return collected;
+        }
+    }
+
+
     private DeadLetterReplayService.Result replay(Long ledgerId) {
         Optional<DeadLetterReplayService.Result> outcome = replayService.replay(ledgerId, "operator");
         return outcome.orElseThrow(() -> new AssertionError("원장에 행이 없다 — id=" + ledgerId));
     }
 
     /** 브로커에 실린 원본 레코드의 좌표와 eventId. replay 원본은 원장 사본이 아니라 이 레코드다. */
-    private record Published(long offset, String eventId) {
+    private record Published(long offset, String eventId, long timestamp, String key) {
     }
 
     private Published publish(String topic, String key) {
@@ -325,18 +548,31 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         String value = "{\"eventId\":\"" + eventId + "\",\"eventType\":\"" + topic
                 + "\",\"payload\":{\"orderId\":1}}";
         try {
-            long offset = kafkaTemplate.send(topic, 0, key, value).get().getRecordMetadata().offset();
-            return new Published(offset, eventId);
+            var metadata = kafkaTemplate.send(topic, 0, key, value).get().getRecordMetadata();
+            return new Published(metadata.offset(), eventId, metadata.timestamp(), key);
         } catch (Exception e) {
             throw new IllegalStateException("테스트 레코드 발행 실패", e);
         }
     }
 
+    private Long ledgerRow(String topic, String group, Published published) {
+        return ledgerRow(topic, group, published.offset(), published.eventId(),
+                published.timestamp(), published.key());
+    }
+
     private Long ledgerRow(String topic, String group, long offset, String eventId) {
-        // original_timestamp 는 **현재 시각**이어야 한다 — 과거 값을 쓰면 멱등 안전창(7d)이 이미 만료돼
-        // 모든 케이스가 [안전창] 으로 거부되고, 그러면 이 테스트들이 검사하려던 축에 도달하지 못한다.
+        return ledgerRow(topic, group, offset, eventId, System.currentTimeMillis(), "order-1");
+    }
+
+    /**
+     * original_timestamp 는 **실제 원본 레코드의 timestamp** 여야 한다 — 재실패 상관(④-c-2b-3b)이
+     * 그 값을 대조 축으로 쓰므로, 임의 값을 넣으면 정상 attempt 가 독립 root 로 갈라진다.
+     * 과거 값(예: 고정 상수)을 쓰면 멱등 안전창(7d)이 이미 만료돼 모든 케이스가 [안전창] 으로 거부된다.
+     */
+    private Long ledgerRow(String topic, String group, long offset, String eventId,
+                           long originalTimestamp, String originalKey) {
         recorder.record(new DlqOrigin(DlqOriginKind.RESOLVED_ORIGIN, topic, 0, offset,
-                group, "order-1", System.currentTimeMillis(), "java.lang.IllegalStateException", "boom",
+                group, originalKey, originalTimestamp, "java.lang.IllegalStateException", "boom",
                 "{\"eventId\":\"" + eventId + "\"}", null, null, null, null));
         List<DeadLetterRecord> rows = ledgerRepository.findAll();
         DeadLetterRecord row = rows.stream()

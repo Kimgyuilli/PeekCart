@@ -5,6 +5,8 @@ import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,9 @@ import java.util.Optional;
  * <p><b>재발행 개시({@code action=replay})도 여기 하나뿐이다</b>(④-c-2b-4a P21 · N14). 진입점이 둘이 되면
  * 적격성·fence·claim 을 우회하는 경로가 생긴다 — P25 의 진입점 단일성 lint 가 그것을 정적으로 막는다.
  * kill-switch {@code app.dead-letter.replay.enabled} 의 <b>기본값은 false</b> 다.
+ *
+ * <p><b>{@code replay} 만 ADMIN 을 요구한다</b> — 나머지 전이는 원장 상태만 바꾸지만 replay 는
+ * <b>업무 토픽에 실제 메시지를 다시 싣는다</b>. 감사 주체(actor)도 요청값이 아니라 인증 주체에서 얻는다.
  */
 @Component
 @Endpoint(id = "deadletter")
@@ -142,7 +147,18 @@ public class DeadLetterEndpoint {
      * 멈추면 운영자가 한 번에 한 축만 보고 고치기를 반복한다.
      */
     private Map<String, Object> replay(Long id, String actor) {
-        Optional<DeadLetterReplayService.Result> outcome = replayService.replay(id, actor);
+        // **replay 는 ADMIN 전용이다** (diff 리뷰 1R #3). 다른 전이와 달리 이 요청은 **업무 토픽에 실제
+        // 메시지를 다시 싣는다** — 공통 체인의 `authenticated()` 만으로는 ROLE_USER 도 통과한다.
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!hasAdminRole(authentication)) {
+            return Map.of("error", "replay 는 ADMIN 권한이 필요합니다");
+        }
+
+        // **actor 를 요청값 그대로 믿지 않는다.** 인증 주체를 앞에 붙여 감사 주체를 위조할 수 없게 한다 —
+        // 요청값은 사람이 읽을 메모로만 남는다. (공란은 이 메서드 앞머리의 기존 가드가 이미 막는다.)
+        String auditActor = authentication.getName() + "(" + actor + ")";
+
+        Optional<DeadLetterReplayService.Result> outcome = replayService.replay(id, auditActor);
         if (outcome.isEmpty()) {
             return Map.of("error", "원장에 id=" + id + " 가 없습니다");
         }
@@ -156,5 +172,11 @@ public class DeadLetterEndpoint {
         response.put("attemptId", result.attemptId());
         response.put("rejections", result.rejections());
         return response;
+    }
+
+    private boolean hasAdminRole(Authentication authentication) {
+        return authentication != null && authentication.isAuthenticated()
+                && authentication.getAuthorities().stream()
+                        .anyMatch(granted -> "ROLE_ADMIN".equals(granted.getAuthority()));
     }
 }
