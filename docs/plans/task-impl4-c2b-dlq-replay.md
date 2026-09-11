@@ -1359,6 +1359,7 @@ replay 행이 남은 채 구버전으로 내려가면 안 된다.
 | **R4** | `replay_policy` 정책의 **장기 운영 정밀화** | 레지스트리·default-deny·기록/상속은 P19·P21 이 만든다. **초기 정책표(토픽별 allow/deny + 사전조건)는 2b-4 착수 전에 확정**하며, 최소 1개 토픽은 실제 도메인 상태 조회를 거친다(2R #7). 이연되는 것은 *운영 경험에 따른 정밀화*뿐이며 "전부 deny" 나 "검사 없는 allow" 로 시작하지 않는다 |
 | **R5** | 소비 성공 확인 자동 종결 | ADR Alternative E 기각. replay 빈도가 오르면 재검토 |
 | **R6** | `__consumer_offsets`·KRaft metadata bound, PVC 증설 | ADR §D4-2 후속 인프라 결정 |
+| **R9** | **진입점의 운영 도달 경로** | **2b-4b 로 이관** (diff 리뷰 2R #1). `/actuator/deadletter/**` 는 **게이트웨이가 라우팅하지 않고**(`gateway` 라우트는 `/api/v1/**` 뿐), 리소스 서비스는 게이트웨이가 서명한 `X-Internal-Auth` 만 신뢰하므로 **직접 호출은 인증 주체를 세울 수 없다**. 즉 ADMIN 가드는 정확하지만 그 가드에 도달할 경로가 아직 없다. **이 성질은 ④-c-2a 가 만든 기존 엔드포인트 전체의 것이고 이번 PR 의 회귀가 아니다** — acknowledge/resolve/discard 도 같다. 관리자 전용 라우트/인증 체인은 설계 결정이므로 **ADR-0022 가 함께 결정**하고 runbook §6 이 절차를 적는다 |
 | **R8** | `dead_letter_records.publication_status` **인덱스** | 추가하지 않는다 (C-7). 이 테이블은 DLQ 유입량에 유계이고 같은 컬럼을 스캔하는 `countUnresolvedByPublicationStatus`(2b-1)가 이미 무인덱스로 돈다. 4 DB 마이그레이션 + parity glob 확장 비용이 이득을 넘는다. **원장 행 수가 경보 `scan-limit`(100) 규모를 상시 넘기면 재검토** |
 | **R7** | **outbox 행이 사라진 `REQUESTED` root 의 종결 경로** | 정상 경로에서는 cleanup 제외 조건이 부재를 만들지 않으므로 이 상태는 **계약 위반 신호**다. 자동 강등은 발행을 실패로 오분류하므로 채택하지 않았다(3R #3). 실제로 발생하면 **ADR-0020 Update Log 로 `PUBLISH_UNKNOWN` 축 추가를 결정**한다 — 상태값 신설은 ADR 사안이다 |
 

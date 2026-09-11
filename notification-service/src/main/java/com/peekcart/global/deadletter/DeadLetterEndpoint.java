@@ -5,6 +5,7 @@ import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;
 import org.springframework.boot.actuate.endpoint.annotation.WriteOperation;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -151,7 +152,10 @@ public class DeadLetterEndpoint {
         // 메시지를 다시 싣는다** — 공통 체인의 `authenticated()` 만으로는 ROLE_USER 도 통과한다.
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!hasAdminRole(authentication)) {
-            return Map.of("error", "replay 는 ADMIN 권한이 필요합니다");
+            // **본문이 아니라 예외로 거부한다** (diff 리뷰 2R #7). 200 + error 문자열로 돌려주면 운영
+            // 자동화가 성공으로 오판하고 권한 실패가 Security 의 감사·메트릭에도 잡히지 않는다.
+            // ExceptionTranslationFilter 가 이것을 인증 주체는 403, 미인증은 401 로 바꾼다.
+            throw new AccessDeniedException("replay 는 ADMIN 권한이 필요합니다");
         }
 
         // **actor 를 요청값 그대로 믿지 않는다.** 인증 주체를 앞에 붙여 감사 주체를 위조할 수 없게 한다 —

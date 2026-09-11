@@ -19,6 +19,14 @@
 ALTER TABLE dead_letter_records
     ADD COLUMN last_replay_settled_at DATETIME(6) NULL AFTER last_replay_payload_digest;
 
+-- (1b) 감사 주체 `last_replay_by` (diff 리뷰 2R #2)
+--   진입점이 인증 principal 로 감사 주체를 만들지만, 그것이 **로그에만** 남으면 프로세스 로그가
+--   사라진 뒤 "누가 재발행을 승인했는가" 를 원장에서 복원할 수 없다. acknowledge/resolve/discard 가
+--   `*_by` 컬럼에 actor 를 영속하는 것과 같은 이유로 replay 도 영속한다.
+--   **거부도 남긴다** — 거부 이력이 없으면 "시도했으나 막혔다" 가 사라진다.
+ALTER TABLE dead_letter_records
+    ADD COLUMN last_replay_by VARCHAR(160) NULL AFTER last_replay_settled_at;
+
 -- (2) backfill — ADR-0020 D3 의 expand 단계에서 남긴 NULL 을 정본 값으로 채운다.
 --   NOT NULL contract(contract 단계)는 이번 범위가 아니다(계획 §10 R1) — 집계 조건의 IS NULL 분기는 남는다.
 --   재실행 안전: 두 UPDATE 모두 IS NULL 조건이라 두 번째 실행은 0행이다.

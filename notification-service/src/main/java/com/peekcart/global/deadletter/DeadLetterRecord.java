@@ -173,6 +173,16 @@ public class DeadLetterRecord {
     @Column(name = "last_replay_settled_at", insertable = false, updatable = false)
     private LocalDateTime lastReplaySettledAt;
 
+    /**
+     * 마지막 replay 요청의 <b>감사 주체</b> (④-c-2b-4a · diff 리뷰 2R #2).
+     *
+     * <p>진입점이 <b>인증 principal</b> 로 만든 값이며 요청자가 보낸 메모가 괄호로 따라붙는다.
+     * 로그에만 남기면 프로세스 로그가 사라진 뒤 누가 승인·거부했는지 원장에서 복원할 수 없다 —
+     * {@code acknowledged_by}/{@code resolved_by} 와 같은 계약이다. <b>거부도 기록한다.</b>
+     */
+    @Column(name = "last_replay_by", length = 160)
+    private String lastReplayBy;
+
     // --- replay 정책 축 (④-c-2b-1 V8 이 컬럼 생성, ④-c-2b-4a 가 처음 매핑) ---
 
     /**

@@ -121,6 +121,17 @@ public class OriginalRecordReader {
             return new Result(null, String.format(
                     "원본 레코드를 읽지 못했다 — %s-%d offset=%d (poll 타임아웃 %s)",
                     topic, partition, offset, POLL_TIMEOUT));
+        } catch (org.apache.kafka.common.errors.InterruptException e) {
+            // Kafka 의 InterruptException 은 RuntimeException 이라 아래 catch 에 먹힌다. 먼저 잡아
+            // **interrupt 상태를 보존**한 뒤 거부 사유로 바꾼다.
+            Thread.currentThread().interrupt();
+            return new Result(null, "원본 읽기가 중단됐다 — " + topic + "-" + partition);
+        } catch (Exception e) {
+            // **좌표 문제를 500 으로 전파하지 않는다** (diff 리뷰 2R #4). 존재하지 않는 파티션·권한 차이·
+            // consumer 설정 오류는 전부 "이 좌표는 읽을 수 없다" 이며, P18 의 Result 가 표현하는 계약이다.
+            log.error("[DLQ-REPLAY] 원본 읽기 실패 — {}-{} offset={}", topic, partition, offset, e);
+            return new Result(null, String.format("원본을 읽지 못했다 — %s-%d offset=%d: %s",
+                    topic, partition, offset, e.getMessage()));
         }
     }
 

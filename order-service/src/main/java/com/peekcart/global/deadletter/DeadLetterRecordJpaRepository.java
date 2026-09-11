@@ -309,9 +309,10 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
      * 직렬화된다 — 순서를 안 박으면 root 는 deny 인데 자식은 allow 를 상속한 조합이 남는다.
      */
     @Modifying(flushAutomatically = true)
-    @Query(value = "UPDATE dead_letter_records SET replay_policy = :policy WHERE id = :rootId",
-            nativeQuery = true)
-    int stampReplayPolicy(@Param("rootId") Long rootId, @Param("policy") String policy);
+    @Query(value = "UPDATE dead_letter_records SET replay_policy = :policy, last_replay_by = :actor "
+            + "WHERE id = :rootId", nativeQuery = true)
+    int stampReplayPolicy(@Param("rootId") Long rootId, @Param("policy") String policy,
+                          @Param("actor") String actor);
 
 
     /**

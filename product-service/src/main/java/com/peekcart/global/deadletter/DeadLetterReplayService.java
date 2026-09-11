@@ -101,7 +101,7 @@ public class DeadLetterReplayService {
 
         // allow·deny 양쪽 다 root 잠금 안에서 기록한다(계획 리뷰 2R #9 — 순서를 안 박으면
         // 동시 deny 가 allow 앵커를 덮어 root=deny/자식=allow 조합이 남는다).
-        repository.stampReplayPolicy(rootId, eligibility.audit());
+        repository.stampReplayPolicy(rootId, eligibility.audit(), actor);
 
         if (!eligibility.reasons().isEmpty()) {
             log.info("[DLQ-REPLAY] 거부 — rootId={}, actor={}, 사유={}", rootId, actor, eligibility.reasons());

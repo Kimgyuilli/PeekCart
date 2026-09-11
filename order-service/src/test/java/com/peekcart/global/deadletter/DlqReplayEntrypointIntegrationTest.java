@@ -8,7 +8,9 @@ import com.peekcart.order.domain.model.Order;
 import com.peekcart.order.domain.model.OrderItemData;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
+import org.springframework.kafka.support.KafkaHeaders;
 import com.peekcart.global.outbox.OutboxEventJpaRepository;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
@@ -42,6 +44,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * replay 개시 진입점 (구현 ④-c-2b-4a P19·P20·P21 · 계획 §6 V-8·V-9·V-13·V-22·V-38).
@@ -116,7 +119,13 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         // confirmReservation 을 적용해 "사전조건 allow" 케이스가 deny 로 뒤집혔다.
         // `spring.kafka.listener.auto-startup` 은 듣지 않는다 — 서비스가 container factory 를
         // 직접 만들어(OrderKafkaConfig) Boot 의 listener 속성을 적용하지 않기 때문이다.
-        listenerRegistry.stop();
+        //
+        // **DLQ 소비자(`dlq-*`)는 살려둔다** — V-35 가 재실패분을 실제 `.dlq` 로 흘려
+        // DlqHeaders.parse → DeadLetterConsumer → recorder 를 관통시키기 때문이다(diff 리뷰 2R #3).
+        listenerRegistry.getListenerContainers().stream()
+                .filter(container -> container.getListenerId() == null
+                        || !container.getListenerId().startsWith(DeadLetterContainerGuard.LISTENER_ID_PREFIX))
+                .forEach(org.springframework.kafka.listener.MessageListenerContainer::stop);
         // lockAtLeastFor(PT4S) 가 남아 있으면 두 번째 이후의 reconcile() 호출이 통째로 건너뛰어지고,
         // 그 테스트는 "아무 일도 안 일어났다" 를 관측하며 green 이 된다.
         jdbcTemplate.update("UPDATE shedlock SET lock_until = NOW() - INTERVAL 1 DAY WHERE name = ?",
@@ -160,6 +169,8 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         assertThat(root.getReplayDeadline()).isNotNull();
         assertThat(root.getOutboxEventId()).isNotNull();
         assertThat(outboxEventJpaRepository.count()).isEqualTo(1);
+        // **감사 주체가 원장에 영속된다** — 로그에만 남기면 로그가 사라진 뒤 누가 승인했는지 복원 불가다.
+        assertThat(root.getLastReplayBy()).isEqualTo("operator");
     }
 
     // ---------- V-9 · V-28c: 정책 deny 와 거부 이력 ----------
@@ -179,6 +190,8 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         String audit = jdbcTemplate.queryForObject(
                 "SELECT replay_policy FROM dead_letter_records WHERE id = ?", String.class, ledgerId);
         assertThat(audit).isEqualTo("order/payment.requested:v1:DENY");
+        // **거부도 주체가 남는다** — "시도했으나 막혔다" 가 사라지면 안 된다.
+        assertThat(ledgerRepository.findById(ledgerId).orElseThrow().getLastReplayBy()).isEqualTo("operator");
         assertThat(outboxEventJpaRepository.count()).isZero();
     }
 
@@ -357,17 +370,13 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         assertThat(ledgerRepository.findById(rootId).orElseThrow().getLastReplayPayloadDigest())
                 .isEqualTo(PayloadDigest.sha256Hex(republished.value()));
 
-        // 5) 그 재발행분이 표적 group 에서 다시 실패했다고 보고 DLT 를 적재한다.
-        //    헤더는 fixture 가 아니라 **방금 발행된 레코드에서 읽은 실제 값**이다.
-        recorder.record(new DlqOrigin(DlqOriginKind.RESOLVED_ORIGIN, ALLOWED_TOPIC,
-                republished.partition(), republished.offset(), ALLOWED_GROUP, republished.key(),
-                republished.timestamp(), "java.lang.IllegalStateException", "재실패", republished.value(),
-                header(republished, ReplayHeaders.ATTEMPT_ID),
-                header(republished, ReplayHeaders.LEDGER_OWNER),
-                header(republished, ReplayHeaders.TARGET_GROUP),
-                Long.valueOf(header(republished, ReplayHeaders.ROOT_ID))));
+        // 5) 그 재발행분이 표적 group 에서 다시 실패했다고 보고 **실제 DLT 를 `.dlq` 에 흘린다**.
+        //    recorder 를 직접 부르지 않는다 — DlqHeaders 판독과 DeadLetterConsumer 진입까지 관통시켜야
+        //    "진입점이 만든 헤더가 실제 소비 경로에서 읽힌다" 가 관측된다(diff 리뷰 2R #3).
+        sendAsDeadLetter(republished);
 
         // 6) **독립 incident 로 갈라지지 않고** 같은 root 에 자식으로 붙는다.
+        await().atMost(Duration.ofSeconds(30)).until(() -> ledgerRepository.count() == 2);
         List<DeadLetterRecord> all = ledgerRepository.findAll();
         assertThat(all).hasSize(2);
         DeadLetterRecord child = all.stream().filter(r -> !r.getId().equals(rootId)).findFirst().orElseThrow();
@@ -402,6 +411,69 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(replay(deniedLedger).rejections())
                 .anyMatch(r -> r.contains("사전조건 불충족"));
+    }
+
+    // ---------- V-28e: 정책 감사 write 의 동시성 (계획 §6 · diff 리뷰 2R #6) ----------
+
+    @Test
+    @DisplayName("같은 root 에 allow 와 deny 가 동시에 와도 root 판정과 발행 결과가 어긋나지 않는다")
+    void concurrentAllowAndDenyStaySerialized() throws Exception {
+        // allow 대상(정상 좌표)과 deny 대상(정책 금지 토픽)을 **같은 root** 에 겹치게 만들 수는 없다 —
+        // 좌표가 곧 사건이기 때문이다. 대신 같은 root 에 **동시 replay 요청 2건**을 넣어
+        // claim 과 감사 write 가 root 잠금에서 직렬화되는지 본다.
+        Published published = publish(ALLOWED_TOPIC, "order-12");
+        Long rootId = ledgerRow(ALLOWED_TOPIC, ALLOWED_GROUP, published);
+        properties.getReplay().setEnabled(true);
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            CountDownLatch start = new CountDownLatch(1);
+            List<Future<DeadLetterReplayService.Result>> futures = List.of(
+                    executor.submit(() -> { start.await(); return replay(rootId); }),
+                    executor.submit(() -> { start.await(); return replay(rootId); }));
+            start.countDown();
+
+            List<DeadLetterReplayService.Result> results = List.of(
+                    futures.get(0).get(30, TimeUnit.SECONDS), futures.get(1).get(30, TimeUnit.SECONDS));
+
+            // **정확히 하나만 승인된다.** 둘 다 승인되면 같은 메시지가 두 번 발행된다.
+            assertThat(results).filteredOn(DeadLetterReplayService.Result::accepted).hasSize(1);
+            assertThat(outboxEventJpaRepository.count()).isEqualTo(1);
+
+            // root 의 감사 기록과 발행 축이 **서로 모순되지 않는다** — 승인된 판정은 ALLOW 여야 한다.
+            DeadLetterRecord root = ledgerRepository.findById(rootId).orElseThrow();
+            assertThat(root.getPublicationStatus()).isEqualTo(PublicationStatus.REQUESTED);
+            assertThat(root.getReplayPolicy()).endsWith(":ALLOW");
+            assertThat(root.getLastReplayAttemptId()).isNotBlank();
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    @DisplayName("deny 요청이 동시에 두 번 와도 감사 기록은 deny 로 수렴하고 outbox 는 생기지 않는다")
+    void concurrentDenyConverges() throws Exception {
+        Published published = publish(DENIED_TOPIC, "order-13");
+        Long rootId = ledgerRow(DENIED_TOPIC, DENIED_GROUP, published);
+        properties.getReplay().setEnabled(true);
+
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            CountDownLatch start = new CountDownLatch(1);
+            List<Future<DeadLetterReplayService.Result>> futures = List.of(
+                    executor.submit(() -> { start.await(); return replay(rootId); }),
+                    executor.submit(() -> { start.await(); return replay(rootId); }));
+            start.countDown();
+            futures.get(0).get(30, TimeUnit.SECONDS);
+            futures.get(1).get(30, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        DeadLetterRecord root = ledgerRepository.findById(rootId).orElseThrow();
+        assertThat(root.getReplayPolicy()).isEqualTo("order/payment.requested:v1:DENY");
+        assertThat(root.getPublicationStatus()).isNull();
+        assertThat(outboxEventJpaRepository.count()).isZero();
     }
 
     // ---------- V-14: 잠금이 I-1 원자성의 근거다 ----------
@@ -484,6 +556,47 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         } catch (Exception e) {
             throw new IllegalStateException("테스트 레코드 발행 실패", e);
         }
+    }
+
+    /**
+     * {@code DeadLetterPublishingRecoverer} 가 만드는 것과 같은 모양의 DLT 레코드를 `.dlq` 에 싣는다.
+     * 원본 좌표는 표준 {@code DLT_*} 헤더로, 상관 축은 재발행 레코드가 실어온 {@code pc-replay-*} 를
+     * 그대로 옮긴다 — 실제 recoverer 도 application 헤더를 보존한다.
+     */
+    private void sendAsDeadLetter(ConsumerRecord<String, String> republished) {
+        ProducerRecord<String, String> dlt = new ProducerRecord<>(
+                ALLOWED_TOPIC + ".dlq", null, republished.key(), republished.value());
+        addHeader(dlt, KafkaHeaders.DLT_ORIGINAL_TOPIC, ALLOWED_TOPIC);
+        addHeader(dlt, KafkaHeaders.DLT_ORIGINAL_PARTITION, intBytes(republished.partition()));
+        addHeader(dlt, KafkaHeaders.DLT_ORIGINAL_OFFSET, longBytes(republished.offset()));
+        addHeader(dlt, KafkaHeaders.DLT_ORIGINAL_TIMESTAMP, longBytes(republished.timestamp()));
+        addHeader(dlt, KafkaHeaders.DLT_ORIGINAL_CONSUMER_GROUP, ALLOWED_GROUP);
+        addHeader(dlt, KafkaHeaders.DLT_EXCEPTION_FQCN, "java.lang.IllegalStateException");
+        addHeader(dlt, KafkaHeaders.DLT_EXCEPTION_MESSAGE, "재실패");
+        for (String key : ReplayHeaders.ALLOWED) {
+            addHeader(dlt, key, header(republished, key));
+        }
+        try {
+            kafkaTemplate.send(dlt).get();
+        } catch (Exception e) {
+            throw new IllegalStateException("DLT 발행 실패", e);
+        }
+    }
+
+    private void addHeader(ProducerRecord<String, String> record, String key, String value) {
+        record.headers().add(key, value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void addHeader(ProducerRecord<String, String> record, String key, byte[] value) {
+        record.headers().add(key, value);
+    }
+
+    private byte[] intBytes(int value) {
+        return java.nio.ByteBuffer.allocate(Integer.BYTES).putInt(value).array();
+    }
+
+    private byte[] longBytes(long value) {
+        return java.nio.ByteBuffer.allocate(Long.BYTES).putLong(value).array();
     }
 
     private String header(ConsumerRecord<String, String> record, String key) {

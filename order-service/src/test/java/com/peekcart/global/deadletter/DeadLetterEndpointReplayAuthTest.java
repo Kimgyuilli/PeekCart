@@ -3,6 +3,7 @@ package com.peekcart.global.deadletter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -50,9 +52,11 @@ class DeadLetterEndpointReplayAuthTest {
     void userRoleIsRejected() {
         authenticateAs("7", "USER");
 
-        Map<String, Object> response = endpoint.transition(1L, "replay", "someone", null);
-
-        assertThat(response.get("error")).asString().contains("ADMIN 권한");
+        // **본문이 아니라 예외로 거부한다** — 200 + error 문자열이면 운영 자동화가 성공으로 오판하고
+        // Security 의 접근 거부 감사에도 잡히지 않는다.
+        assertThatThrownBy(() -> endpoint.transition(1L, "replay", "someone", null))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("ADMIN 권한");
         // **거부는 진입점에서 끝나야 한다** — 서비스가 불린 뒤 결과만 감추면 적격성 조회·잠금이 이미 돈다.
         verify(replayService, never()).replay(any(), any());
     }
@@ -60,9 +64,8 @@ class DeadLetterEndpointReplayAuthTest {
     @Test
     @DisplayName("인증이 없으면 거부한다")
     void anonymousIsRejected() {
-        Map<String, Object> response = endpoint.transition(1L, "replay", "someone", null);
-
-        assertThat(response.get("error")).asString().contains("ADMIN 권한");
+        assertThatThrownBy(() -> endpoint.transition(1L, "replay", "someone", null))
+                .isInstanceOf(AccessDeniedException.class);
         verify(replayService, never()).replay(any(), any());
     }
 
