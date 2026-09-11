@@ -1810,5 +1810,14 @@ consistent-read 스냅샷이 열리지 않았고** `V-15c` 가 다시 vacuous �
 6. **drain 판정식·preflight 진입점 미정**(2b-4 이관) · **`replay_deadline`/`replay_policy` 엔티티 매핑 없음**
    (컬럼은 V8, writer/reader 는 2b-4) · **`NOT NULL` contract·backfill**(2b-4 P23) · **운영 클러스터 미적용**
 
-**다음**: ④-c-2b-4 (진입점 + 좌표 reader + fence + backfill, 계획 P18~P24). 착수 시 drain 4조건의
-판정식·preflight 진입점·ADR 처분을 **먼저 결정**해야 한다(4R 이 이관한 미결).
+**다음**: ④-c-2b-4 (진입점 + 좌표 reader + fence + backfill, 계획 P18~P24). 착수 조건이던 drain 4조건의
+판정식·preflight 진입점·ADR 처분은 **2026-09-11 에 코드 검증 후 확정**했다 — 계획서 §10.1.
+요지: ⓐ 정본 = `outbox_events` 단독(`publication_status` 는 terminal 이 아니고 reconciler 5s 지연으로
+어긋난다) · ⓓ = `sum(backoff)=36s`(4서비스 8곳 전부 `FixedSequenceBackOff(1_000,5_000,30_000)`, `maxAttempts`
+부재라 곱하면 중복) + 기준점은 **원장 신규 컬럼 `last_replay_settled_at`**(reconciler 가 settle 시 기록).
+**후보 2개가 계획 리뷰에서 연속 P0 로 반증됐다** — `replay_deadline` 은 ADR-0020 §D5-3 의 7d 멱등
+안전창과 의미 충돌(1R), `outbox_events.created_at` 은 ① 강제 삭제 시 부재가 fail-open ② INSERT 시각이
+발행 시각이 아님(2R). drain 조건도 **ⓐ' `publication_status='REQUESTED'=0` 이 복원**됐다 ·
+ⓑⓒ 는 Kafka lag 실측 유지(시간 하나로 흡수하면 컨슈머 정지 시 vacuous) · preflight 는 래퍼 스크립트 +
+**우회 가능이라는 한계 명시**(CD 부재 — `ci.yml` deploy job 0건) · **ADR-0022 신설**, ADR-0020 Update Log
+기재 지시는 취소(`adr/README.md:13` 이 계약 변경의 Update Log 우회를 금지).

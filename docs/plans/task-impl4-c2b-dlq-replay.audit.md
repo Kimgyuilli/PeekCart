@@ -452,3 +452,38 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
   (`NotificationOutboxIntegrationTest` ContainerLaunchException · `gateway` RSA p95)는 **자원 경합이 맞았다**.
 - 정정 반영: PR 본문(#104) · `PHASE4.md` · `TASKS.md` · 계획서 진행표
 - **미측정으로 적었다가 관측 후 정정한 것**이지, 처음부터 통과였다고 고쳐 쓰지 않았다.
+
+## 2026-09-11 — ④-c-2b-4 계획 리뷰 라운드 1
+- 항목: 8건 (P0:1, P1:6, P2:1) — 전량 반영
+- 뒤집힌 전제:
+  - **P0** `replay_deadline` 을 drain ⓓ 앵커로 재사용 → ADR-0020 §D5-3 의 7d 멱등 안전창과 **의미 충돌**
+  - `kafkaAdmin.createAdminClient()` **미존재 API**(spring-kafka 3.3.14, `createAdmin()` 은 protected)
+  - C-31 의 "전 경로가 root 잠금부터" → **reconciler 는 예외**(`findRequestedPublications` 에 `@Lock` 없음)
+  - P21 내부 모순: `outbox_event_id` 를 표는 target, 절차는 root 에 기록
+  - `stock.reservation.result` 사전조건이 실행 가능한 식이 아님
+- raw: .cache/codex-reviews/plan-task-impl4-c2b-dlq-replay-2b4-r1-1789114475.json
+
+## 2026-09-11 — ④-c-2b-4 계획 리뷰 라운드 2
+- 항목: 10건 (P0:3, P1:6, P2:1) — 전량 반영
+- 뒤집힌 전제:
+  - **P0** 1R 대체안 `outbox_events.created_at` 도 반증 — ① 강제 삭제 시 **부재가 fail-open**(V-21d 가 그 경로를 계약으로 보존) ② **INSERT 시각 ≠ 발행 시각**(적체 PENDING)
+  - **P0** 정책 키가 토픽 단일 → `stock.reservation.result` 를 **order·payment 두 group 이 소비**해 payment 에서 구현 불가(DB-per-service)
+  - `OrderStatus` 에 **`PAID` 없음**(8종) — 표가 total function 아님
+  - `acknowledge` 까지 I-1 가드에 걸림(ADR I-1 은 terminal resolution 만 금지)
+  - base 기본값 false 와 V-38 의 "기본값(true)" 모순 · Flyway 가 기동 중 실행이라 배포 ①②가 별도 단계 아님
+- 조치: drain ⓐ' (`publication_status='REQUESTED'`=0) **복원**, ⓓ 앵커를 원장 신규 컬럼 `last_replay_settled_at` 으로
+- raw: .cache/codex-reviews/plan-task-impl4-c2b-dlq-replay-2b4-r2-1789114978.json
+
+## 2026-09-11 — ④-c-2b-4 계획 리뷰 라운드 3 (상한)
+- 항목: 8건 (P0:2, P1:6) — 전량 반영
+- 뒤집힌 전제:
+  - **P0** 앵커를 `PUBLISHED` 에만 기록 → ack 성공 후 save 실패로 **최종 `PUBLISH_FAILED`** 가 되면 ⓐ·ⓐ'·ⓓ 전부 통과(fail-open)
+  - **P0** ⓓ 상한 `36s + handler` 가 계산 불가 — handler timeout 설정 부재 · **시도마다 재실행**(attempts×H) · 앱/DB 시계차
+  - 고착 `REQUESTED` 는 스스로 0 이 될 수 없어 **롤백 영구 교착** → `PUBLISH_UNKNOWN` 해제 경로를 2b-4 로 당김(§10 R7)
+  - payment 표가 total function 아님(`PaymentStatus` 5종 × `readyForPayment` 2종) · `markReadyForPayment` 는 **상태 가드 없음**
+  - 정책 완전성은 토픽 10종이 아니라 **소비쌍 21개** + eventType 축
+  - 도메인 aggregate **TOCTOU** — 판정과 claim 사이에 Order/Payment 상태가 바뀜
+  - reconciler 건별 트랜잭션은 **self-invocation 때문에 현 배선으로 구현 불가** → 스캐너/워커 빈 분리
+- **수렴 미달**: P0 가 3라운드 연속 나왔고(각 라운드가 직전 라운드의 수정을 반증), 이번 수정도 새 표면
+  (`PUBLISH_UNKNOWN` 상태값 · 도메인 잠금 순서 · 스캐너/워커 분리 · 안정화 창)을 추가했다. 상한 도달로 사용자 확인 필요.
+- raw: .cache/codex-reviews/plan-task-impl4-c2b-dlq-replay-2b4-r3-1789115615.json
