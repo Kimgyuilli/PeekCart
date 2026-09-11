@@ -158,6 +158,37 @@ public class DeadLetterRecord {
     @Column(name = "last_replay_payload_digest", length = 64)
     private String lastReplayPayloadDigest;
 
+    /**
+     * 이 root 의 발행 축이 <b>가장 최근에 종착한 시각</b> (④-c-2b-4a P23 · 계획 §10.1 #6).
+     *
+     * <p>롤백 전 drain 판정 ⓓ("재발행분의 소비 재시도가 끝났는가")의 <b>내구적 기준시각</b>이다.
+     * {@code PUBLISHED} 뿐 아니라 <b>{@code PUBLISH_FAILED} 로 종착할 때도</b> 찍는다 — poller 는 broker
+     * ack 를 받은 뒤 상태 저장을 따로 하므로(crash window, ADR-0020 §D1), 저장 실패로 재시도가 소진되면
+     * <b>이미 전달된 행이 최종 {@code FAILED}</b> 가 된다. 즉 {@code PUBLISH_FAILED} 는 "발행되지 않았다"
+     * 의 증명이 아니라 <b>"발행 여부를 모른다"</b> 이므로 보수적으로 기록한다.
+     *
+     * <p><b>쓰기는 {@link DeadLetterRecordJpaRepository#stampReplaySettledAt} 하나뿐이고 DB 시각을 쓴다</b> —
+     * 앱 시각으로 찍으면 drain 비교 기준({@code NOW()})과 갈라진다.
+     */
+    @Column(name = "last_replay_settled_at", insertable = false, updatable = false)
+    private LocalDateTime lastReplaySettledAt;
+
+    // --- replay 정책 축 (④-c-2b-1 V8 이 컬럼 생성, ④-c-2b-4a 가 처음 매핑) ---
+
+    /**
+     * 멱등 안전창의 종료 시각 (ADR-0020 §D5-3). {@code original_timestamp + dlq-replay-window} 이며
+     * <b>root 에서 1회 계산하고 자식·재시도가 상속한다</b> — 재계산하면 실패할 때마다 창이 연장된다.
+     *
+     * <p><b>drain 판정과 무관하다</b> — 그 축은 {@link #lastReplaySettledAt} 이 진다. 두 의미를 한 컬럼에
+     * 담으려던 초안은 계획 리뷰에서 반증됐다(7d 안전창이 초 단위로 축소된다).
+     */
+    @Column(name = "replay_deadline")
+    private LocalDateTime replayDeadline;
+
+    /** 적격성 판정의 감사 기록 — {@code 정책식별자:버전:판정}. deny 도 남긴다(거부 이력이 사라지면 안 된다). */
+    @Column(name = "replay_policy", length = 120)
+    private String replayPolicy;
+
     // --- 상태 ---
 
     /**

@@ -1,8 +1,10 @@
 package com.peekcart.order.infrastructure;
 
 import com.peekcart.order.domain.model.Order;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -12,6 +14,16 @@ import java.util.Optional;
 
 public interface OrderJpaRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByIdAndUserId(Long id, Long userId);
+
+    /**
+     * replay 적격성 판정용 <b>비관적 잠금</b> 조회 (④-c-2b-4a P19 · 계획 리뷰 3R #6).
+     *
+     * <p>잠그지 않으면 판정과 claim 사이에 주문 상태가 바뀐다 — {@code PENDING} 이라 allow 된 직후
+     * 취소가 커밋되면 정책이 막으려던 재적용이 그대로 일어난다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdForUpdate(@Param("id") Long id);
 
     @Query("SELECT o FROM Order o WHERE o.userId = :userId ORDER BY o.orderedAt DESC, o.id DESC")
     List<Order> findFirstPageByUserId(@Param("userId") Long userId, Pageable limit);

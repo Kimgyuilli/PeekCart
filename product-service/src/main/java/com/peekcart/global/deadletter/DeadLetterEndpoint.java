@@ -32,7 +32,9 @@ import java.util.Optional;
  * <p><b>종결은 incident 단위다</b>(④-c-2b-1 P5) — 자식 id 로 들어와도 canonical root 로 정규화하고
  * root 와 활성 자식을 함께 전이한다. 자식만 닫으면 미결을 종결로 위장한다.
  *
- * <p>재발행 개시({@code action=replay})는 ④-c-2b-4 소관이라 아직 여기 없다.
+ * <p><b>재발행 개시({@code action=replay})도 여기 하나뿐이다</b>(④-c-2b-4a P21 · N14). 진입점이 둘이 되면
+ * 적격성·fence·claim 을 우회하는 경로가 생긴다 — P25 의 진입점 단일성 lint 가 그것을 정적으로 막는다.
+ * kill-switch {@code app.dead-letter.replay.enabled} 의 <b>기본값은 false</b> 다.
  */
 @Component
 @Endpoint(id = "deadletter")
@@ -41,6 +43,7 @@ public class DeadLetterEndpoint {
 
     private final DeadLetterRecordJpaRepository repository;
     private final DeadLetterTransitionService transitionService;
+    private final DeadLetterReplayService replayService;
 
     /**
      * backlog 요약. {@code GET /actuator/deadletter}
@@ -82,7 +85,10 @@ public class DeadLetterEndpoint {
      *
      * <p>본문: {@code {"action":"acknowledge","actor":"..."}} ·
      * {@code {"action":"resolve","actor":"...","reason":"..."}} ·
-     * {@code {"action":"discard","actor":"...","reason":"..."}}
+     * {@code {"action":"discard","actor":"...","reason":"..."}} ·
+     * {@code {"action":"replay","actor":"..."}}
+     *
+     * <p>본문은 <b>flat 파라미터</b>다 — actuator {@code @WriteOperation} 은 중첩 객체를 받지 않는다.
      *
      * <p>{@code resolve}/{@code discard} 는 사유가 없으면 거부된다 — 근거 없이 닫힌 원장은 "해결됨" 과
      * 구분되지 않는다. {@code resolve} 의 사유는 <b>무엇을 보고 해소를 확인했는지</b>여야 한다.
@@ -96,6 +102,10 @@ public class DeadLetterEndpoint {
             return Map.of("error", "actor 는 필수입니다 — 누가 종결했는지 남지 않으면 감사가 불가능합니다");
         }
 
+        if ("replay".equals(action)) {
+            return replay(id, actor);
+        }
+
         Optional<DeadLetterTransitionService.Result> outcome;
         try {
             outcome = switch (action == null ? "" : action) {
@@ -103,7 +113,7 @@ public class DeadLetterEndpoint {
                 case "resolve" -> transitionService.resolve(id, actor, reason);
                 case "discard" -> transitionService.discard(id, actor, reason);
                 default -> throw new IllegalArgumentException(
-                        "action 은 acknowledge, resolve, discard 중 하나여야 합니다 (받은 값: " + action + ")");
+                        "action 은 acknowledge, resolve, discard, replay 중 하나여야 합니다 (받은 값: " + action + ")");
             };
         } catch (IllegalArgumentException e) {
             return Map.of("error", e.getMessage());
@@ -120,6 +130,31 @@ public class DeadLetterEndpoint {
         response.put("status", result.status());
         response.put("changed", result.changed());
         response.put("affectedChildren", result.affectedChildren());
+        // changed=false 의 두 경우를 구분한다 — 멱등 no-op(null) vs I-1 거부(사유 존재).
+        response.put("rejectedReason", result.rejectedReason());
+        return response;
+    }
+
+    /**
+     * 재발행을 개시한다 (④-c-2b-4a P21).
+     *
+     * <p>거부는 예외가 아니라 <b>사유 전량</b>으로 응답한다 — 6 금지축은 서로 독립이므로 첫 번째에서
+     * 멈추면 운영자가 한 번에 한 축만 보고 고치기를 반복한다.
+     */
+    private Map<String, Object> replay(Long id, String actor) {
+        Optional<DeadLetterReplayService.Result> outcome = replayService.replay(id, actor);
+        if (outcome.isEmpty()) {
+            return Map.of("error", "원장에 id=" + id + " 가 없습니다");
+        }
+
+        DeadLetterReplayService.Result result = outcome.get();
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", id);
+        response.put("rootId", result.rootId());
+        response.put("accepted", result.accepted());
+        response.put("targetId", result.targetId());
+        response.put("attemptId", result.attemptId());
+        response.put("rejections", result.rejections());
         return response;
     }
 }

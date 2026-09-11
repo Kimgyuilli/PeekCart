@@ -80,6 +80,7 @@ jobs:
           # nullable 이면 MySQL UNIQUE 가 같은 poison record 를 여러 행으로 만든다.
           bash scripts/dead-letter-schema-parity-lint.sh
           bash scripts/dead-letter-schema-parity-lint.sh --self-test
+          bash scripts/replay-entrypoint-lint.sh
           bash scripts/servicemonitor-selector-lint.sh
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh

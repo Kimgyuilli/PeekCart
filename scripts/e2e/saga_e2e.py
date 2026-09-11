@@ -65,10 +65,11 @@ EXPECTED_MIGRATIONS = {
     # V9/V7/V7     = outbox_events replay 컬럼 (구현 ④-c-2b-2 P8)
     # notification V5 = outbox_events 신설 (구현 ④-c-2b-2 P9, ADR-0020 D2)
     # V10/V8/V8/V6 = last_replay_payload_digest (구현 ④-c-2b-3a P14, ADR-0021 D1)
-    "order": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],  # V7 = 커서 페이지네이션 인덱스 (구현 ⑥)
-    "product": ["1", "2", "3", "4", "5", "6", "7", "8"],
-    "payment": ["1", "2", "3", "4", "5", "6", "7", "8"],
-    "notification": ["1", "2", "3", "4", "5", "6"],
+    # V11/V9/V9/V7 = drain 앵커 + replay 축 backfill (구현 ④-c-2b-4a P23)
+    "order": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],  # V7 = 커서 페이지네이션 인덱스 (구현 ⑥)
+    "product": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    "payment": ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+    "notification": ["1", "2", "3", "4", "5", "6", "7"],
 }
 
 DLQ_QUARANTINE_GROUPS = [

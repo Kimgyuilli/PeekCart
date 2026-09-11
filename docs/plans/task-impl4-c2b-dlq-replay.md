@@ -934,7 +934,12 @@ consumer group 을 만들지 않도록 `assign` 만 쓰고 offset 을 커밋하�
     `(ledgerOwner, topic)` 이므로 **실제 엔트리는 소비쌍 수만큼**이다 — `DlqTopology.businessSubscriptions`
     기준 **order 6 · product 5 · payment 5 · notification 5 = 21쌍**(`DlqTopology:71-100`). 토픽 10종만 채우면
     **공유 토픽의 owner 별 엔트리 누락이 검사되지 않는다**. 또 ADR-0020 §D5-2 는 정책을 **topic/eventType** 별로
-    요구하므로 각 엔트리는 **허용 eventType 집합**을 함께 갖는다(빈 집합 = 전면 deny 가 아니라 **선언 누락**으로 취급해 부팅 실패).
+    요구한다. **구현 중 정정**: 이 코드베이스에서 **`eventType` 은 토픽 이름과 같은 값**이다 —
+    발행 측이 `saveOutboxEvent(eventType = 토픽)` 으로 봉투를 만들고 `buildDomainRecord` 가 `event_type` 을
+    그대로 토픽으로 쓴다. 따라서 **분기할 값이 없어 별도 축이 성립하지 않는다**. 대신 같은 요구를
+    **`eventTypeMatchesTopic`** 으로 이행한다 — 원본 봉투의 `eventType` 이 목적지 토픽과 다르면 거부한다.
+    불일치는 원장 행과 원본 레코드가 어긋났다는 신호이므로 실질적인 검사다(허용 집합을 적는 것은
+    "토픽 이름 하나" 를 두 번 적는 일이 된다).
     → **completeness 테스트**: topology 의 모든 소비쌍에 정책이 **정확히 하나** 있고 **여분 정책이 없다**.
     한쪽만 검사하면 오래된 엔트리가 남아도 green 이다.
 
@@ -1077,7 +1082,10 @@ consumer group 을 만들지 않도록 `assign` 만 쓰고 offset 을 커밋하�
 1. **스캔은 엔티티가 아니라 `(targetId, rootId)` projection** 으로 바꾼다. 지금처럼 엔티티를 먼저 적재하면
    **뒤이은 `FOR UPDATE` 가 잠금만 얻고 영속성 컨텍스트의 인스턴스를 refresh 하지 않는다** — 이 함정은
    `Repository:130-147` 과 `DeadLetterTransitionService:60-64` 가 이미 명시적으로 피해 둔 것이다
-2. 배치 안에서 **같은 root 는 중복 제거하고 root id 오름차순 정렬**한다 (교착 회피 — 모든 경로가 같은 순서)
+2. 스캔 결과는 **`id ASC` 정렬만** 유지한다. ~~root 중복 제거~~ → **하지 않는다 (구현 중 정정)**: 한 root 에
+   자식 target 이 여럿일 수 있고 **각각이 자기 발행 결과를 가지므로** root 로 중복 제거하면 그 자식들의
+   settle 이 통째로 누락된다. 교착은 중복 제거가 아니라 **"모든 경로가 root 를 먼저 잠근다"** 가 막고,
+   스캐너가 단일 스레드라 배치 안에서는 동시성 자체가 없다
 3. **incident 1건 = 트랜잭션 1개**. 현재처럼 200건을 한 `@Transactional reconcile()` 로 묶으면 root 잠금이
    메서드 종료까지 누적돼 종결·replay 가 그동안 막힌다. 잠금 보유시간을 건당으로 자른다.
    **경계를 만드는 산출물을 명시한다 (3R #8)**: 현재 `@Scheduled`·`@SchedulerLock`·`@Transactional` 이
