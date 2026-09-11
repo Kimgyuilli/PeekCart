@@ -524,3 +524,7 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
   **Kafka 없는 user-service 의 컨텍스트가 깨졌다**(22건 red). diff 만 봐서는 드러나지 않는 결함이며
   (Kafka 없는 모듈의 존재가 diff 밖에 있다) 4서비스 Kafka 설정의 `@Bean` 등록으로 해소했다.
 - lint: parity self-test 26종(backfill DML 3종 신설) · replay-entrypoint-lint 변이 7종 red
+- **전 8모듈 완주 (배선 수정 이후, 모듈별 실행)**: common 104 · order 409 · product 188 · payment 189 ·
+  notification 47 · gateway 80 · user 61 · common-auth 52 = **1130 tests · 0 실패 · 0 에러**.
+  `./gradlew test` 일괄 실행이 세 번 중단돼 모듈별로 나눠 돌렸다 — "이전 완주 기록으로 갈음" 하지 않은 것이
+  위 회귀를 잡아냈다.
