@@ -1821,3 +1821,81 @@ consistent-read 스냅샷이 열리지 않았고** `V-15c` 가 다시 vacuous �
 ⓑⓒ 는 Kafka lag 실측 유지(시간 하나로 흡수하면 컨슈머 정지 시 vacuous) · preflight 는 래퍼 스크립트 +
 **우회 가능이라는 한계 명시**(CD 부재 — `ci.yml` deploy job 0건) · **ADR-0022 신설**, ADR-0020 Update Log
 기재 지시는 취소(`adr/README.md:13` 이 계약 변경의 Update Log 우회를 금지).
+
+---
+
+## 2026-09-12 — ④-c-2b-4a: replay 개시 진입점 ([#105](https://github.com/Kimgyuilli/PeekCart/pull/105))
+
+계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` P18~P21·P23·P25. **진입점이 생겼지만 kill-switch 가
+닫혀 있어 아직 열리지 않는다** — drain·롤백 계약(4b)이 선 뒤에 연다.
+
+### 2b-4 를 4a/4b 로 나눈 이유
+
+계획 리뷰 3라운드의 **결함 분포**가 근거다. P0 5건 중 **4건이 drain/롤백 축**이었고, drain ⓓ 의 앵커 컬럼이
+세 번 갈아엎혔다 — `replay_deadline`(ADR-0020 §D5-3 의 7d 멱등 안전창과 **의미 충돌**) →
+`outbox_events.created_at`(**강제 삭제 시 부재가 fail-open** · INSERT 시각 ≠ 발행 시각) →
+`last_replay_settled_at`(신설). 진입점 축은 1R 이후 P0 가 0건이었다. 수렴도가 다른 두 축을 한 PR 에 묶지 않았다.
+
+### 착수 전 코드 검증이 뒤집은 것
+
+- `kafkaAdmin.createAdminClient()` 는 **존재하지 않는 API** 다(spring-kafka 3.3.14 에서 `createAdmin()` 은 `protected`).
+- C-31 의 "전 경로가 root 잠금부터 진입한다" 는 **reconciler 가 예외**였다 — `findRequestedPublications` 에
+  `@Lock` 이 없고 root 로 한정하지도 않아 자식 행을 잠금 없이 바꾼다. JPA dirty-check 가 행 전체를 쓰므로
+  동시 종결이 커밋한 `RESOLVED` 를 `OPEN` 으로 되돌리는 lost update 가 성립했다.
+- **backfill 은 DML 이라 2b-3a 의 최종 스키마 parity 가 보지 못한다** — 4벌이 갈라져도 전부 green 이다.
+  ④-c-2b-1 glob · 2b-2 java 목록 · 2b-3a 파일 목록에 이은 **같은 구멍 네 번째**. DML parity 를 신설했다.
+
+### 설계 결정 셋
+
+1. **I-1 을 조건부 UPDATE 가 아니라 잠금 안의 Java 검사로 세웠다.** 초안(1R #5)은 "순차 검사라 경합한다" 를
+   근거로 삼았는데, 그 근거가 된 코드 위치는 **2b-1 이 잠금을 선행시킨 뒤라 더 이상 그렇지 않았다**.
+   조건부 UPDATE 로 가면 `NULL <> 'REQUESTED'` = UNKNOWN 3값 논리 함정을 매번 피해야 하고 엔티티 전이
+   가드를 우회하는 **두 번째 종결 경로**가 생긴다. 대신 **변이로 근거를 관측한다** — 잠금 선행을 지우면 V-14 가 red.
+2. **정책 키는 토픽이 아니라 `(원장 소유 서비스, 토픽)`.** `stock.reservation.result` 를 order·payment 두
+   group 이 소비하고 각자 다른 로컬 상태를 만진다 — 토픽 단일 키로는 payment 의 replay 를 통째로 거부하거나
+   **원격 DB 결합**을 들여야 한다(ADR-0012 D1).
+3. **kill-switch 기본값 `false`.** 기본 `true` 면 새 Pod 가 Ready 가 되는 순간 backfill·증적·리허설 이전에
+   진입점이 열리고, 닫는 데 롤링 재기동이 또 든다(Spring 정적 설정).
+
+### 리뷰에서 배운 것
+
+- **1R**: `StringDeserializer` 가 유효하지 않은 UTF-8 을 손실 변환해 **fence 의 "byte-for-byte 동일"
+  주장과 digest 가 거짓**이 되고 있었다 → `byte[]` 로 읽고 strict UTF-8 왕복을 확인한 뒤에만 문자열화.
+  `canConvertToLong()` 만으로는 `1.5` 가 통과해 `asLong()` 절삭으로 **다른 aggregate 를 조회**하던 것도 함께.
+- **2R**: 감사 주체가 **로그에만** 남아 로그 소멸 후 복원 불가(→ 원장 `last_replay_by`), V-35 가
+  `recorder.record()` 직접 호출이라 **관통이 아니던 것**(→ `.dlq` 로 흘려 `DlqHeaders.parse` →
+  `DeadLetterConsumer` 관통). **1R 수정이 만든 새 결함은 0건.**
+- **변이 검사가 테스트의 거짓을 잡았다**: kill-switch 기본값을 `true` 로 뒤집는 변이가 **GREEN** 이었다 —
+  통합테스트가 `@BeforeEach` 에서 값을 세팅해 **기본값을 아무도 관측하지 않았다**. Java 기본값 테스트 +
+  yml 선언 lint 로 두 출처를 고정했다.
+- **변이 실행 자체가 한 번 무효였다**: 복원에 `git checkout -- <디렉토리>` 를 써서 **미커밋 작업분을
+  되돌렸고**, 이후 "RED" 가 변이 검출이 아니라 컴파일 실패였다. 미추적 신규 파일은 반대로 변이가 남아
+  parity lint 가 그것을 잡았다. 백업 사본 복원 + 컴파일 실패 구분으로 재실행했다.
+
+### 검증
+
+**전 8모듈 완주 — 1130 tests · 0 실패**(common 104 · order 409 · product 188 · payment 189 ·
+notification 47 · gateway 80 · user 61 · common-auth 52). 진입점 통합 17건 · reader 통합 8건 · 권한 4건 ·
+**변이 8종 red** · parity self-test 26종 · `replay-entrypoint-lint` 변이 7종 red.
+
+**전 모듈 스위트가 회귀 1건을 잡았다**: `OriginalRecordReader` 를 common 의 `@Component` 로 둬
+**Kafka 를 쓰지 않는 user-service 의 컨텍스트가 깨졌다**(22건 red). diff 만 봐서는 드러나지 않는 결함이다 —
+Kafka 없는 모듈의 존재가 diff 밖에 있기 때문이다. 4서비스 Kafka 설정의 `@Bean` 등록으로 해소했다
+(ADR-0011 §D2 와도 정합). `./gradlew test` 일괄 실행이 세 번 중단돼 모듈별로 나눠 돌렸는데,
+**"이전 완주 기록으로 갈음" 하지 않은 것이 이 회귀를 잡아냈다.**
+
+### 미충족
+
+1. **계획이 수렴하지 않았다** — 계획 리뷰가 상한 3R 에 도달했고 P0 가 **3라운드 연속** 나왔다(각 라운드가
+   직전 라운드의 수정을 반증). **④-c-2b-4b 착수 전 4R 이 필요하다.**
+2. **V-35 의 관통은 완전하지 않다** — 재발행분의 **업무 consumer 실패 자체는 시뮬레이션**이다(`.dlq` 에 직접
+   적재). DLT 헤더 판독·`DeadLetterConsumer` 진입·상관·재개방은 실제 경로로 돈다.
+3. **§10 R9 — 진입점의 운영 도달 경로가 없다.** 게이트웨이는 `/api/v1/**` 만 라우팅하고 리소스 서비스는
+   게이트웨이 서명 토큰만 신뢰하므로 직접 호출은 인증 주체를 세울 수 없다. ADMIN 가드는 정확하지만 그
+   가드에 닿을 길이 없다. **④-c-2a 가 만든 기존 엔드포인트 전체의 성질이며 이번 PR 의 회귀가 아니다** —
+   관리자 라우트·인증 체인은 ADR-0022(4b)가 결정한다. 그때까지 kill-switch 가 닫혀 있어 실질 위험은 없다.
+4. **§10 R1** `NOT NULL` contract 미수행 · **§10 R2** 운영 클러스터 미적용.
+5. **커밋 분류 순수성**: `cc2ff82`·`89955c1` 에 계획서 1파일이 src 와 섞였다. 이력 재작성 위험이 더 크다고 보아 유지.
+
+**다음**: ④-c-2b-4b (drain 4조건 preflight · deploy 래퍼 · `PUBLISH_UNKNOWN` 해제 경로 · runbook §6/§6-R ·
+P22 증적 · **ADR-0022**). **착수 전 계획 리뷰 4R 선행.**

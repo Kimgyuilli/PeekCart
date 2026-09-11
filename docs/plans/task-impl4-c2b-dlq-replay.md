@@ -143,7 +143,7 @@ nullable 이고, `record_kind IS NULL → DOMAIN` 해석이 구버전 writer 를
 | 2b-3a | **P14** | ✅ **완료** [#103](https://github.com/Kimgyuilli/PeakCart/pull/103) — ADR-0021 신설 · 4서비스 digest 마이그레이션 · 송신 allowlist 강제 · parity lint 최종 스키마 전환(self-test 18→23종) · 1006 tests 0 실패 · lint 15종 · 변이 1종 red · **계획 3R·diff 리뷰 미실행(quota)** |
 | 2b-3b | **P15 · P16 · P17 · P17-b** | ✅ **완료** [#104](https://github.com/Kimgyuilli/PeakCart/pull/104) — 6단계 실행 순서(detach 회피 + 단계 5 current read) · 9축 대조(group 3자) · `reopen()` · `LedgerOwner` 빈 주입 · afterCommit 결과별 알림 4행 · Counter 2종(CommitAware, reason enum bounded) · ADR-0021 Update Log(V-35 재배정). 계획 리뷰 3R~5R 전량 반영(**4R 발산은 3b 경계 이탈이 원인 → P24 를 2b-4 로 되돌림**), **6R 사용자 지시로 중단(미측정)**. diff 리뷰 1R 8건 전량 반영(**실제 실패 2건 검출**). 변이 16종 red · lint 15종 · parity self-test 23종 · **전 모듈 1043 tests 0 실패**. **미충족**: #103 재리뷰 스킵 · 계획 수렴 미달 · `V-19o` fixture 전용 |
 
-| 2b-4a | P18 · P19 · P20 · P21 · P23 · P25 · **P26 은 4b** | ✅ **구현 완료(PR 미생성)** — diff 리뷰 2R(1R 8건 전량 · 2R 7건 중 6건 반영, 1건은 §10 R9 로 이관). 변이 8종 red · parity self-test 26종 · replay-entrypoint-lint 변이 7종 red. **kill-switch 기본값 false**(Java 기본값 + 4 yml lint 양쪽 고정). 전 모듈 스위트에서 **회귀 1건 검출·해소**(common `@Component` 가 Kafka 없는 user-service 컨텍스트를 깨뜨림) |
+| 2b-4a | P18 · P19 · P20 · P21 · P23 · P25 · **P26 은 4b** | ✅ **완료** [#105](https://github.com/Kimgyuilli/PeekCart/pull/105) — diff 리뷰 2R(1R 8건 전량 · 2R 7건 중 6건 반영, 1건은 §10 R9 로 이관). 변이 8종 red · parity self-test 26종 · replay-entrypoint-lint 변이 7종 red. **kill-switch 기본값 false**(Java 기본값 + 4 yml lint 양쪽 고정). 전 모듈 스위트에서 **회귀 1건 검출·해소**(common `@Component` 가 Kafka 없는 user-service 컨텍스트를 깨뜨림) |
 | 2b-4b | P22 · P24 · **P26(ADR-0022)** | 🔲 — drain·롤백 계약. **계획 미수렴 상태**(3R 상한 도달, P0 가 3라운드 연속) 이므로 착수 전 4R 선행 |
 
 ### PR ④-c-2b-1 — 원장 축 확장 + incident 집계 정정

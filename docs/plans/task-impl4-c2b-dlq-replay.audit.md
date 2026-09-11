@@ -528,3 +528,14 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
   notification 47 · gateway 80 · user 61 · common-auth 52 = **1130 tests · 0 실패 · 0 에러**.
   `./gradlew test` 일괄 실행이 세 번 중단돼 모듈별로 나눠 돌렸다 — "이전 완주 기록으로 갈음" 하지 않은 것이
   위 회귀를 잡아냈다.
+
+## 2026-09-12 — ④-c-2b-4a /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/105 (base `main`, 머지하지 않음)
+- 커밋 7개 (분할 없음 — `/work` 가 이미 커밋). **관찰**: `cc2ff82`·`89955c1` 에 계획서 1파일이 src 와
+  혼재(분류 순수성 위반). 이력 재작성 위험이 더 크다고 보아 유지하고 PR 본문 §미충족 에 기록.
+- precheck: **warnings 1** — `[MISS] ADR-0022`. **[2] 무시하고 진행** 선택.
+  사유: ADR-0022 는 ④-c-2b-4b 의 산출물(P26)이며 계획서·커밋의 참조는 전부 "4b 가 결정한다" 는
+  **의도된 전방 참조**다. 존재하는 결정을 가리키는 깨진 참조가 아니다. (PR 본문 §Skipped consistency checks)
+- 갱신: `docs/TASKS.md` 구현 ④ 행에 ④-c-2b-4a ✅ + #105 · `docs/progress/PHASE4.md` 작업 이력(미충족 5건 포함) ·
+  계획서 진행 상태 표
+- **④-c-2b-4b 는 🔲 유지** — 계획 미수렴(3R 상한·P0 3라운드 연속)이라 착수 전 4R 선행이 조건이다
