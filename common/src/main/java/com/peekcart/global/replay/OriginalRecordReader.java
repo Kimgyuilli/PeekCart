@@ -51,12 +51,17 @@ import java.util.Map;
  * 왕복이 깨지면 <b>거부</b>한다(outbox {@code payload} 가 TEXT 라 바이트를 그대로 실을 수 없으므로,
  * 실을 수 없는 레코드는 replay 대상이 아니다).
  *
+ * <h2>빈으로 자동 등록하지 않는다</h2>
+ * {@code @Component} 로 두면 <b>Kafka 가 없는 서비스</b>(user-service)의 컨텍스트가 깨진다 —
+ * 공통 스캔 대상이라 그 서비스도 이 빈을 만들려 하고 {@code KafkaAdmin} 이 없어 실패한다.
+ * 그래서 <b>원장을 가진 4서비스의 Kafka 설정이 각자 {@code @Bean} 으로 등록</b>한다
+ * (ADR-0011 §D2 — 서비스는 자기 소비 경로를 소유한다).
+ *
  * <h2>{@code Admin} 생성 방식</h2>
  * {@code KafkaAdmin#createAdmin()} 은 <b>protected</b> 라 호출할 수 없다(spring-kafka 3.3.x).
  * 공개 API 인 {@link KafkaAdmin#getConfigurationProperties()} 로 설정을 얻어 {@link Admin#create} 한다.
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class OriginalRecordReader {
 

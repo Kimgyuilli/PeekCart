@@ -4,6 +4,8 @@ import com.peekcart.global.kafka.FixedSequenceBackOff;
 import com.peekcart.global.kafka.MdcPayloadExtractor;
 import com.peekcart.global.kafka.MdcRecordInterceptor;
 import com.peekcart.global.port.SlackPort;
+import com.peekcart.global.replay.OriginalRecordReader;
+import com.peekcart.global.retention.IdempotencyRetentionProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.TopicPartition;
@@ -11,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.ContainerProperties;
@@ -66,5 +69,18 @@ public class NotificationKafkaConfig {
         factory.setCommonErrorHandler(kafkaErrorHandler);
         factory.setRecordInterceptor(new MdcRecordInterceptor(mdcPayloadExtractor));
         return factory;
+    }
+
+    /**
+     * DLQ replay 좌표 reader (구현 ④-c-2b-4a P18).
+     *
+     * <p><b>공통 모듈에서 자동 등록하지 않는다</b> — {@code @Component} 로 두면 Kafka 가 없는 서비스
+     * (user-service)의 컨텍스트가 {@code KafkaAdmin} 부재로 깨진다. 원장을 가진 서비스만 등록한다.
+     */
+    @Bean
+    public OriginalRecordReader originalRecordReader(KafkaAdmin kafkaAdmin,
+                                                     ConsumerFactory<String, String> consumerFactory,
+                                                     IdempotencyRetentionProperties retentionProperties) {
+        return new OriginalRecordReader(kafkaAdmin, consumerFactory, retentionProperties);
     }
 }
