@@ -487,3 +487,40 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
 - **수렴 미달**: P0 가 3라운드 연속 나왔고(각 라운드가 직전 라운드의 수정을 반증), 이번 수정도 새 표면
   (`PUBLISH_UNKNOWN` 상태값 · 도메인 잠금 순서 · 스캐너/워커 분리 · 안정화 창)을 추가했다. 상한 도달로 사용자 확인 필요.
 - raw: .cache/codex-reviews/plan-task-impl4-c2b-dlq-replay-2b4-r3-1789115615.json
+
+## 2026-09-12 — ④-c-2b-4a diff 리뷰 라운드 1
+- 항목: 8건 (P0:0, P1:6, P2:2) — **전량 반영**
+- 주요 지적:
+  - `StringDeserializer` 가 유효하지 않은 UTF-8 을 손실 변환해 **fence 의 byte 동일성 주장과 digest 가 거짓**
+    → byte[] consumer + strict UTF-8 왕복 검증, tombstone 거부
+  - `canConvertToLong()` 만으로는 `1.5` 가 통과해 `asLong()` 절삭 → **다른 aggregate 조회**
+  - replay 에 권한 검사 없음(공통 체인은 authenticated() 뿐이라 ROLE_USER 통과), actor 가 요청값
+  - V-35 관통·실제 adapter 배선·drain 앵커에 대응 테스트 없음
+- raw: .cache/codex-reviews/diff-impl4-c2b4a-1789123087.json
+
+## 2026-09-12 — ④-c-2b-4a diff 리뷰 라운드 2
+- 항목: 7건 (P0:0, P1:3, P2:4) — **6건 반영 / 1건 범위 밖 기록**
+- **1R 수정이 만든 새 결함은 0건.** 대신 1R 수정이 닿지 못한 곳이 드러났다:
+  - principal 기반 감사 주체가 **로그에만** 남아 로그 소멸 후 복원 불가 → 원장 `last_replay_by` 영속
+  - V-35 가 `recorder.record()` 직접 호출이라 **관통이 아니었다** → `.dlq` 로 흘려
+    DlqHeaders.parse → DeadLetterConsumer 까지 실제 관통
+  - byte consumer·strict UTF-8·tombstone·retention 실측 분기에 테스트 부재 → reader 통합 8종 신설
+  - 권한 거부가 200 + error 본문 → `AccessDeniedException`(403/401)
+- 기각(범위 밖): #1 actuator 진입점의 운영 도달 경로 부재. 게이트웨이가 `/actuator/**` 를 라우팅하지 않아
+  ADMIN 가드에 닿을 길이 없다. **④-c-2a 가 만든 기존 엔드포인트 전체의 성질이며 이번 PR 의 회귀가 아니다**
+  → §10 R9 로 기록하고 ADR-0022(4b) 가 관리자 라우트/인증 체인을 결정한다
+- raw: .cache/codex-reviews/diff-impl4-c2b4a-r2b-1789134833.json
+
+## 2026-09-12 — ④-c-2b-4a 검증
+- **변이 8종 전부 red**: claim 조건 제거 · I-1 가드 제거 · acknowledge 를 가드에 포함 · 정책 감사 제거 ·
+  첫 축 early return · fence eventId 대조 제거 · **종결의 잠금 선행 제거** · topic_generation 검사 제거.
+  마지막이 red 인 것이 C-31(조건부 UPDATE 대신 잠금 안 Java 검사) 을 유지한 근거다.
+- **1차 변이 실행은 무효였다** — 복원에 `git checkout -- <dir>` 을 써서 **미커밋 작업분을 되돌렸고**,
+  이후 "RED" 가 변이 검출이 아니라 컴파일 실패였다. 미추적 신규 파일은 반대로 변이가 남았고 parity lint 가
+  그것을 잡았다. 백업 사본 복원 + 컴파일 실패 구분으로 재실행했다.
+- **kill-switch 기본값 변이(M1)가 처음엔 GREEN 이었다** — 통합테스트가 `@BeforeEach` 에서 값을 세팅해
+  **기본값을 아무도 관측하지 않았다**. Java 기본값 테스트 + yml 선언 lint(REPLAY-ENTRY-004)로 두 출처를 고정.
+- **전 모듈 스위트에서 회귀 1건 검출**: `OriginalRecordReader` 를 common 의 `@Component` 로 둬
+  **Kafka 없는 user-service 의 컨텍스트가 깨졌다**(22건 red). diff 만 봐서는 드러나지 않는 결함이며
+  (Kafka 없는 모듈의 존재가 diff 밖에 있다) 4서비스 Kafka 설정의 `@Bean` 등록으로 해소했다.
+- lint: parity self-test 26종(backfill DML 3종 신설) · replay-entrypoint-lint 변이 7종 red
