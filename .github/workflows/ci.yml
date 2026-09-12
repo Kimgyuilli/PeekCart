@@ -81,6 +81,10 @@ jobs:
           bash scripts/dead-letter-schema-parity-lint.sh
           bash scripts/dead-letter-schema-parity-lint.sh --self-test
           bash scripts/replay-entrypoint-lint.sh
+          # 마이그레이션이 **부여되지 않은 권한**을 요구하면 실제 스택에서만 부팅이 깨진다 —
+          # Testcontainers 는 root 로 돌아 그 차이를 보지 못한다(PR #105 에서 실제로 났다).
+          bash scripts/migration-grant-lint.sh
+          bash scripts/migration-grant-lint.sh --self-test
           bash scripts/servicemonitor-selector-lint.sh
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh
