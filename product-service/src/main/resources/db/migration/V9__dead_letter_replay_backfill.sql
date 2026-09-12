@@ -40,24 +40,21 @@ UPDATE outbox_events SET record_kind = 'DOMAIN' WHERE record_kind IS NULL;
 -- (3) 잔여 0 검증 — 마이그레이션 도중 구버전 writer 가 INSERT 하면 잔여가 남는다.
 --   그때는 **실패시킨다**. 조용히 통과시키면 정규화됐다는 전제로 짠 집계·상관이 그 행에서만 어긋나고,
 --   어긋난 사실은 그 행이 문제를 일으킬 때까지 드러나지 않는다.
-DROP PROCEDURE IF EXISTS pc_assert_replay_backfill_complete;
+--
+-- **stored procedure + SIGNAL 을 쓰지 않는다 (CI #105 에서 실패해 정정).**
+--   서비스 계정의 권한은 `SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES` 뿐이고
+--   (`scripts/mysql-init/01-init-databases.sql` — 스키마 격리를 위한 의도된 최소권한)
+--   `CREATE ROUTINE`·`CREATE TEMPORARY TABLES` 가 없다. Testcontainers 는 root 로 돌아 통과하지만
+--   실제 스택에서는 `ERROR 1370: alter routine command denied` 로 **부팅이 깨진다**.
+--
+-- 대신 **NOT NULL 컬럼에 NULL 을 쓰는 조건부 UPDATE** 로 같은 판정을 만든다:
+--   · 잔여가 0 이면 매칭 행이 없어 **아무 일도 일어나지 않는다**
+--   · 잔여가 1건이라도 있으면 `ERROR 1048: Column cannot be null` 로 마이그레이션이 실패한다
+--   추가 권한이 필요 없다(이미 가진 UPDATE 권한만 쓴다).
+--
+-- `STRICT_ALL_TABLES` 를 세션에 건다 — non-strict 모드에서는 NOT NULL 위반이 **경고로 강등되어
+-- 0/'' 으로 조용히 채워진다**. 세션 범위 설정이라 별도 권한이 필요 없다.
+SET SESSION sql_mode = CONCAT(@@SESSION.sql_mode, ',STRICT_ALL_TABLES');
 
-DELIMITER //
-CREATE PROCEDURE pc_assert_replay_backfill_complete()
-BEGIN
-    DECLARE ledger_remaining INT DEFAULT 0;
-    DECLARE outbox_remaining INT DEFAULT 0;
-
-    SELECT COUNT(*) INTO ledger_remaining FROM dead_letter_records WHERE root_record_id IS NULL;
-    SELECT COUNT(*) INTO outbox_remaining FROM outbox_events WHERE record_kind IS NULL;
-
-    IF ledger_remaining > 0 OR outbox_remaining > 0 THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'replay backfill 잔여가 0 이 아니다 — 구버전 writer 가 아직 INSERT 하고 있다';
-    END IF;
-END //
-DELIMITER ;
-
-CALL pc_assert_replay_backfill_complete();
-
-DROP PROCEDURE pc_assert_replay_backfill_complete;
+UPDATE dead_letter_records SET cluster_id = NULL WHERE root_record_id IS NULL;
+UPDATE outbox_events SET aggregate_type = NULL WHERE record_kind IS NULL;
