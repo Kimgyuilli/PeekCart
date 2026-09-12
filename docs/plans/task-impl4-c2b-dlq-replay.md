@@ -97,7 +97,8 @@
 | **④-c-2b-2** | 발행 표면 — outbox replay kind + notification outbox | P8~P13 | replay 레코드를 **발행할 수 있는** poller (진입점 없음 → replay 행이 생기지 않는다) |
 | **④-c-2b-3a** | 상관 표면 — 헤더 계약 · 매핑 · ADR-0021 · lint | P14 | 헤더가 **정의·강제·판독**되고 앵커가 매핑된다 (아직 상관하지 않는다) |
 | **④-c-2b-3b** | 원자 상관 + 재개방 | P15~P17 | 재실패가 root 로 수렴하는 경로가 **먼저** 선다 (아직 replay 개시 불가) |
-| **④-c-2b-4** | 좌표 reader + 진입점 + fence + backfill + 문서 | P18~P25 | replay **개시 가능** — 그 시점에 상관·재개방이 이미 배포돼 있다 |
+| **④-c-2b-4a** | 좌표 reader + 적격성 + fence + 진입점 + 마이그레이션 | P18~P21 · P23 · P25 | replay **개시 가능하나 kill-switch 가 닫혀 있다**(base 기본값 `false`) |
+| **④-c-2b-4b** | drain·롤백 계약 + ADR-0022 + 증적 | P22 · P24 · P26 | 롤백이 **안전하게 가능**해지고 그 뒤에야 kill-switch 를 연다 |
 
 > **순서 정정 (리뷰 1R #2)**: 초안은 진입점(2b-3)을 상관·재개방(2b-4)보다 **먼저** 열었다.
 > 그러면 2b-3 만 배포된 구간에서 재발행분이 재실패할 때 **독립 incident 로 갈라져** ADR-0020 §D5-4·§D6-3 을
@@ -105,6 +106,14 @@
 > **계약을 지키는 코드 대신 운영 규율에 기대는 것**이라 채택하지 않았다. 상관 경로를 먼저 세우면
 > replay 가 열리는 순간 이미 계약이 성립한다.
 
+> **2b-4 를 4a/4b 로 분할했다 (2026-09-11, 사용자 승인)**. 근거는 **계획 리뷰 3라운드의 결함 분포**다 —
+> P0 5건 중 **4건이 drain/롤백 축**(앵커 컬럼이 세 번 갈아엎혔다: `replay_deadline` → `outbox_events.created_at`
+> → `last_replay_settled_at`)이고, 진입점 축(P18~P21)은 1R 이후 P0 가 **0건**이다. 두 축의 수렴도가 확연히 다르므로
+> 안정된 쪽을 먼저 닫는다. **4a 만 배포된 구간의 안전은 kill-switch 가 진다** — base 기본값이 `false` 라
+> 진입점이 존재해도 replay 가 개시되지 않고, 따라서 롤백 위험(구 poller·늦은 DLT)도 생기지 않는다.
+> **`last_replay_settled_at` 컬럼과 reconciler 의 앵커 기록은 4a 가 넣는다** — 4b 가 읽을 값이 4a 배포
+> 시점부터 쌓여야 갭이 없다(현실적으로는 kill-switch 가 닫혀 있어 4a 구간엔 replay 자체가 없다).
+>
 > **2b-3 을 3a/3b 로 재분할했다 (2026-09-06, 사용자 승인)**. 이유는 두 가지다.
 > ① **범위** — 계획 리뷰 2라운드가 2b-3 에 ADR 신설(ADR-0021) · 4서비스 digest 마이그레이션 ·
 > parity lint 재구조화 · 송신 측 검증 · Counter 2종을 더했다. P14 하나가 이미 앞선 PR 한 개 분량이다.
@@ -134,7 +143,8 @@ nullable 이고, `record_kind IS NULL → DOMAIN` 해석이 구버전 writer 를
 | 2b-3a | **P14** | ✅ **완료** [#103](https://github.com/Kimgyuilli/PeakCart/pull/103) — ADR-0021 신설 · 4서비스 digest 마이그레이션 · 송신 allowlist 강제 · parity lint 최종 스키마 전환(self-test 18→23종) · 1006 tests 0 실패 · lint 15종 · 변이 1종 red · **계획 3R·diff 리뷰 미실행(quota)** |
 | 2b-3b | **P15 · P16 · P17 · P17-b** | ✅ **완료** [#104](https://github.com/Kimgyuilli/PeakCart/pull/104) — 6단계 실행 순서(detach 회피 + 단계 5 current read) · 9축 대조(group 3자) · `reopen()` · `LedgerOwner` 빈 주입 · afterCommit 결과별 알림 4행 · Counter 2종(CommitAware, reason enum bounded) · ADR-0021 Update Log(V-35 재배정). 계획 리뷰 3R~5R 전량 반영(**4R 발산은 3b 경계 이탈이 원인 → P24 를 2b-4 로 되돌림**), **6R 사용자 지시로 중단(미측정)**. diff 리뷰 1R 8건 전량 반영(**실제 실패 2건 검출**). 변이 16종 red · lint 15종 · parity self-test 23종 · **전 모듈 1043 tests 0 실패**. **미충족**: #103 재리뷰 스킵 · 계획 수렴 미달 · `V-19o` fixture 전용 |
 
-| 2b-4 | P18 ~ P25 | 🔲 |
+| 2b-4a | P18 · P19 · P20 · P21 · P23 · P25 · **P26 은 4b** | ✅ **완료** [#105](https://github.com/Kimgyuilli/PeekCart/pull/105) — diff 리뷰 2R(1R 8건 전량 · 2R 7건 중 6건 반영, 1건은 §10 R9 로 이관). 변이 8종 red · parity self-test 26종 · replay-entrypoint-lint 변이 7종 red. **kill-switch 기본값 false**(Java 기본값 + 4 yml lint 양쪽 고정). 전 모듈 스위트에서 **회귀 1건 검출·해소**(common `@Component` 가 Kafka 없는 user-service 컨텍스트를 깨뜨림) |
+| 2b-4b | P22 · P24 · **P26(ADR-0022)** | 🔲 — drain·롤백 계약. **계획 미수렴 상태**(3R 상한 도달, P0 가 3라운드 연속) 이므로 착수 전 4R 선행 |
 
 ### PR ④-c-2b-1 — 원장 축 확장 + incident 집계 정정
 
@@ -823,16 +833,64 @@ fingerprint 대조가 이 값에 의존하므로, 이 값이 조용히 NULL 이 
   그 서비스의 재실패가 `pc-replay-*` 를 무시하고 **독립 root** 로 적재돼 backlog=1 보장이 그 자리에서 깨진다.
 - **롤백**: ① replay 진입점 **비활성화** → ② **drain 완료** → ③ 그 다음 2b-3 롤백.
   역순으로 하면 발행된 재실패분이 상관되지 않는 창이 생긴다.
-  > **drain 의 판정식·조건 수·preflight 진입점은 2b-4 가 정의한다 (5R #5 — 3b 경계).**
+  > **drain 의 판정식·조건 수·preflight 진입점은 2b-4 가 정의한다 (5R #5 — 3b 경계).** → **확정: §10.1 (2026-09-11)**
   > `publication_status='REQUESTED' == 0` 하나로는 불충분하다는 것(2R #5: broker ack 시점에 `PUBLISHED` 로
   > 바뀌므로 **소비 재시도 중**이거나 **DLT 이동 중**인 레코드를 못 잡는다)까지가 **3b 가 아는 사실**이고,
   > 그 이상(무엇을 몇 개 재는가·어떻게 강제하는가)은 진입점·정본·배포 wrapper 를 쥔 **2b-4 소관**이다.
   > 4R #5~#8 이 이 확장을 3b 에서 열었을 때 답할 수 없는 표면 넷을 만들어냈다.
 - 2b-3 단독 배포는 안전하다 — 앵커를 쓰는 주체가 없어 상관 경로가 아예 타지지 않는다.
 
-### PR ④-c-2b-4 — 좌표 reader + 진입점 + fence + backfill + 문서
+### PR ④-c-2b-4 — 좌표 reader + 진입점 + fence + backfill + 문서 (**4a / 4b 로 분할**)
 
-**P18.** `OriginalRecordReader` (신규, `common`). `AdminClient` 로 `cleanup.policy`·`retention.ms` describe +
+#### 착수 전 코드 검증 (2026-09-11) — **전제 5건이 뒤집혔다**
+
+§10.1 의 결정 4건과 별개로, P18~P25 초안이 진술한 코드 사실을 직접 확인했다.
+
+| # | 초안의 전제 | 코드 확인 | 처분 |
+|---|---|---|---|
+| C-31 | I-1 가드를 **조건부 UPDATE** 로 원자화해야 한다(1R #5·2R #1) | **부분적으로만 참이다 (2b-4 계획 리뷰 1R #4 가 반증).** 종결(`DeadLetterTransitionService:60`)·재개방(`DeadLetterRecorder:165`)·purge(`DeadLetterMaintenanceScheduler:92`)는 전부 root 를 먼저 잠근다 — 여기까지는 초안이 맞다. **그러나 reconciler 는 예외다**: `findRequestedPublications` 는 **`@Lock` 이 없고**(`Repository:210`) javadoc 이 "root 로 한정하지 않는다" 고 명시한다 — 자식 행을 **잠금 없이** 읽어 `publication_status` 를 바꾼다. 게다가 현 `transition` 은 **root 를 먼저 전이한 뒤** 자식을 조회한다(`:73`) | **단순화는 유지하되 조건 2개를 붙인다** — ⓐ **reconciler 도 root 잠금 뒤에 settle 한다**(진입 순서 통일, batch 200 기준 비용 허용). 안 하면 JPA dirty-check 가 행 전체를 쓰므로 **동시 종결의 `RESOLVED` 를 `OPEN` 으로 덮는 lost update** 가 성립한다 ⓑ **전이를 2단계로** 바꾼다 — root+활성 자식을 **전부 잠그고 → 전부 검사하고 → 그 다음에만 적용**. 행별 검사로 두면 root 를 전이한 뒤 자식의 `REQUESTED` 를 발견해 **부분 전이**가 남는다 |
+| C-32 | target row = "최신 `OPEN` 자식" 을 고를 수 있다(3R #1) | **조회가 없다.** `findChildrenForUpdate` 는 `ORDER BY` 가 **없고**(`:172-174`) 리스트만 준다 — "가장 최근" 이 정의되지 않는다 | **P21 에 조회 1종 추가** — `findLatestActiveChildForUpdate(rootId)` (`ORDER BY id DESC LIMIT 1`). 자식이 없으면 root 가 target |
+| C-33 | `replay_deadline`·`replay_policy` 에 쓸 수 있다 | **엔티티에 매핑이 없다.** `DeadLetterRecord` 의 `@Column` 전수에 두 컬럼이 없다(컬럼은 V8 에 존재) — 2b-3a 가 "읽는 주체가 2b-4 에 생긴다" 며 의도적으로 남긴 자리다 | **P21 에 매핑 2종 추가.** DDL 불필요 |
+| C-34 | backfill 번호 = order V11·product V9·payment V9·notification V7 | **정확.** 현 최대는 V10/V8/V8/V6 이다 | 유지. `EXPECTED_MIGRATIONS` 갱신 지점은 `scripts/e2e/saga_e2e.py:63` |
+| C-35 | P25 의 parity 확장이 backfill 을 검사한다 | **거짓이고, 여기가 진짜 구멍이다.** 2b-3a 가 넣은 (2b) 검사는 `db/migration` 전체를 합성한 **최종 스키마**를 대조한다 — backfill 은 `UPDATE` 뿐인 **DML** 이라 스키마를 바꾸지 않고, 따라서 **4벌이 갈라져도 최종 스키마는 동일해 전부 green** 이다. ④-c-2b-1 glob · 2b-2 java 목록 · 2b-3a 파일 목록에 이은 **같은 구멍 네 번째** | **P25 를 정정** — 최종 스키마 parity 는 이미 있으므로 첫 bullet 은 삭제하고, **backfill DML parity**(정확히 1파일 · 4벌 원문 동일 · `IS NULL` 조건 존재)를 신설한다 |
+| C-36 | 신규 per-service 클래스의 parity 를 따로 넣어야 한다 | **불필요.** `DLQ-PARITY-014` 가 "4서비스 byte 동일인데 `java_files` 목록에 없는 파일" 을 **자동 검출**한다(`:283-295`) — 등재를 잊으면 lint 가 스스로 red | 목록 등재만 하면 된다. 새 검사 없음 |
+| C-37 | P18 이 `AdminClient` 를 새로 배선한다 | **`AdminClient`·`KafkaAdmin` 직접 사용처가 레포 전체에 0건**이다. 다만 `NewTopic` 빈이 있어 **Spring 이 `KafkaAdmin` 을 이미 만들어 둔다** → `kafkaAdmin.createAdminClient()` 로 충분하고 새 `@Configuration` 이 필요 없다. digest 도 `PayloadDigest.sha256Hex`(common)가 이미 있다 | P18·P21 을 **기존 빈 재사용**으로 고정 (신규 config 금지) |
+| C-38 | deadline 식의 입력이 있다 | **있다.** `IdempotencyRetentionProperties.clockSkewBudget`(5m) · `floor.dlqReplayWindow`(7d) 둘 다 실재하고 `isRetentionCoveringReplaySafetyMargin()` 이 이미 둘을 함께 쓴다 | 유지 |
+| C-39 | "raw `apply -k` 문서 잔존 0건" lint 가 가능하다 (§10.1 #7) | **불가능하다.** `apply -k` 는 **ADR-0005/0006(immutable)** · `docs/learning/` 2편 · `PHASE3.md` · `TASKS-archive` 에도 있다 — 이력·불변 문서를 고칠 수 없으므로 "0건" 은 영원히 red 다. 게다가 **monitoring/shared apply 는 서비스 이미지를 바꾸지 않아** 롤백 위험과 무관하다 | **§10.1 #7 의 범위를 좁힌다** — 래퍼는 **앱 overlay 배포**만 감싸고, lint 대상도 **운영 절차 문서 2개**(`docs/02-architecture.md` 배포 순서 블록 · `k8s/overlays/gke/README.md`)로 한정한다 |
+| C-40 | kill-switch 를 ConfigMap 으로 끌 수 있다 | **키가 없다.** `k8s/base/services/*/configmap.yml` 은 `SPRING_PROFILES_ACTIVE` **하나뿐**이다 | P24 가 4개 ConfigMap 에 키를 **추가**하는 것까지 포함한다. 없으면 runbook 의 3단계가 첫 단계부터 불가 |
+| C-41 | javadoc 정정 대상은 `StockReservationService` 1곳 | **2곳 + 1**이다 — `StockReservationService:196` · `StockReservationRepository:35` · `PHASE4.md:283` | P24 대상 확대 |
+| C-42 | 정책표 10종이 실제 업무 토픽 전수다 | **정확히 일치.** `DlqTopology` 의 dlq 선언 10종(order 3 · product 3 · payment 4)과 표가 1:1 | 유지 |
+| C-43 | 진입점 본문을 `{"action":"replay",...}` JSON 으로 받는다 | 현 `transition(@Selector Long id, String action, String actor, String reason)` 은 **flat 파라미터**다. actuator `@WriteOperation` 은 중첩 객체를 받지 않는다 | replay 도 **flat 파라미터 추가**로 간다(중첩 body 설계 금지) |
+
+> **이 검증이 범위를 바꾼 곳**: 작업이 **줄어든 것 2건**(C-31 조건부 UPDATE 불필요 · C-36 parity 신규 검사 불필요 · C-37 신규 config 불필요),
+> **늘어난 것 3건**(C-32 조회 · C-33 매핑 · C-35 DML parity), **§10.1 결정 1건이 좁아졌다**(C-39).
+
+**P26.** **ADR-0022 신설** — "replay 개시 진입점 + 개방 후 롤백/drain 계약" (§10.1 #8).
+**본문은 처음부터 완결본으로 쓰고, 커밋만 2단계(`Proposed` → `Accepted`)로 나눈다.**
+> **본문을 나중에 고치지 않는다 (정정 — 1R #7 → 2R #10)**: 1R 수정안은 "Proposed 로 커밋 후 측정 결과를
+> 본문에 넣고 Accepted" 였는데, 그건 **`adr/README.md:8-9` 의 immutable 규약 위반**이다(Status 변경만 항상 허용).
+> 따라서 최초 커밋의 본문에 **측정 결과별 분기와 한계를 전부 미리 적는다** — "NULL 비율이 임계 이상이면
+> 수용 기준 X, 미만이면 Y, **표본 0 이면 미측정으로 남기고 운영 표본 확보 후 재평가**". 두 번째 커밋은
+> **Status 줄과 `adr/README.md` 인덱스의 Status 만** 바꾼다. 측정(P22)이 본문을 바꾸지 못하므로
+> 완료 조건 5 의 "수용 기준을 ADR-0022 에 기록" 은 **분기표로 선기록**하는 형태가 된다.
+확정할 것: drain **4조건(ⓐ·ⓐ'·ⓑⓒ·ⓓ)의 판정식과 `last_replay_settled_at` 앵커**(§10.1 #5·#6 — 표현을
+`replay_deadline` 에서 교체, 2R #7) ·
+preflight 의 **강제력 한계**(C-39 로 좁아진 범위 포함) · kill-switch 의 비즉시성 · I-1 을 잠금으로 세우는 근거(C-31).
+**`PUBLISH_UNKNOWN` 상태값 신설도 여기서 결정한다** (3R #3 — §10 R7 을 당겼다).
+**기각 대안을 함께 적는다** — `replay_deadline` 재사용(1R) · `outbox_events.created_at`(2R) ·
+`publication_status` 를 ⓐ 정본으로 · 시간만으로 ⓑⓒ 흡수 · initContainer 인클러스터 게이트 ·
+조건부 UPDATE I-1 · 토픽 단일 키 정책(2R #3).
+> `adr/README.md:13` 에 따라 이 계약들은 Update Log 로 갈 수 없다. 같은 이유로 **§10 R7 의 `PUBLISH_UNKNOWN`
+> Update Log 지시도 "새 ADR" 로 정정**한다. **ADR-0020 Update Log 기재 지시(P24)는 취소**한다 — ADR-0021 §D1 중복.
+
+
+**P18.** `OriginalRecordReader` (신규, `common`). **`Admin.create(kafkaAdmin.getConfigurationProperties())`** 로
+만들고 **try-with-resources 로 닫는다**.
+> **정정 (2b-4 계획 리뷰 1R #2 — C-37 반증)**: 초안의 `kafkaAdmin.createAdminClient()` 는 **존재하지 않는 API**
+> 라 컴파일되지 않는다 — spring-kafka 3.3.14 의 `KafkaAdmin` 은 `createAdmin()` 이 **`protected`** 이고
+> 공개된 것은 `getConfigurationProperties()`·`describeTopics()` 다(jar `javap` 로 확인). 공개 설정 맵으로
+> `Admin` 을 직접 만든다. "`NewTopic` 빈이 `KafkaAdmin` 생성의 근거" 라는 서술도 부정확하므로 철회한다.
+`cleanup.policy`·`retention.ms` describe +
 `beginning/end offset` 조회 → 요청 좌표가 `[beginning, end)` 밖이면 **불가**. 이어서 전용 consumer 로
 `assign → seek → poll` 하고 **반환 레코드의 offset == 요청 offset** 을 검증한다(compaction hole 방어).
 consumer group 을 만들지 않도록 `assign` 만 쓰고 offset 을 커밋하지 않는다.
@@ -863,7 +921,7 @@ consumer group 을 만들지 않도록 `assign` 만 쓰고 offset 을 커밋하�
     | `order.cancelled` | **allow** | 취소는 멱등 종결이고 늦게 도착해도 상태를 되돌리지 않는다 |
     | `order.compensation.requested` | **allow** | 보상 요청은 원장(`order_compensations`)이 종결 축을 따로 갖는다 |
     | `product.updated` | **allow** | 가격 캐시 갱신. 늦은 값은 다음 갱신이 덮는다 |
-    | `stock.reservation.result` | **allow + 사전조건** | **주문이 아직 그 예약 결과를 기다리는 상태인지**를 도메인 조회로 확인한다 (← 실제 adapter 를 갖는 토픽) |
+    | `stock.reservation.result` | **allow + 사전조건** | **판정식을 확정한다 (1R #5)** — 아래 표 |
     | `stock.compensation.requested` | **allow** | 보상 요청. 원장이 종결 축 소유 |
     | `payment.requested` | **deny** | 외부 PG 승인을 유발할 수 있다. 늦은 재적용은 이중 과금 경로다 |
     | `payment.completed` | **allow** | 완료 통지. 소비 측이 전부 멱등 |
@@ -871,11 +929,71 @@ consumer group 을 만들지 않도록 `assign` 만 쓰고 offset 을 커밋하�
     | `payment.refunded` | **allow** | 환불 통지. `payment_refunds` 가 종결 축 소유 |
 
     **미등록 토픽·eventType 은 거부**한다(default-deny). 이 표는 **초기값**이며 운영 경험에 따른 정밀화는 §10 R4.
+
+  - **레지스트리 완전성의 정본은 `DlqTopology` 다 (3R #5)**: 위 표는 토픽 10종이지만 정책 키가
+    `(ledgerOwner, topic)` 이므로 **실제 엔트리는 소비쌍 수만큼**이다 — `DlqTopology.businessSubscriptions`
+    기준 **order 6 · product 5 · payment 5 · notification 5 = 21쌍**(`DlqTopology:71-100`). 토픽 10종만 채우면
+    **공유 토픽의 owner 별 엔트리 누락이 검사되지 않는다**. 또 ADR-0020 §D5-2 는 정책을 **topic/eventType** 별로
+    요구한다. **구현 중 정정**: 이 코드베이스에서 **`eventType` 은 토픽 이름과 같은 값**이다 —
+    발행 측이 `saveOutboxEvent(eventType = 토픽)` 으로 봉투를 만들고 `buildDomainRecord` 가 `event_type` 을
+    그대로 토픽으로 쓴다. 따라서 **분기할 값이 없어 별도 축이 성립하지 않는다**. 대신 같은 요구를
+    **`eventTypeMatchesTopic`** 으로 이행한다 — 원본 봉투의 `eventType` 이 목적지 토픽과 다르면 거부한다.
+    불일치는 원장 행과 원본 레코드가 어긋났다는 신호이므로 실질적인 검사다(허용 집합을 적는 것은
+    "토픽 이름 하나" 를 두 번 적는 일이 된다).
+    → **completeness 테스트**: topology 의 모든 소비쌍에 정책이 **정확히 하나** 있고 **여분 정책이 없다**.
+    한쪽만 검사하면 오래된 엔트리가 남아도 green 이다.
+
+  - **정책 키는 토픽이 아니라 `(ledgerOwner, topic)` 이다 (정정 — 2R #3, P0)**: 초안은 토픽 단일 키였는데
+    `stock.reservation.result` 는 **order 와 payment 두 group 이 소비**하고(`DlqTopology:77·90`) 각자 다른
+    로컬 상태를 만진다 — order 는 `Order.confirmReservation`(`OrderEventConsumer:157-165`), payment 는
+    `Payment.markReadyForPayment`(`PaymentEventConsumer:72-92`). **DB-per-service 라 payment-service 의
+    원장 replay 는 Order 상태를 조회할 수 없다** — 토픽 단일 정책으로 구현하면 payment replay 를 통째로
+    거부하거나 **원격 DB 결합**을 들여야 한다. 정책은 **원장 소유 서비스별로 갈린다**.
+
+    **order 소유 원장 — `stock.reservation.result` 사전조건** (`OrderStatus` **8종 전수**, total function):
+
+    | payload | 주문 상태 | 판정 |
+    |---|---|---|
+    | `reserved=true` | `PENDING` **이고** `reservationConfirmedAt IS NULL` | **allow** — 대기 중인 확정이다 |
+    | `reserved=true` | `PENDING` 이나 이미 확정됨 | **deny** — 재적용이 확정 시각을 흔든다 |
+    | `reserved=true` | `PAYMENT_REQUESTED`·`PAYMENT_COMPLETED`·`PAYMENT_FAILED`·`PREPARING`·`SHIPPED`·`DELIVERED`·`CANCELLED` | **deny** |
+    | `reserved=false` | `PENDING`·`PAYMENT_REQUESTED` | **allow** — `cancel()` 이 전이 가능하고 멱등이다(`OrderStatus:13·19`) |
+    | `reserved=false` | `CANCELLED` | **allow** — 소비 측이 이미 no-op 한다(`OrderEventConsumer:165-170`) |
+    | `reserved=false` | `PAYMENT_COMPLETED`·`PREPARING`·`SHIPPED`·`DELIVERED` | **deny** — 소비 코드가 `cancel()` 을 호출하는데 전이가 불가해 **예외 → 재-DLQ** 가 된다 |
+    | `reserved=false` | `PAYMENT_FAILED` | **allow** — `CANCELLED` 로 전이 가능(`OrderStatus:31`) |
+    | 주문 부재 · payload 파싱 실패 · `orderId`/`reserved` 부재·타입 오류 | — | **deny (fail-closed)** |
+
+    > 초안 표의 `PAID` 는 **존재하지 않는 상태**였다(2R #4) — `OrderStatus` 는 `PENDING`·`PAYMENT_REQUESTED`·
+    > `PAYMENT_COMPLETED`·`PAYMENT_FAILED`·`PREPARING`·`SHIPPED`·`DELIVERED`·`CANCELLED` 8종이다.
+    > **표에 없는 상태는 deny** 가 기본이지만, 위 표는 8종을 **전부** 덮으므로 그 기본값에 의존하지 않는다.
+
+    **payment 소유 원장 — `stock.reservation.result` 사전조건** (`PaymentStatus` **5종** × `readyForPayment`
+    **2종** 전 조합, total function — 3R #4):
+
+    | payload | Payment 상태 | 판정 |
+    |---|---|---|
+    | `reserved=false` | 전 조합 | **allow** — 소비 코드가 **즉시 return** 한다(`PaymentEventConsumer:80-82`). 무해 |
+    | `reserved=true` | `PENDING` + `readyForPayment=false` | **allow** — 대기 중인 게이트 해제다 |
+    | `reserved=true` | `PENDING` + `readyForPayment=true` | **deny** — 이미 해제됐다. 재적용이 `reservationExpiresAt` lease 를 덮어 **만료 판정을 되돌린다** |
+    | `reserved=true` | `APPROVED`·`REFUNDED` | **deny** — 결제가 끝난 뒤 lease 를 덮는다 |
+    | `reserved=true` | `FAILED`·`CANCELLED` | **deny** — 종결 건에 게이트를 다시 연다 |
+    | Payment 부재 · 파싱 실패 · 필드/타입 오류 | — | **deny (fail-closed)** |
+
+    > **상태 가드가 소비 코드에 없다는 것이 deny 의 근거다** — `markReadyForPayment` 는 상태를 보지 않고
+    > `readyForPayment` 와 `reservationExpiresAt` 을 **무조건 덮는다**(`Payment:162-165`). 즉 terminal
+    > 상태에서도 재적용이 통하므로, 막아야 할 쪽은 소비 코드가 아니라 **정책**이다.
+
+    추출 규칙: `payload.orderId`(long) · `payload.reserved`(boolean). **둘 중 하나라도 없거나 타입이 다르면 deny** —
+    소비 코드는 `get(...)` 직접 접근이라 부재 시 NPE 로 터진다.
   - **판정 결과를 allow·deny **양쪽 다** 기록한다 (3R #5)** — deny 는 P19 에서 걸러져 claim(P21)에 도달하지
     않으므로, claim 에만 기록하면 **거부 이력이 남지 않는다**. 판정은 claim 과 **독립된 감사 write** 로 남기고
-    (root 의 `replay_policy` = *정책 식별자 + 버전 + 판정*), allow 인 경우 자식이 상속한다
+    (root 의 `replay_policy` = *정책 식별자 + 버전 + 판정*), allow 인 경우 자식이 상속한다.
+    **감사 write 도 canonical root 잠금 아래에서 직렬화한다 (2R #9)** — 순서를 안 박으면 동시에 들어온
+    deny 가 allow claim 의 root 앵커 UPDATE **뒤에** 정책을 덮어 **root 는 deny 인데 자식은 allow 를 상속한**
+    상태가 남는다. **V-28b·V-28c 는 각각 단독 결과만 보므로 이 경합을 검출하지 못한다** → allow-vs-deny ·
+    deny-vs-deny 동시 요청을 **V-28e** 로 추가한다
 
-**P20.** D8 fence — 발행 직전 최종 검사. `destination_topic == origin_topic` · `destination_partition ==
+**P20.** D8 fence — 발행 직전 최종 검사. digest 는 **`PayloadDigest.sha256Hex`(common, 기존)** 를 쓴다 (C-37). `destination_topic == origin_topic` · `destination_partition ==
 검증된 origin_partition` · `key`·`payload`·`eventId` 가 **reader 가 읽은 원본과 byte 동일** · `record_kind=REPLAY` ·
 **요청 서비스 == 원장 소유 서비스**(타 서비스 원장 행 요청은 거부). 하나라도 어긋나면 outbox 행을 만들지 않는다.
 
@@ -891,10 +1009,22 @@ consumer group 을 만들지 않도록 `assign` 만 쓰고 offset 을 커밋하�
 | `last_replay_attempt_id` · `last_replay_target_group` · **`last_replay_payload_digest`** · `replay_deadline` · `replay_policy` | **canonical root** (상관 앵커는 하나여야 P15 가 찾을 수 있다) |
 
 **잠금 순서는 canonical root → target child 로 고정**한다(P5·P15·purge 와 같은 진입 순서라 순환이 없다).
+
+**선행 산출물 2종 (착수 전 검증 C-32·C-33)**:
+- `findLatestActiveChildForUpdate(rootId)` **신규** — 현 `findChildrenForUpdate` 는 `ORDER BY` 가 없어
+  "가장 최근 활성 자식" 이 **정의되지 않는다**. `ORDER BY id DESC LIMIT 1` + `PESSIMISTIC_WRITE`. 자식이 없으면 target = root
+- `DeadLetterRecord` 에 **`replay_deadline`·`replay_policy` 매핑 2종 추가** — 컬럼은 V8 에 있으나 엔티티에 없다.
+  DDL 은 불필요하고, nullable·DEFAULT 없음 규칙(2b-1)을 그대로 따른다
 **I-1 은 incident 단위로 본다** — root 또는 **활성 자식 중 하나라도** `REQUESTED` 면 종결을 거부한다.
 
 **트랜잭션 순서를 못박는다 (리뷰 1R #3·#4)** — 한 트랜잭션 안에서:
-1. root 를 `SELECT ... FOR UPDATE` 로 잠그고 이어서 target row 를 잠근 뒤 적격성(P19)·fence(P20) 검사
+1. root 를 `SELECT ... FOR UPDATE` 로 잠그고 이어서 target row 를 잠근 뒤 적격성(P19)·fence(P20) 검사.
+   **도메인 aggregate 도 같은 트랜잭션에서 비관적 잠금으로 읽는다 (3R #6)** — P19 의 상태 사전조건은
+   Order/Payment 를 조회하는데, DLQ 원장만 잠그면 **판정과 claim 사이에 도메인 상태가 바뀐다**.
+   `PENDING` 이라 allow 된 직후 다른 트랜잭션이 `CANCELLED` 로 커밋하면 그대로 발행되고,
+   `confirmReservation` 은 **상태 가드 없이** `reservationConfirmedAt`·lease 를 덮으므로(`Order:137-143`)
+   정책이 막으려던 변경이 그대로 재현된다. 잠금 순서는 **DLQ root → target → 도메인 aggregate** 로 고정한다
+   (도메인을 먼저 잡는 경로가 없으므로 순환이 생기지 않는다)
 2. **조건부 claim UPDATE (target row)** — `SET publication_status='REQUESTED' WHERE id=:target
    AND (publication_status IS NULL OR publication_status='PUBLISH_FAILED')
    **AND status IN ('OPEN','ACKED')`**
@@ -913,20 +1043,77 @@ consumer group 을 만들지 않도록 `assign` 만 쓰고 offset 을 커밋하�
    > 커밋한 뒤 replay 가 `publication_status IS NULL` 조건으로 `REQUESTED` 를 기록해 ADR 이 금지한
    > **`REQUESTED` + terminal 조합**이 만들어진다. 초안은 replay 가 먼저인 순서만 막았다.
 3. outbox INSERT (`OutboxEvent.replay(...)`)
-4. root 에 `outbox_event_id` 기록
+4. **target row** 에 `outbox_event_id` 기록
+   > **정정 (2b-4 계획 리뷰 1R #3)**: 초안은 "root 에 기록" 이라 적어 **같은 절의 소유권 표와 모순**이었다
+   > (표는 `publication_status`·`outbox_event_id` 를 target row 소유로 명시한다). 자식이 target 인 재요청에서
+   > root 에 쓰면 reconciler 가 **`REQUESTED` 인 자식의 `outbox_event_id = NULL`** 을 읽고
+   > `"REQUESTED 원장 행에 outbox_event_id 가 없다"` 로그만 남긴 채 **영원히 건너뛴다**
+   > (`DeadLetterPublicationReconciler:63-68`) — 발행 축이 그 자식에서 **영구 미수렴**한다.
+   > 두 축은 **반드시 같은 행**에 있어야 한다.
 > 초안은 `outbox_event_id` 를 조건부 UPDATE 에 넣었는데, 그 값은 **auto-increment 라 INSERT 후에야 존재**한다.
 > 그러면 outbox 를 먼저 만들 수밖에 없고, 경합 패자가 영향 행 0 을 정상 응답으로 돌려주면
 > **먼저 만든 outbox 가 남아 두 번 발행**된다. claim 을 먼저 하고 id 를 나중에 채우는 순서로 바꾼다.
 > 또한 초안에는 **`last_replay_attempt_id`/`last_replay_target_group` 을 쓰는 주체가 없었다** — P15 의 대조가
 > 비교할 정본을 갖지 못했다. claim UPDATE 가 그 둘을 함께 기록한다.
 
-**I-1 가드도 원자화한다 (리뷰 1R #5)**: `resolve`/`discard` 의 종결 UPDATE 자체에
-**`AND (publication_status IS NULL OR publication_status <> 'REQUESTED')`** 를 넣는다.
-순차 검사(`findById` → 엔티티 전이, 현 `DeadLetterEndpoint:68-84`)만 두면 resolve 가 NULL 을 읽은 뒤
-replay 가 `REQUESTED` 를 커밋하고, 그 다음 resolve 가 terminal 을 저장할 수 있다.
-> **`<> 'REQUESTED'` 만 쓰면 안 된다 (2R #1)**: SQL 에서 `NULL <> 'REQUESTED'` 는 **UNKNOWN** 이라
-> `publication_status IS NULL` 인 행 — 즉 **replay 를 한 번도 요청하지 않은 절대다수** — 이 종결되지 않는다.
-> ADR §D6-2b 표는 `NULL` 에서 종결을 **허용**한다. 초안 조건은 그 표와 정면으로 어긋났다.
+**I-1 가드는 잠금 안의 평범한 검사로 둔다 — 단, 2단계로 (정정 — C-31 + 계획 리뷰 1R #4).**
+`DeadLetterTransitionService` 는 `resolve`/`discard` 에서 **`findByIdForUpdate(root)` 로 root 를 먼저 잠그고**
+자식을 그 다음에 잠근다(`:60-88`). replay claim 도 같은 순서로 진입하므로(위 트랜잭션 순서 1) 두 경로는
+**root 행 배타 잠금에서 직렬화**되고, `publicationStatus` 읽기가 이미 잠금 안에서 일어난다.
+따라서 **`resolve`/`discard` 에서** root 와 활성 자식 중 하나라도 `REQUESTED` 면 거부하면 그것으로 원자적이다.
+> **`acknowledge` 는 가드에서 면제한다 (2R #6)**: ADR-0020 I-1 이 금지하는 것은 **terminal resolution** 이고
+> `OPEN → ACKED` 는 terminal 이 아니다(§D6-2b). 세 전이가 같은 `transition` 을 공유하므로(`:37-55`)
+> 공통 precheck 에 가드를 넣으면 **확인(acknowledge)까지 막혀** 기존 멱등 계약이 깨진다. 가드는
+> **전이 종류를 인자로 받아 resolve/discard 에만** 건다.
+> **거부 시 반환을 필드까지 고정한다 (3R #7)**: 예외가 아니라 기존 `Result` 에 **`rejectedReason`(nullable
+> `String`) 1필드를 더해** `Result(rootId, status, changed=false, affectedChildren=0, rejectedReason="…")`
+> 를 돌려준다. 엔드포인트 응답 key 는 **`rejectedReason`** 으로 같은 이름을 쓴다.
+> **`changed=false` 두 경우를 구분하는 것이 계약이다** — ① 이미 terminal 이라 no-op(멱등, `rejectedReason=null`)
+> ② I-1 이 거부(`rejectedReason` 존재). 구분하지 않으면 운영자가 "이미 닫혔다" 와 "닫지 못했다" 를 못 가린다.
+**단 순서가 계약이다 — ① root + 활성 자식을 전부 잠그고 ② 전부 검사하고 ③ 그 다음에만 적용한다.**
+현 `transition` 은 **root 를 전이한 뒤**(`:73`) 자식을 조회하므로, 검사를 행별 `apply` 안에 넣으면
+자식의 `REQUESTED` 를 뒤늦게 발견해 **root 만 닫힌 부분 전이**가 남는다(1R #4).
+
+**reconciler 도 같은 잠금 순서로 편입한다 (1R #4) — 절차를 못박는다 (2R #5)**.
+`findRequestedPublications` 는 `@Lock` 이 없고(`Repository:210`) **root 로 한정하지도 않아** 자식 행을 잠금
+없이 바꾼다. 그대로 두면 JPA dirty-check 가 행 전체를 쓰므로 동시 종결이 커밋한 `RESOLVED` 를
+**`OPEN` 으로 되돌리는 lost update** 가 성립한다. 다만 "root 를 먼저 잠근다" 만으로는 부족하다:
+
+1. **스캔은 엔티티가 아니라 `(targetId, rootId)` projection** 으로 바꾼다. 지금처럼 엔티티를 먼저 적재하면
+   **뒤이은 `FOR UPDATE` 가 잠금만 얻고 영속성 컨텍스트의 인스턴스를 refresh 하지 않는다** — 이 함정은
+   `Repository:130-147` 과 `DeadLetterTransitionService:60-64` 가 이미 명시적으로 피해 둔 것이다
+2. 스캔 결과는 **`id ASC` 정렬만** 유지한다. ~~root 중복 제거~~ → **하지 않는다 (구현 중 정정)**: 한 root 에
+   자식 target 이 여럿일 수 있고 **각각이 자기 발행 결과를 가지므로** root 로 중복 제거하면 그 자식들의
+   settle 이 통째로 누락된다. 교착은 중복 제거가 아니라 **"모든 경로가 root 를 먼저 잠근다"** 가 막고,
+   스캐너가 단일 스레드라 배치 안에서는 동시성 자체가 없다
+3. **incident 1건 = 트랜잭션 1개**. 현재처럼 200건을 한 `@Transactional reconcile()` 로 묶으면 root 잠금이
+   메서드 종료까지 누적돼 종결·replay 가 그동안 막힌다. 잠금 보유시간을 건당으로 자른다.
+   **경계를 만드는 산출물을 명시한다 (3R #8)**: 현재 `@Scheduled`·`@SchedulerLock`·`@Transactional` 이
+   **같은 public 메서드에 함께** 붙어 있고(`:55-60`), 같은 빈의 private 메서드로 옮기면 **self-invocation 이라
+   프록시가 적용되지 않는다**. → **스캐너 빈(`@Scheduled`+`@SchedulerLock`, 트랜잭션 없음)** 과
+   **워커 빈(`@Transactional` public 메서드 1건 처리)** 으로 **분리**한다. `batchSize=200` 배선은 유지한다.
+   **건별 실패 규칙**: 한 건의 예외는 그 건만 롤백하고 **다음 건을 계속 처리**한다(스캐너가 잡아 로깅).
+4. 각 건에서 **root → target 순으로 current read 잠금**한 뒤 settle 하고, **`PUBLISHED`·`PUBLISH_FAILED`
+   어느 쪽으로 settle 하든** root 의 `last_replay_settled_at` 을 **DB 시각(`CURRENT_TIMESTAMP(6)`)으로**
+   기록한다 (drain ⓓ 앵커, §10.1 #6). 재요청마다 갱신된다.
+   > **`PUBLISH_FAILED` 를 제외하면 안 된다 (3R #1, P0)**: poller 는 **broker ack 를 받은 뒤** `markPublished()`
+   > 와 save 를 따로 한다(`OutboxPollingService:90-93`). save 가 실패하고 재시도가 소진되면 **이미 전달된 행이
+   > 최종 `FAILED`** 가 된다 — ADR-0020 §D1 이 명시한 crash window 그대로다. 그러면 ⓐ=0·ⓐ'=0 이고 앵커가
+   > NULL/과거라 **ⓓ 까지 즉시 통과**해 소비 재시도가 도는 중에 롤백이 허용된다. `PUBLISH_FAILED` 는
+   > "발행되지 않았다" 의 증명이 아니라 **"발행 여부를 모른다"** 이므로 보수적으로 앵커를 찍는다.
+
+> **초안(1R #5)의 조건부 UPDATE 안을 기각한다.** 그 안은 "순차 검사라 경합한다" 를 근거로 삼았는데,
+> 근거가 된 코드 위치(`DeadLetterEndpoint:68-84`)는 **2b-1 이 `DeadLetterTransitionService` 로 옮기면서
+> 잠금을 선행시킨 뒤라 더 이상 그렇지 않다** — 초안이 옛 배선을 인용했다. 조건부 UPDATE 로 가면
+> 2R #1 이 잡은 `NULL <> 'REQUESTED'` = **UNKNOWN** 3값 논리 함정(= replay 를 요청한 적 없는 절대다수가
+> 종결 불가)을 매 조건마다 다시 피해야 하고, 엔티티 전이 가드(사유 필수·상태 전이 규칙)를 **우회하는
+> 두 번째 종결 경로**가 생긴다 — `DeadLetterEndpoint` javadoc 이 명시적으로 막아둔 바로 그것이다.
+>
+> **대신 검증이 부담을 진다**: "조건이 SQL 에 있다" 는 관측이 아니므로 **V-13**(네 상태 전수 — `NULL`
+> 포함 앞 셋은 종결 성공, `REQUESTED` 만 거부)과 **V-14**(latch 로 두 순서 각각 경합)가 그대로 판정한다.
+> 여기에 **변이 1종을 추가**한다: `DeadLetterTransitionService` 의 `findByIdForUpdate` → `findById`
+> (잠금 선행 제거). 이 변이에서 **V-14 가 red** 가 되어야 "잠금이 원자성의 근거" 라는 주장이 관측된 것이다 —
+> red 가 되지 않으면 이 단순화는 근거 없이 통과한 것이므로 조건부 UPDATE 안으로 되돌린다.
 
 **P22.** `original_timestamp` NULL 비율 **실측 증적** (정정 — 리뷰 1R #13).
 ADR §D5-2 가 미측정이라고 지적한 것은 **네 실제 원장 DB 의 기존 행 분포**다. fixture 를 세는 것은 자기대조라
@@ -934,7 +1121,11 @@ ADR §D5-2 가 미측정이라고 지적한 것은 **네 실제 원장 DB 의 �
 replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evidence/` 에 남긴다.
 **운영 데이터가 0건이면 "표본 0 — 미측정" 이라고 그대로 기록한다** (0건을 "NULL 0%" 로 적지 않는다).
 
-**P23.** backfill 마이그레이션 (D3·D6-3 3단계) — **order V11 · product V9 · payment V9 · notification V7**
+**P23.** backfill **+ drain 앵커 DDL** 마이그레이션 — **order V11 · product V9 · payment V9 · notification V7**
+> **DDL 이 추가됐다 (2R #1·#2)**: 같은 파일에 `ALTER TABLE dead_letter_records ADD COLUMN
+> last_replay_settled_at DATETIME(6) NULL`(nullable · DEFAULT 없음, 2b-1 규칙 그대로)을 넣는다.
+> 파일을 쪼개면 Flyway 버전이 하나 더 필요하고 2b-4 는 마지막 PR 이라 배포 경계를 나눌 이유가 없다.
+> 엔티티 매핑 1종과 **reconciler 의 settle 시 기록**은 P21 이 함께 넣는다.
 (리뷰 2R #2 로 **V10/V8/V8/V6 에서 밀어냈다** — 그 번호는 2b-3 P14(d) 의 digest 마이그레이션이 쓴다).
 `UPDATE dead_letter_records SET root_record_id = id WHERE root_record_id IS NULL` ·
 `UPDATE outbox_events SET record_kind='DOMAIN' WHERE record_kind IS NULL` + **NULL 잔여 0 검증**(잔여가 있으면 실패).
@@ -943,6 +1134,16 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 
 **P24.** 문서 + **replay 개방 후 롤백 절차**(신규 — 리뷰 1R #15).
 - `docs/runbooks/dlq-recovery.md` **§6 재작성**("재발행 — 현재 불가" → 절차·금지축·fence·재개방)
+- **고착 `REQUESTED` 의 해제 경로를 이 PR 에 포함한다 (3R #3)** — outbox 행이 강제 삭제되면 reconciler 는
+  **강등하지 않고 영원히 건너뛰므로**(`DeadLetterPublicationReconciler:70-75`, V-21d 가 계약으로 보존)
+  ⓐ' 가 **스스로 0 이 될 수 없고 롤백이 영구 차단**된다. fail-closed 가 아니라 **탈출구 없는 교착**이다.
+  → `DeadLetterEndpoint` 에 **`action=publication-unknown`** 을 추가한다: 운영자가 broker 좌표와 소비
+  결과를 확인한 뒤 **actor + 사유 필수**로 `REQUESTED` 를 **`PUBLISH_UNKNOWN`**(신규 `PublicationStatus`)
+  으로 옮긴다. 직접 SQL 은 금지(P25 lint 가 이미 검사한다). 이 상태는 drain ⓐ' 에서 제외되지만
+  **사건은 여전히 미결**이고, **ⓓ 앵커는 이때도 찍는다**(발행 여부를 모르므로).
+  > **§10 R7 을 2b-4 로 당긴다** — R7 은 이 상태값 신설을 "후속 새 ADR" 로 미뤘는데, 그러면 이번 PR 이
+  > **빠져나올 수 없는 운영 상태를 만들고 끝난다**. 상태값 신설은 ADR 사안이므로 **P26 의 ADR-0022 가
+  > 함께 결정**한다(별도 ADR 불필요 — 같은 롤백/drain 계약의 일부다).
 - **§6-R 롤백 절차**: ① 진입점 차단 → ② **drain 4조건 preflight**(아래) → ③ 4조건이 모두 만족될 때까지
   **replay-aware poller 를 유지** → ④ 그 후에만 구버전 이미지 복귀.
   **③ 을 건너뛰면 구 poller 가 `event_type='__replay__'` 를 토픽으로 써서 발행이 깨진다**(P10 sentinel 근거)
@@ -961,31 +1162,60 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 >
 > 넷 다 **3b 가 답할 수 없는 질문**이다(진입점·정본·배포 wrapper가 전부 2b-4 소관). 그래서 **3b 는 drain 조건을
 > "넷" 이라고 규정만 하고**, ⓐ의 테이블 소유·ⓓ의 식과 기준시각·preflight 진입점·ADR 처분은 **2b-4 계획 착수 시
-> 결정한다**. 아래 §미해결에 이관 항목으로 남긴다.
+> 결정한다**. → **넷 다 확정됐다: §10.1 (2026-09-11)**.
 >
 > **3b 가 지금 지는 책임은 하나다**: 이 PR 은 **소비 측만** 바꾸므로, 배포는 **4서비스 전부 3b 를 받은 뒤에야
 > 2b-4 진입점을 켠다**. 한 서비스라도 구버전이면 그 서비스의 재실패가 `pc-replay-*` 를 무시하고 독립 root 가 된다.
 - **절차를 강제하는 수단을 함께 만든다 (2R #9)** — runbook 은 프로세스 기동을 막지 못하므로 문서만으로는
   V-28 이 false-green 이다:
-  1. **kill-switch** `app.dead-letter.replay.enabled`(기본 true, base `application.yml` 소유 — ADR-0007) — false 면
+  1. **kill-switch** `app.dead-letter.replay.enabled`(**base 기본값 `false`** — ADR-0007 상 base `application.yml` 소유) — false 면
      `action=replay` 가 거부된다. **즉시 반영되지 않는다 (3R #7)** — Spring 정적 설정이라 ConfigMap 갱신 +
      **롤링 재기동**이 필요하다(현 `k8s/base/services/*/configmap.yml` 은 `SPRING_PROFILES_ACTIVE` 만 담고
      Deployment 가 `envFrom` 으로 읽는다). runbook 은 "설정 변경 → 재기동 → 반영 확인" 3단계를 그대로 적는다.
-     그 사이의 요청 차단은 **운영 규율**이지 코드 강제가 아님을 명시한다
-  2. **pre-deploy preflight** `scripts/replay-drain-preflight.sh`(신규) — **구 이미지 배포 명령 앞단**에서
-     4 DB 를 조회해 `record_kind='REPLAY' AND status='PENDING'` 이 하나라도 있으면 **exit≠0**.
+     그 사이의 요청 차단은 **운영 규율**이지 코드 강제가 아님을 명시한다.
+     > **기본값을 `true` → `false` 로 뒤집는다 (정정 — 계획 리뷰 1R #6)**: 기본 true 면 **새 Pod 가 Ready 가
+     > 되는 순간** backfill·증적(P22)·리허설 이전에 replay API 가 열린다. 게다가 계획 스스로 "ConfigMap 변경은
+     > 재기동이 필요하다" 고 적었으므로, **열린 것을 닫는 데 롤링 재기동이 또 든다**. 닫힌 채로 배포하고
+     > 준비가 끝난 뒤 **의도적으로 여는** 방향이 되돌리기 비용이 낮다.
+  1b. **ConfigMap 에 키가 없다 (C-40)** — `k8s/base/services/*/configmap.yml` 은 `SPRING_PROFILES_ACTIVE`
+     하나뿐이다. 4개 ConfigMap 에 `APP_DEAD_LETTER_REPLAY_ENABLED` 를 **추가하는 것까지 P24 범위**다.
+     없으면 runbook 3단계가 첫 단계부터 실행 불가다
+  2. **pre-deploy preflight** `scripts/replay-drain-preflight.sh`(신규) + **래퍼 `scripts/deploy-overlay.sh`**
+     (preflight → `kubectl apply -k <overlay>`) — **앱 overlay 배포만 감싼다 (C-39)**. 4 DB 를 조회해
+     **아래 4조건을 SQL/AdminClient 로 그대로 검사**한다 (2R #7 — 표현이 §10.1 과 갈라져 있었다):
+     - **ⓐ** `SELECT COUNT(*) FROM outbox_events WHERE record_kind='REPLAY' AND status='PENDING'` = 0
+     - **ⓐ'** `SELECT COUNT(*) FROM dead_letter_records WHERE publication_status='REQUESTED'` = 0
+     - **ⓓ** `SELECT MAX(last_replay_settled_at) FROM dead_letter_records` 가 **NULL 이거나**
+       `+ (Σbackoff 36s + handler 실행 상한 + 마진) < NOW()`
+     - **ⓑⓒ** `last_replay_target_group` 에 등장한 group + 해당 `.dlq` intake group 의 lag = 0
+     넷 다 **4 DB 각각**에서 통과해야 한다.
      - 배포 대상 이미지가 **replay-aware 인지 판별**해, aware 면 통과시키고 **구 이미지만** 막는다
      - DB 접속·권한 실패는 **fail-closed**(막는다). 4개 격리 DB 각각의 접속 정보가 필요하다
      - `scripts/rollout-convergence-gate.sh` 는 **배포 후** 수렴 게이트라 이 역할을 대신할 수 없다
-- **ADR-0020 Update Log 기재 (3R #2)** — D5-4 의 상관 대조 항목 `record_kind=REPLAY` 를 **root 의 durable
-  fingerprint 4값 대조로 대체**한 것은 계약 변경이다(수명 경쟁 때문에 outbox 를 정본으로 쓸 수 없다는 D5-4
-  자신의 논거에서 따라 나온다). ADR 본문은 immutable 이므로 **Update Log 에 대체 사유와 범위를 남긴다**
-- `StockReservationService` javadoc 의 "DLQ 재발행(새 eventId)" 을 **ADR-0012 D5 우회 경로**로 정정
+     - **문서 교체 범위는 운영 절차 2곳뿐이다 (C-39)** — `docs/02-architecture.md` 의 배포 순서 4단계 중
+       **앱 overlay 단계**(minikube·GKE)와 `k8s/overlays/gke/README.md`. ADR-0005/0006(immutable)·
+       `docs/learning/`·`PHASE3.md`·`TASKS-archive` 의 `apply -k` 는 **이력이므로 건드리지 않는다**.
+       따라서 lint 도 그 2개 파일만 본다 — "레포 전체 raw apply 0건" 은 성립하지 않는다
+     - **강제력의 한계를 명시한다**: 운영자가 래퍼를 건너뛰고 `kubectl apply -k` 를 직접 치면 우회된다.
+       V-28 은 **래퍼가 exit≠0 임**을 확인하고, "우회 불가" 를 주장하지 않는다
+- ~~**ADR-0020 Update Log 기재 (3R #2)**~~ → **취소 (§10.1 #8)**. D5-4 대체는 **ADR-0021 §D1 이 이미
+  Partially Supersedes 로 처리**했으므로 중복이고, `adr/README.md:13` 이 계약 변경의 Update Log 우회를
+  금지한다. 2b-4 가 만드는 계약은 **P26 의 ADR-0022** 가 받는다
+- "DLQ 재발행(새 eventId)" javadoc 을 **ADR-0012 D5 우회 경로**로 정정 — 대상은 **3곳 (C-41)**:
+  `StockReservationService:196` · `StockReservationRepository:35` · `PHASE4.md:283`
 - `docs/progress/PHASE4.md` 동일 서술 정정 · `docs/05-data-design.md`(notification outbox·신규 컬럼) ·
   `docs/02-architecture.md` notification 패키지 트리 · `grafana-alerts.yml` 주석(집계 단위 = incident, V14)
 
-**P25.** lint 확장 2종.
-- `dead-letter-schema-parity-lint` — 4 DB `dead_letter_records` 신규 컬럼 + 4 DB `outbox_events` replay 컬럼 parity
+**P25.** lint 확장 2종. **(정정 — 착수 전 검증 C-35·C-36)**
+- ~~`dead_letter_records`/`outbox_events` 컬럼 parity~~ → **이미 있다**. 2b-3a 의 (2b)·(4) 검사가
+  `db/migration` 전체를 합성한 **최종 스키마**를 대조하므로 신규 DDL 은 자동으로 걸린다
+- **backfill DML parity (신설 — 여기가 실제 구멍이다)**: backfill 은 `UPDATE` 뿐인 **DML** 이라 스키마를
+  바꾸지 않는다 → **4벌이 갈라져도 최종 스키마 대조는 전부 green** 이다. ④-c-2b-1 glob · 2b-2 java 목록 ·
+  2b-3a 파일 목록에 이은 **같은 구멍 네 번째**. 검사: 서비스당 정확히 1파일 · 4벌 **원문 동일** ·
+  `WHERE ... IS NULL` 조건 존재(조건 없는 전량 UPDATE 금지). self-test 에 **한 벌만 바꾼 fixture** 를 넣어
+  그 검사가 실제로 red 가 되는 것까지 고정한다
+- 신규 per-service java 는 **별도 검사가 필요 없다 (C-36)** — `DLQ-PARITY-014` 가 미등재 복제본을 자동
+  검출한다. `java_files` 목록에 더하기만 한다
 - **진입점 단일성 검사**(N14) — replay 를 개시하는 코드가 `DeadLetterEndpoint` 밖에 없고, runbook·리허설 스크립트에
   `UPDATE dead_letter_records SET status` 류 직접 상태 변경이 **0건**임을 정적으로 검사한다
   (④-c-2a 에서 실제로 났던 결함이다)
@@ -1011,9 +1241,9 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 | **V-10** | N4 | `original_timestamp = now + 4m` / `now + 6m` 두 케이스, 고정 Clock | 4m → deadline == `now + 7d`(clamp 적용, 연장 없음) · 6m → **거부**. clamp 를 `now+skew` 로 되돌리면 4m 케이스가 `now+7d+4m` 이 되어 red |
 | **V-11** | N4 | 재발행 → 재실패 → 자식 생성 → 재요청 | ① root 의 `replay_deadline` 이 **DB 에 영속**되고 2회차 claim 이 그 값을 **덮어쓰지 않는다**(`COALESCE`) ② 자식이 root 값을 **복사**했다. 두 단언을 분리한다 — 합치면 transient 계산으로도 green (3R #4) |
 | **V-12** | N5 | root 를 `publication_status='PUBLISHED'` 로 두고 backlog 조회 | `dlq.backlog` == 1, `dlq.oldest.age` > 0. 조기 종결 코드를 넣으면 0 이 되어 red |
-| **V-13** | N6 | `publication_status` **네 상태 전수**(`NULL`·`PUBLISHED`·`PUBLISH_FAILED`·`REQUESTED`)에 `resolve`/`discard` | 앞 셋은 **성공**, `REQUESTED` 만 거부. 조건을 `<> 'REQUESTED'` 로 되돌리면 **`NULL` 행이 종결 불가**가 되어 red (2R #1) |
+| **V-13** | N6 | `publication_status` **네 상태 전수**에 `resolve`/`discard` + **`acknowledge` 를 root `REQUESTED`·활성 자식 `REQUESTED` 두 경우에 각각** 실행 | resolve/discard 는 앞 셋 성공·`REQUESTED` 만 거부(`changed=false`·`affectedChildren=0`·**`rejectedReason` 존재**·모든 행 불변을 **별도 트랜잭션 조회**로 단언). **`acknowledge` 는 `REQUESTED` 에서도 성공한다** — 공통 precheck 에 가드를 넣어 acknowledge 까지 막으면 red (3R #7). **멱등 no-op(`rejectedReason=null`)과 I-1 거부(`rejectedReason` 존재)의 구분**도 함께 단언한다 |
 | **V-13b** | N4 | `now = deadline - 1ms` / `= deadline` / `= deadline + 1ms` 고정 Clock | 앞은 허용, 뒤 둘은 **거부**. 만료 검사를 제거하면 red (2R #3) |
-| **V-14** | N6 | replay 와 resolve 를 **latch 로 두 순서 각각** 실행 — ① replay 선점 ② **resolve 선점** | 어느 순서에서도 `REQUESTED` + terminal 조합이 생기지 않는다. claim 의 `status IN ('OPEN','ACKED')` 를 빼면 **② 에서만** red (2R #2) |
+| **V-14** | N6 | replay 와 resolve 를 **latch 로 두 순서 각각** 실행 — ① replay 선점 ② **resolve 선점** | 어느 순서에서도 `REQUESTED` + terminal 조합이 생기지 않는다. claim 의 `status IN ('OPEN','ACKED')` 조건을 빼면 ②가 red. **추가 변이 (2b-4, C-31)**: `DeadLetterTransitionService` 의 `findByIdForUpdate` → `findById` 로 잠금 선행을 제거하면 **red 가 되어야 한다** — 이것이 I-1 을 조건부 UPDATE 없이 세운 근거다 |
 | **V-15** | N7 | root 를 `RESOLVED` 로 닫은 **직후** 늦은 자식 유입 | root 가 `OPEN` 으로 재개방 + `reopened_at` 기록. 자식은 **삭제·거부되지 않는다**. 알림은 **commit 후 callback 1회 시도**만 단언한다 |
 | **V-15b** | N7 | 재개방 commit 직후 **알림 callback 실패**(또는 프로세스 중단) | 원장의 재개방은 **유지**되고 알림 **0회가 허용**된다 (3R #8 — 기존 best-effort 계약 `DeadLetterRecorder:20-23` 과 정합. "정확히 1회" 를 요구하면 계약이 두 개가 된다) |
 | **V-16** | N8 | 같은 사건을 **3회** replay → 3회 재실패 (**첫 발행이 성공한 뒤의 2·3회차 포함**) | 원장 행 4(root+자식3), **backlog = 1**. root 종결 → 0. target row 분리를 되돌리면 **2회차 claim 이 거부되어** red (3R #1) |
@@ -1032,15 +1262,21 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 | **V-25** | N15 | notification 원장 행 1건으로 replay 개시 | notification `outbox_events` 에 replay 행 생성 → 원본 토픽으로 발행 |
 | **V-26** | N16 | `record_kind` 를 채우지 않는 **팩토리 우회 INSERT** | 아키텍처 테스트가 실패한다. **런타임 DB 제약이 아님을 명시**(§10 R1) |
 | **V-27** | D1 | ack 후 해당 사이클의 **두 save 모두** 실패 주입 (실제 DB+Kafka) | 행이 `PENDING` 으로 남고, 복구 후 다음 poll 에서 **broker 레코드 2개** + 같은 `eventId` 의 `processed_events` 증가분 **1** |
-| **V-28** | 롤백 | **2b-4** — drain 조건을 위반한 상태에서 **구 이미지 배포 명령을 실제로 실행** | **preflight 게이트가 배포를 실패시킨다**(문서 절차 확인이 아니다 — 2R #9). **조건의 수·판정식·preflight 진입점은 2b-4 착수 시 확정한다**(4R #5~#8 — 3b 는 답할 수 없다). kill-switch 로 진입점을 끈 뒤 drain 이 끝나면 통과 |
+| **V-28** | 롤백 | **2b-4** — drain 조건을 위반한 상태에서 **래퍼(`scripts/deploy-overlay.sh`)로 구 이미지 앱 overlay 배포를 실제로 실행** | **래퍼가 exit≠0 로 배포를 실패시킨다**(문서 절차 확인이 아니다 — 2R #9). 판정식·진입점은 §10.1 확정. kill-switch 로 진입점을 끈 뒤 drain 이 끝나면 통과. **"raw `kubectl apply -k` 우회 불가" 는 단언하지 않는다**(C-39) |
 | **V-28b** | N3 | `replay_policy` **allow 판정** 기록 | root 에 *정책 식별자+버전+판정* 이 남고 자식이 상속한다 |
+| **V-28d** | N3 | **2b-4** — 사전조건을 **두 소유 서비스 각각** 관통: order = `reserved` × `OrderStatus` **8종** 전 조합 · payment = `reserved` × `PaymentStatus` **5종** × `readyForPayment` **2종** 전 조합 · **fail-closed 3종**(대상 부재·파싱 실패·필드/타입 오류)을 **각각 독립 ID 로** · **eventType 불일치 1종** | 각 조합이 표대로 갈린다. adapter 제거·상태 검사 제거·ready flag 검사 제거 **각각이 red**. 정책 키에서 `ledgerOwner` 축을 빼면 payment 관통이 red(2R #3) |
 | **V-28c** | N3 | `replay_policy` **deny 판정**(`order.created` 등) | **거부 이력이 남는다**. claim 에만 기록하는 구조로 되돌리면 deny 는 claim 에 도달하지 않아 **아무 기록도 없어** red (3R #5) |
+| **V-28e** | N3 | **2b-4** — 같은 root 에 **allow 요청과 deny 요청을 동시** 실행(latch) · **deny 2건 동시** | root 의 `replay_policy` 판정과 자식 상속이 **일치**한다. 감사 write 를 root 잠금 밖으로 빼면 **root=deny 인데 자식=allow 상속** 조합이 만들어져 red (2R #9) |
+| **V-28f** | N3 | **2b-4** — 정책 레지스트리 **completeness**: `DlqTopology.businessSubscriptions` 의 **21 소비쌍** 대조 | 모든 쌍에 정책이 **정확히 하나**, **여분 정책 0**. 엔트리 1개를 지우면 red, 존재하지 않는 쌍을 더해도 red (3R #5). 허용 eventType 집합이 빈 엔트리는 **부팅 실패**로 드러난다 |
 | **V-30** | D3 | `record_kind IS NULL` 인 outbox 행(구버전 writer 흉내)을 fixture 로 넣고 poll | **도메인 경로로 발행된다**. 분기를 `record_kind = 'DOMAIN'` 로만 좁히면 그 행이 영원히 미발행으로 남아 red. expand 단계의 NULL 해석(D3)을 직접 관측하는 유일한 행 |
 | **V-31** | C-5 | parity 대조기(P9-b) **self-test** — ① notification `outbox_events` 에서 컬럼 1개 제거 ② P8 신설 컬럼 1개에 `DEFAULT 'DOMAIN'` 부여 ③ 신설 컬럼 1개를 `NOT NULL` 로 ④ `OutboxEvent.java` 한 벌만 1바이트 변경 ⑤ `OutboxEventStatus` 를 order 판본으로 notification 에 복사 | 4종은 red, ⑤는 **green**(2집합 계약). 대조 축을 하나 빼면 해당 fixture 가 통과해 self-test 가 red. **정상 트리에서 lint 가 green 임도 함께 확인**한다 — 항상 red 인 lint 는 검사가 아니다 |
 | **V-32** | D2 | notification `outbox_events` 에 **도메인 행 1건을 fixture 로 직접 INSERT** 후 poller 사이클 실행 (실제 DB + Kafka) | broker 에 해당 레코드가 도착하고 행이 `PUBLISHED` 로 전이. **poller 빈 배선을 지우면 red**. (replay 행은 진입점이 없어 이 PR 에서 만들 수 없으므로, 발행 표면이 실제로 도는지는 도메인 행으로 관측한다 — V-25 로 미루면 이 PR 이 "배선됐다" 수준의 판정으로 끝난다) |
 | **V-33** | D6-4 | 원장 행 `publication_status='REQUESTED'` + 연결된 outbox 행을 **① `PUBLISHED` ② `FAILED` ③ `PENDING`** 세 상태로 두고 reconciler 실행 | ①→`PUBLISHED` ②→`PUBLISH_FAILED` ③→**전이 없음**(`REQUESTED` 유지). ③을 빼고 "REQUESTED 가 아니면 전이" 로 되돌리면 **발행 중인 건이 조기 종결**되어 red |
 | **V-35** | N10 | **2b-4** — P21 claim 을 실제로 거쳐 root 에 digest 가 기록된 뒤, 그 재발행분이 재실패해 P15 가 상관한다 | fixture 주입 없이 **진입점→발행→재실패→상관** 전 구간이 한 번 돈다. 2b-3 은 digest 를 fixture 로만 심으므로 **writer 누락(2R #1)이 이 행 없이는 관측되지 않는다** |
-| **V-29** | N17 | **변이 목록 전수** — §6 이 지목한 각 변이(**V-1~V-35 전체**, `V-19a~V-19o` 16 ID·17 실행 포함). 범위를 리터럴로 적지 않고 **이 표에서 유도**한다 (4R #2 — 초안의 `V-1~V-28b` 는 V-28c·V-30~V-35·신규 V-19 변형을 전부 빠뜨렸다) | 각 변이가 red → 복원 후 green. 변이 목록과 red 테스트 id 를 PR 본문에 **열거**한다. 자기대조 0건 |
+| **V-36** | N14 | **2b-4** — backfill DML parity self-test: 4벌 중 **한 벌만** `WHERE` 조건을 지운 fixture · 한 벌만 파일을 2개로 쪼갠 fixture | 각각 red. **최종 스키마 대조는 두 fixture 모두 green** 임을 같은 self-test 에서 함께 보여 C-35 의 구멍이 실재했음을 고정한다 |
+| **V-37** | 롤백 | **2b-4** — drain **4조건을 하나씩만** 위반한 4종 + **outbox 행 강제 삭제(V-21d 상태)** + **7일 적체된 PENDING replay 를 preflight 직전에 발행** + **handler 실행이 36초를 넘는** 케이스 | 각 실행이 **위반 조건을 정확히 지목**하며 exit≠0. 뒤 3종이 핵심이다(2R #1·#2) — **강제 삭제분은 ⓐ' (`publication_status='REQUESTED'`)가 잡고**, 적체 PENDING 은 ⓐ 가, 긴 handler 는 ⓓ 의 실행 상한 마진이 잡는다. 기준을 `created_at` 으로 되돌리면 뒤 2종이 **green 으로 통과**해 red. **DB·브로커 접속 실패는 fail-closed**(exit≠0)를 5번째로 확인 · **ack 성공 후 status save 실패 → 재시도 소진 → 최종 `PUBLISH_FAILED`**(3R #1 — 앵커를 `PUBLISHED` 에만 찍으면 green 으로 통과해 red) · **고착 `REQUESTED` 를 `publication-unknown` 으로 해제한 뒤 drain·롤백이 실제로 가능해지는 끝까지**(3R #3) · **앱 시계 ±`clockSkewBudget` 변이**(3R #2 — 식에서 skew 를 빼면 조기 통과해 red) |
+| **V-38** | 롤백 | **2b-4** — `app.dead-letter.replay.enabled` **`false`(base 기본값)** 로 기동 후 `action=replay` 요청 · 이어서 **`true` 로 덮어** 같은 요청 | false → 거부되고 **outbox 행이 생기지 않는다**(DB 조회). true → 통과. **positive replay 테스트(V-16·V-25·V-35 등)는 전부 `enabled=true` 를 명시적으로 준다** — 기본값이 false 로 뒤집혔으므로 명시하지 않으면 진입점에서 막혀 false-red 가 된다(2R #8). ConfigMap 은 **문자열 `"false"`** 로 커밋하고 렌더링·`envFrom` 바인딩을 함께 확인한다. **설정 변경이 재기동 없이 반영된다고 단언하지 않는다** |
+| **V-29** | N17 | **변이 목록 전수** — §6 이 지목한 각 변이. **정본은 이 표를 파싱해 얻은 명시 ID 집합**이며 **`{V-34}` 는 제외 집합으로 고정**한다(철회된 미사용 ID). 범위 문자열(`V-1~V-38`)은 **설명일 뿐 판정 입력이 아니다** — 연속 구간으로 해석하면 V-34 때문에 **영구 false-red** 가 되고, 설명으로만 두면 신규 행 누락을 막는다는 주장이 검증되지 않는다 (2b-4 계획 리뷰 1R #8). `V-19a~V-19o` 16 ID·17 실행 포함 | 각 변이가 red → 복원 후 green. 변이 목록과 red 테스트 id 를 PR 본문에 **열거**한다. 자기대조 0건 |
 
 **모듈별 그린 기준**: 각 PR 에서 `common` + 변경된 서비스 모듈 전체 테스트 0 실패 +
 **`scripts/e2e/saga_e2e.py` 그린**(각 PR 이 `EXPECTED_MIGRATIONS` 를 함께 갱신하므로 이 게이트가 실제로 돈다).
@@ -1049,7 +1285,7 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 
 ## 7. 완료 조건
 
-1. §1 의 **N1~N17 이 전부 거짓**임이 §6 의 **V-1~V-35**(V-13b·V-15b·**V-19a~V-19o**·V-21b·V-21c·V-21d·V-28b·V-28c·**V-35** 포함)로 확인된다.
+1. §1 의 **N1~N17 이 전부 거짓**임이 §6 표의 **명시 ID 전수**(`V-34` 제외 — 철회)로 확인된다. 2b-4 신설분은 **V-28d·V-36·V-37·V-38** 이다.
    > **ID 충돌 해소 (3R #7 → 4R #4 로 방향 정정)**: `V-30` 이 **두 곳에 배정**돼 있었다 — ① `record_kind IS NULL` 호환성 · ② P21 진입점 관통.
    > 3R 은 ①을 `V-34` 로 옮겼는데 **그게 틀렸다** — ①은 ④-c-2b-2 에서 **이미 머지된 테스트**가 `V-30` 이라는 이름으로
    > 들고 있다(`OutboxReplayPublicationIntegrationTest:44·122`). 계획서만 고치면 코드와 갈라진다.
@@ -1063,12 +1299,14 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
    (수렴 판정 — 건수 추세로 종료하지 않는다)
 3. `docs/runbooks/dlq-recovery.md` §6 이 **실행 가능한 절차**로 재작성되고 **§6-R 롤백 절차**를 포함하며,
    리허설이 **공개 진입점만** 사용한다 (직접 SQL 상태 변경 0 — ④-c-2a 재발 방지, P25 lint 로 강제)
-4. `dead-letter-schema-parity-lint` 가 4 DB 신규 컬럼 parity 를 강제한다.
+4. `dead-letter-schema-parity-lint` 가 4 DB 신규 컬럼 parity **와 backfill DML parity**(2b-4 P25, C-35)를 강제한다.
    **각 PR 은 `bash scripts/dead-letter-schema-parity-lint.sh` 본실행과 `--self-test` 를 모두 통과해야 한다**
    (리뷰 1R #14 — `DLQ-PARITY-014` 는 4벌이 **이미 동일할 때만** 목록 누락을 신고하므로, 목록에 이미 있는 파일을
    고칠 때는 본실행이 유일한 방어선이다)
 5. `original_timestamp` NULL 비율 증적이 **실제 원장 집계**로 남는다(표본 0이면 "미측정" 으로 기록).
-   비율이 높으면 **가용성 손실 수용 기준**을 ADR-0020 Update Log 에 기록한다
+   비율이 높으면 **가용성 손실 수용 기준**을 **ADR-0022 에 기록**한다 (정정 — §10.1 #8: 수용 기준은
+   트레이드오프 판단이라 `adr/README.md:13` 상 Update Log 로 갈 수 없다)
+6. **ADR-0022 가 Accepted 로 존재**하고, §10.1 의 결정 4건과 그 **기각 대안**이 본문에 남는다 (P26)
 
 ---
 
@@ -1085,8 +1323,9 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 > **단계별 `EXPECTED_MIGRATIONS`** (리뷰 2R #2): 2b-1 후 `8/6/6/4` → 2b-2 후 `9/7/7/5` →
 > **2b-3 후 `10/8/8/6`** → 2b-4 후 `11/9/9/7`. 갱신은 **4회**다(2b-1·2b-2·**2b-3**·2b-4).
 | `user-service` | **무변경** (Kafka consumer 없음) |
-| scripts | `scripts/e2e/saga_e2e.py` `EXPECTED_MIGRATIONS` **4회 갱신**(2b-1 · 2b-2 · **2b-3** · 2b-4) · lint 2종 + **`dead-letter-schema-parity-lint.sh` 에 `outbox_events` 축 확장**(P9-b) |
-| docs | runbook §6 + §6-R · 05-data-design · 02-architecture · PHASE4 · grafana-alerts 주석 · **ADR-0012 D1 표 + Update Log**(P9-c, 2b-2 에서 선행) |
+| scripts | **2b-4 신규 2종**: `replay-drain-preflight.sh` · `deploy-overlay.sh`(래퍼). `scripts/e2e/saga_e2e.py` `EXPECTED_MIGRATIONS` **4회 갱신**(2b-1 · 2b-2 · **2b-3** · 2b-4) · lint 2종 + **`dead-letter-schema-parity-lint.sh` 에 `outbox_events` 축 확장**(P9-b) |
+| `k8s` | **2b-4**: `base/services/*/configmap.yml` 4개에 kill-switch 키 추가, 값은 문자열 `"false"` (C-40 · 2R #8 — 현재 `SPRING_PROFILES_ACTIVE` 뿐) |
+| docs | runbook §6 + §6-R · 05-data-design · 02-architecture(**배포 명령 → 래퍼**, C-39) · PHASE4 · grafana-alerts 주석 · `k8s/overlays/gke/README.md` · **ADR-0022 신설**(P26) · **ADR-0012 D1 표 + Update Log**(P9-c, 2b-2 에서 선행) |
 
 ---
 
@@ -1095,7 +1334,14 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 1. **2b-1 배포** → 신규 컬럼 nullable, 기존 미결 집계 불변(V-18) 확인
 2. **2b-2 배포** → 구버전 writer 소멸 확인 (`record_kind IS NULL` 신규 유입이 멈추는지)
 3. **2b-3 배포** → 재실패 상관·재개방 경로 성립. **replay 는 아직 개시 불가**(진입점 없음)
-4. **2b-4 배포 + backfill 실행** → NULL 잔여 0 확인 → 첫 replay 를 **리허설**로 수행하고 증적을 남긴다.
+4. **2b-4 배포** — **kill-switch 가 `false` 인 채로** 뜬다(기본값). 순서 (1R #6 · 2R #8):
+   ① 4서비스 배포 — **backfill 은 Pod 기동 중 Flyway 가 실행한다**(`spring.flyway.enabled: true`)이므로
+   "배포 후 별도 실행" 단계가 아니다 → ② **Ready 후 NULL 잔여 0 검증**(마이그레이션 자체의 검증 구문 +
+   외부 조회 둘 다) → ③ **V-38 로 "닫혀 있음" 확인**(`action=replay` 거부 + outbox 행 0) →
+   ④ P22 증적 수집 → ⑤ ConfigMap `"true"` + **롤링 재기동** → ⑥ V-38 재확인(열림) →
+   ⑦ 첫 replay 를 **리허설**로 수행하고 증적을 남긴다.
+   **진입점은 4서비스 전부 2b-3b 를 받은 뒤에 켠다** — 한 서비스라도 구버전이면 그 서비스의 재실패가
+   `pc-replay-*` 를 무시하고 독립 root 가 된다(2b-3b 가 진 책임의 짝).
    `NOT NULL` contract 는 수행하지 않는다(§10 R1)
 
 1~3 단계는 앞 단계만 배포된 상태에서 정지 가능하다. **4 단계 이후의 롤백은 P24 §6-R 절차를 따른다** —
@@ -1113,8 +1359,26 @@ replay 행이 남은 채 구버전으로 내려가면 안 된다.
 | **R4** | `replay_policy` 정책의 **장기 운영 정밀화** | 레지스트리·default-deny·기록/상속은 P19·P21 이 만든다. **초기 정책표(토픽별 allow/deny + 사전조건)는 2b-4 착수 전에 확정**하며, 최소 1개 토픽은 실제 도메인 상태 조회를 거친다(2R #7). 이연되는 것은 *운영 경험에 따른 정밀화*뿐이며 "전부 deny" 나 "검사 없는 allow" 로 시작하지 않는다 |
 | **R5** | 소비 성공 확인 자동 종결 | ADR Alternative E 기각. replay 빈도가 오르면 재검토 |
 | **R6** | `__consumer_offsets`·KRaft metadata bound, PVC 증설 | ADR §D4-2 후속 인프라 결정 |
+| **R9** | **진입점의 운영 도달 경로** | **2b-4b 로 이관** (diff 리뷰 2R #1). `/actuator/deadletter/**` 는 **게이트웨이가 라우팅하지 않고**(`gateway` 라우트는 `/api/v1/**` 뿐), 리소스 서비스는 게이트웨이가 서명한 `X-Internal-Auth` 만 신뢰하므로 **직접 호출은 인증 주체를 세울 수 없다**. 즉 ADMIN 가드는 정확하지만 그 가드에 도달할 경로가 아직 없다. **이 성질은 ④-c-2a 가 만든 기존 엔드포인트 전체의 것이고 이번 PR 의 회귀가 아니다** — acknowledge/resolve/discard 도 같다. 관리자 전용 라우트/인증 체인은 설계 결정이므로 **ADR-0022 가 함께 결정**하고 runbook §6 이 절차를 적는다 |
 | **R8** | `dead_letter_records.publication_status` **인덱스** | 추가하지 않는다 (C-7). 이 테이블은 DLQ 유입량에 유계이고 같은 컬럼을 스캔하는 `countUnresolvedByPublicationStatus`(2b-1)가 이미 무인덱스로 돈다. 4 DB 마이그레이션 + parity glob 확장 비용이 이득을 넘는다. **원장 행 수가 경보 `scan-limit`(100) 규모를 상시 넘기면 재검토** |
 | **R7** | **outbox 행이 사라진 `REQUESTED` root 의 종결 경로** | 정상 경로에서는 cleanup 제외 조건이 부재를 만들지 않으므로 이 상태는 **계약 위반 신호**다. 자동 강등은 발행을 실패로 오분류하므로 채택하지 않았다(3R #3). 실제로 발생하면 **ADR-0020 Update Log 로 `PUBLISH_UNKNOWN` 축 추가를 결정**한다 — 상태값 신설은 ADR 사안이다 |
+
+### 10.1 2b-4 이관 미결 — **결정 완료 (2026-09-11, 사용자 승인)**
+
+4R #5~#8 이 3b 에서 답할 수 없다고 이관한 넷을 **2b-4 계획 착수 전에** 코드로 검증하고 확정했다.
+아래가 2b-4 의 확정 입력이며, P19·P21·P24·P25 는 이 결정을 전제로 작성한다.
+
+| 4R | 미결 | 결정 | 근거 (코드 검증) |
+|---|---|---|---|
+| #5 | drain ⓐ 의 정본 테이블 | **미발행 잔여 = `outbox_events` 단독** (`record_kind='REPLAY' AND status='PENDING' = 0`). **여기에 ⓐ' 를 더한다 (2R #1 이 되돌린 것)**: `dead_letter_records.publication_status='REQUESTED' = 0`. 초안은 이 조건을 "reconciler 5s 지연으로 어긋난다" 며 **뺐는데, 어긋나는 방향이 fail-closed(게이트가 더 오래 막힘)라 안전한 쪽**이고, **outbox 행이 강제 삭제된 경우 `REQUESTED` 만이 유일한 미확정 증거**다(`DeadLetterPublicationReconciler:63-76` 이 그 상태를 강등하지 않고 남긴다). `PUBLISHED`/`PUBLISH_FAILED` 는 여전히 drain 기준이 아니다 | 구 poller 가 집는 행 집합이 정확히 ⓐ 다 — `OutboxPollingService` 는 `PENDING` 만 폴링하고 `FAILED` 는 손대지 않는다(`:106-124`) |
+| #6 | ⓓ 의 식과 내구적 기준시각 | **기준점 = 원장 root 의 신규 컬럼 `last_replay_settled_at`** — reconciler 가 settle 할 때(**`PUBLISHED`·`PUBLISH_FAILED` 양쪽 다**, 3R #1) **DB 시각**으로 기록한다. **식은 설정에서 유도한다 (3R #2)**: `Σbackoff(36s) + attempts×handlerBudget + DLT publish/intake 상한 + clockSkewBudget(5m) + margin`. `attempts` 를 곱하는 이유는 **backoff 사이마다 handler 가 다시 실행**되기 때문이고, `clockSkewBudget` 을 더하는 이유는 앵커 기록 시각과 비교 기준(`NOW()`)이 갈릴 수 있기 때문이다. **`handlerBudget` 은 코드로 강제되지 않는 선언값이다** — consumer handler 에 timeout 설정이 없다(`*KafkaConfig`). 그래서 **ⓑⓒ 를 안정화 창으로 이중화**한다: lag=0 을 **상한 간격을 두고 2회 연속** 관측해야 통과 — 시간 추론 하나에 걸지 않는다. ⓓ = `MAX(last_replay_settled_at) + 위 상한 < NOW()`, **NULL 이면 replay 이력 없음 → 충족**. ~~`replay_deadline`~~(1R #1, P0: ADR-0020 §D5-3 의 7d 멱등 안전창과 의미 충돌) · ~~`outbox_events.created_at`~~(2R #1·#2, P0: 강제 삭제 시 부재가 fail-open · INSERT 시각 ≠ 발행 시각) 둘 다 철회 |
+| — | ⓑⓒ (target group lag · DLQ intake lag) | **Kafka lag 실측을 유지한다.** `last_replay_target_group` 이 이미 원장에 있으므로 그 group 만 `kafka-consumer-groups --describe` 로 본다. **브로커 접속 실패는 fail-closed** | ⓑⓒ 를 `replay_deadline` 하나로 흡수하는 안은 기각했다 — 컨슈머가 정지/지연된 상태에서는 deadline 만 지나고 소비는 일어나지 않아, **판정이 vacuous 해지면서 정확히 방지하려던 "늦은 DLT 의 독립 root"** 를 통과시킨다 |
+| #7 | preflight 의 배포 진입점 | **래퍼 스크립트 `scripts/deploy-overlay.sh`** (preflight → `kubectl apply -k`) + 배포 명령 교체. **← 범위 축소 (C-39, 2b-4 착수 전 검증)**: `apply -k` 는 ADR-0005/0006(immutable)·`docs/learning/`·`PHASE3.md` 에도 있어 "레포 전체 0건" 은 영원히 red 다. 또 monitoring/shared apply 는 서비스 이미지를 바꾸지 않아 위험과 무관하다 → 래퍼는 **앱 overlay 배포만** 감싸고 lint 대상은 **운영 절차 2개 파일**(`docs/02-architecture.md` 배포 순서 · `k8s/overlays/gke/README.md`)뿐이다. **강제력의 한계를 ADR/runbook 에 명시**한다 — 운영자가 raw apply 하면 우회된다. V-28 은 "래퍼가 exit≠0" 을 확인하고, **"우회 불가" 를 주장하지 않는다** | CD 가 없다 — `ci.yml` 에 deploy job **0건**, 배포는 운영자의 수동 `kubectl apply -k`(`docs/02-architecture.md:405-418`). initContainer 인클러스터 게이트는 진짜 강제지만 4서비스 × in-cluster DB 자격증명 + mysql 클라이언트 이미지 + 정상 배포마다 상시 비용이라 기각 |
+| #8 | ADR 처분 | **ADR-0022 신설** — "replay 개시 진입점 + 개방 후 롤백/drain 계약". **P24 의 "ADR-0020 Update Log 에 기록" 지시는 취소**한다 | D5-4 대체는 **ADR-0021 §D1 이 Partially Supersedes 로 이미 처리**했으므로 중복이고, `adr/README.md:13` 이 **계약 변경의 Update Log 우회를 금지**한다(Update Log 는 사실 오류 정정 전용). 반면 drain·롤백·kill-switch 는 **ADR-0020·0021 어디에도 없다**(grep 0건) — 위 결정들은 전부 기각 대안이 있는 설계 결정이라 새 ADR 사유다 |
+
+> **R7 도 같은 정정을 받는다** — R7 이 적은 "`PUBLISH_UNKNOWN` 축 추가를 **ADR-0020 Update Log 로** 결정한다"
+> 는 #8 과 동일하게 `adr/README.md:13` 위반이다. 상태값 신설은 **새 ADR** 로 한다.
+
 
 ---
 

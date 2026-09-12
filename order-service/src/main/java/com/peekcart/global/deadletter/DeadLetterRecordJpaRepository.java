@@ -211,6 +211,111 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
     List<DeadLetterRecord> findRequestedPublications(Pageable pageable);
 
     /**
+     * reconciler <b>스캔용</b> — 엔티티가 아니라 id 만 돌려준다 (④-c-2b-4a P21, 계획 리뷰 2R #5).
+     *
+     * <p><b>{@link #findRequestedPublications} 를 스캔에 쓰면 안 된다.</b> 그 조회는 엔티티를 영속성
+     * 컨텍스트에 올리는데, 뒤이은 {@code FOR UPDATE} 는 <b>잠금만 얻고 이미 관리 중인 인스턴스를
+     * refresh 하지 않는다</b> — 잠금을 기다리는 사이 다른 트랜잭션이 커밋한 전이를 못 본다.
+     * {@link #findRootIdOf} 가 같은 이유로 id 만 돌려주는 것과 같은 계약이다.
+     *
+     * <p><b>root 로 중복 제거하지 않는다</b> — 한 root 에 자식 target 이 여럿일 수 있고 각각이 자기 발행
+     * 결과를 가지므로, 중복을 제거하면 그 자식들의 종착이 누락된다.
+     */
+    @Query("SELECT r.id FROM DeadLetterRecord r WHERE r.publicationStatus = 'REQUESTED' ORDER BY r.id ASC")
+    List<Long> findRequestedPublicationIds(Pageable pageable);
+
+    /**
+     * incident 의 <b>가장 최근 활성 자식</b>. replay 재요청의 target row 다 (④-c-2b-4a P21).
+     *
+     * <p>{@link #findChildrenForUpdate} 로는 이 질문에 답할 수 없다 — 그 조회에는 {@code ORDER BY} 가 없어
+     * "가장 최근" 이 정의되지 않는다. 결과가 비면 <b>root 자신이 target</b> 이다.
+     *
+     * <p>호출자는 이미 root 를 잠근 상태여야 한다(잠금 순서: root → target → 도메인 aggregate).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM DeadLetterRecord r WHERE r.rootRecordId = :rootId AND r.id <> :rootId "
+            + "AND r.status IN ('OPEN', 'ACKED') ORDER BY r.id DESC")
+    List<DeadLetterRecord> findLatestActiveChildForUpdate(@Param("rootId") Long rootId, Pageable pageable);
+
+    /**
+     * drain ⓓ 앵커를 <b>DB 시각으로</b> 찍는다 (④-c-2b-4a P23 · 계획 §10.1 #6).
+     *
+     * <p>앱 시각(`LocalDateTime.now()`)으로 쓰면 preflight 의 비교 기준인 {@code NOW()} 와 갈라진다 —
+     * 애플리케이션 시계가 뒤진 만큼 drain 이 <b>조기 통과</b>한다. 그래서 엔티티 dirty-check 가 아니라
+     * 네이티브 UPDATE 로 쓴다. <b>이것이 이 컬럼의 유일한 writer 다.</b>
+     *
+     * <p>{@code clearAutomatically} 를 쓰지 않는 이유: 같은 트랜잭션에서 잠가둔 root·target 엔티티가
+     * detach 되면 뒤이은 전이가 사라진다. 이 컬럼은 엔티티에서 {@code updatable = false} 라 충돌하지 않는다.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(value = "UPDATE dead_letter_records SET last_replay_settled_at = CURRENT_TIMESTAMP(6) WHERE id = :rootId",
+            nativeQuery = true)
+    int stampReplaySettledAt(@Param("rootId") Long rootId);
+
+    /**
+     * replay <b>claim</b> — 발행 축을 {@code REQUESTED} 로 선점한다 (ADR-0020 §D6-4 · 구현 ④-c-2b-4a P21).
+     *
+     * <p><b>조건부 UPDATE 여야 한다.</b> 읽고-검사하고-쓰면 동시 요청 둘이 모두 통과해 <b>같은 메시지가
+     * 두 번 발행</b>된다. 영향 행 0 이면 호출자는 거부하고 즉시 반환한다 — 이 시점엔 outbox 를 아직
+     * 만들지 않았으므로 orphan 이 남지 않는다.
+     *
+     * <p><b>{@code status IN ('OPEN','ACKED')} 가 필수다</b>: publication 축만 보면 종결이 먼저 커밋된 뒤
+     * replay 가 {@code REQUESTED} 를 기록해 ADR 이 금지한 <b>{@code REQUESTED} + terminal</b> 조합이 만들어진다.
+     *
+     * <p>{@code outbox_event_id} 는 여기서 쓰지 않는다 — auto-increment 라 INSERT 후에야 존재한다.
+     * 먼저 만들면 경합 패자의 outbox 가 남아 두 번 발행된다.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(value = "UPDATE dead_letter_records SET publication_status = 'REQUESTED' "
+            + "WHERE id = :targetId "
+            + "AND (publication_status IS NULL OR publication_status = 'PUBLISH_FAILED') "
+            + "AND status IN ('OPEN', 'ACKED')", nativeQuery = true)
+    int claimPublication(@Param("targetId") Long targetId);
+
+    /** claim 이 만든 {@code REQUESTED} 행에 발행 연결을 채운다. claim 과 <b>같은 트랜잭션</b>이다. */
+    @Modifying(flushAutomatically = true)
+    @Query(value = "UPDATE dead_letter_records SET outbox_event_id = :outboxEventId WHERE id = :targetId",
+            nativeQuery = true)
+    int linkOutboxEvent(@Param("targetId") Long targetId, @Param("outboxEventId") Long outboxEventId);
+
+    /**
+     * 상관 앵커를 <b>canonical root</b> 에 기록한다 (ADR-0021 §D1 · 구현 ④-c-2b-4a P21).
+     *
+     * <p>앵커가 root 하나여야 재실패 상관(④-c-2b-3b P15)이 찾을 수 있다. target 이 자식이어도 앵커는 root 다.
+     *
+     * <p><b>{@code replay_deadline} 은 {@code COALESCE} 다</b> — 첫 claim 이 값을 박고 이후 요청은
+     * 덮어쓰지 않는다(ADR §D5-3: root 에서 1회 계산하고 자식·재시도가 상속한다). 재계산하면 실패할
+     * 때마다 안전창이 연장된다.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(value = "UPDATE dead_letter_records SET last_replay_attempt_id = :attemptId, "
+            + "last_replay_target_group = :targetGroup, "
+            + "last_replay_payload_digest = :payloadDigest, "
+            + "replay_policy = :policy, "
+            + "replay_deadline = COALESCE(replay_deadline, :deadline) "
+            + "WHERE id = :rootId", nativeQuery = true)
+    int stampReplayAnchor(@Param("rootId") Long rootId,
+                          @Param("attemptId") String attemptId,
+                          @Param("targetGroup") String targetGroup,
+                          @Param("payloadDigest") String payloadDigest,
+                          @Param("policy") String policy,
+                          @Param("deadline") LocalDateTime deadline);
+
+    /**
+     * 적격성 <b>감사</b> 기록 — allow 든 deny 든 남긴다 (구현 ④-c-2b-4a P19).
+     *
+     * <p>deny 는 claim 에 도달하지 않으므로 {@link #stampReplayAnchor} 에만 기록하면 <b>거부 이력이
+     * 아예 남지 않는다</b>. 호출자가 <b>root 잠금 안에서</b> 부르므로 allow claim 의 앵커 기록과
+     * 직렬화된다 — 순서를 안 박으면 root 는 deny 인데 자식은 allow 를 상속한 조합이 남는다.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(value = "UPDATE dead_letter_records SET replay_policy = :policy, last_replay_by = :actor "
+            + "WHERE id = :rootId", nativeQuery = true)
+    int stampReplayPolicy(@Param("rootId") Long rootId, @Param("policy") String policy,
+                          @Param("actor") String actor);
+
+
+    /**
      * incident 1건(root + 자식 전부)을 삭제한다. <b>자식 단독 purge 경로는 두지 않는다</b> —
      * 자식은 진단용이며 root 를 따라 종결·정리된다(ADR-0020 §D6-3).
      *

@@ -61,6 +61,9 @@ public class DeadLetterProperties {
     @Valid
     private final Reconcile reconcile = new Reconcile();
 
+    /** replay 개시 kill-switch. */
+    private final Replay replay = new Replay();
+
     /**
      * 해당 토픽의 세대를 돌려준다.
      *
@@ -127,6 +130,23 @@ public class DeadLetterProperties {
     public static class Reconcile {
         /** 한 사이클에 대조할 {@code REQUESTED} 행 상한 (unbounded 조회 방지). */
         private int batchSize = 200;
+    }
+
+    /**
+     * replay 개시 (ADR-0020 §D5 · 구현 ④-c-2b-4a P21·P24).
+     *
+     * <p><b>기본값이 {@code false} 인 것이 계약이다</b>(계획 리뷰 1R #6). 기본 {@code true} 면 새 Pod 가
+     * Ready 가 되는 순간 backfill·증적·리허설 이전에 replay API 가 열리고, 그것을 다시 닫는 데
+     * <b>롤링 재기동이 또 든다</b>(Spring 정적 설정이라 ConfigMap 갱신만으로는 반영되지 않는다).
+     * 닫힌 채로 배포하고 준비가 끝난 뒤 <b>의도적으로 여는</b> 방향이 되돌리기 비용이 낮다.
+     *
+     * <p>drain·롤백 계약(④-c-2b-4b)이 서기 전까지는 운영에서 열지 않는다.
+     */
+    @Getter
+    @Setter
+    public static class Replay {
+        /** {@code false} 면 {@code action=replay} 가 거부된다. */
+        private boolean enabled = false;
     }
 
     /** 종결 건 정리. {@code OPEN}/{@code ACKED} 는 대상이 아니다 — 장기 미결은 운영 SLA 문제다. */

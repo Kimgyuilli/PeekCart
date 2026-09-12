@@ -203,6 +203,43 @@ if len(alter_prints) == len(services):
                                   "(롤링 배포 중 구버전 INSERT 가 깨지고 expand→backfill 순서가 성립하지 않는다)"
                                   % (service, column))
 
+# --- (2c) backfill **DML** parity (④-c-2b-4a P25 · 계획 리뷰 2R 착수 전 검증 C-35) ---
+# 왜 (2b) 로 부족한가:
+#   (2b) 는 db/migration 전체를 합성한 **최종 스키마**를 대조한다. backfill 은 UPDATE 뿐인 DML 이라
+#   스키마를 바꾸지 않으므로 **4벌이 갈라져도 최종 스키마 대조는 전부 green** 이다.
+#   ④-c-2b-1(glob 미확장) · 2b-2(java 목록 누락) · 2b-3a(파일 목록 누락)에 이은 같은 구멍 네 번째다.
+backfill_prints = {}
+for service in services:
+    matches = glob.glob(os.path.join(root, service, "src/main/resources/db/migration/V*__dead_letter_replay_backfill.sql"))
+    if len(matches) != 1:
+        violations.append(
+            "[DLQ-PARITY-021] %s: dead_letter_replay_backfill 마이그레이션이 %d개다 (정확히 1개여야 한다)"
+            % (service, len(matches)))
+        continue
+    with open(matches[0], "rb") as f:
+        raw_bytes = f.read()
+    backfill_prints[service] = (os.path.basename(matches[0]), hashlib.sha256(raw_bytes).hexdigest(),
+                                raw_bytes.decode("utf-8"))
+
+if len(backfill_prints) == len(services):
+    digests = {d for _, d, _ in backfill_prints.values()}
+    if len(digests) != 1:
+        violations.append("[DLQ-PARITY-022] 4서비스의 backfill 마이그레이션이 다르다 (원문 대조):")
+        for service, (fname, digest, _) in sorted(backfill_prints.items()):
+            violations.append("    %-22s %s  %s" % (service, digest[:12], fname))
+
+    # 조건 없는 전량 UPDATE 금지 — IS NULL 조건이 재실행 안전성(idempotency)의 근거다.
+    # 조건을 지우면 두 번째 실행이 이미 정규화된 행을 다시 쓰고, 그 사실은 아무 것도 실패시키지 않는다.
+    for service, (fname, _, body) in sorted(backfill_prints.items()):
+        for statement in re.findall(r"UPDATE\s+\w+\s+SET[^;]*;", body, re.IGNORECASE):
+            if "IS NULL" not in statement.upper():
+                violations.append(
+                    "[DLQ-PARITY-023] %s: backfill 에 조건 없는 UPDATE 가 있다 (재실행 안전하지 않다)\n    %s"
+                    % (service, " ".join(statement.split())[:120]))
+        # drain 앵커 컬럼도 이 파일이 만든다 — 빠지면 4b 의 drain 판정이 설 자리가 없다.
+        if "last_replay_settled_at" not in body:
+            violations.append("[DLQ-PARITY-024] %s: backfill 에 last_replay_settled_at 컬럼 추가가 없다" % service)
+
 # --- (2b) dead_letter_records **최종 스키마** parity (④-c-2b-3a P14 f-2) ---
 #
 # 왜 (2) 로 부족한가:
@@ -267,6 +304,8 @@ java_files = ["DeadLetterRecord", "DeadLetterStatus", "PublicationStatus", "Dead
               # ④-c-2b-2 P12. **신규 복제 파일은 이 목록에 반드시 더한다** — 목록에 없으면 4벌이 갈라져도
               # 아무 것도 실패하지 않는다(④-c-2b-1 이 glob 을 안 넓혀 겪은 것과 같은 구멍이다).
               "DeadLetterPublicationReconciler",
+              # ④-c-2b-4a P21·P23. 진입점·워커·사전조건 포트도 4벌 byte 동일 복제본이다.
+              "DeadLetterPublicationWorker", "DeadLetterReplayService", "ReplayPreconditionPort",
               # ④-c-2a 산출물이나 목록에 빠져 있던 복제본 2개. 아래 DLQ-PARITY-014 검사가 찾아냈다 —
               # 사람이 목록을 관리하는 한 누락은 반복되므로, 목록 자체를 검사가 지킨다.
               "DeadLetterContainerGuard", "DeadLetterKafkaConfig"]
@@ -424,6 +463,9 @@ if [[ "${1:-}" == "--self-test" ]]; then
             # 파일이 최종 스키마 검사에는 걸린다는 것이 이 축의 존재 이유다.
             cp order-service/src/main/resources/db/migration/V*__dead_letter_replay_payload_digest.sql \
                "$TMP/$svc/src/main/resources/db/migration/V5__dead_letter_replay_payload_digest.sql"
+            # backfill(④-c-2b-4a P23). **DML 이라 최종 스키마 대조가 못 보는 축**이라 따로 심는다.
+            cp order-service/src/main/resources/db/migration/V*__dead_letter_replay_backfill.sql \
+               "$TMP/$svc/src/main/resources/db/migration/V6__dead_letter_replay_backfill.sql"
             cp order-service/src/main/java/com/peekcart/global/deadletter/*.java \
                "$TMP/$svc/src/main/java/com/peekcart/global/deadletter/"
             # **per-service 파일은 fixture 에서도 서비스마다 달라야 한다.** 전부 order 사본으로 채우면
@@ -695,7 +737,31 @@ if [[ "${1:-}" == "--self-test" ]]; then
         echo "self-test 20 실패: 정상 digest fixture 를 위반으로 판정"; exit 1
     fi
 
-    echo "dead-letter-schema-parity-lint self-test 23종 통과"
+        # self-test N-1: backfill 한 벌만 변조 → 검출되어야 한다 (DML 은 최종 스키마가 못 본다 — C-35)
+    seed_fixture
+    printf '\n-- drift\n' >> "$TMP/product-service/src/main/resources/db/migration/V6__dead_letter_replay_backfill.sql"
+    if python3 "$LINT_PY" "$TMP" >/dev/null 2>&1; then
+        echo "self-test backfill-1 실패: backfill 원문 차이를 검출하지 못했다"; exit 1
+    fi
+
+    # self-test N-2: backfill 의 IS NULL 조건 제거 → 검출되어야 한다 (재실행 안전성이 깨진다)
+    seed_fixture
+    for svc in order-service product-service payment-service notification-service; do
+        sed -i.bak 's/WHERE root_record_id IS NULL/WHERE 1 = 1/' \
+            "$TMP/$svc/src/main/resources/db/migration/V6__dead_letter_replay_backfill.sql"
+    done
+    if python3 "$LINT_PY" "$TMP" >/dev/null 2>&1; then
+        echo "self-test backfill-2 실패: 조건 없는 UPDATE 를 검출하지 못했다"; exit 1
+    fi
+
+    # self-test N-3: backfill 파일 자체가 없으면 검출되어야 한다
+    seed_fixture
+    rm "$TMP/notification-service/src/main/resources/db/migration/V6__dead_letter_replay_backfill.sql"
+    if python3 "$LINT_PY" "$TMP" >/dev/null 2>&1; then
+        echo "self-test backfill-3 실패: backfill 누락을 검출하지 못했다"; exit 1
+    fi
+
+echo "dead-letter-schema-parity-lint self-test 26종 통과"
     exit 0
 fi
 

@@ -103,6 +103,11 @@ app:
       scan-limit: 100
     payload:
       max-length: 8000     # 초과분은 잘리고 payload_truncated 로 표시
+    # replay 개시 kill-switch (④-c-2b-4a P21). **기본값 false 가 계약이다** — 배포 순간 진입점이
+    # 열리면 backfill·증적·리허설 이전에 replay 가 가능해지고, 닫는 데 롤링 재기동이 또 든다.
+    # drain·롤백 계약(④-c-2b-4b)이 서기 전까지 운영에서 열지 않는다. 동작 정책이므로 base 소유(ADR-0007).
+    replay:
+      enabled: false
     purge:
       retention: 90d       # DISCARDED 후 보존기간. OPEN/ACKED 는 삭제 대상이 아니다
       batch-size: 500
