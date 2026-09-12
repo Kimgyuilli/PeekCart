@@ -539,3 +539,17 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
 - 갱신: `docs/TASKS.md` 구현 ④ 행에 ④-c-2b-4a ✅ + #105 · `docs/progress/PHASE4.md` 작업 이력(미충족 5건 포함) ·
   계획서 진행 상태 표
 - **④-c-2b-4b 는 🔲 유지** — 계획 미수렴(3R 상한·P0 3라운드 연속)이라 착수 전 4R 선행이 조건이다
+
+## 2026-09-12 — ④-c-2b-4a CI 실패 대응 (PR #105)
+- **증상**: `images` 잡이 원장 4서비스에서 전부 실패(gateway·user 는 통과). test·lint·guards 는 전부 pass.
+- **원인**: P23 backfill 의 "잔여 0 검증" 을 `CREATE PROCEDURE` + `SIGNAL` 로 구현했는데 서비스 계정에
+  `CREATE ROUTINE` 이 없다 → `ERROR 1370`. **Testcontainers 가 root 로 돌아 전 모듈 1130 테스트는 green 이었다.**
+  gateway·user 가 통과한 것은 이 마이그레이션이 없어서다.
+- **조치**: NOT NULL 컬럼(`cluster_id`/`aggregate_type`)에 NULL 을 쓰는 조건부 UPDATE 로 대체 +
+  `SET SESSION sql_mode ... STRICT_ALL_TABLES`(세션 범위라 권한 불필요). 추가 권한 0.
+- **검증(root 아님 — 실제 서비스 계정)**: V1~V7 순차 적용 OK · 잔여 1건 주입 시 `ERROR 1048` ·
+  **실패 후 부분 손상 0건** · backfill 후 재실행 통과. 이미지 빌드 + `docker-health-smoke.sh` 통과.
+- **재발 방지**: `scripts/migration-grant-lint.sh` 신설(GRANT 문 파싱 → 요구 권한 대조, self-test 6종,
+  원래 결함 재현 시 red 확인) + CI `guards` 배선.
+- **교훈**: 테스트가 도는 권한과 운영이 도는 권한이 다르면 테스트는 그 차이를 영원히 보지 못한다.
+  계획 리뷰 3R·diff 리뷰 2R 어느 쪽도 이것을 잡지 못했다 — **diff 안에 없는 사실**(계정 권한)이기 때문이다.
