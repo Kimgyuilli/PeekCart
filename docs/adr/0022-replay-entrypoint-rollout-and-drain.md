@@ -1,6 +1,6 @@
 # ADR-0022: replay 개시 진입점의 개방 절차 — 도달 경로 · drain/롤백 계약 · `PUBLISH_UNKNOWN`
 
-- **Status**: Proposed
+- **Status**: Accepted
 - **Date**: 2026-09-13
 - **Deciders**: 프로젝트 오너
 - **관련 Phase**: Phase 4 (MSA 분리) — 구현 ④ Choreography Saga (④-c-2b-4b)
