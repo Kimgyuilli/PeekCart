@@ -146,6 +146,128 @@ spring:
                     fail-closed-rate-limiter.windowSeconds: 1
                     deny-empty-key: true
 
+
+            # --- DLQ 원장 관리자 라우트 (④-c-2b-4b P27 · ADR-0022 §D5) ---
+            #
+            # 왜 필요한가: 도메인 서비스는 gateway 와 달리 관리 포트를 분리하지 않아 actuator 가 앱 포트에
+            #   함께 있다. 그런데 라우트가 /api/v1/** 뿐이고 리소스 서비스는 게이트웨이가 서명한 내부
+            #   토큰에서만 인증 주체를 세우므로(ADR-0017), port-forward 직접 호출은 Authentication 이 null
+            #   이라 **DeadLetterEndpoint 의 ROLE_ADMIN 가드에 닿기 전에 인증에서 끊긴다**. 즉 ④-c-2b-4a 의
+            #   진입점은 정확하지만 **부를 방법이 없었다**.
+            #
+            # 권한 판정을 여기로 옮기지 않는다: 게이트웨이는 서명 주체만 전달하고 ADMIN 검사는 리소스를
+            #   소유한 서비스가 그대로 진다. 게이트웨이로 옮기면 이 라우트를 우회하는 경로가 생겼을 때
+            #   가드가 함께 사라진다.
+            #
+            # **id 를 숫자로 못박는다** — actuator 아래 다른 엔드포인트로 새지 않게 하는 것이 이 라우트의
+            #   유일한 위험 통제다. `{id:[0-9]+}` 면 `..`·인코딩 변형이 애초에 **매칭되지 않아** 404 다
+            #   (rewrite 결과의 안전을 정규화에 맡기지 않는다). DeadLetterEndpoint 의 @Selector 도 Long 이다.
+            # 공개 경로 SSOT 에 없으므로 인증 필수이고, deny-empty-key 로 미인증은 게이트웨이가 먼저 끊는다.
+            - id: order-deadletter-admin-summary
+              uri: ${app.gateway.upstream.order-uri:http://order-service:8080}
+              predicates:
+                - Path=/api/v1/admin/deadletter/order
+              filters:
+                - RewritePath=/api/v1/admin/deadletter/order, /actuator/deadletter
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@failClosedRedisRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+                    fail-closed-rate-limiter.burstCapacity: 20
+                    fail-closed-rate-limiter.windowSeconds: 1
+                    deny-empty-key: true
+            - id: order-deadletter-admin-transition
+              uri: ${app.gateway.upstream.order-uri:http://order-service:8080}
+              predicates:
+                - Path=/api/v1/admin/deadletter/order/{id:[0-9]+}
+              filters:
+                - RewritePath=/api/v1/admin/deadletter/order/(?<id>[0-9]+), /actuator/deadletter/$\{id}
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@failClosedRedisRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+                    fail-closed-rate-limiter.burstCapacity: 20
+                    fail-closed-rate-limiter.windowSeconds: 1
+                    deny-empty-key: true
+            - id: product-deadletter-admin-summary
+              uri: ${app.gateway.upstream.product-uri:http://product-service:8080}
+              predicates:
+                - Path=/api/v1/admin/deadletter/product
+              filters:
+                - RewritePath=/api/v1/admin/deadletter/product, /actuator/deadletter
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@failClosedRedisRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+                    fail-closed-rate-limiter.burstCapacity: 20
+                    fail-closed-rate-limiter.windowSeconds: 1
+                    deny-empty-key: true
+            - id: product-deadletter-admin-transition
+              uri: ${app.gateway.upstream.product-uri:http://product-service:8080}
+              predicates:
+                - Path=/api/v1/admin/deadletter/product/{id:[0-9]+}
+              filters:
+                - RewritePath=/api/v1/admin/deadletter/product/(?<id>[0-9]+), /actuator/deadletter/$\{id}
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@failClosedRedisRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+                    fail-closed-rate-limiter.burstCapacity: 20
+                    fail-closed-rate-limiter.windowSeconds: 1
+                    deny-empty-key: true
+            - id: payment-deadletter-admin-summary
+              uri: ${app.gateway.upstream.payment-uri:http://payment-service:8080}
+              predicates:
+                - Path=/api/v1/admin/deadletter/payment
+              filters:
+                - RewritePath=/api/v1/admin/deadletter/payment, /actuator/deadletter
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@failClosedRedisRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+                    fail-closed-rate-limiter.burstCapacity: 20
+                    fail-closed-rate-limiter.windowSeconds: 1
+                    deny-empty-key: true
+            - id: payment-deadletter-admin-transition
+              uri: ${app.gateway.upstream.payment-uri:http://payment-service:8080}
+              predicates:
+                - Path=/api/v1/admin/deadletter/payment/{id:[0-9]+}
+              filters:
+                - RewritePath=/api/v1/admin/deadletter/payment/(?<id>[0-9]+), /actuator/deadletter/$\{id}
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@failClosedRedisRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+                    fail-closed-rate-limiter.burstCapacity: 20
+                    fail-closed-rate-limiter.windowSeconds: 1
+                    deny-empty-key: true
+            - id: notification-deadletter-admin-summary
+              uri: ${app.gateway.upstream.notification-uri:http://notification-service:8080}
+              predicates:
+                - Path=/api/v1/admin/deadletter/notification
+              filters:
+                - RewritePath=/api/v1/admin/deadletter/notification, /actuator/deadletter
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@failClosedRedisRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+                    fail-closed-rate-limiter.burstCapacity: 20
+                    fail-closed-rate-limiter.windowSeconds: 1
+                    deny-empty-key: true
+            - id: notification-deadletter-admin-transition
+              uri: ${app.gateway.upstream.notification-uri:http://notification-service:8080}
+              predicates:
+                - Path=/api/v1/admin/deadletter/notification/{id:[0-9]+}
+              filters:
+                - RewritePath=/api/v1/admin/deadletter/notification/(?<id>[0-9]+), /actuator/deadletter/$\{id}
+                - name: RequestRateLimiter
+                  args:
+                    rate-limiter: "#{@failClosedRedisRateLimiter}"
+                    key-resolver: "#{@userKeyResolver}"
+                    fail-closed-rate-limiter.burstCapacity: 20
+                    fail-closed-rate-limiter.windowSeconds: 1
+                    deny-empty-key: true
+
           # /.well-known/jwks.json · /swagger-ui/** · /api-docs/** 는 라우트가 없다 → 외부 404.
           # JWKS 는 Gateway 가 내부적으로만 fetch 한다(계획 P11 · 공개 경로 SSOT).
 
