@@ -32,7 +32,9 @@ public interface StockReservationRepository {
 
     /**
      * commit-실패 보상 1회성 marker 원자 CAS. {@code compensated_at} 이 비어있을 때만 채워 1건을 반환한다.
-     * orderId 기준 멱등 — DLQ 재발행(새 eventId) 으로 confirm 이 재실행돼도 보상 알림이 중복 발송되지 않는다.
+     * orderId 기준 멱등 — <b>상류 재발행(새 eventId, ADR-0012 D5 우회 경로)</b> 으로 confirm 이 재실행돼도
+     * 보상 알림이 중복 발송되지 않는다. DLQ replay 는 {@code eventId} 를 보존하므로 여기가 아니라
+     * {@code processed_events} 가 막는다(④-c-2b-4b 정정).
      *
      * <p>{@code detectedAt} 을 호출자가 넘기는 이유: 같은 값이 {@code stock.compensation.requested}
      * payload 의 {@code detectedAt} 으로도 실려, 원장의 감지 시각과 이벤트의 감지 시각이

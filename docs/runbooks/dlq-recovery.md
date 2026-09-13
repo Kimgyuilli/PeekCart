@@ -202,32 +202,142 @@ DLQ listener 가 DB 장애 등으로 반복 실패할 때 선택지는 둘뿐이
 
 ---
 
-## 6. 재발행 — 현재 불가
+## 6. 재발행 (replay)
 
-**④-c-2b 가 구현될 때까지 원장에서 메시지를 다시 발행하는 수단이 없다.**
+원장에서 원본 메시지를 **그대로** 다시 발행한다. 계약은 [ADR-0020](../adr/0020-dlq-replay-contract.md) ·
+[ADR-0021](../adr/0021-dlq-replay-correlation-anchor.md) · [ADR-0022](../adr/0022-replay-entrypoint-rollout-and-drain.md).
 
-### 왜 없나
+### 6.0 먼저 — 열려 있는가
 
-"재발행하되 중복 발행 0" 이 두 가지 설계에서 모두 반증됐다:
-- 2단 상태머신(`REPLAY_REQUESTED` → 발행 → `REPLAY_PUBLISHED`): 발행 직후 사망하면 발행 여부를 판별할 수 없다
-- 기존 outbox 재사용: `OutboxPollingService` 가 broker ack 후 **별도로** `PUBLISHED` 를 저장하므로 같은 crash window 가 있다
+replay 는 **kill-switch 뒤에 있고 기본값은 닫힘**이다(`app.dead-letter.replay.enabled=false`).
 
-같은 주장이 두 번 반증됐으므로 계획서 수정이 아니라 **ADR 결정 사안**으로 올렸다.
-결정 항목은 **[ADR-0020](../adr/0020-dlq-replay-contract.md)** 이 확정했다(D1~D8). 구현은 ④-c-2b.
+```bash
+# 닫혀 있으면 accepted=false 와 "replay 진입점이 꺼져 있다" 사유가 돌아온다.
+curl -s -X POST "$GW/api/v1/admin/deadletter/order/42" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -d 'action=replay&actor=야간당직'
+```
 
-### 그때까지의 우회
+여는 절차(**즉시 반영되지 않는다** — 정적 설정이라 롤링 재기동이 필요하다):
 
-1. **도메인 상태를 직접 교정한다** — 대개 이게 더 빠르고 안전하다. 예: 재고가 복구되지 않았다면
-   해당 예약 원장을 직접 확인·조정
-2. **상류에서 다시 발행한다** — 원인이 고쳐졌고 재발행이 안전하다면, 발행 서비스에서 해당 도메인
-   액션을 다시 일으킨다 (새 `eventId` 가 부여되므로 `processed_events` 멱등에 걸리지 않는다)
-3. 어느 쪽이든 처리 후 원장을 `DISCARDED` + 사유로 종결한다 (§4.2)
+1. `kubectl -n peekcart edit configmap order-service-config` → `APP_DEAD_LETTER_REPLAY_ENABLED: "true"`
+2. `kubectl -n peekcart rollout restart deploy/order-service` 후 `rollout status` 로 수렴 확인
+3. 위 curl 로 **열린 것을 확인**한다
 
-> **주의**: 재발행 가능 여부를 **시간만으로 판정하지 않는다**(ADR-0020 §D4-2·§D5-1). 두 조건을 **모두** 만족해야 한다 —
-> ① 원장의 `replay_deadline` 을 넘기지 않았고, ② 발행 직전 좌표 검증에서 원본 레코드가 **실제로 조회**된다.
-> `retention.bytes` 가 유한값이므로 **7일 이내에도 크기 기반으로 이미 삭제됐을 수 있고**, 반대로 시간 만료 직후에 물리 삭제가
-> 끝났다고 단정할 수도 없다. 어느 쪽이든 부재로 판정되면 아래 우회 절차로 간다.
-> 원본 좌표의 메시지가 이미 삭제되기 때문이다. 오래된 미결을 방치하지 않아야 하는 실질적 이유다.
+> 설정 변경과 재기동 사이의 요청은 코드가 막지 못한다 — **운영 규율**이다(ADR-0022 §D1).
+
+### 6.1 접근 경로
+
+`/actuator/deadletter/**` 는 **게이트웨이 관리자 라우트를 통해서만** 도달한다(ADR-0022 §D5):
+
+| 목적 | 경로 |
+|---|---|
+| backlog 요약 | `GET  {gateway}/api/v1/admin/deadletter/{order\|product\|payment\|notification}` |
+| 전이 | `POST {gateway}/api/v1/admin/deadletter/{service}/{id}` |
+
+- **ADMIN 토큰이 필요하다.** `replay` 와 `publication-unknown` 은 서비스가 `ROLE_ADMIN` 을 직접 검사한다.
+- **`{id}` 는 숫자만 받는다.** 다른 문자는 라우트가 매칭하지 않아 404 다 — actuator 의 다른 엔드포인트로
+  새지 않게 하는 통제이므로 우회 경로를 찾지 말 것.
+- Pod 에 직접 port-forward 해서 부를 수 없다 — 인증 주체를 세울 수 없어 401 이다.
+
+### 6.2 개시
+
+```bash
+curl -s -X POST "$GW/api/v1/admin/deadletter/order/42" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -d 'action=replay&actor=야간당직'
+# {"id":42,"rootId":42,"accepted":true,"targetId":42,"attemptId":"...","rejections":[]}
+```
+
+거부되면 `rejections` 에 **사유가 전부** 담긴다(6 금지축은 서로 독립이라 하나씩 고치게 하지 않는다).
+대표 사유와 조치:
+
+| 사유 | 뜻 | 조치 |
+|---|---|---|
+| `[안전창]` | `replay_deadline`(원본 timestamp + 7d) 이 지났다 | replay 불가 — §6.5 우회로 |
+| `[축5] 정책이 금지한다` | 해당 토픽이 replay deny (예: `payment.requested` — 늦은 재적용이 이중 과금) | 우회로 |
+| `[좌표]` | 브로커에 원본 레코드가 없다(retention·compaction) | 우회로 |
+| `발행 결과가 미확정이다(REQUESTED)` | 앞선 replay 가 아직 종착하지 않았다 | 기다린다. 영원히 안 끝나면 §6.4 |
+
+### 6.3 재발행 후
+
+- **발행 성공은 사건 해소가 아니다.** `publication_status=PUBLISHED` 여도 backlog 에 남는다.
+- 재발행분이 **또 실패하면** 자식 행이 생기고 root 가 재개방된다 — 종결은 root id 로 한다(자식 id 로
+  들어와도 root 로 정규화된다).
+- 소비까지 확인했으면 `action=resolve` + **무엇을 보고 확인했는지**를 사유로 남긴다.
+
+### 6.4 `REQUESTED` 가 끝나지 않을 때 — `publication-unknown`
+
+원장이 가리키는 outbox 행이 **사라지면** reconciler 는 강등하지 않고 그대로 둔다 — 부재는 실패의 증거가
+아니기 때문이다(발행됐는데 행만 지워졌을 수 있다). 그 결과 `REQUESTED` 가 스스로 해소되지 않고,
+**사건 종결도 롤백도 막힌다**. 탈출구는 하나다.
+
+**먼저 확인한다** (확인 없이 옮기면 이 전이는 의미가 없다):
+
+```bash
+# 표적 group 이 그 offset 을 소비했는가
+kubectl -n peekcart exec deploy/kafka -- /opt/kafka/bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 --describe --group order-svc-payment-completed-group
+```
+
+```bash
+curl -s -X POST "$GW/api/v1/admin/deadletter/order/42" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -d 'action=publication-unknown&actor=야간당직&reason=broker offset 확인 — 소비 흔적 없음'
+# {"id":42,"rootId":42,"released":1,"rejections":[]}
+```
+
+- **사유는 필수다** — 다음 사람이 무엇을 확인했는지 원장에서 읽을 수 있어야 한다.
+- **outbox 행이 아직 있으면 거부된다.** 그때는 reconciler 가 스스로 종착시키므로 기다린다.
+- 옮긴 뒤 **재발행은 열리지 않는다**(발행 여부를 모르는 건을 다시 싣지 않는다). 사건 종결은 가능하다.
+
+### 6.5 replay 가 불가능할 때의 우회
+
+1. **도메인 상태를 직접 교정한다** — 대개 이게 더 빠르고 안전하다
+2. **상류에서 다시 발행한다** — 새 `eventId` 가 부여되므로 `processed_events` 멱등에 걸리지 않는다
+   (ADR-0012 D5 가 허용한 경로이며, replay 계약의 우회가 아니라 **별도 경로**다)
+3. 처리 후 원장을 `DISCARDED` + 사유로 종결한다 (§4.2)
+
+> **재발행 가능 여부를 시간만으로 판정하지 않는다**(ADR-0020 §D4-2·§D5-1). ① `replay_deadline` 이내이고
+> ② 발행 직전 좌표 검증에서 원본 레코드가 **실제로 조회**돼야 한다. `retention.bytes` 가 유한값이라
+> 7일 이내에도 크기 기반으로 이미 삭제됐을 수 있다.
+
+---
+
+## 6-R. replay 를 연 뒤의 롤백 절차
+
+**replay 행이 하나라도 생긴 뒤에는 구 이미지로 그냥 내려갈 수 없다.** `record_kind='REPLAY'` 행은
+replay-aware poller 만 올바르게 발행한다 — 구 poller 는 그 행의 sentinel(`__replay__`)을 **토픽 이름으로**
+써서 발행을 깨뜨린다.
+
+### 순서
+
+1. **진입점을 닫는다** — ConfigMap `APP_DEAD_LETTER_REPLAY_ENABLED: "false"` + 롤링 재기동.
+   재기동이 끝나기 전까지는 요청이 여전히 통과할 수 있다(운영 규율).
+2. **drain 판정을 돌린다**:
+   ```bash
+   bash scripts/replay-drain-preflight.sh
+   ```
+   4개 서비스 DB **각각**에서 아래 4조건이 전부 충족돼야 한다(ADR-0022 §D2):
+
+   | | 조건 |
+   |---|---|
+   | ⓐ | `outbox_events` 에 `record_kind='REPLAY' AND status='PENDING'` 인 행이 0 |
+   | ⓐ' | `dead_letter_records.publication_status='REQUESTED'` 인 행이 0 |
+   | ⓑⓒ | 표적 group + `.dlq` intake group 의 lag 가 **2회 연속** 0 |
+   | ⓓ | 마지막 `last_replay_settled_at` 이후 상한(기본 546s)이 지났다 |
+
+   - ⓐ' 가 줄지 않으면 §6.4 의 `publication-unknown` 으로 교착을 먼저 푼다.
+   - **DB·브로커 접속 실패는 통과가 아니라 차단**이다(fail-closed).
+3. **4조건이 충족될 때까지 replay-aware poller 를 유지한다.** 이 단계를 건너뛰면 ⓐ 의 행이 구 poller 에
+   집혀 발행이 깨진다.
+4. 그 다음에만 구 이미지로 배포한다:
+   ```bash
+   scripts/deploy-overlay.sh k8s/overlays/gke
+   ```
+
+> **래퍼는 우회 가능하다.** `kubectl apply -k` 를 직접 치면 preflight 가 돌지 않는다(ADR-0022 §D3).
+> 부득이 건너뛸 때는 `DRAIN_PREFLIGHT_SKIP_REASON="..."` 을 주어 **사유가 로그에 남게** 한다.
 
 ---
 

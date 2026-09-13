@@ -280,7 +280,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 **핵심 결정**:
 - **race 를 막지 않고 검출+보상** (plan 라운드1 P0): confirm(`payment.completed`)과 release(`order.cancelled`/`payment.failed`)는 별도 토픽이라 무순서. confirm-우선 가정 대신, 확정 시점에 원장이 RELEASED 등이면 commit-실패로 검출해 보상으로 수렴(ADR-0012 ④). CONFIRMED 종결성으로 확정 후 지연 release 는 CAS 자연 no-op(판매분 보호).
 - **타임아웃 기준 = paymentRequestedAt** (plan 라운드1 P1): `orderedAt` 기준은 생성 15분 경과 주문 결제 시 진행 중 취소 race → 결제 요청 시점 기준 전환 + 기존 행 backfill/null 폴백으로 마이그레이션 회귀 방지.
-- **보상 멱등 = 원장 compensated_at CAS** (plan 라운드2 P1): 신규 테이블 대신 `orderId` 1회성 컬럼 CAS — DLQ 재발행(새 eventId, `processed_events` 우회) 에도 알림 1회.
+- **보상 멱등 = 원장 compensated_at CAS** (plan 라운드2 P1): 신규 테이블 대신 `orderId` 1회성 컬럼 CAS — **상류** 재발행(새 eventId, `processed_events` 우회 — ADR-0012 D5 경로) 에도 알림 1회. **DLQ replay 는 여기가 아니다** — eventId 를 보존하므로 `processed_events` 가 막는다(④-c-2b-4b 정정).
 - **게이트 분류**: 전이 검사(ORD-003 영구) 우선 → 예약 확정 검사(ORD-008 409 retryable). HttpStatus 가 곧 API 재시도 계약.
 
 **검증**: `./gradlew test` 전체 BUILD SUCCESSFUL. 동시성(confirm×2+release×1)이 `CONFIRMED+복구0+보상0` 또는 `RELEASED+복구1+보상1` 한쪽으로만 수렴 확인.
