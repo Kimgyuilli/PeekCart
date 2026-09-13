@@ -50,13 +50,16 @@ public class DeadLetterEndpoint {
     private final DeadLetterRecordJpaRepository repository;
     private final DeadLetterTransitionService transitionService;
     private final DeadLetterReplayService replayService;
+    private final DeadLetterPublicationOverrideService publicationOverrideService;
 
     /**
      * backlog 요약. {@code GET /actuator/deadletter}
      *
      * <p>{@code unresolved} 는 <b>incident(root) 수</b>다 — 재발행 재실패로 늘어난 자식은 세지 않는다.
-     * {@code publication} 은 그 미결 incident 의 <b>발행 축 분포</b>이며 네 값의 합은 {@code unresolved} 와
-     * 같다({@code NOT_REQUESTED} = 아직 replay 를 요청하지 않은 건) — 다섯 번의 집계 조회를
+     * {@code publication} 은 그 미결 incident 의 <b>발행 축 분포</b>이며 <b>모든 값의 합</b>은
+     * {@code unresolved} 와 같다({@code NOT_REQUESTED} = 아직 replay 를 요청하지 않은 건. 키는
+     * {@link PublicationStatus} 를 따라가므로 ④-c-2b-4b 의 {@code PUBLISH_UNKNOWN} 추가로 <b>5개</b>가 됐다)
+     * — 집계 조회 전부를
      * <b>하나의 read-only 트랜잭션</b>에서 수행해 그 합 불변식을 지킨다. 조회마다 커밋 경계가 갈리면
      * 그 사이의 전이가 같은 행을 두 번 세거나 한 번도 세지 않아 합이 어긋난다. <b>{@code PUBLISHED} 도 미결에
      * 포함된다</b> — 발행 성공은 사건 해소가 아니다(ADR-0020 §D6-2).
@@ -92,7 +95,11 @@ public class DeadLetterEndpoint {
      * <p>본문: {@code {"action":"acknowledge","actor":"..."}} ·
      * {@code {"action":"resolve","actor":"...","reason":"..."}} ·
      * {@code {"action":"discard","actor":"...","reason":"..."}} ·
-     * {@code {"action":"replay","actor":"..."}}
+     * {@code {"action":"replay","actor":"..."}} ·
+     * {@code {"action":"publication-unknown","actor":"...","reason":"..."}}
+     *
+     * <p>{@code publication-unknown} 은 <b>교착한 {@code REQUESTED} 의 해제</b>다(ADR-0022 §D4). replay 와
+     * 같은 이유로 <b>ADMIN 전용</b>이며 사유가 필수다 — 이 전이의 존재 이유가 감사이기 때문이다.
      *
      * <p>본문은 <b>flat 파라미터</b>다 — actuator {@code @WriteOperation} 은 중첩 객체를 받지 않는다.
      *
@@ -111,6 +118,9 @@ public class DeadLetterEndpoint {
         if ("replay".equals(action)) {
             return replay(id, actor);
         }
+        if ("publication-unknown".equals(action)) {
+            return publicationUnknown(id, actor, reason);
+        }
 
         Optional<DeadLetterTransitionService.Result> outcome;
         try {
@@ -119,7 +129,8 @@ public class DeadLetterEndpoint {
                 case "resolve" -> transitionService.resolve(id, actor, reason);
                 case "discard" -> transitionService.discard(id, actor, reason);
                 default -> throw new IllegalArgumentException(
-                        "action 은 acknowledge, resolve, discard, replay 중 하나여야 합니다 (받은 값: " + action + ")");
+                        "action 은 acknowledge, resolve, discard, replay, publication-unknown 중 하나여야 합니다 "
+                                + "(받은 값: " + action + ")");
             };
         } catch (IllegalArgumentException e) {
             return Map.of("error", e.getMessage());
@@ -174,6 +185,42 @@ public class DeadLetterEndpoint {
         response.put("accepted", result.accepted());
         response.put("targetId", result.targetId());
         response.put("attemptId", result.attemptId());
+        response.put("rejections", result.rejections());
+        return response;
+    }
+
+    /**
+     * 교착한 {@code REQUESTED} 를 해제한다 (④-c-2b-4b P24 · ADR-0022 §D4).
+     *
+     * <p><b>ADMIN 전용이다</b> — 이 전이는 사건을 종결 가능한 상태로 바꾸고 drain 게이트를 통과시킨다.
+     * 그 판단은 broker 좌표와 소비 결과를 직접 확인한 사람만 할 수 있다.
+     *
+     * <p><b>사유가 필수다.</b> 없으면 다음 운영자가 {@code PUBLISH_UNKNOWN} 행을 보고 무엇을 확인하고
+     * 옮겼는지 복원할 수 없다 — 그러면 이 action 은 존재 이유를 잃는다.
+     */
+    private Map<String, Object> publicationUnknown(Long id, String actor, String reason) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!hasAdminRole(authentication)) {
+            throw new AccessDeniedException("publication-unknown 은 ADMIN 권한이 필요합니다");
+        }
+        if (reason == null || reason.isBlank()) {
+            return Map.of("error", "reason 은 필수입니다 — 무엇을 확인하고 옮겼는지가 남지 않으면 감사가 불가능합니다");
+        }
+
+        // actor 를 요청값 그대로 믿지 않는다 — replay 와 같은 계약이다.
+        String auditActor = authentication.getName() + "(" + actor + ")";
+
+        Optional<DeadLetterPublicationOverrideService.Result> outcome =
+                publicationOverrideService.releaseStuckPublication(id, auditActor, reason);
+        if (outcome.isEmpty()) {
+            return Map.of("error", "원장에 id=" + id + " 가 없습니다");
+        }
+
+        DeadLetterPublicationOverrideService.Result result = outcome.get();
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", id);
+        response.put("rootId", result.rootId());
+        response.put("released", result.released());
         response.put("rejections", result.rejections());
         return response;
     }

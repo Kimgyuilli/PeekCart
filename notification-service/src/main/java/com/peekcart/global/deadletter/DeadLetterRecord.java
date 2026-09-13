@@ -183,6 +183,26 @@ public class DeadLetterRecord {
     @Column(name = "last_replay_by", length = 160)
     private String lastReplayBy;
 
+    // --- 발행 축 override 감사 (④-c-2b-4b, ADR-0022 §D4) ---
+
+    /**
+     * {@link PublicationStatus#PUBLISH_UNKNOWN} 으로 옮긴 <b>운영자</b> (인증 principal + 요청 메모).
+     *
+     * <p>{@link #lastReplayBy} 와 의미가 다르다 — 그것은 "마지막 <b>replay 요청</b>의 주체" 이고
+     * 이것은 "교착을 <b>해제한</b> 주체" 다. 한 컬럼에 담으면 재발행 이력이 해제 이력에 덮인다.
+     */
+    @Column(name = "publication_override_by", length = 160)
+    private String publicationOverrideBy;
+
+    /**
+     * 해제 사유 — <b>무엇을 확인하고 옮겼는가</b>.
+     *
+     * <p>로그에만 남기면 프로세스 로그가 사라진 뒤 복원할 수 없고, 그러면 이 전이는 존재 이유(감사)를 잃는다.
+     * 시각은 같은 순간 찍는 {@link #lastReplaySettledAt} 이 갖는다 — 별도 {@code *_at} 을 두지 않는다.
+     */
+    @Column(name = "publication_override_reason", length = 500)
+    private String publicationOverrideReason;
+
     // --- replay 정책 축 (④-c-2b-1 V8 이 컬럼 생성, ④-c-2b-4a 가 처음 매핑) ---
 
     /**
