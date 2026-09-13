@@ -89,11 +89,14 @@ class K8sProfileConnectionPropertiesTest {
     }
 
     @Test
-    @DisplayName("k8s 프로파일에서 9개 라우트 uri 가 모두 해석된다")
+    @DisplayName("k8s 프로파일에서 17개 라우트 uri 가 모두 해석된다")
     void routeUrisResolveUnderK8sProfile() {
         Map<String, String> uriByRouteId = routeUris();
 
-        assertThat(uriByRouteId).hasSize(9);
+        // 업무 9 + DLQ 관리자 라우트 8(4서비스 × 요약/전이, ④-c-2b-4b P27).
+        // **개수를 고정한다** — 라우트를 더하면서 이 테스트를 지나치면 신규 라우트의 placeholder 해석이
+        // 아무 데서도 검사되지 않는다.
+        assertThat(uriByRouteId).hasSize(17);
         assertThat(uriByRouteId).allSatisfy((id, uri) ->
                 assertThat(uri).as("라우트 %s 의 uri 가 미해석 placeholder", id).doesNotContain("${"));
     }
@@ -112,7 +115,7 @@ class K8sProfileConnectionPropertiesTest {
      * <p>프로파일 값과 base 기본값이 같은 문자열이라, 어떤 라우트가 옛 이름
      * ({@code ${USER_SERVICE_URI:...}})으로 되돌아가도 uri 값은 그대로 http://user-service:8080 이다
      * — 값 비교로는 절대 잡히지 않는다. 그래서 여기서는 upstream 키를 <b>식별 가능한 다른 값</b>으로
-     * override 하고 9개 라우트 전부가 그 키를 따라가는지 본다.
+     * override 하고 17개 라우트 전부가 그 키를 따라가는지 본다.
      */
     @Nested
     @SpringBootTest
@@ -133,7 +136,7 @@ class K8sProfileConnectionPropertiesTest {
         private RouteDefinitionLocator locator;
 
         @Test
-        @DisplayName("9개 라우트 전부가 override 한 upstream 값으로 해석된다")
+        @DisplayName("17개 라우트 전부가 override 한 upstream 값으로 해석된다")
         void everyRouteFollowsUpstreamKey() {
             Map<String, String> uriByRouteId = locator.getRouteDefinitions()
                     .collectList()
@@ -150,7 +153,17 @@ class K8sProfileConnectionPropertiesTest {
                     .containsEntry("order-cart", "http://sentinel-order:9")
                     .containsEntry("order-orders", "http://sentinel-order:9")
                     .containsEntry("payment", "http://sentinel-payment:9")
-                    .containsEntry("notification", "http://sentinel-notification:9");
+                    .containsEntry("notification", "http://sentinel-notification:9")
+                    // DLQ 관리자 라우트도 같은 upstream 키를 따른다 (④-c-2b-4b P27).
+                    // 여기가 sentinel 을 따르지 않으면 라우트가 옛 placeholder 이름으로 되돌아간 것이다.
+                    .containsEntry("order-deadletter-admin-summary", "http://sentinel-order:9")
+                    .containsEntry("order-deadletter-admin-transition", "http://sentinel-order:9")
+                    .containsEntry("product-deadletter-admin-summary", "http://sentinel-product:9")
+                    .containsEntry("product-deadletter-admin-transition", "http://sentinel-product:9")
+                    .containsEntry("payment-deadletter-admin-summary", "http://sentinel-payment:9")
+                    .containsEntry("payment-deadletter-admin-transition", "http://sentinel-payment:9")
+                    .containsEntry("notification-deadletter-admin-summary", "http://sentinel-notification:9")
+                    .containsEntry("notification-deadletter-admin-transition", "http://sentinel-notification:9");
         }
     }
 }
