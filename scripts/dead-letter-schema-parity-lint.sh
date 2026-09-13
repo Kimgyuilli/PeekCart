@@ -306,6 +306,8 @@ java_files = ["DeadLetterRecord", "DeadLetterStatus", "PublicationStatus", "Dead
               "DeadLetterPublicationReconciler",
               # ④-c-2b-4a P21·P23. 진입점·워커·사전조건 포트도 4벌 byte 동일 복제본이다.
               "DeadLetterPublicationWorker", "DeadLetterReplayService", "ReplayPreconditionPort",
+              # ④-c-2b-4b P24. 교착 REQUESTED 해제(ADR-0022 D4)도 4벌 byte 동일 복제본이다.
+              "DeadLetterPublicationOverrideService",
               # ④-c-2a 산출물이나 목록에 빠져 있던 복제본 2개. 아래 DLQ-PARITY-014 검사가 찾아냈다 —
               # 사람이 목록을 관리하는 한 누락은 반복되므로, 목록 자체를 검사가 지킨다.
               "DeadLetterContainerGuard", "DeadLetterKafkaConfig"]
