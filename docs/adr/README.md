@@ -42,6 +42,7 @@
 | [0017](./0017-gateway-signed-internal-token.md) | Gateway 서명 내부 토큰 — header-trust 를 평문 헤더에서 서명 assertion 으로 격상 (defense-in-depth) | Accepted | Phase 4 | 02, 04 |
 | [0018](./0018-compensation-refund-contract.md) | 보상/환불 트리거 계약 — 감지 3지점 → Payment 환불 실행 → 원장 종결 (ADR-0012 D3 ④ 구체화) | Partially Superseded | Phase 4 | 03, 04, 05 |
 | [0019](./0019-alert-expression-pinning.md) | alert 식 정본 고정 — PromQL 정적 lint 를 라벨 invariant 에서 식 동일성으로 격상 (ADR-0015 부분 무효화) | Accepted | Phase 4 | 02 |
-| [0020](./0020-dlq-replay-contract.md) | DLQ replay 계약 — 재발행 보장·발행 권한 예외·좌표 유효성·종결 축 분리 (ADR-0012 D1/D4 · ADR-0018 producer 규약 부분 무효화) | Partially Superseded | Phase 4 | 02, 04 |
+| [0020](./0020-dlq-replay-contract.md) | DLQ replay 계약 — 재발행 보장·발행 권한 예외·좌표 유효성·종결 축 분리 (ADR-0012 D1/D4 · ADR-0018 producer 규약 부분 무효화 · ADR-0021/0022 로 부분 무효화) | Partially Superseded | Phase 4 | 02, 04 |
 | [0021](./0021-dlq-replay-correlation-anchor.md) | DLQ replay 재실패 상관 — 대조 축을 `record_kind` 에서 원장 앵커 + payload digest 로 (ADR-0020 D5-4 부분 무효화) | Accepted | Phase 4 | 02, 05 |
+| [0022](./0022-replay-entrypoint-rollout-and-drain.md) | replay 개시 진입점의 개방 절차 — 도달 경로 · drain/롤백 계약 · `PUBLISH_UNKNOWN` (ADR-0020 §D6-1/§D6-2b/§D6-4 부분 무효화) | Proposed | Phase 4 | 02, 04, 05 |
 <!-- INDEX:END -->
