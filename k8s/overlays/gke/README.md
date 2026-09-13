@@ -71,7 +71,8 @@ bash k8s/monitoring/gke/install.sh
 kubectl apply -k k8s/monitoring/shared/
 
 # 4. app/infra + HPA + ServiceMonitor
-kubectl apply -k k8s/overlays/gke/
+# 앱 overlay 배포는 래퍼를 쓴다 — drain preflight 선행 (ADR-0022 §D3)
+bash scripts/deploy-overlay.sh k8s/overlays/gke
 ```
 
 > **HPA 전제**: 4단계 적용에 포함된 HPA (`hpa.yml`) 는 CPU Utilization 기반이며 metrics-server API (`metrics.k8s.io`) 가 필요합니다. GKE Standard 는 기본 제공이므로 추가 설치 없이 동작합니다. **도메인 서비스 HPA 는 order-service 단일**(구현 ① PR3b GP-2 #4 · 로드맵 §16 "Phase 4 이후 HPA=Order Service HPA") — 타 4서비스는 HPA 미적용(필요 시 후속). **gateway 는 그 원칙의 명시적 예외**(구현 ③ PR3b): 전 트래픽 단일 진입점이라 단일 replica 가 SPOF 이므로 `minReplicas: 2` HPA 를 둡니다(ADR-0013 D3). minikube overlay 에는 HPA 미포함.

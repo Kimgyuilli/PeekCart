@@ -66,10 +66,147 @@ for svc in order product payment notification; do
     fi
 done
 
+# --- (5) drain 상한 상수가 코드·설정과 갈라지지 않았는가 (④-c-2b-4b · ADR-0022 §D2 · 계획 V-41) ---
+#
+# 상한은 preflight 스크립트가 소유한다 — 배포 절차의 값이지 앱 런타임 정책이 아니기 때문이다(ADR-0007).
+# 그 대가로 **코드/설정과 갈라질 수 있다**: backoff 를 늘리거나 clock-skew 를 바꿔도 상한은 그대로여서
+# drain 이 **조기 통과**한다. 그 드리프트를 여기서 잡는다.
+drift_check() {
+    local root="${1:-.}"
+    python3 - "$root" <<'PYEOF'
+import os, re, sys
+
+root = sys.argv[1]
+services = ["order", "product", "payment", "notification"]
+problems = []
+
+preflight = os.path.join(root, "scripts/replay-drain-preflight.sh")
+try:
+    with open(preflight, encoding="utf-8") as f:
+        script = f.read()
+except OSError:
+    print("[REPLAY-ENTRY-006] scripts/replay-drain-preflight.sh 가 없다 — 상한 정본이 사라졌다")
+    sys.exit(1)
+
+def constant(name):
+    m = re.search(r"^%s=(\d+)" % name, script, re.M)
+    return int(m.group(1)) if m else None
+
+declared_backoff = constant("BACKOFF_TOTAL_SECONDS")
+declared_skew = constant("CLOCK_SKEW_SECONDS")
+if declared_backoff is None or declared_skew is None:
+    problems.append("[REPLAY-ENTRY-006] preflight 에서 상한 상수를 읽지 못했다 "
+                    "(BACKOFF_TOTAL_SECONDS / CLOCK_SKEW_SECONDS)")
+
+for service in services:
+    config = os.path.join(root, "%s-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java" % service)
+    try:
+        with open(config, encoding="utf-8") as f:
+            body = f.read()
+    except OSError:
+        problems.append("[REPLAY-ENTRY-006] %s: DeadLetterKafkaConfig.java 가 없다" % service)
+        continue
+    m = re.search(r"FixedSequenceBackOff\(([^)]*)\)", body)
+    if not m:
+        problems.append("[REPLAY-ENTRY-006] %s: FixedSequenceBackOff 리터럴을 찾지 못했다" % service)
+        continue
+    millis = [int(v.strip().replace("_", "")) for v in m.group(1).split(",") if v.strip()]
+    total = sum(millis) // 1000
+    if declared_backoff is not None and total != declared_backoff:
+        problems.append(
+            "[REPLAY-ENTRY-006] %s: backoff 합 %ds 가 preflight 의 BACKOFF_TOTAL_SECONDS=%ds 와 다르다 "
+            "— drain 이 조기 통과한다" % (service, total, declared_backoff))
+
+    yml = os.path.join(root, "%s-service/src/main/resources/application.yml" % service)
+    try:
+        with open(yml, encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        problems.append("[REPLAY-ENTRY-006] %s: application.yml 이 없다" % service)
+        continue
+    m = re.search(r"^\s*clock-skew-budget:\s*(\d+)([smh])", text, re.M)
+    if not m:
+        problems.append("[REPLAY-ENTRY-006] %s: clock-skew-budget 을 찾지 못했다" % service)
+        continue
+    seconds = int(m.group(1)) * {"s": 1, "m": 60, "h": 3600}[m.group(2)]
+    if declared_skew is not None and seconds != declared_skew:
+        problems.append(
+            "[REPLAY-ENTRY-006] %s: clock-skew-budget %ds 가 preflight 의 CLOCK_SKEW_SECONDS=%ds 와 다르다"
+            % (service, seconds, declared_skew))
+
+for p in problems:
+    print(p)
+sys.exit(1 if problems else 0)
+PYEOF
+}
+
+if [[ "${1:-}" == "--self-test" ]]; then
+    # 드리프트 검사가 **실제로 red 가 되는지** 고정한다. 정상 트리에서 green 인 것도 함께 본다 —
+    # 항상 red 인 lint 는 검사가 아니고, 항상 green 인 lint 는 더 나쁘다.
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    mkdir -p "$tmp/scripts"
+    cp scripts/replay-drain-preflight.sh "$tmp/scripts/"
+    for svc in order product payment notification; do
+        mkdir -p "$tmp/${svc}-service/src/main/java/com/peekcart/global/deadletter" \
+                 "$tmp/${svc}-service/src/main/resources"
+        cp "${svc}-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java" \
+           "$tmp/${svc}-service/src/main/java/com/peekcart/global/deadletter/"
+        cp "${svc}-service/src/main/resources/application.yml" "$tmp/${svc}-service/src/main/resources/"
+    done
+
+    failures=0
+    expect() {
+        local name="$1" want="$2" needle="$3"
+        local out rc
+        set +e
+        out=$(drift_check "$tmp" 2>&1); rc=$?
+        set -e
+        if [[ "$rc" != "$want" ]] || { [[ -n "$needle" ]] && [[ "$out" != *"$needle"* ]]; }; then
+            echo "self-test 실패: $name (exit $rc, 기대 $want)" >&2
+            echo "$out" >&2
+            failures=$((failures + 1))
+        else
+            echo "  ok  $name"
+        fi
+    }
+
+    expect "무변조 baseline 은 green" 0 ""
+    sed -i.bak 's/FixedSequenceBackOff(1_000, 5_000, 30_000)/FixedSequenceBackOff(1_000, 5_000, 60_000)/' \
+        "$tmp/order-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java"
+    expect "backoff 를 한 벌만 늘리면 red" 1 "backoff 합"
+    cp "$tmp/order-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java.bak" \
+       "$tmp/order-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java"
+
+    sed -i.bak 's/clock-skew-budget: 5m/clock-skew-budget: 9m/' \
+        "$tmp/payment-service/src/main/resources/application.yml"
+    expect "clock-skew 를 한 벌만 바꾸면 red" 1 "clock-skew-budget"
+    cp "$tmp/payment-service/src/main/resources/application.yml.bak" \
+       "$tmp/payment-service/src/main/resources/application.yml"
+
+    sed -i.bak 's/^BACKOFF_TOTAL_SECONDS=36/BACKOFF_TOTAL_SECONDS=99/' "$tmp/scripts/replay-drain-preflight.sh"
+    expect "preflight 상한만 바꿔도 red (드리프트는 양방향이다)" 1 "backoff 합"
+    cp "$tmp/scripts/replay-drain-preflight.sh.bak" "$tmp/scripts/replay-drain-preflight.sh"
+
+    rm "$tmp/scripts/replay-drain-preflight.sh"
+    expect "preflight 가 사라지면 red (상한 정본 소실)" 1 "정본이 사라졌다"
+
+    if ((failures > 0)); then
+        echo "replay-entrypoint-lint self-test FAILED (${failures}건)" >&2
+        exit 2
+    fi
+    echo "replay-entrypoint-lint self-test OK — 드리프트 4종"
+    exit 0
+fi
+
+while IFS= read -r line; do
+    violations+=("$line")
+done < <(drift_check "." || true)
+
 if ((${#violations[@]} > 0)); then
     printf '%s\n' "${violations[@]}" >&2
     echo "replay-entrypoint-lint FAILED (${#violations[@]}건)" >&2
     exit 1
 fi
 
-echo "replay-entrypoint-lint OK — 진입점 4서비스 1개씩, 우회 호출 0, 문서 직접 SQL 0"
+echo "replay-entrypoint-lint OK — 진입점 4서비스 1개씩, 우회 호출 0, 문서 직접 SQL 0, drain 상한 드리프트 0"

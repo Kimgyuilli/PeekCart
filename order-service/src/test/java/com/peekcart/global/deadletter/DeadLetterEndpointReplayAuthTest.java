@@ -22,7 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * {@code action=replay} 의 권한·감사 주체 계약 (구현 ④-c-2b-4a · diff 리뷰 1R #3).
+ * {@code action=replay} · {@code action=publication-unknown} 의 권한·감사 주체 계약
+ * (구현 ④-c-2b-4a diff 리뷰 1R #3 · ④-c-2b-4b P24).
  *
  * <p>다른 전이는 원장 상태만 바꾸지만 replay 는 <b>업무 토픽에 실제 메시지를 다시 싣는다</b>.
  * 공통 보안 체인은 {@code anyRequest().authenticated()} 뿐이라 ROLE_USER 도 통과하므로
@@ -33,8 +34,10 @@ class DeadLetterEndpointReplayAuthTest {
     private final DeadLetterRecordJpaRepository repository = mock(DeadLetterRecordJpaRepository.class);
     private final DeadLetterTransitionService transitionService = mock(DeadLetterTransitionService.class);
     private final DeadLetterReplayService replayService = mock(DeadLetterReplayService.class);
+    private final DeadLetterPublicationOverrideService overrideService =
+            mock(DeadLetterPublicationOverrideService.class);
     private final DeadLetterEndpoint endpoint =
-            new DeadLetterEndpoint(repository, transitionService, replayService);
+            new DeadLetterEndpoint(repository, transitionService, replayService, overrideService);
 
     @AfterEach
     void clearContext() {
@@ -92,5 +95,43 @@ class DeadLetterEndpointReplayAuthTest {
 
         assertThat(response.get("error")).asString().contains("actor 는 필수");
         verify(replayService, never()).replay(any(), any());
+    }
+
+    // ---------- publication-unknown (④-c-2b-4b P24 · ADR-0022 §D4) ----------
+
+    @Test
+    @DisplayName("ROLE_USER 는 교착 해제를 할 수 없다 — 서비스까지 도달하지 않는다")
+    void publicationUnknownRequiresAdmin() {
+        authenticateAs("7", "USER");
+
+        assertThatThrownBy(() -> endpoint.transition(1L, "publication-unknown", "someone", "확인함"))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("ADMIN 권한");
+        verify(overrideService, never()).releaseStuckPublication(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("사유가 없으면 거부한다 — 감사가 이 전이의 존재 이유다")
+    void publicationUnknownRequiresReason() {
+        authenticateAs("42", "ADMIN");
+
+        Map<String, Object> response = endpoint.transition(1L, "publication-unknown", "야간 당직", "  ");
+
+        assertThat(response.get("error")).asString().contains("reason 은 필수");
+        // 사유 검사를 서비스 안으로 미루면 잠금·조회가 이미 돈 뒤에 거부된다.
+        verify(overrideService, never()).releaseStuckPublication(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("ADMIN 의 해제는 인증 주체를 감사에 앞세운다 — 요청값만으로 위조할 수 없다")
+    void publicationUnknownDelegatesWithAuthenticatedActor() {
+        authenticateAs("42", "ADMIN");
+        when(overrideService.releaseStuckPublication(eq(1L), any(), any()))
+                .thenReturn(Optional.of(new DeadLetterPublicationOverrideService.Result(1L, 1, List.of())));
+
+        Map<String, Object> response = endpoint.transition(1L, "publication-unknown", "야간 당직", "확인함");
+
+        assertThat(response.get("released")).isEqualTo(1);
+        verify(overrideService).releaseStuckPublication(1L, "42(야간 당직)", "확인함");
     }
 }

@@ -280,7 +280,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 **핵심 결정**:
 - **race 를 막지 않고 검출+보상** (plan 라운드1 P0): confirm(`payment.completed`)과 release(`order.cancelled`/`payment.failed`)는 별도 토픽이라 무순서. confirm-우선 가정 대신, 확정 시점에 원장이 RELEASED 등이면 commit-실패로 검출해 보상으로 수렴(ADR-0012 ④). CONFIRMED 종결성으로 확정 후 지연 release 는 CAS 자연 no-op(판매분 보호).
 - **타임아웃 기준 = paymentRequestedAt** (plan 라운드1 P1): `orderedAt` 기준은 생성 15분 경과 주문 결제 시 진행 중 취소 race → 결제 요청 시점 기준 전환 + 기존 행 backfill/null 폴백으로 마이그레이션 회귀 방지.
-- **보상 멱등 = 원장 compensated_at CAS** (plan 라운드2 P1): 신규 테이블 대신 `orderId` 1회성 컬럼 CAS — DLQ 재발행(새 eventId, `processed_events` 우회) 에도 알림 1회.
+- **보상 멱등 = 원장 compensated_at CAS** (plan 라운드2 P1): 신규 테이블 대신 `orderId` 1회성 컬럼 CAS — **상류** 재발행(새 eventId, `processed_events` 우회 — ADR-0012 D5 경로) 에도 알림 1회. **DLQ replay 는 여기가 아니다** — eventId 를 보존하므로 `processed_events` 가 막는다(④-c-2b-4b 정정).
 - **게이트 분류**: 전이 검사(ORD-003 영구) 우선 → 예약 확정 검사(ORD-008 409 retryable). HttpStatus 가 곧 API 재시도 계약.
 
 **검증**: `./gradlew test` 전체 BUILD SUCCESSFUL. 동시성(confirm×2+release×1)이 `CONFIRMED+복구0+보상0` 또는 `RELEASED+복구1+보상1` 한쪽으로만 수렴 확인.
@@ -1899,3 +1899,74 @@ Kafka 없는 모듈의 존재가 diff 밖에 있기 때문이다. 4서비스 Kaf
 
 **다음**: ④-c-2b-4b (drain 4조건 preflight · deploy 래퍼 · `PUBLISH_UNKNOWN` 해제 경로 · runbook §6/§6-R ·
 P22 증적 · **ADR-0022**). **착수 전 계획 리뷰 4R 선행.**
+
+---
+
+## 2026-09-13 — ④-c-2b-4b: drain·롤백 계약 + 진입점 도달 경로 ([#106](https://github.com/Kimgyuilli/PeakCart/pull/106))
+
+계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` P22·P24·P26·**P27(신설)**. **구현 ④ 종결.**
+
+4a 가 진입점을 세우고 kill-switch 를 닫아둔 채 끝났다. 이 PR 은 그 스위치를 **열 수 있게** 만든다 —
+여는 행위가 되돌릴 수 없는 성질 셋(롤백 손상 · 도달 불가 · 교착)을 만들기 때문이다.
+
+### 리뷰 없이 진행했다
+
+계획 4R 과 diff 리뷰 **둘 다 사용자 지시로 미실행**(Codex 토큰 절약)이다. 따라서 이 PR 에는
+**"P1 = 0" 주장이 존재하지 않고**, 계획서 완료 조건 2(수렴 판정)를 충족하지 못한다.
+
+대신 착수 전 **코드 검증 C-44~C-55(12건)**로 계획의 미수렴 축을 코드 사실에 고정했다 —
+전제 유지 7 · 반증 2 · 확대 3. 이 검증이 없었으면 4b 는 세 번 갈아엎힌 앵커 논의를 네 번째로
+반복했을 것이다.
+
+### 검증이 뒤집은 것 — 그리고 구현이 또 뒤집은 것
+
+- **C-46**: `PUBLISH_UNKNOWN` 신설에 DDL 이 필요하다고 봤으나 `publication_status` 는 ENUM 이 아니라
+  `VARCHAR(20)` 이었다 → "4b 는 마이그레이션 0개".
+- **C-46b (구현 중 재정정)**: 그런데 그것이 **틀렸다**. 상태값에는 DDL 이 불필요하지만 **override 의
+  감사 사유를 담을 컬럼이 없었다** — `last_replay_by` 는 "마지막 *replay 요청*의 주체" 라는 다른 의미다.
+  사유가 휘발되면 이 전이는 존재 이유(감사)를 잃으므로 컬럼 2개를 추가했다. **검증이 한 번에 옳지
+  않았다는 기록을 남긴다** — 같은 표면을 두 번 보고서야 "상태값" 과 "그 전이의 감사" 가 다른 축임을 봤다.
+- **C-52**: ⓓ 상한 식의 입력 중 `handlerBudget` 이 **레포에 존재하지 않았다**(grep 0건, 계획서 본문에만
+  있었다). 상한의 소유처를 preflight 스크립트 상수로 확정하고 드리프트를 lint 가 잡게 했다.
+
+### 설계에서 좁힌 것 — 탈출구와 우회로
+
+`PUBLISH_UNKNOWN` 을 **outbox 행이 실제 부재일 때만** 허용한다(계획에 없던 결정). 행이 남아 있으면
+reconciler 가 스스로 종착시키므로, 그때도 옮길 수 있게 하면 **reconciler 와 경쟁하는 두 번째 종착
+경로**가 생긴다 — `DeadLetterEndpoint` javadoc 이 명시적으로 막아둔 바로 그것이고, 실제로 발행에
+성공한 건이 "발행 여부 모름" 으로 후퇴할 수 있다. 이 좁힘이 탈출구와 우회로를 가른다.
+
+재요청이 막히는 것은 새 코드가 아니라 **claim 이 allow-list 라서**다(`NULL` 또는 `PUBLISH_FAILED`).
+그 default-deny 가 우연이 아님은 변이(allow-list 에 값 추가 → red)로 관측했다.
+
+### R9 — "가드는 정확한데 도달할 수 없다"
+
+도메인 서비스는 gateway 와 달리 관리 포트를 분리하지 않아 actuator 가 앱 포트에 있는데, 라우트는
+`/api/v1/**` 뿐이고 리소스 서비스는 게이트웨이 서명 토큰에서만 주체를 세운다(ADR-0017). port-forward
+직접 호출은 `Authentication` 이 null 이라 **ROLE_ADMIN 검사에 닿기 전에 끊긴다**. 이 성질은 ④-c-2a 가
+만든 기존 엔드포인트 전체의 것이었고 4a 의 회귀가 아니지만, **kill-switch 를 여는 시점에는 답해야 했다.**
+
+게이트웨이 관리자 라우트 8종으로 처분했다. **권한 판정을 게이트웨이로 옮기지 않는다** — 옮기면 판정이
+리소스 소유 서비스 밖으로 나가고, 라우트를 우회하는 경로가 생겼을 때 가드가 함께 사라진다.
+`{id:[0-9]+}` 제약이 actuator 누출을 **매칭 단계에서** 차단한다(rewrite 결과의 안전을 정규화에 맡기지 않는다).
+
+### 검증에서 드러난 것
+
+- **false-green 1건 (자백)**: 신규 라우트 테스트의 `matches()` 가 `AsyncPredicate.apply()`(=
+  `Publisher<Boolean>`)를 Boolean 과 직접 비교해 **항상 false** 였다. 그 상태에서 **actuator 누출 음성
+  검사 6종이 전부 vacuous-green** 이었고, 양성 8종이 red 였던 덕에 드러났다. 음성 검사만 있는 표면은
+  이 함정을 스스로 못 잡는다.
+- **회귀 1건**: `K8sProfileConnectionPropertiesTest` 가 라우트 수를 9로 고정하고 있었다(→ 17).
+  신규 8개의 upstream placeholder 추종까지 단언에 추가했다.
+- **변이 14종 red** · **전 8모듈 1153 tests 0 실패** · lint 5종 + self-test 3종.
+
+### 미충족
+
+- **리뷰 수렴 미판정** — 완료 조건 2 미달. 머지 전 리뷰가 필요하다.
+- **V-40 의 실제 스택 관통 미검증** — ADMIN 토큰으로 게이트웨이를 경유해 호출하고 ROLE_USER 가 403 을
+  받는 구간. 라우트 계약과 엔드포인트 가드를 각각 관측했으나 **둘을 잇는 구간은 미관측**이다.
+- **preflight 의 수집 계층 미검증** — `kubectl exec` 기반 DB/Kafka 조회. 판정 계층만 fixture 로 관통했다.
+- **P22 표본 0 → 미측정** — 운영 원장이 없다. fixture 로 대체하지 않았고 0건을 "NULL 0%" 로 적지 않았다.
+  처분은 ADR-0022 §D6 분기표가 선기록한다.
+- **래퍼는 우회 가능하고 kill-switch 는 즉시 닫히지 않는다** — 둘 다 ADR-0022 가 한계로 명시한 것이다.
+- **실제 개방은 이 PR 이 하지 않는다** — 배포 순서(계획 §9 4단계)의 운영 작업이며 GKE 실적용은 §10 R2 소관.

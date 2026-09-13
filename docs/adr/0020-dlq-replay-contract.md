@@ -1,6 +1,7 @@
 # ADR-0020: DLQ replay 계약 — 재발행 보장·발행 권한 예외·좌표 유효성·종결 축 분리
 
-- **Status**: Partially Superseded by [ADR-0021](./0021-dlq-replay-correlation-anchor.md)
+- **Status**: Partially Superseded by [ADR-0021](./0021-dlq-replay-correlation-anchor.md) · [ADR-0022](./0022-replay-entrypoint-rollout-and-drain.md)
+  - **ADR-0022 가 무효화한 범위**: §D6-1 표의 `publication_status` **값 목록**(`PUBLISH_UNKNOWN` 추가) · §D6-2b 의 **두 축 곱 표**(같은 값의 행 추가) · §D6-4 의 **"전이 주체는 reconciler 1종으로 고정한다"**(운영자의 단방향 override 를 더해 **2종**). **I-1·I-2 와 §D6-2 의 "종결은 사람만" 은 유지**되며, §D6-4 의 `outbox_event_id` 연결·"관리 API 는 `REQUESTED` 까지만 만든다" 도 그대로다 — override 는 `REQUESTED` 를 **만드는** 것이 아니라 그것이 교착했을 때 **빠져나오는** 단방향 전이다.
   - **무효화된 범위**: §D5-4 의 **"판독 조건 = 한 트랜잭션 안의 원자 대조"** 중 **`record_kind=REPLAY` 대조**와, 같은 절 음성 테스트 목록의 **`record_kind` 불일치** 항목. `record_kind` 는 `outbox_events` 전속 컬럼이라 **같은 절이 배제한 수명 경쟁에 그대로 걸린다** — ADR-0021 이 그 축을 원장 앵커(`last_replay_attempt_id`·`last_replay_target_group`·`last_replay_payload_digest`) + fingerprint 대조로 대체한다.
   - **유지되는 범위**: §D5-4 의 나머지 전부(대조의 정본은 원장 · 헤더 불신 · 수명 경쟁 · 실제 DLT group 대조 · 어긋나면 독립 행) · §D3 · §D5-2 · §D6 · §D8. ADR-0021 은 이 원칙들의 **귀결**이지 반박이 아니다.
 - **Date**: 2026-09-01

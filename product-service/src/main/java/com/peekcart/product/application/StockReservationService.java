@@ -193,8 +193,13 @@ public class StockReservationService {
 
     /**
      * commit-실패(PAID_BUT_UNRESERVED) 보상 (ADR-0012 ④ → ADR-0018 D1). {@code orderId} 기준
-     * 1회성 marker 로 멱등을 보장해 DLQ 재발행(새 eventId) 으로 confirm 이 재실행돼도 요청이
+     * 1회성 marker 로 멱등을 보장해 <b>상류 재발행(새 eventId)</b> 으로 confirm 이 재실행돼도 요청이
      * 중복 발행되지 않는다.
+     *
+     * <p><b>"DLQ 재발행" 이 아니다</b>(④-c-2b-4b 정정): DLQ replay 는 원본 payload 를 <b>byte 그대로</b>
+     * 다시 싣는다(ADR-0020 §D8-3) — {@code eventId} 가 보존되므로 {@code processed_events} 멱등에 그대로
+     * 걸린다. 새 {@code eventId} 가 부여되는 것은 <b>ADR-0012 D5 가 허용한 상류 재발행 우회 경로</b>이고,
+     * 이 marker 가 막는 것은 그쪽이다.
      *
      * <p><b>감지 marker 와 요청 Outbox 는 같은 트랜잭션</b>이다(ADR-0018 D1 원자성 불변식) —
      * 부분 커밋은 "감지했는데 아무도 환불하지 않는" 영구 미결을 만든다. 본 서비스는 클래스

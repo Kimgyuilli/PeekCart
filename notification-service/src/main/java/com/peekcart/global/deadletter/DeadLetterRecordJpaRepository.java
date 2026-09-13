@@ -253,6 +253,24 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
     int stampReplaySettledAt(@Param("rootId") Long rootId);
 
     /**
+     * 교착한 {@code REQUESTED} 를 {@code PUBLISH_UNKNOWN} 으로 <b>단방향 해제</b>한다
+     * (④-c-2b-4b P24 · ADR-0022 §D4).
+     *
+     * <p><b>조건부 UPDATE 여야 한다.</b> 읽고-검사하고-쓰면 그 사이에 reconciler 가 종착시킨 결과를
+     * 덮어쓴다 — 실제로 발행에 성공한 건이 "발행 여부 모름" 으로 후퇴하고, 그 상태는 되돌릴 수 없다.
+     * 영향 행 0 이면 호출자는 <b>이미 다른 주체가 전이시켰다</b> 고 보고 거부 사유를 돌려준다.
+     *
+     * <p>감사 2컬럼을 <b>같은 UPDATE 에서</b> 쓴다. 나눠 쓰면 상태만 바뀌고 사유가 비는 창이 생긴다.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query(value = "UPDATE dead_letter_records SET publication_status = 'PUBLISH_UNKNOWN', "
+            + "publication_override_by = :overrideBy, publication_override_reason = :reason "
+            + "WHERE id = :targetId AND publication_status = 'REQUESTED'", nativeQuery = true)
+    int overridePublicationUnknown(@Param("targetId") Long targetId,
+                                   @Param("overrideBy") String overrideBy,
+                                   @Param("reason") String reason);
+
+    /**
      * replay <b>claim</b> — 발행 축을 {@code REQUESTED} 로 선점한다 (ADR-0020 §D6-4 · 구현 ④-c-2b-4a P21).
      *
      * <p><b>조건부 UPDATE 여야 한다.</b> 읽고-검사하고-쓰면 동시 요청 둘이 모두 통과해 <b>같은 메시지가
