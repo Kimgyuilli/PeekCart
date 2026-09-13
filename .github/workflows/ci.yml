@@ -81,6 +81,11 @@ jobs:
           bash scripts/dead-letter-schema-parity-lint.sh
           bash scripts/dead-letter-schema-parity-lint.sh --self-test
           bash scripts/replay-entrypoint-lint.sh
+          # drain 상한은 preflight 스크립트가 소유한다(ADR-0022 D2) — 그 대가로 backoff/clock-skew 와
+          # 갈라질 수 있고, 갈라지면 drain 이 **조기 통과**한다. 드리프트 검사와 그 자기검증.
+          bash scripts/replay-entrypoint-lint.sh --self-test
+          # drain 판정 자체의 fixture 검증(계획 V-37). 수집은 클러스터가 필요하지만 판정은 순수 함수다.
+          bash scripts/replay-drain-preflight.sh --self-test
           # 마이그레이션이 **부여되지 않은 권한**을 요구하면 실제 스택에서만 부팅이 깨진다 —
           # Testcontainers 는 root 로 돌아 그 차이를 보지 못한다(PR #105 에서 실제로 났다).
           bash scripts/migration-grant-lint.sh
