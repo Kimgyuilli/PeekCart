@@ -89,6 +89,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
     @Autowired OutboxEventJpaRepository outboxEventJpaRepository;
     @Autowired DeadLetterRecorder recorder;
     @Autowired DeadLetterPublicationReconciler reconciler;
+    @Autowired DeadLetterPublicationOverrideService overrideService;
     @Autowired com.peekcart.global.outbox.OutboxPollingService pollingService;
     @Autowired com.peekcart.order.infrastructure.OrderJpaRepository orderJpaRepository;
     @Autowired DeadLetterProperties properties;
@@ -342,6 +343,99 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         assertThat(after.getLastReplaySettledAt()).isNull();
     }
 
+    // ---------- V-39: 교착 REQUESTED 의 단방향 해제 (④-c-2b-4b P24 · ADR-0022 §D4) ----------
+
+    @Test
+    @DisplayName("outbox 행이 사라져 고착한 REQUESTED 를 해제하면 PUBLISH_UNKNOWN + 앵커 + 감사가 남는다")
+    void releaseStuckPublication() {
+        Long ledgerId = replayedIncident("order-20");
+        deleteOutboxRowOf(ledgerId);
+
+        // 먼저 **교착임을 관측한다** — reconciler 는 부재를 강등하지 않는다(부재는 실패의 증거가 아니다).
+        reconciler.reconcile();
+        assertThat(ledgerRepository.findById(ledgerId).orElseThrow().getPublicationStatus())
+                .isEqualTo(PublicationStatus.REQUESTED);
+
+        DeadLetterPublicationOverrideService.Result result = overrideService
+                .releaseStuckPublication(ledgerId, "admin(operator)", "broker offset 확인 — 소비 흔적 없음")
+                .orElseThrow();
+
+        assertThat(result.released()).isEqualTo(1);
+        assertThat(result.rejections()).isEmpty();
+        DeadLetterRecord after = ledgerRepository.findById(ledgerId).orElseThrow();
+        assertThat(after.getPublicationStatus()).isEqualTo(PublicationStatus.PUBLISH_UNKNOWN);
+        // 발행 여부를 모르므로 drain ⓓ 앵커도 찍는다 — 소비 재시도가 끝났다고 가정할 수 없다.
+        assertThat(after.getLastReplaySettledAt()).isNotNull();
+        // 감사가 **원장에** 남는다. 로그에만 남기면 이 action 은 존재 이유를 잃는다.
+        assertThat(after.getPublicationOverrideBy()).isEqualTo("admin(operator)");
+        assertThat(after.getPublicationOverrideReason()).isEqualTo("broker offset 확인 — 소비 흔적 없음");
+    }
+
+    @Test
+    @DisplayName("outbox 행이 아직 있으면 해제를 거부한다 — reconciler 와 경쟁하는 두 번째 종착 경로를 막는다")
+    void refusesWhenOutboxRowStillExists() {
+        Long ledgerId = replayedIncident("order-21");
+
+        DeadLetterPublicationOverrideService.Result result = overrideService
+                .releaseStuckPublication(ledgerId, "admin(operator)", "성급한 해제 시도")
+                .orElseThrow();
+
+        assertThat(result.released()).isZero();
+        assertThat(result.rejections()).anyMatch(r -> r.contains("outbox 행이 아직 있다"));
+        DeadLetterRecord after = ledgerRepository.findById(ledgerId).orElseThrow();
+        // 상태로 확인한다 — 거부 응답만 보면 옮기고 나서 거부해도 통과한다.
+        assertThat(after.getPublicationStatus()).isEqualTo(PublicationStatus.REQUESTED);
+        assertThat(after.getPublicationOverrideBy()).isNull();
+        assertThat(after.getLastReplaySettledAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("PUBLISH_UNKNOWN 은 재발행을 열지 않는다 — claim allow-list 의 default-deny 가 우연이 아님")
+    void publishUnknownIsNotReclaimable() {
+        Long ledgerId = replayedIncident("order-22");
+        deleteOutboxRowOf(ledgerId);
+        overrideService.releaseStuckPublication(ledgerId, "admin(operator)", "확인함").orElseThrow();
+        long outboxBefore = outboxEventJpaRepository.count();
+
+        DeadLetterReplayService.Result result = replay(ledgerId);
+
+        assertThat(result.accepted()).isFalse();
+        // claim allow-list 에 PUBLISH_UNKNOWN 을 더하면 이 단언이 red 가 된다.
+        assertThat(outboxEventJpaRepository.count()).isEqualTo(outboxBefore);
+        assertThat(ledgerRepository.findById(ledgerId).orElseThrow().getPublicationStatus())
+                .isEqualTo(PublicationStatus.PUBLISH_UNKNOWN);
+    }
+
+    @Test
+    @DisplayName("PUBLISH_UNKNOWN 에서 사건 종결은 허용된다 — I-1 이 막는 것은 REQUESTED 뿐이다")
+    void publishUnknownAllowsResolution() {
+        Long ledgerId = replayedIncident("order-23");
+        deleteOutboxRowOf(ledgerId);
+        overrideService.releaseStuckPublication(ledgerId, "admin(operator)", "확인함").orElseThrow();
+
+        DeadLetterTransitionService.Result result =
+                transitionService.resolve(ledgerId, "operator", "수동 재처리 완료").orElseThrow();
+
+        // 막으면 교착이 상태만 바꿔 유지된다 — 그 변이가 여기서 red 가 된다.
+        assertThat(result.rejectedReason()).isNull();
+        assertThat(result.changed()).isTrue();
+        assertThat(ledgerRepository.findById(ledgerId).orElseThrow().getStatus()).isEqualTo("RESOLVED");
+    }
+
+    @Test
+    @DisplayName("REQUESTED 가 없는 incident 에 해제를 걸면 사유와 함께 아무 것도 옮기지 않는다")
+    void noRequestedRowToRelease() {
+        Published published = publish(ALLOWED_TOPIC, "order-24");
+        Long ledgerId = ledgerRow(ALLOWED_TOPIC, ALLOWED_GROUP, published.offset(), published.eventId());
+
+        DeadLetterPublicationOverrideService.Result result = overrideService
+                .releaseStuckPublication(ledgerId, "admin(operator)", "확인함").orElseThrow();
+
+        assertThat(result.released()).isZero();
+        assertThat(result.rejections()).anyMatch(r -> r.contains("REQUESTED 인 행이 없다"));
+        assertThat(ledgerRepository.findById(ledgerId).orElseThrow().getPublicationStatus()).isNull();
+    }
+
     // ---------- V-35: 진입점 → 발행 → 재실패 → 상관 관통 (diff 리뷰 1R #4) ----------
 
     @Test
@@ -535,6 +629,13 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         properties.getReplay().setEnabled(true);
         assertThat(replay(ledgerId).accepted()).isTrue();
         return ledgerId;
+    }
+
+    /** 연결된 outbox 행을 **강제로 삭제**한다 — cleanup 제외 조건을 뚫린 상태(계약 위반 신호)를 만든다. */
+    private void deleteOutboxRowOf(Long ledgerId) {
+        Long outboxEventId = jdbcTemplate.queryForObject(
+                "SELECT outbox_event_id FROM dead_letter_records WHERE id = ?", Long.class, ledgerId);
+        jdbcTemplate.update("DELETE FROM outbox_events WHERE id = ?", outboxEventId);
     }
 
     /** 해당 incident 에 연결된 replay outbox 행을 지정 상태로 종착시킨다(발행 결과를 흉내낸다). */
