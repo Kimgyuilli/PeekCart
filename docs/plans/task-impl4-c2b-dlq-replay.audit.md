@@ -553,3 +553,52 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
   원래 결함 재현 시 red 확인) + CI `guards` 배선.
 - **교훈**: 테스트가 도는 권한과 운영이 도는 권한이 다르면 테스트는 그 차이를 영원히 보지 못한다.
   계획 리뷰 3R·diff 리뷰 2R 어느 쪽도 이것을 잡지 못했다 — **diff 안에 없는 사실**(계정 권한)이기 때문이다.
+
+## 2026-09-13 — ④-c-2b-4b 착수 전 코드 검증 (계획 리뷰 4R **미실행**)
+
+- **Codex 리뷰 미실행** — 사용자 지시(`/plan ... codex 리뷰를 돌리지 말아주세요`). 3R 상한 도달 후
+  "4R 선행" 으로 남아 있던 미수렴 축(drain 앵커 · preflight 진입점 · 상태값 신설)을 **코드 전수 확인**으로 대체했다.
+  수렴 판정(P1=0 + 새 계약 표면 무추가)은 **이번 라운드로 충족됐다고 보지 않는다** — diff 리뷰 단계에서 진다.
+- 항목: 코드 검증 **C-44~C-55 (12건)** — 전제 유지 7건 · **반증 2건**(C-46 · C-47) · **확대 3건**(C-49 · C-52 · C-55)
+- **뒤집힌 전제**:
+  - **C-46** — `PUBLISH_UNKNOWN` 신설에 Flyway 마이그레이션이 필요하다고 전제했으나 `publication_status` 는
+    `VARCHAR(20)`(ENUM 아님)이라 **DDL 0개**. `EXPECTED_MIGRATIONS` 갱신도 없다 → 4b 범위 축소
+  - **C-47** — 재claim 차단 코드가 필요하다고 전제했으나 claim 이 allow-list 라 **신규 값은 자동 default-deny**
+    → 코드 대신 V-39 로 성질을 고정
+- **결정으로 닫힌 미결**:
+  - **C-52** — ⓓ 상한의 소유처. `handlerBudget` 이 레포에 존재하지 않는 값임을 확인(grep 0건) →
+    **preflight 스크립트 상수 소유 + 드리프트 lint(V-41)** 로 확정, 한계는 ADR-0022 Consequences 에 명시
+  - **§10 R9** — 진입점 운영 도달 경로. 도메인 서비스는 관리 포트를 분리하지 않으나 게이트웨이 라우트가
+    `/api/v1/**` 뿐이고 HeaderTrust 가 서명 헤더에서만 주체를 세워 **직접 호출로는 ADMIN 가드에 도달 불가**를 확인.
+    → **게이트웨이 관리자 라우트 신설(P27)** 로 사용자 승인. 기각 2건(common-auth 2차 인증 / 한계로만 기록)
+- **처리**: 계획서 반영 — 4b 코드 검증표(C-44~C-55) · **P27 신설** · P24/P26 보강 ·
+  **V-39 · V-40 · V-41 신설** · 완료 조건 6 보강 + **7 신설** · §8 gateway 행 · §9 배포 순서 ⑤~⑧ 재배치 · §10 R9 처분 갱신
+- raw: 없음 (Codex 미실행)
+
+## 2026-09-13 — ④-c-2b-4b 구현 (diff 리뷰 **미실행**)
+
+- **Codex diff 리뷰 미실행** — 사용자 지시(토큰 절약). 따라서 **수렴 미판정**이며,
+  이 PR 의 P1=0 주장은 존재하지 않는다. 머지 전 리뷰가 필요하다.
+- 구현: P26(ADR-0022) · P24(PUBLISH_UNKNOWN·preflight·래퍼·ConfigMap·문서) · P27(게이트웨이 관리자 라우트) · P22(증적)
+- **계획 대비 변경 2건 (계획서를 먼저 고치고 구현)**:
+  - **C-46 → C-46b**: "4b 는 마이그레이션 0개" 가 **거짓**이었다. 상태값에는 DDL 이 불필요하지만
+    override 의 **감사 기록을 담을 컬럼이 없다**(`last_replay_by` 는 replay 요청 주체라는 다른 의미).
+    사유 없이 옮기면 이 action 의 존재 이유(감사)가 휘발된다 → 마이그레이션 1개 추가
+    (order V12 · product V10 · payment V10 · notification V8), `EXPECTED_MIGRATIONS` 1회 갱신
+  - **override 의 허용 조건을 좁혔다 (계획에 없던 결정)**: outbox 행이 **실제로 부재할 때만** 허용한다.
+    행이 남아 있으면 reconciler 가 스스로 종착시키므로, 그때도 옮히면 **reconciler 와 경쟁하는 두 번째
+    종착 경로**가 생긴다. 이 좁힘이 탈출구와 우회로를 가른다 (ADR-0022 §D4)
+- **스스로 잡은 false-green 1건**: 신규 `DeadLetterAdminRouteContractTest` 의 `matches()` 가
+  `AsyncPredicate.apply()`(= `Publisher<Boolean>`)를 Boolean 과 직접 비교해 **항상 false** 였다.
+  그 상태에서 **actuator 누출 음성 검사 6종이 전부 vacuous-green** 이었다(양성 8종이 red 라서 드러났다).
+  구독해 값을 꺼내도록 고치고, 그 함정을 javadoc 에 남겼다.
+- **변이 검사**:
+  - claim allow-list 에 `PUBLISH_UNKNOWN` 추가 → red (재claim default-deny 가 우연이 아님)
+  - override 의 outbox 부재 검사 제거 → red
+  - override 의 `stampReplaySettledAt` 제거 → red
+  - 라우트 predicate 를 `/**` 로 확대 → red 6건 (누출 음성 검사 전수)
+  - backoff 리터럴 / clock-skew / preflight 상한 / preflight 파일 → drift lint red 4종
+- **회귀 1건 검출·해소**: `K8sProfileConnectionPropertiesTest` 가 라우트 수를 9로 고정하고 있었다
+  (신규 8개로 17). 개수 고정 + 신규 라우트 8개의 upstream placeholder 추종까지 단언에 추가
+- **한계(보고에 명시)**: V-40 의 실제 스택 관통(ADMIN 토큰으로 게이트웨이 경유 호출)과 preflight 의
+  **수집 계층**은 클러스터가 없어 미검증이다. 판정 계층은 fixture 11종으로 관통했다

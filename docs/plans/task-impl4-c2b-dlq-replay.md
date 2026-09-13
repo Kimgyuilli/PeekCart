@@ -98,7 +98,7 @@
 | **④-c-2b-3a** | 상관 표면 — 헤더 계약 · 매핑 · ADR-0021 · lint | P14 | 헤더가 **정의·강제·판독**되고 앵커가 매핑된다 (아직 상관하지 않는다) |
 | **④-c-2b-3b** | 원자 상관 + 재개방 | P15~P17 | 재실패가 root 로 수렴하는 경로가 **먼저** 선다 (아직 replay 개시 불가) |
 | **④-c-2b-4a** | 좌표 reader + 적격성 + fence + 진입점 + 마이그레이션 | P18~P21 · P23 · P25 | replay **개시 가능하나 kill-switch 가 닫혀 있다**(base 기본값 `false`) |
-| **④-c-2b-4b** | drain·롤백 계약 + ADR-0022 + 증적 | P22 · P24 · P26 | 롤백이 **안전하게 가능**해지고 그 뒤에야 kill-switch 를 연다 |
+| **④-c-2b-4b** | drain·롤백 계약 + ADR-0022 + 증적 + **진입점 도달 경로** | P22 · P24 · P26 · **P27** | 롤백이 **안전하게 가능**해지고, 게이트웨이 관리자 라우트로 **운영이 진입점에 닿은** 뒤에야 kill-switch 를 연다 |
 
 > **순서 정정 (리뷰 1R #2)**: 초안은 진입점(2b-3)을 상관·재개방(2b-4)보다 **먼저** 열었다.
 > 그러면 2b-3 만 배포된 구간에서 재발행분이 재실패할 때 **독립 incident 로 갈라져** ADR-0020 §D5-4·§D6-3 을
@@ -144,7 +144,7 @@ nullable 이고, `record_kind IS NULL → DOMAIN` 해석이 구버전 writer 를
 | 2b-3b | **P15 · P16 · P17 · P17-b** | ✅ **완료** [#104](https://github.com/Kimgyuilli/PeakCart/pull/104) — 6단계 실행 순서(detach 회피 + 단계 5 current read) · 9축 대조(group 3자) · `reopen()` · `LedgerOwner` 빈 주입 · afterCommit 결과별 알림 4행 · Counter 2종(CommitAware, reason enum bounded) · ADR-0021 Update Log(V-35 재배정). 계획 리뷰 3R~5R 전량 반영(**4R 발산은 3b 경계 이탈이 원인 → P24 를 2b-4 로 되돌림**), **6R 사용자 지시로 중단(미측정)**. diff 리뷰 1R 8건 전량 반영(**실제 실패 2건 검출**). 변이 16종 red · lint 15종 · parity self-test 23종 · **전 모듈 1043 tests 0 실패**. **미충족**: #103 재리뷰 스킵 · 계획 수렴 미달 · `V-19o` fixture 전용 |
 
 | 2b-4a | P18 · P19 · P20 · P21 · P23 · P25 · **P26 은 4b** | ✅ **완료** [#105](https://github.com/Kimgyuilli/PeekCart/pull/105) — diff 리뷰 2R(1R 8건 전량 · 2R 7건 중 6건 반영, 1건은 §10 R9 로 이관). 변이 8종 red · parity self-test 26종 · replay-entrypoint-lint 변이 7종 red. **kill-switch 기본값 false**(Java 기본값 + 4 yml lint 양쪽 고정). 전 모듈 스위트에서 **회귀 1건 검출·해소**(common `@Component` 가 Kafka 없는 user-service 컨텍스트를 깨뜨림) |
-| 2b-4b | P22 · P24 · **P26(ADR-0022)** | 🔲 — drain·롤백 계약. **계획 미수렴 상태**(3R 상한 도달, P0 가 3라운드 연속) 이므로 착수 전 4R 선행 |
+| 2b-4b | P22 · P24 · **P26(ADR-0022)** · **P27(R9 게이트웨이 관리자 라우트)** | 🔄 **구현 완료 — 리뷰 미실행**. drain·롤백 계약 + 진입점 도달 경로. **계획 리뷰 4R 은 사용자 지시로 미실행** — 대신 **착수 전 코드 검증 C-44~C-55**(2026-09-13)로 미수렴 축 3개(drain 앵커·preflight 진입점·상태값 신설)를 코드 사실에 고정했다. 그 결과 **상한 소유처**(C-52)·**R9 처분**(P27)이 결정으로 닫혔고, C-46 은 구현 중 **C-46b 로 재정정**됐다(상태값엔 DDL 불필요하나 override 감사 컬럼이 필요 → 마이그레이션 1개). **Codex diff 리뷰도 사용자 지시로 미실행** — 수렴 미판정 |
 
 ### PR ④-c-2b-1 — 원장 축 확장 + incident 집계 정정
 
@@ -865,6 +865,48 @@ fingerprint 대조가 이 값에 의존하므로, 이 값이 조용히 NULL 이 
 > **이 검증이 범위를 바꾼 곳**: 작업이 **줄어든 것 2건**(C-31 조건부 UPDATE 불필요 · C-36 parity 신규 검사 불필요 · C-37 신규 config 불필요),
 > **늘어난 것 3건**(C-32 조회 · C-33 매핑 · C-35 DML parity), **§10.1 결정 1건이 좁아졌다**(C-39).
 
+#### 착수 전 코드 검증 (2026-09-13) — **4b 축 (C-44~C-55)**
+
+4a 가 머지된 뒤의 트리를 기준으로 4b(P22·P24·P26)가 전제하는 코드 사실을 다시 확인했다.
+**Codex 계획 리뷰 4R 은 사용자 지시로 실행하지 않았다** — 대신 4b 가 건드릴 표면을 코드로 전수 확인해
+미수렴 축(drain 앵커·preflight 진입점·상태값 신설)이 실제로 무엇에 걸려 있는지 고정한다.
+
+| # | 4b 계획의 전제 | 코드 확인 | 처분 |
+|---|---|---|---|
+| C-44 | drain ⓓ 앵커 `last_replay_settled_at` 이 이미 쌓인다 | **참.** 4벌 DDL(`V11/V9/V9/V7:20`) · 엔티티 매핑(`DeadLetterRecord:173`, `insertable=false updatable=false`) · 네이티브 stamp(`DeadLetterRecordJpaRepository:251`) · 워커가 **`PUBLISHED`·`PUBLISH_FAILED` 양쪽에서** 호출(`DeadLetterPublicationWorker:96`) | 유지. preflight 는 이 컬럼만 읽는다 |
+| C-45 | 고착 `REQUESTED` 해제 경로가 없다 | **참이고, 4a 가 자리를 남겨뒀다** — `DeadLetterPublicationWorker:72-76` 이 outbox 부재 시 강등하지 않고 `"운영자가 publication-unknown 으로 해제한다(④-c-2b-4b)"` 를 주석으로 명시 | P24 가 그 action 을 만든다 |
+| C-46 | `PUBLISH_UNKNOWN` 신설에 **마이그레이션이 필요하다** | **거짓.** `publication_status` 는 MySQL ENUM 이 아니라 **`VARCHAR(20)`**(`V8__dead_letter_replay_axis.sql:20`)이고 엔티티는 `@Enumerated(EnumType.STRING)`(`DeadLetterRecord:114-116`) — `PUBLISH_UNKNOWN`(16자)이 들어간다 | **상태값 자체에는 DDL 이 불필요**하다. 단 **C-46b 로 정정** — 아래 |
+| **C-46b** | 따라서 4b 는 마이그레이션이 없다 (C-46 의 귀결) | **거짓.** 상태값은 DDL 이 필요 없지만 **override 의 감사 기록을 담을 컬럼이 없다**. `last_replay_by`(160)는 "마지막 **replay 요청**의 감사 주체" 라는 다른 의미를 이미 갖고(`DeadLetterRecord:196-204`), 사유를 담을 자리는 어디에도 없다. 사유 없이 옮기면 다음 운영자가 `PUBLISH_UNKNOWN` 행을 보고 **무엇을 확인하고 옮겼는지 복원할 수 없다** — 이 action 의 존재 이유가 감사인데 감사가 휘발된다 | **마이그레이션 1개 추가** — `publication_override_by VARCHAR(160)` · `publication_override_reason VARCHAR(500)` (**order V12 · product V10 · payment V10 · notification V8**). 시각은 같은 순간 찍히는 `last_replay_settled_at` 이 이미 갖고 있으므로 `*_at` 은 만들지 않는다. `EXPECTED_MIGRATIONS`(`scripts/e2e/saga_e2e.py:63`) **갱신 1회** |
+| C-47 | `PUBLISH_UNKNOWN` 을 재claim 하지 못하게 막는 코드가 필요하다 | **불필요.** claim 은 allow-list 다 — `AND (publication_status IS NULL OR publication_status = 'PUBLISH_FAILED')`(`Repository:269-272`). 신규 값은 **자동으로 default-deny** | 코드 변경 없음. 다만 이 성질이 우연이 아님을 **V-39 가 단언**한다(값을 allow-list 에 넣으면 red) |
+| C-48 | 종결(I-1) 가드가 `PUBLISH_UNKNOWN` 을 막지 않는다 | **참.** 가드는 `(IS NULL OR <> 'REQUESTED')` 이므로 새 값에서 종결이 열린다 — 의도한 바다(사건은 미결이되 **교착은 아니다**) | 유지 |
+| C-49 | `backlog()` 응답이 자동으로 새 값을 싣는다 | **참이지만 계약이 바뀐다.** `for (PublicationStatus status : values())`(`DeadLetterEndpoint:81`)라 키가 4→5개가 되고 javadoc 의 "네 값의 합"(`:59`)이 틀린다 | P24 에 javadoc·문서 정정 추가. 합 불변식 자체는 유지 |
+| C-50 | ConfigMap 에 kill-switch 키가 없다 (C-40 재확인) | **참.** `k8s/base/services/*/configmap.yml` 은 `SPRING_PROFILES_ACTIVE` 뿐이다(product 만 `PEEKCART_CACHE_ENABLED` 추가) | P24 유지 — 4개 ConfigMap 에 키 추가 |
+| C-51 | preflight·래퍼 스크립트가 없다 | **참.** `scripts/` 에 `replay-drain-preflight.sh`·`deploy-overlay.sh` **0건**(lint 17종·`rollout-convergence-gate.sh` 는 배포 **후** 게이트) | P24 유지 |
+| C-52 | ⓓ 상한의 입력이 설정에 있다 | **부분적으로만 참.** `Σbackoff` 는 `FixedSequenceBackOff(1_000, 5_000, 30_000)` = **36s**(4벌 동일) · `clock-skew-budget: 5m` · `dlq-replay-window: 7d` 는 4벌 yml 에 실재. 그러나 **`handlerBudget` 은 레포에 존재하지 않는다**(grep 0건 — 계획서 본문에만 있다) | **소유처를 정한다**: 상한은 **preflight 스크립트의 명명 상수**가 소유하고(운영 절차의 값이지 앱 런타임 정책이 아니다 — ADR-0007 상 앱 yml 에 넣을 근거가 없다), **lint 가 `FixedSequenceBackOff` 리터럴과 `clock-skew-budget` 을 교차 대조**해 드리프트를 red 로 만든다. `handlerBudget` 은 **코드로 강제되지 않는 선언값**임을 스크립트 주석·ADR-0022 에 명시하고, 그래서 ⓑⓒ 2회 연속 관측이 이중화로 남는다 |
+| C-53 | preflight 가 4 DB 와 브로커에 닿을 수 있다 | **경로는 있으나 스크립트 선례가 없다.** DB 는 1 인스턴스 5 스키마이고 계정은 평문 Secret(`k8s/base/services/*/secret.yml` — 예: `peekcart_order`)이다. `kubectl exec` 로 mysql·kafka Pod 에 들어가는 방식이 유일하며 `scripts/` 에 그 선례는 **없다**(`scripts/e2e/mysql-init/` 는 compose 전용) | preflight 는 `kubectl exec` 기반으로 쓰고, **접속·권한 실패는 fail-closed**(exit≠0). V-37 의 5번째 케이스가 그것을 관측한다 |
+| C-54 | runbook §6 이 아직 "재발행 — 현재 불가" 다 | **참**(`docs/runbooks/dlq-recovery.md:205`). §6-R 도 없다 | P24 유지 |
+| C-55 | C-41 의 javadoc 3곳이 아직 그대로다 | **참이고 1곳 더 있다** — `StockReservationService:196` · `StockReservationRepository:35` · `PHASE4.md:283` 에 더해 **`StockReservation:114`** 도 "회신 재전달(DLQ 재발행 등)" 로 같은 서술을 한다 | P24 대상 **4곳**으로 확대 |
+
+> **이 검증이 범위를 바꾼 곳**: **줄어든 것 2건**(C-46 마이그레이션 0개·`EXPECTED_MIGRATIONS` 무갱신 · C-47 재claim 차단 코드 불필요),
+> **늘어난 것 3건**(C-49 backlog 계약 정정 · C-52 상한 소유처 + 드리프트 lint · C-55 javadoc 1곳 추가),
+> **미결 1건이 결정으로 닫혔다**(C-52 `handlerBudget` 소유처 — 계획서가 값의 출처를 적지 않은 채 식만 적고 있었다).
+
+**P27.** **replay 진입점의 운영 도달 경로 — 게이트웨이 관리자 라우트** (§10 R9, 2026-09-13 사용자 결정).
+> **왜 필요한가**: 도메인 5서비스는 gateway 와 달리 **관리 포트를 분리하지 않아**(`management.server.port` 선언은
+> gateway 에만 있다) actuator 가 앱 포트 8080 에 함께 있다. 그런데 gateway 라우트는 `/api/v1/**` 뿐이고
+> (`gateway/src/main/resources/application.yml:33-139`), 리소스 서비스는 `HeaderTrustSecurityConfigurer` 가
+> **게이트웨이 서명 헤더에서만** 주체를 세운다. 따라서 port-forward 직접 호출은 `Authentication` 이 null 이라
+> **ADMIN 가드에 도달조차 못 한다** — 4a 의 진입점은 정확하지만 부를 방법이 없다.
+- 4서비스에 대해 `/api/v1/admin/deadletter/{service}/**` → `RewritePath` → 업스트림 `/actuator/deadletter/**` 라우트 신설.
+  기존 `product-admin` 라우트와 같은 형태이므로 새 인증 기구가 없다 — **게이트웨이가 서명한 주체가 그대로 전달되고
+  `DeadLetterEndpoint` 의 기존 `ROLE_ADMIN` 검사가 판정 주체로 남는다**(권한 판정을 게이트웨이로 옮기지 않는다).
+- **경로 predicate 를 좁힌다** — rewrite 결과가 `/actuator/` 아래 **다른 엔드포인트로 새지 않아야 한다**.
+  `..`·인코딩 우회로 `/actuator/env` 등에 닿으면 이 라우트가 곧 actuator 전면 노출이다.
+- `deny-empty-key: true` 인 `userKeyResolver` rate limiter 를 같이 붙인다(미인증은 게이트웨이에서 먼저 끊긴다).
+- **기각 대안**(ADR-0022 에 함께 기록): ① common-auth 에 actuator 한정 2차 인증(ADMIN JWT 직접 검증) 추가 —
+  ADR-0017 의 "서명 assertion 단일 신뢰 경계" 를 깨고 신뢰 경로가 둘이 된다 ② 도달 경로 없이 한계로만 기록 —
+  kill-switch 를 열 수 없어 ④ 가 종결되지 않는다
+
 **P26.** **ADR-0022 신설** — "replay 개시 진입점 + 개방 후 롤백/drain 계약" (§10.1 #8).
 **본문은 처음부터 완결본으로 쓰고, 커밋만 2단계(`Proposed` → `Accepted`)로 나눈다.**
 > **본문을 나중에 고치지 않는다 (정정 — 1R #7 → 2R #10)**: 1R 수정안은 "Proposed 로 커밋 후 측정 결과를
@@ -877,6 +919,9 @@ fingerprint 대조가 이 값에 의존하므로, 이 값이 조용히 NULL 이 
 `replay_deadline` 에서 교체, 2R #7) ·
 preflight 의 **강제력 한계**(C-39 로 좁아진 범위 포함) · kill-switch 의 비즉시성 · I-1 을 잠금으로 세우는 근거(C-31).
 **`PUBLISH_UNKNOWN` 상태값 신설도 여기서 결정한다** (3R #3 — §10 R7 을 당겼다).
+**여기에 R9(진입점 운영 도달 경로)의 결정도 함께 적는다** — 게이트웨이 관리자 라우트 채택과 기각 대안 2건(P27),
+그리고 **권한 판정을 게이트웨이로 옮기지 않는 이유**(가드는 리소스 소유 서비스가 진다).
+**`handlerBudget` 이 코드로 강제되지 않는 선언값이라는 한계**(C-52)와 그 보완(ⓑⓒ 2회 연속 관측)도 Consequences 에 남긴다.
 **기각 대안을 함께 적는다** — `replay_deadline` 재사용(1R) · `outbox_events.created_at`(2R) ·
 `publication_status` 를 ⓐ 정본으로 · 시간만으로 ⓑⓒ 흡수 · initContainer 인클러스터 게이트 ·
 조건부 UPDATE I-1 · 토픽 단일 키 정책(2R #3).
@@ -1187,6 +1232,13 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
      - **ⓐ'** `SELECT COUNT(*) FROM dead_letter_records WHERE publication_status='REQUESTED'` = 0
      - **ⓓ** `SELECT MAX(last_replay_settled_at) FROM dead_letter_records` 가 **NULL 이거나**
        `+ (Σbackoff 36s + handler 실행 상한 + 마진) < NOW()`
+       > **상한의 소유처 (C-52, 2026-09-13 결정)**: 이 상한은 **preflight 스크립트의 명명 상수**가 소유한다 —
+       > 배포 절차의 값이지 앱 런타임 정책이 아니므로 ADR-0007 상 앱 yml 에 넣을 근거가 없고, 스크립트가
+       > 앱 yml 을 파싱하면 배포 도구가 런타임 설정 포맷에 묶인다. 대신 **드리프트를 lint 가 잡는다** —
+       > `FixedSequenceBackOff(1_000, 5_000, 30_000)` 리터럴(4벌)과 `clock-skew-budget`(4벌 yml)을
+       > 스크립트 상수와 교차 대조해 어긋나면 red. **`handlerBudget` 은 레포에 존재하지 않는 선언값**이며
+       > (consumer handler 에 timeout 설정이 없다) 그 한계를 스크립트 주석과 ADR-0022 에 명시한다 —
+       > 그래서 ⓑⓒ 의 "lag=0 을 상한 간격 두고 2회 연속" 이중화가 남는다
      - **ⓑⓒ** `last_replay_target_group` 에 등장한 group + 해당 `.dlq` intake group 의 lag = 0
      넷 다 **4 DB 각각**에서 통과해야 한다.
      - 배포 대상 이미지가 **replay-aware 인지 판별**해, aware 면 통과시키고 **구 이미지만** 막는다
@@ -1201,8 +1253,20 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 - ~~**ADR-0020 Update Log 기재 (3R #2)**~~ → **취소 (§10.1 #8)**. D5-4 대체는 **ADR-0021 §D1 이 이미
   Partially Supersedes 로 처리**했으므로 중복이고, `adr/README.md:13` 이 계약 변경의 Update Log 우회를
   금지한다. 2b-4 가 만드는 계약은 **P26 의 ADR-0022** 가 받는다
-- "DLQ 재발행(새 eventId)" javadoc 을 **ADR-0012 D5 우회 경로**로 정정 — 대상은 **3곳 (C-41)**:
-  `StockReservationService:196` · `StockReservationRepository:35` · `PHASE4.md:283`
+- "DLQ 재발행(새 eventId)" javadoc 을 **ADR-0012 D5 우회 경로**로 정정 — 대상은 **4곳 (C-41 → C-55 로 확대)**:
+  `StockReservationService:196` · `StockReservationRepository:35` · `PHASE4.md:283` · **`StockReservation:114`**
+- **`backlog()` 계약 정정 (C-49)** — `publication` 맵은 `PublicationStatus.values()` 를 순회하므로 키가 **4→5개**가 된다.
+  `DeadLetterEndpoint:59` javadoc 의 "네 값의 합" 서술과 runbook §2.2 예시를 함께 고친다. **합 불변식은 유지**된다
+- **마이그레이션 1개 (C-46 → C-46b 로 정정)** — 상태값에는 DDL 이 불필요하나(`VARCHAR(20)`),
+  **override 의 감사 기록**을 담을 컬럼이 없다: `publication_override_by VARCHAR(160)` ·
+  `publication_override_reason VARCHAR(500)` 을 **order V12 · product V10 · payment V10 · notification V8** 로 추가하고
+  `EXPECTED_MIGRATIONS` 를 **1회 갱신**한다. `*_at` 은 만들지 않는다 — 같은 순간 찍는 `last_replay_settled_at` 이 시각을 갖는다
+- **override 는 outbox 행이 실제로 없을 때만 허용한다 (신설 결정)** — 행이 남아 있으면 reconciler 가
+  스스로 종착시키므로, 그때도 옮길 수 있게 하면 **reconciler 와 경쟁하는 두 번째 종착 경로**가 생긴다
+  (`DeadLetterEndpoint` javadoc 이 명시적으로 막아둔 것). outbox 행이 존재하면 **사유와 함께 거부**한다.
+  이 좁힘이 "탈출구" 와 "우회로" 를 가른다 — ADR-0022 에 근거와 함께 남긴다
+- **재claim 차단 코드는 넣지 않는다 (C-47)** — claim 이 `IS NULL OR 'PUBLISH_FAILED'` **allow-list** 라 신규 값은
+  자동으로 default-deny 다. 대신 그 성질이 우연이 아님을 **V-39** 가 단언한다
 - `docs/progress/PHASE4.md` 동일 서술 정정 · `docs/05-data-design.md`(notification outbox·신규 컬럼) ·
   `docs/02-architecture.md` notification 패키지 트리 · `grafana-alerts.yml` 주석(집계 단위 = incident, V14)
 
@@ -1276,6 +1340,9 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 | **V-36** | N14 | **2b-4** — backfill DML parity self-test: 4벌 중 **한 벌만** `WHERE` 조건을 지운 fixture · 한 벌만 파일을 2개로 쪼갠 fixture | 각각 red. **최종 스키마 대조는 두 fixture 모두 green** 임을 같은 self-test 에서 함께 보여 C-35 의 구멍이 실재했음을 고정한다 |
 | **V-37** | 롤백 | **2b-4** — drain **4조건을 하나씩만** 위반한 4종 + **outbox 행 강제 삭제(V-21d 상태)** + **7일 적체된 PENDING replay 를 preflight 직전에 발행** + **handler 실행이 36초를 넘는** 케이스 | 각 실행이 **위반 조건을 정확히 지목**하며 exit≠0. 뒤 3종이 핵심이다(2R #1·#2) — **강제 삭제분은 ⓐ' (`publication_status='REQUESTED'`)가 잡고**, 적체 PENDING 은 ⓐ 가, 긴 handler 는 ⓓ 의 실행 상한 마진이 잡는다. 기준을 `created_at` 으로 되돌리면 뒤 2종이 **green 으로 통과**해 red. **DB·브로커 접속 실패는 fail-closed**(exit≠0)를 5번째로 확인 · **ack 성공 후 status save 실패 → 재시도 소진 → 최종 `PUBLISH_FAILED`**(3R #1 — 앵커를 `PUBLISHED` 에만 찍으면 green 으로 통과해 red) · **고착 `REQUESTED` 를 `publication-unknown` 으로 해제한 뒤 drain·롤백이 실제로 가능해지는 끝까지**(3R #3) · **앱 시계 ±`clockSkewBudget` 변이**(3R #2 — 식에서 skew 를 빼면 조기 통과해 red) |
 | **V-38** | 롤백 | **2b-4** — `app.dead-letter.replay.enabled` **`false`(base 기본값)** 로 기동 후 `action=replay` 요청 · 이어서 **`true` 로 덮어** 같은 요청 | false → 거부되고 **outbox 행이 생기지 않는다**(DB 조회). true → 통과. **positive replay 테스트(V-16·V-25·V-35 등)는 전부 `enabled=true` 를 명시적으로 준다** — 기본값이 false 로 뒤집혔으므로 명시하지 않으면 진입점에서 막혀 false-red 가 된다(2R #8). ConfigMap 은 **문자열 `"false"`** 로 커밋하고 렌더링·`envFrom` 바인딩을 함께 확인한다. **설정 변경이 재기동 없이 반영된다고 단언하지 않는다** |
+| **V-39** | 롤백 | **2b-4b** — `PUBLISH_UNKNOWN` 전이 경로 전수: ① outbox 행 강제 삭제로 `REQUESTED` 고착 → `action=publication-unknown`(actor·사유 필수) → ② 그 행에 `action=replay` 재요청 → ③ 그 행에 `resolve` | ① 상태가 `PUBLISH_UNKNOWN` 으로 이동하고 **drain ⓐ' 에서 빠지며 `last_replay_settled_at` 앵커가 찍힌다**(발행 여부를 모르므로) ② **재claim 이 거부된다** — claim allow-list 에 `PUBLISH_UNKNOWN` 을 **넣으면 red**(C-47 의 default-deny 가 우연이 아님을 관측) ③ 종결은 **허용된다**(I-1 이 `REQUESTED` 만 막으므로 — 교착이 아니다). 사유 없이 호출하면 거부 |
+| **V-40** | R9 | **2b-4b** — 게이트웨이 관리자 라우트(P27)를 실제 스택에서 관통: ① ADMIN 토큰으로 `/api/v1/admin/deadletter/order/{id}` POST ② ROLE_USER 토큰으로 동일 요청 ③ 미인증 요청 ④ **rewrite 우회 시도** — `/api/v1/admin/deadletter/order/../env` 및 인코딩 변형 | ①만 엔드포인트에 도달해 전이가 일어난다(DB 확인) ② **403** — 게이트웨이가 통과시키고 **엔드포인트의 ADMIN 가드가 거부**하는 것까지 확인한다(권한 판정 주체가 서비스임을 관측) ③ 게이트웨이에서 끊긴다(`deny-empty-key`) ④ **`/actuator/env` 등 다른 엔드포인트에 도달하지 않는다** — predicate 를 넓히면 red. 라우트를 지우면 ①이 red |
+| **V-41** | 롤백 | **2b-4b** — preflight 상한 드리프트 lint: `FixedSequenceBackOff` 리터럴 한 벌을 바꾼 fixture · `clock-skew-budget` 한 벌을 바꾼 fixture | 각각 red (C-52 — 상한이 스크립트 상수 소유라 코드/설정과 갈라질 수 있다). 정상 트리에서 green 임도 함께 확인한다 |
 | **V-29** | N17 | **변이 목록 전수** — §6 이 지목한 각 변이. **정본은 이 표를 파싱해 얻은 명시 ID 집합**이며 **`{V-34}` 는 제외 집합으로 고정**한다(철회된 미사용 ID). 범위 문자열(`V-1~V-38`)은 **설명일 뿐 판정 입력이 아니다** — 연속 구간으로 해석하면 V-34 때문에 **영구 false-red** 가 되고, 설명으로만 두면 신규 행 누락을 막는다는 주장이 검증되지 않는다 (2b-4 계획 리뷰 1R #8). `V-19a~V-19o` 16 ID·17 실행 포함 | 각 변이가 red → 복원 후 green. 변이 목록과 red 테스트 id 를 PR 본문에 **열거**한다. 자기대조 0건 |
 
 **모듈별 그린 기준**: 각 PR 에서 `common` + 변경된 서비스 모듈 전체 테스트 0 실패 +
@@ -1285,7 +1352,7 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 
 ## 7. 완료 조건
 
-1. §1 의 **N1~N17 이 전부 거짓**임이 §6 표의 **명시 ID 전수**(`V-34` 제외 — 철회)로 확인된다. 2b-4 신설분은 **V-28d·V-36·V-37·V-38** 이다.
+1. §1 의 **N1~N17 이 전부 거짓**임이 §6 표의 **명시 ID 전수**(`V-34` 제외 — 철회)로 확인된다. 2b-4a 신설분은 **V-28d·V-36·V-38**, **2b-4b 신설분은 V-37·V-39·V-40·V-41** 이다.
    > **ID 충돌 해소 (3R #7 → 4R #4 로 방향 정정)**: `V-30` 이 **두 곳에 배정**돼 있었다 — ① `record_kind IS NULL` 호환성 · ② P21 진입점 관통.
    > 3R 은 ①을 `V-34` 로 옮겼는데 **그게 틀렸다** — ①은 ④-c-2b-2 에서 **이미 머지된 테스트**가 `V-30` 이라는 이름으로
    > 들고 있다(`OutboxReplayPublicationIntegrationTest:44·122`). 계획서만 고치면 코드와 갈라진다.
@@ -1306,7 +1373,11 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 5. `original_timestamp` NULL 비율 증적이 **실제 원장 집계**로 남는다(표본 0이면 "미측정" 으로 기록).
    비율이 높으면 **가용성 손실 수용 기준**을 **ADR-0022 에 기록**한다 (정정 — §10.1 #8: 수용 기준은
    트레이드오프 판단이라 `adr/README.md:13` 상 Update Log 로 갈 수 없다)
-6. **ADR-0022 가 Accepted 로 존재**하고, §10.1 의 결정 4건과 그 **기각 대안**이 본문에 남는다 (P26)
+6. **ADR-0022 가 Accepted 로 존재**하고, §10.1 의 결정 4건과 그 **기각 대안**이 본문에 남는다 (P26).
+   **R9 의 처분(게이트웨이 관리자 라우트)과 기각 대안 2건**, **`handlerBudget` 이 코드로 강제되지 않는다는 한계**도 함께 남는다
+7. **replay 진입점에 운영이 실제로 도달한다** (P27 · V-40) — kill-switch 를 연 뒤 ADMIN 이 게이트웨이를 통해
+   `action=replay` 를 호출할 수 있고, ROLE_USER 는 거부되며, 그 라우트가 다른 actuator 엔드포인트를 열지 않는다.
+   **이 조건이 서지 않으면 kill-switch 를 열어도 ④ 를 종결로 볼 수 없다**
 
 ---
 
@@ -1323,6 +1394,8 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
 > **단계별 `EXPECTED_MIGRATIONS`** (리뷰 2R #2): 2b-1 후 `8/6/6/4` → 2b-2 후 `9/7/7/5` →
 > **2b-3 후 `10/8/8/6`** → 2b-4 후 `11/9/9/7`. 갱신은 **4회**다(2b-1·2b-2·**2b-3**·2b-4).
 | `user-service` | **무변경** (Kafka consumer 없음) |
+| **마이그레이션(2b-4b)** | `order V12` · `product V10` · `payment V10` · `notification V8` — override 감사 2컬럼 (C-46b). `EXPECTED_MIGRATIONS` 1회 갱신 |
+| `gateway` | **2b-4b**: `/api/v1/admin/deadletter/{service}/**` 라우트 4종 + `RewritePath` + rate limiter (P27 · R9). 인증 기구 변경 **없음** — 권한 판정은 `DeadLetterEndpoint` 의 기존 `ROLE_ADMIN` 검사가 그대로 진다 |
 | scripts | **2b-4 신규 2종**: `replay-drain-preflight.sh` · `deploy-overlay.sh`(래퍼). `scripts/e2e/saga_e2e.py` `EXPECTED_MIGRATIONS` **4회 갱신**(2b-1 · 2b-2 · **2b-3** · 2b-4) · lint 2종 + **`dead-letter-schema-parity-lint.sh` 에 `outbox_events` 축 확장**(P9-b) |
 | `k8s` | **2b-4**: `base/services/*/configmap.yml` 4개에 kill-switch 키 추가, 값은 문자열 `"false"` (C-40 · 2R #8 — 현재 `SPRING_PROFILES_ACTIVE` 뿐) |
 | docs | runbook §6 + §6-R · 05-data-design · 02-architecture(**배포 명령 → 래퍼**, C-39) · PHASE4 · grafana-alerts 주석 · `k8s/overlays/gke/README.md` · **ADR-0022 신설**(P26) · **ADR-0012 D1 표 + Update Log**(P9-c, 2b-2 에서 선행) |
@@ -1338,8 +1411,9 @@ replay 후보* 각각의 **분자·분모·기준시각**을 `docs/progress/evid
    ① 4서비스 배포 — **backfill 은 Pod 기동 중 Flyway 가 실행한다**(`spring.flyway.enabled: true`)이므로
    "배포 후 별도 실행" 단계가 아니다 → ② **Ready 후 NULL 잔여 0 검증**(마이그레이션 자체의 검증 구문 +
    외부 조회 둘 다) → ③ **V-38 로 "닫혀 있음" 확인**(`action=replay` 거부 + outbox 행 0) →
-   ④ P22 증적 수집 → ⑤ ConfigMap `"true"` + **롤링 재기동** → ⑥ V-38 재확인(열림) →
-   ⑦ 첫 replay 를 **리허설**로 수행하고 증적을 남긴다.
+   ④ P22 증적 수집 → ⑤ **게이트웨이 관리자 라우트 배포**(P27, gateway 는 도메인 서비스보다 나중에 올린다 —
+   라우트가 먼저 서면 kill-switch 가 닫혀 있어도 거부 응답만 쌓인다) → ⑥ ConfigMap `"true"` + **롤링 재기동** →
+   ⑦ V-38 재확인(열림) + **V-40 로 게이트웨이 경유 도달 확인** → ⑧ 첫 replay 를 **리허설**로 수행하고 증적을 남긴다.
    **진입점은 4서비스 전부 2b-3b 를 받은 뒤에 켠다** — 한 서비스라도 구버전이면 그 서비스의 재실패가
    `pc-replay-*` 를 무시하고 독립 root 가 된다(2b-3b 가 진 책임의 짝).
    `NOT NULL` contract 는 수행하지 않는다(§10 R1)
@@ -1359,7 +1433,7 @@ replay 행이 남은 채 구버전으로 내려가면 안 된다.
 | **R4** | `replay_policy` 정책의 **장기 운영 정밀화** | 레지스트리·default-deny·기록/상속은 P19·P21 이 만든다. **초기 정책표(토픽별 allow/deny + 사전조건)는 2b-4 착수 전에 확정**하며, 최소 1개 토픽은 실제 도메인 상태 조회를 거친다(2R #7). 이연되는 것은 *운영 경험에 따른 정밀화*뿐이며 "전부 deny" 나 "검사 없는 allow" 로 시작하지 않는다 |
 | **R5** | 소비 성공 확인 자동 종결 | ADR Alternative E 기각. replay 빈도가 오르면 재검토 |
 | **R6** | `__consumer_offsets`·KRaft metadata bound, PVC 증설 | ADR §D4-2 후속 인프라 결정 |
-| **R9** | **진입점의 운영 도달 경로** | **2b-4b 로 이관** (diff 리뷰 2R #1). `/actuator/deadletter/**` 는 **게이트웨이가 라우팅하지 않고**(`gateway` 라우트는 `/api/v1/**` 뿐), 리소스 서비스는 게이트웨이가 서명한 `X-Internal-Auth` 만 신뢰하므로 **직접 호출은 인증 주체를 세울 수 없다**. 즉 ADMIN 가드는 정확하지만 그 가드에 도달할 경로가 아직 없다. **이 성질은 ④-c-2a 가 만든 기존 엔드포인트 전체의 것이고 이번 PR 의 회귀가 아니다** — acknowledge/resolve/discard 도 같다. 관리자 전용 라우트/인증 체인은 설계 결정이므로 **ADR-0022 가 함께 결정**하고 runbook §6 이 절차를 적는다 |
+| **R9** | **진입점의 운영 도달 경로** | **2b-4b 로 이관** (diff 리뷰 2R #1). `/actuator/deadletter/**` 는 **게이트웨이가 라우팅하지 않고**(`gateway` 라우트는 `/api/v1/**` 뿐), 리소스 서비스는 게이트웨이가 서명한 `X-Internal-Auth` 만 신뢰하므로 **직접 호출은 인증 주체를 세울 수 없다**. 즉 ADMIN 가드는 정확하지만 그 가드에 도달할 경로가 아직 없다. **이 성질은 ④-c-2a 가 만든 기존 엔드포인트 전체의 것이고 이번 PR 의 회귀가 아니다** — acknowledge/resolve/discard 도 같다. 관리자 전용 라우트/인증 체인은 설계 결정이므로 **ADR-0022 가 함께 결정**하고 runbook §6 이 절차를 적는다. → **결정 완료 (2026-09-13, 사용자 승인)**: **게이트웨이 관리자 라우트 신설**(P27). 기각 대안 2건은 P27·ADR-0022 에 남긴다 |
 | **R8** | `dead_letter_records.publication_status` **인덱스** | 추가하지 않는다 (C-7). 이 테이블은 DLQ 유입량에 유계이고 같은 컬럼을 스캔하는 `countUnresolvedByPublicationStatus`(2b-1)가 이미 무인덱스로 돈다. 4 DB 마이그레이션 + parity glob 확장 비용이 이득을 넘는다. **원장 행 수가 경보 `scan-limit`(100) 규모를 상시 넘기면 재검토** |
 | **R7** | **outbox 행이 사라진 `REQUESTED` root 의 종결 경로** | 정상 경로에서는 cleanup 제외 조건이 부재를 만들지 않으므로 이 상태는 **계약 위반 신호**다. 자동 강등은 발행을 실패로 오분류하므로 채택하지 않았다(3R #3). 실제로 발생하면 **ADR-0020 Update Log 로 `PUBLISH_UNKNOWN` 축 추가를 결정**한다 — 상태값 신설은 ADR 사안이다 |
 
