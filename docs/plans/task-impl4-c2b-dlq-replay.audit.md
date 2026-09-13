@@ -602,3 +602,12 @@ self-test 9b(“reconciler drift 를 잡는가”)는 **내가 기억한 그 파
   (신규 8개로 17). 개수 고정 + 신규 라우트 8개의 upstream placeholder 추종까지 단언에 추가
 - **한계(보고에 명시)**: V-40 의 실제 스택 관통(ADMIN 토큰으로 게이트웨이 경유 호출)과 preflight 의
   **수집 계층**은 클러스터가 없어 미검증이다. 판정 계층은 fixture 11종으로 관통했다
+
+## 2026-09-13 — /ship (④-c-2b-4b)
+
+- PR: **[#106](https://github.com/Kimgyuilli/PeakCart/pull/106)** (base `main`, 미머지)
+- precheck: **ok** (warnings 0) — skip 사유 없음
+- 커밋 11개 (한 커밋 = 한 분류): adr 2(Proposed→Accepted 규약) · src 2 · test 2 · chore 3 · docs 2
+- 갱신: `docs/TASKS.md` 구현 ④ 행 ✅ + #106 · `docs/progress/PHASE4.md` 작업 이력(미충족 6항목 포함)
+- **문서에 남긴 미충족**: 리뷰 수렴 미판정(완료 조건 2 미달) · V-40 실제 스택 관통 미검증 ·
+  preflight 수집 계층 미검증 · P22 표본 0 · 래퍼 우회 가능 · kill-switch 비즉시성 · 실제 개방은 운영 작업
