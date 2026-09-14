@@ -2185,3 +2185,74 @@ dashboard 는 promql lint 가 **아예 읽지 않던** 표면이었다. 변수 �
   NetworkPolicy(`component: backend`)의 대상이 아니다. PR3b 이래의 기존 상태이고, 좁히려면
   ADR-0013 D3 신뢰 경계의 확장이 필요해 범위 밖으로 뒀다.
 - **리뷰 수렴 미판정** — Codex 리뷰 미호출(사용자 지시). 이 PR 에 "P1 = 0" 주장이 없다.
+
+---
+
+## 2026-09-14 — 구현 ③ PR3d-b-2 P2: Workload Identity 결선 ([#109](https://github.com/Kimgyuilli/PeakCart/pull/109))
+
+클러스터 세션(PR3d-b-2)을 계획하다가, **클러스터를 켜기 전에 고쳐야 하는 것**이 나와서 먼저 뗀 PR 이다.
+
+### SPC 가 규정한 주체가 존재하지 않았다
+
+`SecretProviderClass` 는 PR3d-b-1 이래 "노드 인증은 Workload Identity 로 한다(정적 자격증명
+금지)" 를 주석과 lint(`WKO-008`)로 규정하고 있었다. 그런데 `k8s/` 전체에 `kind: ServiceAccount`
+가 **0건**이고 `serviceAccountName` 도 **0건**이었다 — 모든 Pod 가 `default` KSA 로 뜬다.
+규정은 있는데 그 규정이 가리키는 주체가 없는 상태였다.
+
+이게 남았으면 두 가지가 동시에 터진다. 첫째, WI 결선이 없으면 CSI 투영 자체가 실패하므로
+**P3(실 키 주입)이 부팅하지 못한다** — GKE 를 켜둔 채 발견하면 그 시간이 곧 비용이다. 둘째,
+`default` 에 GSA 를 바인딩하면 **그 네임스페이스의 모든 Pod** 가 내부 토큰 서명 개인키를
+Secret Manager 에서 직접 꺼낼 수 있다.
+
+b-1 이 "b-2 는 증적만" 으로 분할했던 경계가 여기서 깨진다. 사유를 계획서 P2 에 적고 넘어갔다.
+
+### 권한은 볼륨이 아니라 신원에 붙는다
+
+매니페스트만 넣으면 이 축은 클러스터에서만 검증 가능한 상태로 남는데, 그게 그냥 "나중에
+확인" 이 아니라 **기존 검사의 사각지대**였다.
+
+`workload-key-ownership-lint` 는 Pod 를 만드는 모든 종류(Job·CronJob·DaemonSet·bare Pod·
+ephemeralContainer 까지)를 전수해서 개인키 CSI 마운트의 배타적 소유를 검사한다. 꽤 촘촘하다.
+그런데 Secret Manager 접근 권한은 **볼륨이 아니라 신원**에 붙는다 — GSA 가 바인딩된 KSA 로
+뜨는 Pod 는 CSI 를 마운트하지 않고 `gcloud secrets versions access` 로 개인키를 그대로 읽는다.
+WKO-001~009 가 **한 줄도 보지 못하는** 경로다.
+
+그래서 WKO-012(소유자의 전용 KSA + 승인 GSA exact 대조)와 WKO-013(승인 KSA 를 다른
+워크로드가 빌려 씀)을 넣었다. 음성 self-test 중 `ksa_borrowed_by_job` 은 **볼륨을 하나도
+마운트하지 않는** 변이다 — 기존 검사가 전부 그린인 상태에서만 red 가 되므로, 새 분기가 실제로
+일한다는 것이 그 변이 하나로 증명된다.
+
+두 KSA 를 **서로 다른 GSA** 에 바인딩하는 것도 같은 층위의 결정이다(ADR-0017 D3). 한 GSA 에
+두 secret 의 accessor 를 몰아주면 CSI 마운트는 분리돼 있어도 신원 층위에서 교차 접근이 열리고,
+그건 렌더로 보이지 않는다. lint 가 GSA 를 패턴으로 exact 대조하는 이유다.
+
+### automountServiceAccountToken 은 그대로 뒀다
+
+`gateway-exposure-lint.sh:346` 이 `automountServiceAccountToken is False` 를 강제하고 있어서
+KSA 를 붙이면 충돌하는 줄 알았는데 아니었다. GCP provider 는 CSI **드라이버**의 TokenRequest 로
+KSA 신원을 받아가므로, Pod 자신의 토큰 자동 마운트와 독립이다. 계약을 완화하지 않았다.
+
+### 착수 전 검증에서 뒤집힌 다른 하나 (W7)
+
+§7 ②/③ 리허설은 "평문 주입 → 서명 주입 전환" 을 재현해야 하는데, gateway 는 평문 `X-User-*` 를
+**더 이상 주입하지 않는다**(`GatewayAuthenticationFilter:59-63`, PR3d-a 가 삭제하고 strip 만
+남겼다). 되돌릴 "before" 가 코드에 없다 → **PR3c 시점 이미지**(CI 가 `github.sha` 로도 push
+한다)를 배포해야 한다. 확보 실패 시 평문 경로 실측은 미검증으로 남긴다. 현재 이미지에 평문
+주입을 임시로 되살리는 안은 기각했다 — 증적을 위해 지운 공격 표면을 부활시키는 건 본말전도다.
+
+### 검증
+
+- `workload-key-ownership-lint --self-test` 29/29 차단(신규 5종 포함) · `gateway-exposure-lint
+  --self-test` 29/29
+- lint 8종 전량 통과 · 양 overlay `kubectl kustomize` 렌더 OK · consistency precheck ok
+- `./gradlew test` 미실행 — diff 에 JVM 산출물 0건(매니페스트·bash·docs), 자바/gradle 이 k8s
+  렌더를 참조하지 않음을 grep 으로 확인
+
+### 미충족
+
+- **구현 ③ 은 종결되지 않았다** — 계획서 16항목 중 P2 하나. ③ 은 🔄 유지.
+- **WI 결선의 실동작 미검증** — 이 PR 의 검증은 전부 렌더 축이다. 실증은 "GSA 에서
+  `secretAccessor` 를 빼면 Pod 가 `ContainerCreating` 에 고착되고, 부여하면 뜬다" 로 P2 의
+  클러스터 절반에 남는다.
+- **GSA 생성·IAM 바인딩은 클러스터 작업** — 매니페스트만으로는 접근 권한이 생기지 않는다.
+- **리뷰 미수행** — Codex 계획/diff 리뷰 모두 미호출(사용자 지시). "P0/P1 = 0" 주장 없음.

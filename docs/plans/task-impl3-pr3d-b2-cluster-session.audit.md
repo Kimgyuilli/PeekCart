@@ -20,3 +20,12 @@
 - **미수행**: `./gradlew test` — diff 에 JVM 산출물이 0건(k8s 매니페스트·bash·docs). grep 으로
   자바/gradle 이 k8s 렌더를 참조하지 않음을 확인.
 - raw: 없음 (리뷰 미수행)
+
+## 2026-09-14 — /ship (P2 분리 ship)
+
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/109 (base main, 머지 안 함)
+- consistency precheck: ok (warnings 0)
+- 커밋 3개 (feat(k8s) 매니페스트 / test(k8s) lint / docs(plan))
+- 계획서 체크박스 1/16 — 미완이 아니라 §6 이 정한 분할(P2 만 클러스터 비의존). ship 시 명시 보고.
+- 갱신: TASKS.md ③ 행(b-2 🔲 → 🔄 + P2 ✅ #109, ③ 자체는 🔄 유지) · PHASE4.md 세션 기록
+- 부채 로드맵 미갱신 — L-002 는 P3(실 키 주입)에서 종결 예정이라 이 PR 로 닫지 않았다.
