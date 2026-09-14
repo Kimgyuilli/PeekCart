@@ -432,8 +432,10 @@ peekcart/
 │   │   ├── infra/{mysql,redis,kafka}/    # Phase 3 와 동일 (공통 인프라)
 │   │   ├── services/                      # Phase 3 의 peekcart/ 를 서비스별로 분리
 │   │   │   ├── gateway/
-│   │   │   │   ├── deployment.yml
-│   │   │   │   └── service.yml
+│   │   │   │   ├── deployment.yml          # Deployment + Service(8080) + gateway-metrics Service(8081)
+│   │   │   │   ├── configmap.yml
+│   │   │   │   ├── secretproviderclass.yml # 내부 토큰 서명 개인키 CSI (ADR-0017 D2)
+│   │   │   │   └── servicemonitor.yml      # gateway-metrics 를 scrape (ADR-0024 D1)
 │   │   │   ├── order-service/
 │   │   │   │   ├── deployment.yml
 │   │   │   │   ├── service.yml
@@ -489,11 +491,16 @@ peekcart/
 │       │   ├── GatewayAuthenticationFilter.java  # 외부 헤더 strip → RS256 검증 → 내부 토큰 주입
 │       │   ├── GatewayJwtVerifier.java
 │       │   ├── JwksKeyRegistry.java
-│       │   └── InternalTokenIssuer.java   # Gateway 개인키 서명 (ADR-0017)
+│       │   ├── InternalTokenIssuer.java   # Gateway 개인키 서명 (ADR-0017)
+│       │   ├── AuthFailureReason.java     # 거부 사유 enum — 메트릭 태그의 단일 출처 (S9)
+│       │   └── GatewayAuthMetrics.java    # auth.failure counter (ADR-0009 S9 owner)
 │       ├── ratelimit/
-│       │   └── FailClosedRedisRateLimiter.java   # SCG 기본 fail-OPEN 대체 (ADR-0013 D3)
+│       │   └── FailClosedRedisRateLimiter.java   # SCG 기본 fail-OPEN 대체 (ADR-0013 D3) + 429 계측
+│       ├── observability/
+│       │   └── ForbiddenResponseMetricsFilter.java  # 다운스트림 403 관측 (S9)
 │       └── config/
-│           └── RateLimiterConfig.java
+│           ├── RateLimiterConfig.java
+│           └── GatewayObservabilityConfig.java   # 공유 MetricsConfig(S1) 명시 import
 │
 ├── user-service/
 ├── product-service/
