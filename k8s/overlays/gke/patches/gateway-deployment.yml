@@ -1,5 +1,7 @@
 # GKE: e2-standard-4 기준 resources 상향. strategic merge — container name(gateway) 매칭.
-# replicas 는 HPA(minReplicas 2)가 관리한다 — 여기서 고정하지 않는다.
+# replicas 는 HPA(minReplicas 2)가 소유한다 — 여기에도, base 에도 선언하지 않는다.
+# (이 주석은 base 에 `replicas: 1` 이 남아 있는 동안 사실이 아니었다 — apply 마다 2→1 로 깎였다.
+#  PR3d-b-2 클러스터 세션에서 실측으로 드러나 base 에서 제거했다.)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
