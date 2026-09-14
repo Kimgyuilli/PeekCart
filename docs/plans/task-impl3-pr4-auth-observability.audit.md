@@ -41,3 +41,15 @@
     (`observability-ssot-lint` 은 self-test 모드가 없다 — 인자를 무시하고 본 검사만 돈다.)
   - 렌더: minikube/gke `kubectl kustomize` OK.
 - **미충족**: 실 클러스터 scrape 증적(SM 이 실제로 8081 을 긁는지)은 PR3d-b-2 와 같은 세션 몫. 리뷰 수렴 미판정.
+
+## 2026-09-14 — /ship
+
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/108 (신규, base=main, 미머지)
+- precheck: `ok` (warnings 0)
+- 커밋 7개 — `fix(adr)` / `docs(adr)` / `feat(gateway)` / `feat(observability)` / `chore(auth)` / `test` / `docs(plan)`
+- ship 단계 grep 증명에서 **추가 발견 1건**: 4서비스의 `jjwt-api` test dep 이 PR3d-a 이후
+  사용처 0(`grep -rl jsonwebtoken <svc>/src` → 0). 주석이 "root signer 와 동일 HS256/app.jwt.secret"
+  을 가리키고 있어 잔재 정의에 해당 → P11 ⑥ 으로 계획에 추가 후 제거.
+- 갱신: `docs/TASKS.md` ③ 행(PR4 ✅ · ③ 자체는 PR3d-b-2 때문에 🔄 유지) ·
+  `phase4-prep-debt-roadmap.md`(L-019 ✅, L-002 는 PR3d-b-2 종결 예정) · `PHASE4.md` 이력 ·
+  부모 계획 P20~P23 + 완료 조건 2줄 · Layer 1(`02`/`04`)

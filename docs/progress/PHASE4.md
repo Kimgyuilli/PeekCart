@@ -2070,3 +2070,118 @@ C-9 가 여기서 함정을 하나 막았다: 환불 원장의 `claimForReconcil
 - **T1 커밋 지연 벽시계 미측정** — 승인 응답에 커밋이 1회 늘었으나 측정하지 않았다.
 - **수동 종결 표면은 외부 API 가 아니다** — `resolveManually` 는 서비스 메서드로만 존재한다.
   운영 도달 경로는 ④-c-2b-4b 가 DLQ 원장에 한 것처럼 별도 작업이 필요하다.
+
+---
+
+## 2026-09-14 — 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 ([#108](https://github.com/Kimgyuilli/PeakCart/pull/108) · 신설 [ADR-0024](../adr/0024-observability-canonical-with-infra.md))
+
+계획서 `docs/plans/task-impl3-pr4-auth-observability.md` P1~P13. 부모 계획의 PR4(P20~P23) 종결.
+
+ADR-0009 §Decision 의 S9 행은 2026-05-04 부터 있었다. 코드는 0건이었다 —
+`grep -r "MeterRegistry\|Counter" gateway/src` 가 아무것도 찾지 못한다. Gateway 가 요청을
+거부해도(401/403/429/503) 그 사유를 셀 수 없는 상태로 네 개 PR 을 지나온 셈이다.
+
+### 계측을 넣으려는 순간 세 군데서 계약이 깨졌다
+
+**하나. gateway 에는 S1/S2 가 아예 없었다.** `:common` 미의존(WebFlux 격리)의 여파로
+`MetricsConfig`(histogram bucket)도 `management.metrics.tags.application` 도 없다. 이 상태로
+p95 alert 의 regex 에 gateway 를 넣으면 `_bucket` series 가 없어 **NaN**, error-rate 에 넣으면
+`application` 라벨이 없어 **매칭 0** 이다. 계측보다 기반 배선이 먼저였다.
+
+**둘. 단일 ground truth 가 세 집합으로 갈라졌다.** ADR-0015 는 "5서비스"라는 하나의 집합으로
+세 가지를 동시에 표현할 수 있었다 — 메트릭 태그, `up{service=}` 라벨, ServiceMonitor 이름.
+gateway 에서는 셋의 원소가 다르다: 태그는 `gateway`, scrape 되는 Service 는 `gateway-metrics`,
+SM 이름은 `gateway`.
+
+`gateway-metrics` 가 따로 필요한 이유는 PR3b 가 이미 결정해 둔 것이다 — public Service 는
+overlay 에서 NodePort/LoadBalancer 로 patch 되므로 8081 을 함께 게시하면 `/actuator/prometheus`
+가 인터넷으로 나간다. 그래서 관리 포트 scrape 용 ClusterIP Service 를 별도로 둔다.
+
+**셋. lint 3종이 전부 "정확히 5" 로 못박혀 있었다.** 6 으로 넓히는 것은 사실 정정이 아니라
+ADR-0015 §Decision 의 계약 변경이라 → **ADR-0024 신설**. PR3b 자신도 "SM·alert·lint 6 확장은
+PR4 에서 ADR 과 함께" 로 이연해 둔 지점이다.
+
+### A ≠ B 를 허용한 것이 결정의 실질이다
+
+세 집합을 억지로 같게 만드는 길이 두 개 있었고 둘 다 더 나빴다. 관리 포트를 public Service 에
+게시하면 PR3a 의 포트 분리가 무의미해지고, 태그를 `gateway-metrics` 로 바꾸면 태그가
+`spring.application.name` 과 어긋나 로그·트레이스의 서비스 식별자와 갈라진다.
+그래서 lint 가 상수 하나가 아니라 **세 상수**를 갖는다. 지금까지 "5" 라는 숫자가 우연히 세 가지를
+동시에 맞히고 있었을 뿐이고, 어느 하나가 달라지는 순간 서로를 오탐할 예정이었다.
+
+### 401 세부 사유를 응답으로 돌려주지 않았다
+
+운영은 "서명이 깨졌는지 / 만료됐는지 / 폐기된 kid 인지"를 구분해야 하지만, 그 구분을 응답으로
+돌려주면 **토큰 검증 내부 상태를 요청자에게 알려주는 것**이 된다(위조 시도의 피드백 루프).
+`AuthFailureReason` 이 `wire()`(응답, `invalid_token` 으로 합침)와 `tag()`(메트릭, 분해)를 따로
+나르고, PR4 이전의 응답 계약은 그대로 유지된다.
+
+사유가 enum 인 것도 같은 종류의 선택이다 — 예외 message 를 태그로 쓰면 토큰 파편·경로 같은
+사용자 입력이 라벨이 되어 카디널리티가 폭발한다.
+
+### 한도 초과와 판정 불가를 한 숫자로 합치지 않았다
+
+429(남용)는 클라이언트 문제고 503(Redis 장애)은 우리 인프라 문제다. 대응 주체가 다른 둘을
+합치면 "rate limit 이 늘었다"에서 어느 쪽인지 다시 로그를 읽어야 한다. 429 는
+`FailClosedRedisRateLimiter.isAllowed` 의 `allowed=false` 분기에서만, 503 은
+`auth.failure{reason=rate_limiter_unavailable}` 로 오른다.
+
+403 은 gateway 가 **관측**한다. gateway 는 인가를 판정하지 않으므로(ROLE_ADMIN 은 리소스
+서비스 몫 — ADR-0017) 여기 숫자는 전부 다운스트림 판정이다. 5서비스에 카운터를 복제하는
+대안은 S9 의 "이름 1개소" 계약을 깬다.
+
+### 뒤집힌 전제 — 의존성만으로는 S1 이 배선되지 않는다
+
+`:peekcart-common-observability` 를 의존하면 `MetricsConfig` 가 들어올 줄 알았다. 아니었다.
+그 클래스는 `com.peekcart.global.config` 에 있고 gateway 의 컴포넌트 스캔 기점은
+`com.peekcart.gateway` 다. 증상이 조용하다 — `http_server_requests_seconds` 는 정상 발행되는데
+`_bucket` 시계열만 없어서 **앱은 멀쩡하고 p95 alert 만 NaN** 이 된다.
+
+이걸 잡은 것은 **실제 스크랩 출력(`/actuator/prometheus`)을 검사하는 통합테스트**다.
+MeterRegistry 를 직접 들여다봤다면 그대로 통과했을 것이다. `@Import(MetricsConfig.class)` 로
+해소했고, scan 기점을 `com.peekcart` 로 넓히지 않은 이유는 WebFlux 전용 모듈이 servlet 기반
+공유 설정을 우연히 끌어오면 부팅이 깨지기 때문이다.
+
+### 잔재 제거의 전제가 반대로 뒤집혔다
+
+부모 계획 P22 는 "access token 최대 TTL 경과 증명을 게이트로" 걸어뒀다. 착수 전 grep 이 그
+전제를 없앴다 — `JwtTokenSigner` 는 이미 RS256 단독 서명이라 수용할 레거시 HS 토큰이 **새로
+만들어지지 않고**, legacy `bl:<원문토큰>` 키를 쓰는 코드는 저장소에 **0건**이며,
+`JwtAuthProperties.secret` 을 읽는 코드도 **0건**이었다. 기다릴 대상이 없으니 바로 지웠다.
+
+`TokenBlacklistPort.addToBlacklist` 만 남겼다. 호출자가 0건인 것은 맞지만 gateway 의
+`auth:blacklist:` read 가 살아 있어서, write 만 지우면 계약의 반쪽이 죽는다. 삭제 대신
+"현재 호출자 없음"을 javadoc 에 적었다.
+
+### 검증 도구를 먼저 red 로 만들어 보고 넣었다
+
+`servicemonitor-selector-lint` 는 음성 대조군이 **없었다** — canonical 집합을 6으로 넓히는 변경이
+vacuous-green 이 될 수 있는 상태였다. self-test 6종을 신설했고, 그중 핵심은 "gateway SM 의
+selector 를 `app: gateway` 단독으로 되돌리면 red" 다. 그래야 두 라벨 논리곱이 실제로
+강제된다(app 단독이면 8081 없는 public Service 까지 매칭한다).
+
+dashboard 는 promql lint 가 **아예 읽지 않던** 표면이었다. 변수 집합 검사를 신설하면서
+`kafka-lag` 목록의 `user-service` 가 `@KafkaListener` 0건인 오기라는 것도 드러났다.
+
+### 검증
+
+- lint 14종 + self-test(gateway-exposure 29 · promql 17 · servicemonitor-selector 6) 전량 통과
+- 양 overlay `kubectl kustomize` 렌더 OK
+- gateway 관측성 통합테스트 — 실제 스크랩 출력에 `application="gateway"` **와**
+  `http_server_requests_seconds_bucket` **와** `auth_failure_total{reason="missing_token"}` 동시 존재
+- 401 사유 6종 파라미터 테스트(뭉개면 red) · 429/503 축 분리 · reuse 롤백 시 미증가(실 MySQL)
+- HS512 토큰 → 401(`alg_not_allowed`), 설정으로 되살릴 수 없음
+
+### 미충족
+
+- **전 모듈 테스트 1건 실패** — `ProductCacheFallbackIntegrationTest.unresponsiveRedis_isBoundedByCommandTimeout`
+  (1.648s > 1.5s 상한). 본 PR diff 에 product-service 소스가 없고 격리 재실행은 통과 →
+  부하 의존 타이밍 flake(D-019 동류). **본 PR 에서 고치지 않았고 부채로도 등록하지 않았다.**
+- **실 클러스터 scrape 증적 없음** — SM 이 실제로 gateway 8081 을 긁는지는 GKE 가 필요하다.
+  PR3d-b-2 와 같은 세션 몫.
+- **auth failure rate alert 미도입** — 401 기저율(만료 토큰 재시도 등) baseline 이 없는 상태에서
+  임계를 정하면 그 숫자가 곧 거짓 계약이 된다. reuse 만 "발생 자체가 사건"이라 alert 화했다.
+- **gateway 8081 의 NS 내부 도달 범위** — gateway Pod 는 `component: gateway` 라 기존
+  NetworkPolicy(`component: backend`)의 대상이 아니다. PR3b 이래의 기존 상태이고, 좁히려면
+  ADR-0013 D3 신뢰 경계의 확장이 필요해 범위 밖으로 뒀다.
+- **리뷰 수렴 미판정** — Codex 리뷰 미호출(사용자 지시). 이 PR 에 "P1 = 0" 주장이 없다.
