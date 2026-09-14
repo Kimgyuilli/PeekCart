@@ -12,6 +12,7 @@ import com.peekcart.user.domain.model.RefreshToken;
 import com.peekcart.user.domain.model.User;
 import com.peekcart.user.domain.repository.RefreshTokenRepository;
 import com.peekcart.user.domain.repository.UserRepository;
+import com.peekcart.user.infrastructure.metrics.UserAuthMetrics;
 import com.peekcart.user.presentation.dto.request.LoginRequest;
 import com.peekcart.user.presentation.dto.request.SignupRequest;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +45,7 @@ public class AuthService {
     private final TokenIssuer tokenIssuer;
     private final PasswordEncoder passwordEncoder;
     private final JwtAuthProperties jwtAuthProperties;
+    private final UserAuthMetrics authMetrics;
 
     /**
      * 신규 회원을 등록하고 새 family 로 토큰을 발급한다.
@@ -87,6 +89,7 @@ public class AuthService {
             tokenBlacklistPort.denyFamily(familyId, jwtAuthProperties.accessTokenExpiry() / 1000);
         }
         refreshTokenRepository.revokeAllByUserId(userId);
+        authMetrics.loggedOut();
     }
 
     /**
@@ -164,6 +167,7 @@ public class AuthService {
             log.warn("family deny write 실패 — DB 무효화는 유지, deny 는 access TTL 까지 bounded (familyId={})",
                     familyId, e);
         }
+        authMetrics.reuseDetected();
         return new RefreshTokenReuseException();
     }
 

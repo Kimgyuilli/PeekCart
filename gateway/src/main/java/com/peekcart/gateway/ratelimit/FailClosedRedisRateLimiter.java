@@ -1,5 +1,7 @@
 package com.peekcart.gateway.ratelimit;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.cloud.gateway.filter.ratelimit.AbstractRateLimiter;
 import org.springframework.cloud.gateway.support.ConfigurationService;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
@@ -10,6 +12,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <b>fail-closed</b> Redis rate limiter (ADR-0013 D3 · 계획 P13 · GW-2 c2:3/c3:1).
@@ -33,12 +36,20 @@ public class FailClosedRedisRateLimiter extends AbstractRateLimiter<FailClosedRe
     public static final String CONFIGURATION_PROPERTY_NAME = "fail-closed-rate-limiter";
     private static final String KEY_PREFIX = "gw:rl:";
 
+    /** S9 — 한도 초과(429) 전용 카운터 이름. 판정 불가(503)는 {@code auth.failure} 소관이다. */
+    static final String RATELIMIT_REJECTED = "auth.ratelimit.rejected";
+
     private final ReactiveStringRedisTemplate redis;
+    private final MeterRegistry registry;
+    /** route 별 카운터. routeId 는 라우트 정의에서만 오므로 태그 카디널리티가 설정으로 유계다. */
+    private final Map<String, Counter> rejectedByRoute = new ConcurrentHashMap<>();
 
     public FailClosedRedisRateLimiter(ReactiveStringRedisTemplate redis,
-                                      ConfigurationService configurationService) {
+                                      ConfigurationService configurationService,
+                                      MeterRegistry registry) {
         super(Config.class, CONFIGURATION_PROPERTY_NAME, configurationService);
         this.redis = redis;
+        this.registry = registry;
     }
 
     @Override
@@ -60,6 +71,12 @@ public class FailClosedRedisRateLimiter extends AbstractRateLimiter<FailClosedRe
                 })
                 .map(count -> {
                     boolean allowed = count <= limit;
+                    if (!allowed) {
+                        // 한도 초과만 센다(S9 · ADR-0024 D4). Redis 장애는 아래 onErrorMap 으로 빠지므로
+                        // 이 지점에 오지 않는다 — 둘을 한 카운터로 합치면 "남용 급증" 과 "백엔드 장애" 가
+                        // 같은 숫자가 되어 대응이 갈린다.
+                        rejected(routeId).increment();
+                    }
                     long remaining = Math.max(0, limit - count);
                     Map<String, String> headers = new HashMap<>();
                     headers.put("X-RateLimit-Limit", String.valueOf(limit));
@@ -71,6 +88,13 @@ public class FailClosedRedisRateLimiter extends AbstractRateLimiter<FailClosedRe
                 .onErrorMap(e -> !(e instanceof RateLimiterUnavailableException),
                         e -> new RateLimiterUnavailableException(
                                 "rate limiter Redis 조회 실패 (route=" + routeId + ")", e));
+    }
+
+    private Counter rejected(String routeId) {
+        return rejectedByRoute.computeIfAbsent(routeId, id -> Counter.builder(RATELIMIT_REJECTED)
+                .tag("route", id)
+                .description("rate limit 한도 초과로 거부된 요청 (429)")
+                .register(registry));
     }
 
     /** 라우트 args 로 바인딩된 설정. 미지정 라우트는 보수적인 기본값을 쓴다. */
