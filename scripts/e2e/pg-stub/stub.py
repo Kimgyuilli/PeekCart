@@ -12,7 +12,7 @@ script (paymentKey 접두사):
   e2e-already-part-*  이미 취소됨 + 조회상 금액 부족  POST -> 400 ALREADY_CANCELED / GET -> cancels 합계 < amount
   e2e-already-fail-*  이미 취소됨 + 조회 실패         POST -> 400 ALREADY_CANCELED / GET -> 500
   e2e-timeout-*       응답 지연(클라이언트 타임아웃)   POST -> sleep
-  e2e-cfail-*         승인 실패 (시나리오 A 의 실패 지점) confirm -> 500
+  e2e-cfail-*         승인 확정 거절 (시나리오 A) confirm -> 400 {"code":"REJECT_CARD_COMPANY"}
 
 **script 없는 paymentKey 는 500 `STUB_UNSCRIPTED_KEY`** 다. 기본값을 성공으로 두면
 오타 난 키가 조용히 성공해 시나리오가 무엇을 검증했는지 알 수 없게 된다.
@@ -126,9 +126,11 @@ class Handler(BaseHTTPRequestHandler):
             if script is None:
                 self._send(500, {"code": "STUB_UNSCRIPTED_KEY", "message": payment_key})
             elif script == "cfail":
-                # 시나리오 A 의 실패 지점 — PaymentCommandService 의 catch 가
-                # payment.fail() + publishPaymentFailed() 를 같은 트랜잭션에서 수행한다.
-                self._send(500, {"code": "STUB_CONFIRM_FAILED", "message": "승인 실패 script"})
+                # 시나리오 A 의 실패 지점. **4xx 여야 한다** — 카드사 거절처럼 재시도해도
+                # 상태가 바뀌지 않는 확정 거절이라야 payment.failed 체인이 성립한다.
+                # 5xx 는 ADR-0023 D5 상 "과금이 성립했는지 모름" 이라 원장이 UNRESOLVED 로
+                # 남고 주문 취소·재고 복구가 일어나지 않는다(D-020 의 수정 내용 그 자체다).
+                self._send(400, {"code": "REJECT_CARD_COMPANY", "message": "카드사 거절 script"})
             else:
                 self._send(200, {
                     "paymentKey": payment_key,
