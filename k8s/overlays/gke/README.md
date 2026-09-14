@@ -26,7 +26,12 @@ done
 # kustomize edit set image \
 #   "ghcr.io/kimgyuilli/peekcart-gateway=asia-northeast3-docker.pkg.dev/<YOUR_PROJECT>/peekcart/gateway@sha256:<digest>"
 
-# 렌더링 확인 — 치환 누락이 남아 있으면 여기서 걸립니다
+# 이미지 외에도 PROJECT_ID_PLACEHOLDER 를 쓰는 자리가 있습니다 — `kustomize edit set image` 로는
+# 안 바뀌므로 apply 직전에 함께 치환합니다(치환 누락 시 Pod 가 개인키를 못 받아 ContainerCreating 고착):
+#   - SecretProviderClass 2종의 `resourceName`  (gateway / user-service)
+#   - ServiceAccount 2종의 `iam.gke.io/gcp-service-account` 어노테이션 (Workload Identity, PR3d-b-2 P2)
+
+# 렌더링 확인 — 치환 누락이 남아 있으면 여기서 걸립니다 (이미지·SPC·KSA 어노테이션 전부)
 kubectl kustomize . | grep -n PROJECT_ID_PLACEHOLDER && echo "치환 누락 있음" || echo "치환 완료"
 
 # apply 후 반드시 원복
