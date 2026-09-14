@@ -2,6 +2,7 @@ package com.peekcart.gateway.ratelimit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.cloud.gateway.support.ConfigurationService;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
@@ -30,6 +31,7 @@ class FailClosedRedisRateLimiterTest {
     private ReactiveStringRedisTemplate redis;
     private ReactiveValueOperations<String, String> valueOps;
     private FailClosedRedisRateLimiter limiter;
+    private SimpleMeterRegistry meterRegistry;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
@@ -41,7 +43,8 @@ class FailClosedRedisRateLimiterTest {
 
         ConfigurationService configurationService =
                 new ConfigurationService(null, () -> null, () -> null);
-        limiter = new FailClosedRedisRateLimiter(redis, configurationService);
+        meterRegistry = new SimpleMeterRegistry();
+        limiter = new FailClosedRedisRateLimiter(redis, configurationService, meterRegistry);
         // 라우트 설정 미등록 → Config 기본값(burstCapacity=20, window=1s)
     }
 
@@ -94,5 +97,57 @@ class FailClosedRedisRateLimiterTest {
         StepVerifier.create(limiter.isAllowed("route-a", "user:1")).expectNextCount(1).verifyComplete();
         org.mockito.Mockito.verify(redis, org.mockito.Mockito.never())
                 .expire(anyString(), any(Duration.class));
+    }
+
+
+    @Test
+    @DisplayName("S9 — 한도 초과 1건마다 auth.ratelimit.rejected{route} +1")
+    void overLimit_incrementsRejectedCounter() {
+        when(valueOps.increment(anyString())).thenReturn(Mono.just(21L));
+
+        StepVerifier.create(limiter.isAllowed("route-a", "user:1")).expectNextCount(1).verifyComplete();
+        StepVerifier.create(limiter.isAllowed("route-a", "user:2")).expectNextCount(1).verifyComplete();
+
+        assertThat(meterRegistry.get("auth.ratelimit.rejected").tag("route", "route-a").counter().count())
+                .isEqualTo(2.0);
+    }
+
+    @Test
+    @DisplayName("S9 — 한도 이내 통과는 카운터를 올리지 않는다")
+    void withinLimit_incrementsNothing() {
+        when(valueOps.increment(anyString())).thenReturn(Mono.just(1L));
+
+        StepVerifier.create(limiter.isAllowed("route-a", "user:1")).expectNextCount(1).verifyComplete();
+
+        assertThat(meterRegistry.find("auth.ratelimit.rejected").counters()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("S9 — Redis 장애(판정 불가)는 429 카운터를 올리지 않는다")
+    void redisFailure_doesNotIncrementRejectedCounter() {
+        // 한도 초과(남용)와 백엔드 장애를 한 숫자로 합치면 대응이 갈린다 — 전자는 클라이언트,
+        // 후자는 우리 인프라다. 장애는 auth.failure{reason=rate_limiter_unavailable} 소관이다.
+        when(valueOps.increment(anyString()))
+                .thenReturn(Mono.error(new IllegalStateException("redis down")));
+
+        StepVerifier.create(limiter.isAllowed("route-a", "user:1"))
+                .expectError(RateLimiterUnavailableException.class)
+                .verify();
+
+        assertThat(meterRegistry.find("auth.ratelimit.rejected").counters()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("S9 — route 별로 카운터가 분리된다 (어느 라우트가 맞는지 보여야 한다)")
+    void countersAreSeparatedByRoute() {
+        when(valueOps.increment(anyString())).thenReturn(Mono.just(21L));
+
+        StepVerifier.create(limiter.isAllowed("route-a", "user:1")).expectNextCount(1).verifyComplete();
+        StepVerifier.create(limiter.isAllowed("route-b", "user:1")).expectNextCount(1).verifyComplete();
+
+        assertThat(meterRegistry.get("auth.ratelimit.rejected").tag("route", "route-a").counter().count())
+                .isEqualTo(1.0);
+        assertThat(meterRegistry.get("auth.ratelimit.rejected").tag("route", "route-b").counter().count())
+                .isEqualTo(1.0);
     }
 }
