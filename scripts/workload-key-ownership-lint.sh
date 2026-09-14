@@ -97,7 +97,13 @@ KEY_OWNERS = {
 # 5 도메인 서비스는 내부 토큰 **공개키**를 정확히 이 경로로 받아야 한다(§10.2 property-ownership).
 DOMAIN_SERVICES = ["user-service", "product-service", "order-service", "payment-service", "notification-service"]
 BINDING_CONFIGMAP = "internal-token-binding"
+# User JWT 공개키 바인딩은 **발급 owner(user-service) 에게만** 승인한다.
+# 다른 서비스가 이걸 끌어다 쓰면 그 서비스의 JWT 공개키 도메인까지 한 ConfigMap 이
+# 좌우하게 되고, 승인 표면이 조용히 넓어진다.
+JWKS_BINDING_CONFIGMAP = "user-jwt-binding"
+JWKS_BINDING_OWNER = "user-service"
 KEYS_CONFIGMAP = "internal-token-keys"
+JWKS_CONFIGMAP = "user-jwt-public-keys"
 
 violations = []
 
@@ -380,7 +386,10 @@ for svc in DOMAIN_SERVICES:
                     " 키 도메인 분리를 우회한다 — 사용 금지")
         for ef in (c.get("envFrom") or []):
             cm = (ef.get("configMapRef") or {}).get("name")
-            if cm and cm not in (f"{svc}-config", BINDING_CONFIGMAP):
+            approved = {f"{svc}-config", BINDING_CONFIGMAP}
+            if svc == JWKS_BINDING_OWNER:
+                approved.add(JWKS_BINDING_CONFIGMAP)
+            if cm and cm not in approved:
                 bad("WKO-011",
                     f'{svc}/{c.get("name")}: 미승인 ConfigMap envFrom={cm}'
                     " — 임의 ConfigMap 은 키 도메인 프로퍼티를 덮을 수 있다")
@@ -410,7 +419,13 @@ if not internal_fps:
     bad("WKO-006",
         "internal-token-keys ConfigMap 에 공개키가 없다 — 5서비스가 Gateway 서명을 검증할 수 없다")
 
-# user-service 가 JWKS 로 게시하는 공개키(이미지 classpath 정본)와 겹치면 내부 앵커 노출이다.
+# user-service 가 JWKS 로 게시하는 공개키와 겹치면 내부 앵커 노출이다.
+#
+# JWKS 원본은 **두 곳**이다 — 둘 다 봐야 한다:
+#   (a) 이미지 classpath 정본 common/src/main/resources/keys
+#   (b) user-jwt-public-keys ConfigMap (운영 kid 를 이미지 재빌드 없이 싣는 자리)
+# (b) 가 생기면서 누출 경로가 하나 늘었다: 내부 토큰 공개키를 (b) 에 넣으면 kid 를 달리해도
+# JwkController 가 그것까지 JWKS 로 게시한다. (a) 만 보던 검사는 그 변이를 통째로 놓친다.
 jwks_fps = {}
 jwks_dir = os.path.join(repo, "common/src/main/resources/keys")
 if os.path.isdir(jwks_dir):
@@ -419,7 +434,23 @@ if os.path.isdir(jwks_dir):
             continue
         fp = spki_fingerprint(open(os.path.join(jwks_dir, fname), encoding="utf-8").read())
         if fp:
-            jwks_fps[fname] = fp
+            jwks_fps["classpath:" + fname] = fp
+
+user_cm_fps = {}
+for doc in docs:
+    if doc.get("kind") == "ConfigMap" and (doc.get("metadata") or {}).get("name") == JWKS_CONFIGMAP:
+        for fname, body in (doc.get("data") or {}).items():
+            fp = spki_fingerprint(body)
+            if fp is None:
+                bad("WKO-014", f"{JWKS_CONFIGMAP} ConfigMap 의 {fname} 을 공개키로 파싱할 수 없다")
+            else:
+                user_cm_fps[fname] = fp
+                jwks_fps[JWKS_CONFIGMAP + ":" + fname] = fp
+
+if not user_cm_fps:
+    bad("WKO-015",
+        f"{JWKS_CONFIGMAP} ConfigMap 에 공개키가 없다 — user-service 가 JWKS 를 게시할 수 없고,"
+        " 운영 kid 를 실을 자리가 사라져 공개키가 이미지에 고정된다")
 
 overlap = set(internal_fps.values()) & set(jwks_fps.values())
 if overlap:
@@ -434,7 +465,8 @@ if violations:
     sys.exit(1)
 
 print(f"{TAG} {overlay}: 개인키 소유 경계 OK"
-      f" (개인키 SPC {len(KEY_OWNERS)}종 배타 소유 · 내부 공개키 {len(internal_fps)}개 · JWKS 와 서로소)")
+      f" (개인키 SPC {len(KEY_OWNERS)}종 배타 소유 · 내부 공개키 {len(internal_fps)}개 ·"
+      f" JWKS 원본 {len(jwks_fps)}개[classpath+ConfigMap] 와 서로소)")
 PY
 
 run_checks() {
@@ -557,6 +589,27 @@ elif mut == "public_key_domain_merge":
                              "common/src/main/resources/keys/dev-jwt-public.pem"), encoding="utf-8").read()
     for k in list(cm["data"].keys()):
         cm["data"][k] = jwks
+elif mut == "internal_key_into_user_jwks_cm":
+    # **이 ConfigMap 이 만든 새 누출 경로** — 내부 토큰 공개키를 user-jwt-public-keys ConfigMap 에
+    # 싣는다. JwkController 가 그 레지스트리를 통째로 JWKS 로 게시하므로 내부 신뢰 앵커가 외부로
+    # 나간다. classpath 정본만 보던 검사는 이 변이를 통째로 놓친다 — 그래서 JWKS 원본 집합에
+    # 이 ConfigMap 을 포함시켰다.
+    icm = next(d for d in docs if d["kind"] == "ConfigMap" and d["metadata"]["name"] == "internal-token-keys")
+    ucm = next(d for d in docs if d["kind"] == "ConfigMap" and d["metadata"]["name"] == "user-jwt-public-keys")
+    internal_pem = next(iter(icm["data"].values()))
+    for k in list(ucm["data"].keys()):
+        ucm["data"][k] = internal_pem
+elif mut == "user_jwks_cm_emptied":
+    # 공개키가 비면 JWKS 게시가 불가능하고, 운영 kid 를 실을 자리가 사라져 공개키가 이미지에 고정된다
+    # (= 이 PR 이 없애려는 상태로의 회귀).
+    ucm = next(d for d in docs if d["kind"] == "ConfigMap" and d["metadata"]["name"] == "user-jwt-public-keys")
+    ucm["data"] = {}
+elif mut == "jwks_binding_borrowed_by_other_service":
+    # user-jwt-binding 을 발급 owner 가 아닌 서비스가 끌어다 쓴다 — 그 서비스의 JWT 공개키 도메인까지
+    # 한 ConfigMap 이 좌우하게 되어 승인 표면이 조용히 넓어진다.
+    dep = next(d for d in docs if d["kind"] == "Deployment" and d["metadata"]["name"] == "order-service")
+    c = dep["spec"]["template"]["spec"]["containers"][0]
+    c.setdefault("envFrom", []).append({"configMapRef": {"name": "user-jwt-binding"}})
 elif mut == "empty_public_keys":
     cm = next(d for d in docs if d["kind"] == "ConfigMap" and d["metadata"]["name"] == "internal-token-keys")
     cm["data"] = {}
@@ -688,6 +741,10 @@ PY
         [private_key_secret]="WKO-004:1"
         [b64_private_secret]="WKO-004:1"
         [public_key_domain_merge]="WKO-007:1"
+        # user-jwt-public-keys ConfigMap 이 만든 새 표면 (구현 ③ 후속)
+        [internal_key_into_user_jwks_cm]="WKO-007:1"
+        [user_jwks_cm_emptied]="WKO-015:1"
+        [jwks_binding_borrowed_by_other_service]="WKO-011:1"
         [empty_public_keys]="WKO-006:1"
         [spc_user_points_to_gateway]="WKO-008:1"
         [spc_wrong_namespace]="WKO-008:1"
@@ -710,7 +767,9 @@ PY
                replicaset_mount ephemeral_mount inline_node_publish b64_private_secret
                binding_removed jwt_domain_env spring_application_json keys_mount_writable
                ksa_default ksa_annotation_removed ksa_foreign_gsa ksa_object_removed
-               ksa_borrowed_by_job)
+               ksa_borrowed_by_job
+               internal_key_into_user_jwks_cm user_jwks_cm_emptied
+               jwks_binding_borrowed_by_other_service)
 
     if ! OVERLAY_NAME="gke" OVERLAY_OUT="$TMP/base.yml" REPO_ROOT="$REPO_ROOT" \
          python3 "$CHECKER" >/dev/null 2>&1; then

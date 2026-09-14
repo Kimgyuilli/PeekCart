@@ -31,9 +31,12 @@ spec:
       # DB-per-service (구현 ② PR2): 각 서비스가 자기 스키마를 독립 Flyway 마이그레이션하므로
       # order-service readiness 게이트(전환기 initContainer)를 제거한다 — cross-service cold-start 순서 의존 소멸.
       #
-      # 키 마운트 2종(PR3d-b) — 도메인이 다르므로 볼륨도 분리한다(ADR-0017 D3):
-      #   jwt-signing-key      = 사용자 access token **개인키**(CSI, user-service 전용, ADR-0013 D2)
-      #   internal-token-keys  = gateway 내부 토큰 **공개키**(ConfigMap, 5서비스 공용)
+      # 키 마운트 3종 — 도메인이 다르므로 볼륨도 분리한다(ADR-0017 D3):
+      #   jwt-signing-key       = 사용자 access token **개인키**(CSI, user-service 전용, ADR-0013 D2)
+      #   user-jwt-public-keys  = 사용자 access token **공개키**(ConfigMap, JWKS 게시 원본)
+      #   internal-token-keys   = gateway 내부 토큰 **공개키**(ConfigMap, 5서비스 공용)
+      # 앞 둘은 같은 키쌍의 양면이라 **함께 교체**해야 한다 — 하나만 바꾸면 발급한 토큰을
+      # 아무도 검증하지 못한다(PR3d-b-2 세션에서 실제로 발생).
       volumes:
         - name: jwt-signing-key
           csi:
@@ -41,6 +44,9 @@ spec:
             readOnly: true
             volumeAttributes:
               secretProviderClass: user-service-jwt-signing-key
+        - name: user-jwt-public-keys
+          configMap:
+            name: user-jwt-public-keys
         - name: internal-token-keys
           configMap:
             name: internal-token-keys
@@ -53,12 +59,17 @@ spec:
             - configMapRef:
                 name: user-service-config
             - configMapRef:
+                name: user-jwt-binding
+            - configMapRef:
                 name: internal-token-binding
             - secretRef:
                 name: user-service-secret
           volumeMounts:
             - name: jwt-signing-key
               mountPath: /etc/peekcart/user-keys
+              readOnly: true
+            - name: user-jwt-public-keys
+              mountPath: /etc/peekcart/user-jwt-public-keys
               readOnly: true
             - name: internal-token-keys
               mountPath: /etc/peekcart/internal-token-keys
