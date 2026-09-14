@@ -8,7 +8,9 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: peekcart
 spec:
-  replicas: 1
+  # replicas 를 선언하지 않는다 — gke overlay 의 HPA(minReplicas 1 / maxReplicas 3)가 소유한다.
+  # min 이 1 이라 평소엔 무해해 보이지만, 부하로 3 까지 올라간 상태에서 `kubectl apply -k` 하면
+  # 1 로 깎인다. 강제: scripts/hpa-replicas-ownership-lint.sh
   # 무중단 rollout — header-trust 전환/이미지 교체 시 가용 replica 유지(PR3c §8 롤아웃 계약)
   strategy:
     type: RollingUpdate

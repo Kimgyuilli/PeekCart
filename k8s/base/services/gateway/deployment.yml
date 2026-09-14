@@ -17,7 +17,10 @@ metadata:
     app.kubernetes.io/component: gateway
     app.kubernetes.io/part-of: peekcart
 spec:
-  replicas: 1
+  # replicas 를 선언하지 않는다 — gke overlay 의 HPA(minReplicas 2)가 소유한다.
+  # 여기에 replicas 를 두면 `kubectl apply -k` 가 매번 그 값으로 덮어써 HPA 가 올려둔 수를
+  # 최소값 아래로 깎는다(배포마다 가용 Pod 가 minReplicas 미만이 되는 구간 발생).
+  # 강제: scripts/hpa-replicas-ownership-lint.sh
   # 외부 진입점이라 롤아웃 중에도 수용 가능한 Pod 가 항상 있어야 한다(PR3b runbook 의 rollout 공통 조건).
   strategy:
     type: RollingUpdate
