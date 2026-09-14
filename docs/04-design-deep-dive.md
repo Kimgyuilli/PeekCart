@@ -449,6 +449,20 @@ Gateway 통과 후 내부 서비스 호출 시:
   - 강제는 kid 가 아니라 SPKI DER SHA-256 fingerprint 대조 (같은 키의 kid 우회 차단)
 ```
 
+**거부 사유 관측** (S9 — see ADR-0009 §Decision S9 · ADR-0024 D4):
+
+```
+Gateway 는 자기가 거부한 요청을 사유별로 센다 (auth.failure{reason}).
+  - 401 세부 사유(서명오류·만료·unknown kid·alg 불허·exp 부재·deny hit)는
+    **메트릭에서만** 분해한다. 응답 헤더(X-Auth-Failure-Reason)는 invalid_token 으로 합친다
+    — 검증 내부 상태를 요청자에게 알려주면 위조 시도에 피드백을 주는 셈이다
+  - 한도 초과(429)는 auth.ratelimit.rejected{route}, 판정 불가(503)는
+    auth.failure{reason=rate_limiter_unavailable} 로 분리한다 (대응 주체가 다르다)
+  - 인가 실패(403)는 리소스 서비스가 판정하고 Gateway 가 응답을 관측해 센다
+    (auth.forbidden{route}) — 메트릭 이름은 owner 1개소
+reuse 감지·로그아웃은 User 소유(auth.token.reuse.detected / auth.logout).
+```
+
 ### 10-3. 페이지네이션 전략 — Offset 방식의 한계
 
 주문 내역 조회는 **Cursor 기반 페이지네이션**입니다 (구현 ⑥에서 Offset 에서 전환).

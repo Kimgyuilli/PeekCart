@@ -33,14 +33,12 @@ class JwtTokenSignerTest {
 
     @BeforeEach
     void setUp() {
-        JwtAuthProperties authProps = new JwtAuthProperties(
-                "peekcart-secret-key-must-be-at-least-256-bits-long-xxxxxxxxxxxxxxx", 1_800_000, 604_800_000);
+        JwtAuthProperties authProps = new JwtAuthProperties(1_800_000, 604_800_000);
         // 런타임 생성 키쌍(임시 파일) — 개인키를 저장소에 커밋하지 않는다(ADR-0013 D2)
         keyProps = new JwtKeyProperties(
                 KID,
                 new FileSystemResource(TestRsaKeys.privateKeyFile()),
-                List.of(new JwtKeyProperties.PublicKeyEntry(KID, new FileSystemResource(TestRsaKeys.publicKeyFile()))),
-                false);
+                List.of(new JwtKeyProperties.PublicKeyEntry(KID, new FileSystemResource(TestRsaKeys.publicKeyFile()))));
 
         signer = new JwtTokenSigner(authProps, keyProps);
         signer.init();

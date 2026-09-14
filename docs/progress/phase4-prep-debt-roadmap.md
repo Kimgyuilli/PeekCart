@@ -94,7 +94,7 @@ Phase 4 에서 서비스/매니페스트가 N배로 늘기 *전에* 게이트를
 
 | ID | 영역 | Phase 4 연결고리 | 편입 대상 |
 |---|---|---|---|
-| **L-001/L-002/L-003/L-019** | Security/Obs | **JWT RS256 전환 확정** → Gateway + 시크릿 저장소(KMS/Vault) + DelegatingPasswordEncoder + Reuse Detection(`family_id`) + 인증 실패 관측성을 **한 D- 단위**로 | Phase 4 ③ Gateway |
+| **L-001/L-002/L-003/L-019** | Security/Obs | **JWT RS256 전환 확정** → Gateway + 시크릿 저장소(KMS/Vault) + DelegatingPasswordEncoder + Reuse Detection(`family_id`) + 인증 실패 관측성을 **한 D- 단위**로 | Phase 4 ③ Gateway — **L-019(인증 실패 관측성) ✅ 해소 ([#108](https://github.com/Kimgyuilli/PeakCart/pull/108), ADR-0024)**: `auth.failure{reason}`·429·403·reuse/logout 계측 + gateway S1/S2 편입 + alert/dashboard/lint 6집합. L-001(RS256 [#73])·L-003(Reuse Detection [#74])은 해소, **L-002(KMS/Vault 시크릿 저장소)는 PR3d-b-2 의 실 키 주입으로 종결 예정** |
 | L-004 | Observability | Slack 단일채널 → 운영 알림 채널 재설계(PagerDuty 등) | Phase 4 운영 관측성 |
 | L-006 | Resilience | Redis 조회 캐시 fallback(`CacheErrorHandler`) — Redis 가 서비스간 공유 인프라화 시. L-005(작업4) 선결 | ✅ 구현 ⑤ [#94](https://github.com/Kimgyuilli/PeakCart/pull/94) (`ResilientCacheErrorHandler` — get/put fail-open, evict/clear 는 WARN+`cache_fallback_total`) |
 | L-008 / L-011 | Operations | `outbox_events`/`processed_events` retention(§9-7 코드화) — DB 서비스별 분리 시 N배. 같은 작업 단위. 보존기간=멱등성 창 상한 결정 동반 | Phase 4 ② DB 분리 |

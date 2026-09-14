@@ -7,6 +7,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.util.stream.Stream;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -51,11 +56,10 @@ class GatewayJwtVerifierTest {
         when(registry.resolve(KID)).thenReturn(Mono.just((RSAPublicKey) keyPair.getPublic()));
     }
 
-    private GatewayJwtVerifier verifier(boolean hs512Fallback) {
+    private GatewayJwtVerifier verifier() {
         JwtGatewayProperties props = new JwtGatewayProperties(
                 "http://user/.well-known/jwks.json",
-                Duration.ofSeconds(2), Duration.ofSeconds(10), Duration.ofMinutes(5),
-                hs512Fallback, HS_SECRET);
+                Duration.ofSeconds(2), Duration.ofSeconds(10), Duration.ofMinutes(5));
         return new GatewayJwtVerifier(registry, props, new ObjectMapper());
     }
 
@@ -85,7 +89,7 @@ class GatewayJwtVerifierTest {
         @Test
         @DisplayName("RS256 왕복 — claims 매핑(userId/role/family_id)")
         void rs256_roundTrip() {
-            StepVerifier.create(verifier(false).verify(rs256Token(KID)))
+            StepVerifier.create(verifier().verify(rs256Token(KID)))
                     .assertNext(claims -> {
                         assertThat(claims.userId()).isEqualTo(42L);
                         assertThat(claims.role()).isEqualTo("USER");
@@ -101,7 +105,7 @@ class GatewayJwtVerifierTest {
             when(registry.resolve("other-kid"))
                     .thenReturn(Mono.error(new JwksKeyRegistry.UnknownKidException("알 수 없는 kid")));
 
-            StepVerifier.create(verifier(false).verify(rs256Token("other-kid")))
+            StepVerifier.create(verifier().verify(rs256Token("other-kid")))
                     .expectError(GatewayJwtVerifier.InvalidTokenException.class)
                     .verify();
         }
@@ -112,7 +116,7 @@ class GatewayJwtVerifierTest {
             when(registry.resolve(anyString()))
                     .thenReturn(Mono.error(new JwksKeyRegistry.JwksUnavailableException("down", null)));
 
-            StepVerifier.create(verifier(false).verify(rs256Token(KID)))
+            StepVerifier.create(verifier().verify(rs256Token(KID)))
                     .expectError(JwksKeyRegistry.JwksUnavailableException.class)
                     .verify();
         }
@@ -130,7 +134,7 @@ class GatewayJwtVerifierTest {
                     .signWith((RSAPrivateKey) attacker.getPrivate(), Jwts.SIG.RS256)
                     .compact();
 
-            StepVerifier.create(verifier(false).verify(forged))
+            StepVerifier.create(verifier().verify(forged))
                     .expectError(GatewayJwtVerifier.InvalidTokenException.class)
                     .verify();
         }
@@ -145,46 +149,37 @@ class GatewayJwtVerifierTest {
                     .signWith((RSAPrivateKey) keyPair.getPrivate(), Jwts.SIG.RS256)
                     .compact();
 
-            StepVerifier.create(verifier(false).verify(expired))
+            StepVerifier.create(verifier().verify(expired))
                     .expectError(GatewayJwtVerifier.InvalidTokenException.class)
                     .verify();
         }
     }
 
     @Nested
-    @DisplayName("전환기 HMAC fallback — HS512 정확 한정")
-    class HmacFallback {
+    @DisplayName("HMAC 전면 거부 — PR4 로 전환기 fallback 제거")
+    class HmacRejected {
 
-        @Test
-        @DisplayName("fallback off(기본) → HS512 거부")
-        void hs512_rejectedWhenDisabled() {
-            StepVerifier.create(verifier(false).verify(hmacToken(Jwts.SIG.HS512)))
-                    .expectError(GatewayJwtVerifier.InvalidTokenException.class)
+        // fallback 스위치 자체가 사라졌다. 설정으로 되살릴 수 없다는 것이 이 nest 의 계약이다
+        // (스위치가 남아 있으면 alg 혼동 공격의 재활성 경로가 된다).
+        @ParameterizedTest(name = "{0} 서명 → 거부")
+        @MethodSource("hmacAlgorithms")
+        @DisplayName("HS256/HS384/HS512 전부 거부 — reason=ALG_NOT_ALLOWED")
+        void hmac_rejected(String name, io.jsonwebtoken.security.MacAlgorithm alg) {
+            StepVerifier.create(verifier().verify(hmacToken(alg)))
+                    .expectErrorSatisfies(e -> {
+                        assertThat(e).isInstanceOf(GatewayJwtVerifier.InvalidTokenException.class);
+                        assertThat(((GatewayJwtVerifier.InvalidTokenException) e).reason())
+                                .isEqualTo(AuthFailureReason.ALG_NOT_ALLOWED);
+                    })
                     .verify();
         }
 
-        @Test
-        @DisplayName("fallback on → HS512 수용 (레거시 토큰의 실제 alg)")
-        void hs512_acceptedWhenEnabled() {
-            StepVerifier.create(verifier(true).verify(hmacToken(Jwts.SIG.HS512)))
-                    .assertNext(claims -> assertThat(claims.userId()).isEqualTo(42L))
-                    .verifyComplete();
-        }
-
-        @Test
-        @DisplayName("fallback on 이어도 HS256 은 상시 거부 (allow-list 과확장 방지)")
-        void hs256_alwaysRejected() {
-            StepVerifier.create(verifier(true).verify(hmacToken(Jwts.SIG.HS256)))
-                    .expectError(GatewayJwtVerifier.InvalidTokenException.class)
-                    .verify();
-        }
-
-        @Test
-        @DisplayName("fallback on 이어도 HS384 는 상시 거부")
-        void hs384_alwaysRejected() {
-            StepVerifier.create(verifier(true).verify(hmacToken(Jwts.SIG.HS384)))
-                    .expectError(GatewayJwtVerifier.InvalidTokenException.class)
-                    .verify();
+        static Stream<Arguments> hmacAlgorithms() {
+            return Stream.of(
+                    Arguments.of("HS256", Jwts.SIG.HS256),
+                    Arguments.of("HS384", Jwts.SIG.HS384),
+                    // 레거시 토큰의 실제 alg — PR4 이전에는 스위치 on 시 수용했다
+                    Arguments.of("HS512", Jwts.SIG.HS512));
         }
     }
 
@@ -200,7 +195,7 @@ class GatewayJwtVerifierTest {
                     .expiration(Date.from(Instant.now().plusSeconds(300)))
                     .compact();
 
-            StepVerifier.create(verifier(true).verify(unsigned))
+            StepVerifier.create(verifier().verify(unsigned))
                     .expectError(GatewayJwtVerifier.InvalidTokenException.class)
                     .verify();
         }
@@ -208,7 +203,7 @@ class GatewayJwtVerifierTest {
         @Test
         @DisplayName("JWT 형식이 아닌 문자열 → 거부(예외 누출 없음)")
         void garbage_rejected() {
-            StepVerifier.create(verifier(true).verify("not-a-jwt"))
+            StepVerifier.create(verifier().verify("not-a-jwt"))
                     .expectError(GatewayJwtVerifier.InvalidTokenException.class)
                     .verify();
         }
@@ -224,7 +219,7 @@ class GatewayJwtVerifierTest {
                     .signWith((RSAPrivateKey) keyPair.getPrivate(), Jwts.SIG.RS256)
                     .compact();
 
-            StepVerifier.create(verifier(false).verify(noKid))
+            StepVerifier.create(verifier().verify(noKid))
                     .expectError(GatewayJwtVerifier.InvalidTokenException.class)
                     .verify();
         }
@@ -240,7 +235,7 @@ class GatewayJwtVerifierTest {
                 .signWith((RSAPrivateKey) keyPair.getPrivate(), Jwts.SIG.RS256)
                 .compact();
 
-        StepVerifier.create(verifier(false).verify(legacy))
+        StepVerifier.create(verifier().verify(legacy))
                 .assertNext(claims -> {
                     assertThat(claims.userId()).isEqualTo(7L);
                     assertThat(claims.familyId()).isNull();
@@ -258,7 +253,7 @@ class GatewayJwtVerifierTest {
                 .signWith((RSAPrivateKey) keyPair.getPrivate(), Jwts.SIG.RS256)
                 .compact();
 
-        StepVerifier.create(verifier(false).verify(noExp))
+        StepVerifier.create(verifier().verify(noExp))
                 .expectError(GatewayJwtVerifier.InvalidTokenException.class)
                 .verify();
     }

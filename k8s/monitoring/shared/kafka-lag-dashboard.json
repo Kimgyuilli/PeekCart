@@ -72,7 +72,7 @@
         "name": "application",
         "label": "Application",
         "type": "custom",
-        "query": "notification-service,order-service,payment-service,product-service,user-service",
+        "query": "notification-service,order-service,payment-service,product-service",
         "multi": true,
         "includeAll": true,
         "allValue": ".*",
@@ -82,8 +82,7 @@
           { "text": "notification-service", "value": "notification-service", "selected": false },
           { "text": "order-service", "value": "order-service", "selected": false },
           { "text": "payment-service", "value": "payment-service", "selected": false },
-          { "text": "product-service", "value": "product-service", "selected": false },
-          { "text": "user-service", "value": "user-service", "selected": false }
+          { "text": "product-service", "value": "product-service", "selected": false }
         ],
         "hide": 0
       }

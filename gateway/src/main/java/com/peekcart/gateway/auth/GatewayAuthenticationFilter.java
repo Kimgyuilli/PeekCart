@@ -23,7 +23,7 @@ import java.util.List;
  *
  * <ol>
  *   <li><b>헤더 strip</b>: 외부에서 유입된 {@code X-Internal-Auth}/{@code X-User-*} 를 <b>항상</b> 제거한다(공개 경로 포함).</li>
- *   <li><b>서명/만료 검증</b>(RS256 via JWKS, 전환기 HS512) → <b>blacklist/family deny</b>(Redis)</li>
+ *   <li><b>서명/만료 검증</b>(RS256 via JWKS — PR4 로 HMAC fallback 제거) → <b>blacklist/family deny</b>(Redis)</li>
  *   <li><b>내부 토큰 주입</b>(Gateway 서명, ADR-0017) + 검증된 userId 를 exchange attribute 로 노출(RateLimiter 용)</li>
  * </ol>
  *
@@ -68,15 +68,18 @@ public class GatewayAuthenticationFilter implements GlobalFilter, Ordered {
     private final TokenDenyLookup denyLookup;
     private final InternalTokenIssuer internalTokenIssuer;
     private final List<PublicEndpointProperties.Rule> publicRules;
+    private final GatewayAuthMetrics metrics;
 
     public GatewayAuthenticationFilter(GatewayJwtVerifier verifier,
                                        TokenDenyLookup denyLookup,
                                        InternalTokenIssuer internalTokenIssuer,
-                                       PublicEndpointProperties publicEndpointProperties) {
+                                       PublicEndpointProperties publicEndpointProperties,
+                                       GatewayAuthMetrics metrics) {
         this.verifier = verifier;
         this.denyLookup = denyLookup;
         this.internalTokenIssuer = internalTokenIssuer;
         this.publicRules = publicEndpointProperties.rules();
+        this.metrics = metrics;
     }
 
     @Override
@@ -94,7 +97,7 @@ public class GatewayAuthenticationFilter implements GlobalFilter, Ordered {
             // 토큰 미제시: 공개 경로는 익명 통과, 보호 경로는 401.
             return isPublic
                     ? proceed(chain, stripTrusted(exchange))
-                    : reject(exchange, HttpStatus.UNAUTHORIZED, "missing_token");
+                    : reject(exchange, HttpStatus.UNAUTHORIZED, AuthFailureReason.MISSING_TOKEN);
         }
 
         // 토큰이 제시됐다면 공개 경로여도 반드시 검증한다(GW-2 c2:4): 만료·위조·deny 토큰을 익명으로
@@ -114,7 +117,7 @@ public class GatewayAuthenticationFilter implements GlobalFilter, Ordered {
                 .flatMap(claims -> denyLookup.isDenied(token, claims.familyId())
                         .flatMap(denied -> denied
                                 ? Mono.<GatewayClaims>error(new GatewayJwtVerifier.InvalidTokenException(
-                                        "차단된 토큰(blacklist/family deny)"))
+                                        AuthFailureReason.DENIED, "차단된 토큰(blacklist/family deny)"))
                                 : Mono.just(claims)))
                 .map(claims -> withInternalToken(exchange, claims));
     }
@@ -126,7 +129,8 @@ public class GatewayAuthenticationFilter implements GlobalFilter, Ordered {
     private Mono<Void> proceed(GatewayFilterChain chain, ServerWebExchange exchange) {
         return chain.filter(exchange)
                 .onErrorResume(RateLimiterUnavailableException.class,
-                        e -> reject(exchange, HttpStatus.SERVICE_UNAVAILABLE, "rate_limiter_unavailable"));
+                        e -> reject(exchange, HttpStatus.SERVICE_UNAVAILABLE,
+                                AuthFailureReason.RATE_LIMITER_UNAVAILABLE));
     }
 
     private static boolean isAuthFailure(Throwable e) {
@@ -141,14 +145,21 @@ public class GatewayAuthenticationFilter implements GlobalFilter, Ordered {
         // 클라이언트가 재인증을 시도하고 실제 원인이 가려진다.
         if (e instanceof TokenDenyLookup.DenyLookupUnavailableException
                 || e instanceof JwksKeyRegistry.JwksUnavailableException) {
-            return reject(exchange, HttpStatus.SERVICE_UNAVAILABLE, "dependency_unavailable");
+            return reject(exchange, HttpStatus.SERVICE_UNAVAILABLE, AuthFailureReason.DEPENDENCY_UNAVAILABLE);
         }
         if (e instanceof InternalTokenIssuer.IssuanceRefusedException) {
             // 사용자 토큰 자체는 유효하나 정책상 내부 토큰을 발행하지 않는 신원(예: family-less).
             // fail-closed — 신원 없이 다운스트림으로 보내지 않는다.
-            return reject(exchange, HttpStatus.UNAUTHORIZED, "internal_token_refused");
+            return reject(exchange, HttpStatus.UNAUTHORIZED, AuthFailureReason.INTERNAL_TOKEN_REFUSED);
         }
-        return reject(exchange, HttpStatus.UNAUTHORIZED, "invalid_token");
+        // 401 세부 사유는 예외가 나른다(서명오류/만료/unknown kid/alg/exp 부재/deny hit).
+        // isAuthFailure 에 새 예외 타입이 추가되고 여기 분기를 빠뜨리면 MALFORMED 로 떨어진다 —
+        // ClassCastException 으로 요청을 500 으로 만드는 것보다 낫고, 태그가 실제와 어긋나는 것은
+        // 대시보드에서 드러난다.
+        AuthFailureReason reason = (e instanceof GatewayJwtVerifier.InvalidTokenException invalid)
+                ? invalid.reason()
+                : AuthFailureReason.MALFORMED;
+        return reject(exchange, HttpStatus.UNAUTHORIZED, reason);
     }
 
     private boolean isPublicEndpoint(ServerHttpRequest request) {
@@ -195,11 +206,19 @@ public class GatewayAuthenticationFilter implements GlobalFilter, Ordered {
         return mutated;
     }
 
-    private static Mono<Void> reject(ServerWebExchange exchange, HttpStatus status, String reason) {
+    /**
+     * 거부 단일 지점 — S9 {@code auth.failure} 는 <b>여기서만</b> 증가한다(ADR-0024 D4).
+     * 계측을 호출부에 흩으면 새 거부 경로가 생겼을 때 조용히 세어지지 않는다.
+     *
+     * <p>응답 헤더에는 {@link AuthFailureReason#wire()}(401 세부 사유는 합쳐진 값)를, 메트릭에는
+     * {@link AuthFailureReason#tag()}(분해된 값)를 쓴다.
+     */
+    private Mono<Void> reject(ServerWebExchange exchange, HttpStatus status, AuthFailureReason reason) {
+        metrics.failed(reason);
         log.debug("gateway 거부: status={} reason={} path={}",
-                status.value(), reason, exchange.getRequest().getPath());
+                status.value(), reason.tag(), exchange.getRequest().getPath());
         exchange.getResponse().setStatusCode(status);
-        exchange.getResponse().getHeaders().add("X-Auth-Failure-Reason", reason);
+        exchange.getResponse().getHeaders().add("X-Auth-Failure-Reason", reason.wire());
         return exchange.getResponse().setComplete();
     }
 }

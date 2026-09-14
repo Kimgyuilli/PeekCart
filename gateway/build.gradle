@@ -46,6 +46,10 @@ dependencies {
     // 관측성 — actuator/prometheus (S4 노출 정책은 gateway-local SecurityConfig 소유)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
+    // S1(http.server.requests histogram bucket) 단일 owner — MeterFilter 재선언 금지(ADR-0009 S1).
+    // servlet/web/JPA 를 노출하지 않아 WebFlux 부팅을 깨지 않는다(ADR-0024 D2).
+    // assertGatewayHasNoServletDeps allowlist + (a2) 무오염 검사가 그 성질을 강제한다.
+    implementation project(':peekcart-common-observability')
 
     // JWT 검증 — RS256(JWKS) + 전환기 HS512 fallback
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'

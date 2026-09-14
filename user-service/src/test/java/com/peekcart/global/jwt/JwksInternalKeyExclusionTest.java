@@ -39,7 +39,7 @@ class JwksInternalKeyExclusionTest {
     /** User 서명 키만 담은 정상 배선. */
     private JwkController controller(List<JwtKeyProperties.PublicKeyEntry> publicKeys) {
         JwtKeyProperties props = new JwtKeyProperties(
-                USER_KID, new FileSystemResource(TestRsaKeys.privateKeyFile()), publicKeys, false);
+                USER_KID, new FileSystemResource(TestRsaKeys.privateKeyFile()), publicKeys);
         RsaPublicKeyRegistry registry = new RsaPublicKeyRegistry(props);
         registry.load();
         return new JwkController(registry);

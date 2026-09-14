@@ -2,14 +2,17 @@
 # observability-promql-lint.sh — D5-V6 PromQL 라벨 invariant + coverage + syntax lint
 #   (ADR-0009 §Decision S6, ADR-0015 per-service 정정)
 #
-# per-service 계약(ADR-0015): alert 는 단일 application/service 값(과거 peekcart)이 아니라 5서비스를
-# 전부 평가해야 한다. ground truth 는 5서비스 application.yml(태그) + k8s Service metadata.name(scrape).
+# per-service 계약(ADR-0015): alert 는 단일 application/service 값(과거 peekcart)이 아니라 대상 전체를
+# 평가해야 한다. PR4(ADR-0024 D1)부터 대상은 **도메인 5 + 인프라 1(gateway)** 이고, ground truth 가
+# 세 집합으로 갈라진다 — A(application 태그) / B(SM 이 매칭하는 Service name) / C(SM 이름, 별도 lint).
+# A 와 B 의 원소가 다르다: gateway 의 태그는 `gateway`, scrape 되는 Service 는 `gateway-metrics`.
 #
 # 검증:
 #   peekcart-high-error-rate (S6.a) → application 라벨 5서비스 정확일치 regex(=~) + by(application)
 #   peekcart-slow-response   (S6.b) → 동상 (by 에 application 포함)
 #   peekcart-target-down     (S6.c) → namespace 필터 + by(service)
-#   peekcart-scrape-absent-* (S6.d) → service equality matcher 5개, 집합 == Service metadata.name 집합 1:1
+#   peekcart-scrape-absent-* (S6.d) → service equality matcher, 집합 == 집합 B 와 1:1
+#   dashboard `application` 변수 (PR4)  → query/options 집합 == 파일별 기대 집합(api-jvm=A, kafka-lag=소비 4)
 #
 # Ground truth:
 #   application set = 5서비스 <svc>-service/src/main/resources/application.yml :: management.metrics.tags.application
@@ -228,10 +231,128 @@ yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
 PYEOF
     run_case "기존 alert entry 삭제" "$ST_TMP/legacy-noentry.yml"
 
+    # (11) 인프라 1(gateway)을 alert regex 에서 제외 — 외부 진입점의 5xx/지연이 통째로 안 보인다
+    python3 - "$ST_SRC" "$ST_TMP/no-gateway.yml" <<'PYEOF'
+import sys, yaml
+src, dst = sys.argv[1], sys.argv[2]
+doc = yaml.safe_load(open(src))
+inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+for rule in inner["groups"][0]["rules"]:
+    if rule["uid"] in ("peekcart-high-error-rate", "peekcart-slow-response"):
+        for d in rule["data"]:
+            expr = (d.get("model") or {}).get("expr")
+            if expr:
+                d["model"]["expr"] = expr.replace("gateway|", "")
+doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
+yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    run_case "gateway 를 alert 집합에서 제외" "$ST_TMP/no-gateway.yml"
+
+    # (12) gateway scrape-absent rule 삭제 — SM 이 끊겨도 아무도 모른다(S9 전량 미수집)
+    python3 - "$ST_SRC" "$ST_TMP/no-gw-absent.yml" <<'PYEOF'
+import sys, yaml
+src, dst = sys.argv[1], sys.argv[2]
+doc = yaml.safe_load(open(src))
+inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+inner["groups"][0]["rules"] = [r for r in inner["groups"][0]["rules"]
+                               if r["uid"] != "peekcart-scrape-absent-gateway-metrics"]
+doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
+yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    run_case "gateway scrape-absent rule 삭제" "$ST_TMP/no-gw-absent.yml"
+
+    # (13) scrape-absent 의 service 값을 public Service 이름으로 — up{service=} 는 매칭 Service
+    #      이름이라 `gateway` 로 쓰면 영원히 absent 인 series 를 기다린다(항상 발화 또는 무의미).
+    python3 - "$ST_SRC" "$ST_TMP/wrong-absent-name.yml" <<'PYEOF'
+import sys, yaml
+src, dst = sys.argv[1], sys.argv[2]
+doc = yaml.safe_load(open(src))
+inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+for rule in inner["groups"][0]["rules"]:
+    if rule["uid"] == "peekcart-scrape-absent-gateway-metrics":
+        for d in rule["data"]:
+            expr = (d.get("model") or {}).get("expr")
+            if expr:
+                d["model"]["expr"] = expr.replace('service="gateway-metrics"', 'service="gateway"')
+doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
+yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    run_case "scrape-absent 대상 이름 변조" "$ST_TMP/wrong-absent-name.yml"
+
+    # (14) reuse alert 삭제 — S9 에서 유일하게 alert 로 올린 신호다
+    python3 - "$ST_SRC" "$ST_TMP/no-reuse.yml" <<'PYEOF'
+import sys, yaml
+src, dst = sys.argv[1], sys.argv[2]
+doc = yaml.safe_load(open(src))
+inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+inner["groups"][0]["rules"] = [r for r in inner["groups"][0]["rules"]
+                               if r["uid"] != "peekcart-token-reuse-detected"]
+doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
+yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    run_case "reuse alert 삭제" "$ST_TMP/no-reuse.yml"
+
+    # (15~17) dashboard 변수 드리프트 — alert 만 고치고 패널을 두면 거기서만 조용히 빠진다.
+    #         조작 대상이 dashboard 이므로 alert 는 원본을 쓰고 디렉터리만 갈아끼운다.
+    run_dash_case() {
+        local name="$1" dir="$2"
+        if ALERTS_PATH_OVERRIDE="$ST_SRC" DASHBOARD_DIR_OVERRIDE="$dir" \
+                bash "${BASH_SOURCE[0]}" >/dev/null 2>&1; then
+            echo "self-test 실패: '$name' 을 검출하지 못했다" >&2
+            ST_FAIL=1
+        fi
+    }
+
+    python3 - "$ST_TMP" <<'PYEOF'
+import sys, os, json, shutil
+tmp = sys.argv[1]
+src = "k8s/monitoring/shared"
+
+def prepare(name):
+    d = os.path.join(tmp, name)
+    os.makedirs(d, exist_ok=True)
+    for f in ("api-jvm-dashboard.json", "kafka-lag-dashboard.json"):
+        shutil.copy(os.path.join(src, f), os.path.join(d, f))
+    return d
+
+def load(d, f):
+    with open(os.path.join(d, f)) as fh:
+        return json.load(fh)
+
+def save(d, f, doc):
+    with open(os.path.join(d, f), "w") as fh:
+        json.dump(doc, fh, ensure_ascii=False, indent=2)
+
+# (15) query 에서 gateway 제거 (options 는 그대로) — 한쪽만 고친 드리프트
+d = prepare("dash-query-drift")
+doc = load(d, "api-jvm-dashboard.json")
+var = doc["templating"]["list"][0]
+var["query"] = ",".join(s for s in var["query"].split(",") if s != "gateway")
+save(d, "api-jvm-dashboard.json", doc)
+
+# (16) options 에서 gateway 제거 (query 는 그대로)
+d = prepare("dash-option-drift")
+doc = load(d, "api-jvm-dashboard.json")
+var = doc["templating"]["list"][0]
+var["options"] = [o for o in var["options"] if o.get("value") != "gateway"]
+save(d, "api-jvm-dashboard.json", doc)
+
+# (17) Kafka 소비자가 아닌 서비스를 lag 대시보드에 추가 — 고를 수는 있는데 series 가 없다
+d = prepare("dash-kafka-extra")
+doc = load(d, "kafka-lag-dashboard.json")
+var = doc["templating"]["list"][0]
+var["query"] = var["query"] + ",user-service"
+var["options"].append({"text": "user-service", "value": "user-service", "selected": False})
+save(d, "kafka-lag-dashboard.json", doc)
+PYEOF
+    run_dash_case "dashboard query 드리프트" "$ST_TMP/dash-query-drift"
+    run_dash_case "dashboard options 드리프트" "$ST_TMP/dash-option-drift"
+    run_dash_case "kafka-lag 에 비소비 서비스 추가" "$ST_TMP/dash-kafka-extra"
+
     if [[ "$ST_FAIL" -ne 0 ]]; then
         exit 1
     fi
-    echo "observability-promql-lint self-test 10종 통과"
+    echo "observability-promql-lint self-test 17종 통과"
     exit 0
 fi
 
@@ -249,11 +370,26 @@ import yaml
 ALERTS_PATH = os.environ.get("ALERTS_PATH_OVERRIDE", "k8s/monitoring/shared/grafana-alerts.yml")
 RULES_OUT = os.environ["RULES_OUT"]
 
-# ---- 5서비스 정본 (ADR-0010/0015) — glob 결과를 정본으로 삼지 않는다 ----
-EXPECTED_SERVICES = {
+# ---- canonical 정본 (ADR-0010/0015 · ADR-0024 D1) — glob 결과를 정본으로 삼지 않는다 ----
+#
+# 세 집합의 원소가 서로 다르다. 하나의 상수로 셋을 강제하던 것이 PR4 이전 상태이고,
+# gateway 가 들어오면서 갈라졌다(ADR-0024 D1):
+#   A. application 메트릭 태그   = spring.application.name       → "gateway"
+#   B. scrape 되는 Service 이름  = up{service=} 라벨              → "gateway-metrics"(관리 포트 전용 Service)
+#   C. ServiceMonitor 이름       = servicemonitor-selector-lint 소관(본 스크립트 비대상)
+# 억지로 같게 만들려면 관리 포트를 public Service 에 게시하거나 태그를 Service 이름으로
+# 흉내내야 한다 — 둘 다 더 나쁘다(ADR-0024 Alternatives B).
+DOMAIN_SERVICES = {
     "notification-service", "order-service", "payment-service",
     "product-service", "user-service",
 }
+# 집합 A — application 태그
+EXPECTED_APP_TAGS = DOMAIN_SERVICES | {"gateway"}
+# 집합 B — SM 이 매칭하는 Service metadata.name
+EXPECTED_SCRAPE_SERVICES = DOMAIN_SERVICES | {"gateway-metrics"}
+# 태그 값이 디렉터리명과 다른 모듈만 명시한다. glob 확장으로 처리하면 디렉터리가 사라져도
+# 남은 것만으로 통과하는 false-green 이 생긴다(기존 주석과 같은 이유).
+EXTRA_APP_YMLS = ["gateway/src/main/resources/application.yml"]
 
 # ---- 메트릭 alert 계약 (구현 ④-d-1 P5) ----
 # saga/DLQ alert 는 http_server_requests 처럼 5서비스 전부에 있는 메트릭이 아니다.
@@ -282,6 +418,14 @@ METRIC_ALERT_CONTRACTS = {
         "expr": 'sum by (application)(saga_compensation_backlog'
                 '{application=~"order-service", status=~"open|refund_failed"})',
     },
+    "peekcart-token-reuse-detected": {
+        # refresh token 발급 owner 는 user-service 단독(ADR-0010) — 5/6 서비스 regex 로 걸면
+        # 없는 series 를 기다리는 alert 가 된다.
+        "metric": "auth_token_reuse_detected_total",
+        "apps": {"user-service"},
+        "expr": 'sum by (application)(increase(auth_token_reuse_detected_total'
+                '{application=~"user-service"}[5m]))',
+    },
     "peekcart-dlq-backlog": {
         # dead_letter_records 는 Kafka 소비 4서비스가 소유. user-service 는 소비자가 없다.
         "metric": "dlq_backlog",
@@ -299,7 +443,7 @@ METRIC_ALERT_CONTRACTS = {
 def _scrape_absent_expr(service):
     return ('absent(up{namespace="peekcart", service="%s"}) or on() vector(0)' % service)
 
-APP_REGEX = "notification-service|order-service|payment-service|product-service|user-service"
+APP_REGEX = "|".join(sorted(EXPECTED_APP_TAGS))
 
 ALERT_EXPR_CONTRACTS = {
     "peekcart-high-error-rate": [
@@ -316,14 +460,14 @@ ALERT_EXPR_CONTRACTS = {
         'count by (service)(up{namespace="peekcart"} == 0) or on() vector(0)',
     ],
 }
-for _svc in sorted(EXPECTED_SERVICES):
+for _svc in sorted(EXPECTED_SCRAPE_SERVICES):
     ALERT_EXPR_CONTRACTS["peekcart-scrape-absent-%s" % _svc] = [_scrape_absent_expr(_svc)]
 for _uid, _c in METRIC_ALERT_CONTRACTS.items():
     ALERT_EXPR_CONTRACTS[_uid] = [_c["expr"]]
 
 # ---- ground truth ----
 app_set = set()
-for p in sorted(glob.glob("*-service/src/main/resources/application.yml")):
+for p in sorted(glob.glob("*-service/src/main/resources/application.yml")) + EXTRA_APP_YMLS:
     with open(p) as f:
         doc = yaml.safe_load(f) or {}
     val = (((doc.get("management") or {}).get("metrics") or {}).get("tags") or {}).get("application")
@@ -356,18 +500,63 @@ for p in sorted(glob.glob("k8s/base/services/*/deployment.yml")):
                     svc_set.add(name)
 
 # 발견 집합이 5서비스 정본과 정확히 일치하는지 먼저 검증 (누락 서비스 false-green 차단)
-if app_set != EXPECTED_SERVICES:
+if app_set != EXPECTED_APP_TAGS:
     sys.stderr.write(
-        f"[D5-V6] application 태그 집합이 5서비스 정본과 불일치:\n"
-        f"  expected: {sorted(EXPECTED_SERVICES)}\n  found: {sorted(app_set)}\n"
-        f"  missing: {sorted(EXPECTED_SERVICES - app_set)} / extra: {sorted(app_set - EXPECTED_SERVICES)}\n")
+        f"[D5-V6] application 태그 집합(A)이 정본과 불일치:\n"
+        f"  expected: {sorted(EXPECTED_APP_TAGS)}\n  found: {sorted(app_set)}\n"
+        f"  missing: {sorted(EXPECTED_APP_TAGS - app_set)} / extra: {sorted(app_set - EXPECTED_APP_TAGS)}\n"
+        f"  → ADR-0024 D1 집합 A: 도메인 5 + 인프라 1(gateway).\n")
     sys.exit(2)
-if svc_set != EXPECTED_SERVICES:
+if svc_set != EXPECTED_SCRAPE_SERVICES:
     sys.stderr.write(
-        f"[D5-V6] k8s Service metadata.name 집합이 5서비스 정본과 불일치:\n"
-        f"  expected: {sorted(EXPECTED_SERVICES)}\n  found: {sorted(svc_set)}\n"
-        f"  missing: {sorted(EXPECTED_SERVICES - svc_set)} / extra: {sorted(svc_set - EXPECTED_SERVICES)}\n")
+        f"[D5-V6] SM 이 매칭하는 Service metadata.name 집합(B)이 정본과 불일치:\n"
+        f"  expected: {sorted(EXPECTED_SCRAPE_SERVICES)}\n  found: {sorted(svc_set)}\n"
+        f"  missing: {sorted(EXPECTED_SCRAPE_SERVICES - svc_set)} / extra: {sorted(svc_set - EXPECTED_SCRAPE_SERVICES)}\n"
+        f"  → ADR-0024 D1 집합 B: gateway 는 관리 포트 전용 `gateway-metrics` 로 scrape 된다\n"
+        f"    (public gateway Service 는 SM 이 매칭하지 않는다).\n")
     sys.exit(2)
+
+# ---- dashboard `application` 변수 ground truth (구현 ③ PR4 · ADR-0024 D1) ----
+# alert 만 검사하고 dashboard 를 두면, 서비스가 늘거나 줄 때 패널에서만 조용히 빠진다.
+# 파일마다 기대 집합이 다르다 — 모든 앱이 http/JVM 메트릭을 내지만 Kafka lag 은 소비자만 낸다.
+import json
+DASHBOARD_DIR = os.environ.get("DASHBOARD_DIR_OVERRIDE", "k8s/monitoring/shared")
+DASHBOARD_APP_SETS = {
+    "api-jvm-dashboard.json": EXPECTED_APP_TAGS,
+    # Kafka 소비자를 가진 서비스만. user-service 는 @KafkaListener 가 0 건이고 gateway 는
+    # Kafka 를 쓰지 않는다 — 넣으면 고를 수는 있는데 series 가 없는 값이 된다.
+    "kafka-lag-dashboard.json": DOMAIN_SERVICES - {"user-service"},
+}
+dashboard_violations = []
+for fname, expected in DASHBOARD_APP_SETS.items():
+    path = os.path.join(DASHBOARD_DIR, fname)
+    if not os.path.exists(path):
+        dashboard_violations.append(
+            f"[D5-V6] dashboard 파일 부재: {path}\n"
+            f"  → 파일이 사라지면 변수 검사가 통째로 실행되지 않는다(false-green).\n")
+        continue
+    with open(path) as f:
+        dash = json.load(f)
+    var = None
+    for v in ((dash.get("templating") or {}).get("list") or []):
+        if v.get("name") == "application":
+            var = v
+            break
+    if var is None:
+        dashboard_violations.append(
+            f"[D5-V6] dashboard `application` 변수 부재: {fname}\n"
+            f"  → 변수를 지우면 패널이 전 서비스를 합산하거나 비어버린다.\n")
+        continue
+    query_set = {s for s in (var.get("query") or "").split(",") if s}
+    option_set = {o.get("value") for o in (var.get("options") or []) if o.get("value") != "$__all"}
+    for label, found in (("query", query_set), ("options", option_set)):
+        if found != expected:
+            dashboard_violations.append(
+                f"[D5-V6] dashboard `application` {label} 집합 불일치: {fname}\n"
+                f"  expected: {sorted(expected)}\n  found: {sorted(found)}\n"
+                f"  missing: {sorted(expected - found)} / extra: {sorted(found - expected)}\n"
+                f"  → query 와 options 는 같은 집합이어야 한다 — 한쪽만 고치면 드롭다운과\n"
+                f"    실제 쿼리 값이 어긋난다(ADR-0024 D1).\n")
 
 # ---- alerts 로드 (ConfigMap → data['alerts.yaml'] → inner yaml) ----
 with open(ALERTS_PATH) as f:
@@ -397,7 +586,7 @@ def by_labels(expr):
                 out.add(lbl)
     return out
 
-violations = []
+violations = list(dashboard_violations)
 prom_exprs = []          # (uid, refId, expr) for promtool syntax
 scrape_absent_services = set()
 seen_uids = set()        # 필수 alert 존재 검증용 (Codex GP-2 #2)
@@ -452,15 +641,15 @@ for group in alerts_doc.get("groups", []) or []:
                         violations.append(
                             f"[D5-V6] application 단일 equality 금지: uid={uid} refId={ref_id}\n"
                             f"  found: application=\"{val}\"\n"
-                            f"  → ADR-0015 S6: 5서비스 정확일치 regex(=~) 필요, 단일 서비스 필터 불가.\n")
+                            f"  → ADR-0015 S6 · ADR-0024 D3: 집합 A 정확일치 regex(=~) 필요, 단일 서비스 필터 불가.\n")
                     elif op == "=~":
                         vals = set(v for v in val.split("|") if v)
                         if vals != app_set:
                             violations.append(
                                 f"[D5-V6] application regex 집합 불일치: uid={uid} refId={ref_id}\n"
-                                f"  expected(5서비스): {sorted(app_set)}\n"
+                                f"  expected(집합 A): {sorted(app_set)}\n"
                                 f"  found: {sorted(vals)}\n"
-                                f"  → ADR-0015 S6: regex 값 == 5서비스 ground truth.\n")
+                                f"  → ADR-0015 S6 · ADR-0024 D3: regex 값 == 집합 A ground truth.\n")
                 # by(application) 강제 (무필터+by 단독 아닌, regex+by 동반)
                 if "application" not in bys:
                     violations.append(
@@ -576,7 +765,7 @@ for group in alerts_doc.get("groups", []) or []:
 # 필수 alert uid 존재 검증 — rule 삭제 시 분기 미실행으로 통과하는 false-green 차단 (Codex GP-2 #2)
 REQUIRED_UIDS = (
     {"peekcart-high-error-rate", "peekcart-slow-response", "peekcart-target-down"}
-    | {f"peekcart-scrape-absent-{s}" for s in EXPECTED_SERVICES}
+    | {f"peekcart-scrape-absent-{s}" for s in EXPECTED_SCRAPE_SERVICES}
     # 구현 ④-d-1 P5 — alert 를 지우면 위 분기가 실행되지 않아 라벨 검사가 통과해버린다.
     | set(METRIC_ALERT_CONTRACTS)
 )
@@ -585,7 +774,8 @@ if missing_uids:
     violations.append(
         f"[D5-V6] 필수 alert rule 부재:\n"
         f"  missing uid: {sorted(missing_uids)}\n"
-        f"  → ADR-0015 S6: high-error-rate/slow-response/target-down 각 1 + scrape-absent 5서비스 필수.\n"
+        f"  → ADR-0015 S6 · ADR-0024 D3: high-error-rate/slow-response/target-down 각 1\n"
+        f"    + scrape-absent(집합 B) 필수.\n"
         f"    구현 ④-d-1 P5: compensation-backlog / dlq-backlog 각 1 추가.\n")
 
 # scrape-absent 집합 == Service metadata.name 집합 1:1

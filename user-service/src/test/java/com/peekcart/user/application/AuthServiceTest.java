@@ -4,6 +4,8 @@ import com.peekcart.global.auth.TokenBlacklistPort;
 import com.peekcart.global.auth.TokenHasher;
 import com.peekcart.global.auth.TokenIssuer;
 import com.peekcart.global.jwt.JwtAuthProperties;
+import com.peekcart.user.infrastructure.metrics.UserAuthMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.support.ServiceTest;
 import com.peekcart.support.fixture.UserFixture;
@@ -49,13 +51,17 @@ class AuthServiceTest {
     private static final String REFRESH_TOKEN_HASH = TokenHasher.sha256Hex(REFRESH_TOKEN_VALUE);
     private static final long ACCESS_TTL_MS = 1_800_000L;
     // record 는 mock 대상이 아님 — 실제 값으로 주입(reuse deny TTL = accessTokenExpiry/1000)
-    private final JwtAuthProperties jwtAuthProperties = new JwtAuthProperties(
-            "peekcart-secret-key-must-be-at-least-256-bits-long-xxxxxxxxxxxxxxx", ACCESS_TTL_MS, 604_800_000L);
+    private final JwtAuthProperties jwtAuthProperties = new JwtAuthProperties(ACCESS_TTL_MS, 604_800_000L);
+
+    private SimpleMeterRegistry meterRegistry;
+    private UserAuthMetrics authMetrics;
 
     @BeforeEach
     void setUp() {
+        meterRegistry = new SimpleMeterRegistry();
+        authMetrics = new UserAuthMetrics(meterRegistry);
         authService = new AuthService(userRepository, refreshTokenRepository, tokenBlacklistPort,
-                tokenIssuer, passwordEncoder, jwtAuthProperties);
+                tokenIssuer, passwordEncoder, jwtAuthProperties, authMetrics);
     }
 
     private TokenIssuer.IssuedTokens issuedTokens() {

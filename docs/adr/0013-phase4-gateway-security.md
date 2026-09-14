@@ -7,11 +7,11 @@
 
 ## Context
 
-Phase 4 설계의 마지막 ADR. Spring Cloud Gateway 도입 + JWT 보안 강화(보안 묶음 L-001/002/003/019)를 한 결정으로 묶는다. 현재는 모놀리스 단일 앱에서 **HS256 대칭키** JWT 를 `JwtFilter` 가 매 요청 검증한다. MSA 로 5개 서비스가 분리되면 대칭키 공유는 키 유출 표면을 N배로 키운다.
+Phase 4 설계의 마지막 ADR. Spring Cloud Gateway 도입 + JWT 보안 강화(보안 묶음 L-001/002/003/019)를 한 결정으로 묶는다. 현재는 모놀리스 단일 앱에서 **HS512 대칭키**(512bit secret) JWT 를 `JwtFilter` 가 매 요청 검증한다. MSA 로 5개 서비스가 분리되면 대칭키 공유는 키 유출 표면을 N배로 키운다.
 
 ### C1. 현 인증 구현 (감사 — 실제 인용)
 
-- **JWT 서명 = HS256 대칭키**: `JwtProvider.java:40` `Keys.hmacShaKeyFor(secret...)`, `secret` = `application.yml:53` `${JWT_SECRET:...}`(기본 fallback 하드코딩)
+- **JWT 서명 = HS512 대칭키**: `JwtProvider.java:40` `Keys.hmacShaKeyFor(secret...)`, `secret` = `application.yml:53` `${JWT_SECRET:...}`(기본 fallback 하드코딩)
 - **검증 위치**: 모놀리스 `JwtFilter`(`global.jwt`) 가 매 요청 검증(`SecurityConfig:63-70` PUBLIC_URLS permitAll + `addFilterBefore`). 서명 파싱 후 `tokenBlacklistPort.isBlacklisted(token)` 확인(`JwtFilter:37-39`)
 - **Refresh rotation**: `AuthService.refresh`(L99) — `rotateToken`(grace-period 10초 `tokenBlacklistPort.addGracePeriod` 로 동시요청 이중발급 방지, 기존 row **삭제**) + `refreshViaGracePeriod`. **`family_id`/reuse(탈취) 감지 없음**. `RefreshToken` 엔티티 = id/userId/token/expiresAt(`RefreshToken.java`)
 - **Gateway**: 현재 없음. `04-design-deep-dive §10-2`(L403-415) 에 "Phase 4 JWT 검증은 Gateway, 내부 서비스 미재검증, user_id/role 헤더 전달, NetworkPolicy 차단" 이 이미 설계 — 본 ADR 이 구체화
@@ -24,10 +24,10 @@ Phase 4 설계의 마지막 ADR. Spring Cloud Gateway 도입 + JWT 보안 강화
 
 ### D1. RS256 비대칭키 전환 (L-001)
 
-- HS256 대칭키 → **RS256 비대칭키**. **User(인증) 서버만 개인키로 서명**, **Gateway 가 공개키로 1차 검증**, **리소스 서비스는 JWT 미재검증**(헤더 신뢰 — `04 §10-2`·ADR-0011 정합). 서비스 재검증은 기각(Alt 비교)
+- HS512 대칭키 → **RS256 비대칭키**. **User(인증) 서버만 개인키로 서명**, **Gateway 가 공개키로 1차 검증**, **리소스 서비스는 JWT 미재검증**(헤더 신뢰 — `04 §10-2`·ADR-0011 정합). 서비스 재검증은 기각(Alt 비교)
 - **공개키 배포**: User 서비스 JWKS endpoint(`/.well-known/jwks.json`) — Gateway 가 `kid` 로 키 선택, cache TTL 적용
-- **키 안전 조건**: 토큰 헤더 `kid` 필수, 허용 알고리즘 **allow-list(RS256만)** — 전환 중 HS256 은 bounded fallback 기간만, unknown `kid`/예상외 `alg` 거부, JWKS cache refresh 실패 시 마지막 정상 키 유지 + 경보
-- **마이그레이션**: HS256→RS256 dual-validation 기간, access token 짧은 TTL 로 자연 소멸, **active/previous 키 overlap > access token max TTL**, 이후 이전 키 제거
+- **키 안전 조건**: 토큰 헤더 `kid` 필수, 허용 알고리즘 **allow-list(RS256만)** — 전환 중 HS512 는 bounded fallback 기간만, unknown `kid`/예상외 `alg` 거부, JWKS cache refresh 실패 시 마지막 정상 키 유지 + 경보
+- **마이그레이션**: HS512→RS256 dual-validation 기간, access token 짧은 TTL 로 자연 소멸, **active/previous 키 overlap > access token max TTL**, 이후 이전 키 제거
 
 ### D2. 시크릿 저장소 (L-002)
 
@@ -88,3 +88,14 @@ Phase 4 설계의 마지막 ADR. Spring Cloud Gateway 도입 + JWT 보안 강화
 - ADR-0009(관측성 SSOT — S9 추가), ADR-0010(User 인증 소유), ADR-0011(auth/jwt/security User 전속·Gateway A4)
 - `docs/04-design-deep-dive.md §10-2`(Gateway 인증)·§9-2(JWT refresh)·§10-6(Redis SPOF), `docs/03-requirements.md §7-2`(Refresh Rotation), `docs/05-data-design.md`(refresh_tokens)
 - 코드: `JwtProvider.java:38-40`, `JwtFilter.java:37-39`, `SecurityConfig.java:63-70`, `AuthService.java:99-130`, `RefreshToken.java`, `application.yml:51-55`
+
+## Update Log
+
+- **2026-09-14** (구현 ③ PR4): 본문의 레거시 서명 알고리즘 표기를 **HS256 → HS512** 로 정정했다.
+  `:10`, `:14`, `:27`, `:29`, `:30` 이 대상이다. 구현 당시 시크릿이 512bit 였고 실제 서명·검증
+  알고리즘도 HS512 였다(PR1 의 `JwtTokenVerifier` 구현에서 확인). **결정 변경이 아니라 사실 오류
+  정정**이므로 README §본문 정정 예외에 따라 본문을 고치고 여기 기록한다.
+  `## Alternatives Considered` 의 "HS256 유지 vs RS256 vs ES256" 비교는 **결정 당시의 사고 과정**
+  이므로 원문 그대로 둔다 — 그 줄의 HS256 은 코드 사실이 아니라 검토한 대안의 이름이다.
+  함께: 전환기 HMAC fallback(`hs512-fallback-enabled`·`app.jwt.secret`·`hs256-fallback-enabled`)은
+  PR4 에서 코드·설정에서 제거됐다. 본 ADR 의 "bounded fallback 기간" 은 종료된 상태다.

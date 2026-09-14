@@ -280,10 +280,6 @@ app:
       jwks-timeout: PT2S
       jwks-refresh-cooldown: PT10S
       jwks-refresh-interval: PT5M
-      # 전환기 HMAC fallback — 레거시 토큰의 실제 alg 는 HS512(HS256 아님).
-      # 기본 off(RS256 단일). PR4 P22 에서 제거한다.
-      hs512-fallback-enabled: false
-      hs512-secret: ${JWT_SECRET:}
     # 내부 토큰 발행 (ADR-0017 D1/D2 · 구현 ③ PR3d).
     # 개인키는 산출물에 포함하지 않는다 — 로컬 dev 는 gitignored 파일, k8s 는 Secret Manager CSI 마운트
     # (PR3d-b). 값 자체가 아니라 *위치*만 설정으로 노출한다.
@@ -315,6 +311,11 @@ app:
 management:
   server:
     port: 8081
+  # S2(ADR-0015 · ADR-0024 D1 집합 A) — 값은 서비스 자기 이름. gateway 는 인프라 컴포넌트라
+  # `-service` 접미사가 없다(spring.application.name 과 동일). 어느 프로파일에도 재선언 금지.
+  metrics:
+    tags:
+      application: gateway
   endpoints:
     web:
       exposure:

@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,7 @@ import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
 import com.peekcart.gateway.ratelimit.RateLimiterUnavailableException;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -58,6 +61,9 @@ class GatewayAuthenticationFilterTest {
     private TokenDenyLookup denyLookup;
     private GatewayAuthenticationFilter filter;
     private AtomicReference<ServerWebExchange> forwarded;
+    /** S9 계측 검증용 — 실제 레지스트리를 쓴다(mock 이면 "무엇이 올라갔는가" 를 못 본다). */
+    private SimpleMeterRegistry meterRegistry;
+    private GatewayAuthMetrics metrics;
 
     @BeforeEach
     void setUp() {
@@ -68,7 +74,9 @@ class GatewayAuthenticationFilterTest {
                 "GET /api/v1/products",
                 "GET /api/v1/products/**",
                 "POST /api/v1/payments/webhook"));
-        filter = new GatewayAuthenticationFilter(verifier, denyLookup, issuer(true), publicProps);
+        meterRegistry = new SimpleMeterRegistry();
+        metrics = new GatewayAuthMetrics(meterRegistry);
+        filter = new GatewayAuthenticationFilter(verifier, denyLookup, issuer(true), publicProps, metrics);
         forwarded = new AtomicReference<>();
     }
 
@@ -195,7 +203,7 @@ class GatewayAuthenticationFilterTest {
             stubValid(null);
             GatewayAuthenticationFilter transitional = new GatewayAuthenticationFilter(
                     verifier, denyLookup, issuer(false),
-                    new PublicEndpointProperties(List.of("GET /api/v1/products")));
+                    new PublicEndpointProperties(List.of("GET /api/v1/products")), metrics);
             MockServerWebExchange exchange = MockServerWebExchange.from(
                     MockServerHttpRequest.get("/api/v1/orders")
                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN));
@@ -262,7 +270,7 @@ class GatewayAuthenticationFilterTest {
         @DisplayName("무효 토큰 → 401")
         void invalidToken_401() {
             when(verifier.verify(anyString()))
-                    .thenReturn(Mono.error(new GatewayJwtVerifier.InvalidTokenException("bad")));
+                    .thenReturn(Mono.error(new GatewayJwtVerifier.InvalidTokenException(AuthFailureReason.BAD_SIGNATURE, "bad")));
             MockServerWebExchange exchange = MockServerWebExchange.from(
                     MockServerHttpRequest.get("/api/v1/orders")
                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN));
@@ -471,7 +479,7 @@ class GatewayAuthenticationFilterTest {
         @DisplayName("공개 경로 + 무효 토큰 → 401 (익명 강등 금지, GW-2 c2:4)")
         void publicPath_invalidToken_isRejected() {
             when(verifier.verify(anyString()))
-                    .thenReturn(Mono.error(new GatewayJwtVerifier.InvalidTokenException("bad")));
+                    .thenReturn(Mono.error(new GatewayJwtVerifier.InvalidTokenException(AuthFailureReason.BAD_SIGNATURE, "bad")));
             MockServerWebExchange exchange = MockServerWebExchange.from(
                     MockServerHttpRequest.get("/api/v1/products/1")
                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN)
@@ -533,6 +541,124 @@ class GatewayAuthenticationFilterTest {
             filter.filter(exchange, chain()).block();
 
             assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @Nested
+    @DisplayName("S9 인증 실패 계측 (ADR-0024 D4)")
+    class AuthFailureMetrics {
+
+        private double count(AuthFailureReason reason) {
+            return meterRegistry.get("auth.failure").tag("reason", reason.tag()).counter().count();
+        }
+
+        private MockServerWebExchange protectedRequest(boolean withToken) {
+            MockServerHttpRequest.BaseBuilder<?> req = MockServerHttpRequest.get("/api/v1/orders");
+            if (withToken) {
+                req = MockServerHttpRequest.get("/api/v1/orders")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + TOKEN);
+            }
+            return MockServerWebExchange.from((MockServerHttpRequest) req.build());
+        }
+
+        @Test
+        @DisplayName("모든 reason series 는 요청 전에 이미 0 으로 등록돼 있다")
+        void allReasonsRegisteredEagerly() {
+            // 지연 등록이면 "아직 일어나지 않은 사유" 와 "계측이 빠진 사유" 가 구분되지 않는다.
+            for (AuthFailureReason reason : AuthFailureReason.values()) {
+                assertThat(count(reason)).as("reason=%s", reason.tag()).isZero();
+            }
+        }
+
+        @Test
+        @DisplayName("정상 통과 요청은 어떤 reason 도 올리지 않는다")
+        void successfulRequest_incrementsNothing() {
+            stubValid("fam-1");
+
+            filter.filter(protectedRequest(true), chain()).block();
+
+            assertThat(meterRegistry.get("auth.failure").counters().stream()
+                    .mapToDouble(c -> c.count()).sum())
+                    .as("성공 경로가 카운터를 건드리면 실패율이 통째로 거짓이 된다")
+                    .isZero();
+        }
+
+        @Test
+        @DisplayName("무토큰 → reason=missing_token 만 +1")
+        void missingToken() {
+            filter.filter(protectedRequest(false), chain()).block();
+
+            assertThat(count(AuthFailureReason.MISSING_TOKEN)).isEqualTo(1.0);
+            assertThat(count(AuthFailureReason.MALFORMED)).isZero();
+        }
+
+        @ParameterizedTest(name = "검증 실패 reason={0} → 같은 태그로 +1")
+        @EnumSource(value = AuthFailureReason.class,
+                names = {"MALFORMED", "BAD_SIGNATURE", "EXPIRED", "UNKNOWN_KID", "ALG_NOT_ALLOWED", "MISSING_EXP"})
+        @DisplayName("검증기가 나른 사유가 그대로 태그가 된다 (뭉개면 red)")
+        void verifierReason_isPreserved(AuthFailureReason reason) {
+            when(verifier.verify(anyString()))
+                    .thenReturn(Mono.error(new GatewayJwtVerifier.InvalidTokenException(reason, "rejected")));
+
+            filter.filter(protectedRequest(true), chain()).block();
+
+            assertThat(count(reason)).as("reason=%s", reason.tag()).isEqualTo(1.0);
+            // 응답 헤더는 401 세부 사유를 합쳐서 돌려준다(검증 내부 상태를 요청자에게 알리지 않는다).
+            assertThat(count(AuthFailureReason.MISSING_TOKEN)).isZero();
+        }
+
+        @Test
+        @DisplayName("deny hit → reason=denied (서명오류와 같은 숫자가 되면 안 된다)")
+        void denyHit() {
+            stubValid("fam-1");
+            when(denyLookup.isDenied(anyString(), any())).thenReturn(Mono.just(true));
+
+            filter.filter(protectedRequest(true), chain()).block();
+
+            assertThat(count(AuthFailureReason.DENIED)).isEqualTo(1.0);
+            assertThat(count(AuthFailureReason.BAD_SIGNATURE)).isZero();
+        }
+
+        @Test
+        @DisplayName("family-less 발행 거부 → reason=internal_token_refused")
+        void issuanceRefused() {
+            stubValid(null);
+
+            filter.filter(protectedRequest(true), chain()).block();
+
+            assertThat(count(AuthFailureReason.INTERNAL_TOKEN_REFUSED)).isEqualTo(1.0);
+        }
+
+        @Test
+        @DisplayName("의존성 장애(deny 조회 실패) → reason=dependency_unavailable (401 아님)")
+        void dependencyUnavailable() {
+            when(verifier.verify(anyString()))
+                    .thenReturn(Mono.just(new GatewayClaims(42L, "USER", "fam-1", Instant.now().plusSeconds(300))));
+            when(denyLookup.isDenied(anyString(), any()))
+                    .thenReturn(Mono.error(new TokenDenyLookup.DenyLookupUnavailableException("redis down", null)));
+
+            MockServerWebExchange exchange = protectedRequest(true);
+            filter.filter(exchange, chain()).block();
+
+            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+            assertThat(count(AuthFailureReason.DEPENDENCY_UNAVAILABLE)).isEqualTo(1.0);
+            assertThat(count(AuthFailureReason.BAD_SIGNATURE))
+                    .as("장애를 인증 실패로 집계하면 대시보드가 공격 신호로 읽힌다")
+                    .isZero();
+        }
+
+        @Test
+        @DisplayName("rate limiter 백엔드 장애 → reason=rate_limiter_unavailable (429 축과 분리)")
+        void rateLimiterUnavailable() {
+            stubValid("fam-1");
+            GatewayFilterChain failing = exchange ->
+                    Mono.error(new RateLimiterUnavailableException("redis down", null));
+
+            MockServerWebExchange exchange = protectedRequest(true);
+            filter.filter(exchange, failing).block();
+
+            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+            assertThat(count(AuthFailureReason.RATE_LIMITER_UNAVAILABLE)).isEqualTo(1.0);
         }
     }
 }

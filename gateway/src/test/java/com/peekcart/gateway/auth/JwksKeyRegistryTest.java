@@ -50,7 +50,7 @@ class JwksKeyRegistryTest {
     private JwksKeyRegistry registry(Duration cooldown) {
         JwtGatewayProperties props = new JwtGatewayProperties(
                 server.url("/.well-known/jwks.json").toString(),
-                Duration.ofSeconds(2), cooldown, Duration.ofMinutes(5), false, null);
+                Duration.ofSeconds(2), cooldown, Duration.ofMinutes(5));
         return new JwksKeyRegistry(WebClient.builder(), props);
     }
 

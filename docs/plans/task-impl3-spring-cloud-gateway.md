@@ -163,10 +163,10 @@
 
 > **범위 축소(보강 g)**: common-auth `JwtFilter`/`JwtTokenVerifier`/blacklist lookup **삭제는 PR3 P14 소관**(ADR-0014 D2-c 가 PR3 exit 로 규정). PR4 는 **Gateway 의 HMAC fallback 종료 + 잔재 sweep** 만 담당한다.
 
-- [ ] **P20.** S9 auth_failure 메트릭: 인증실패(서명오류/만료)·인가실패(403)·reuse 감지·429 counter(+사유 태그). SSOT = Gateway(인증필터/RateLimiter) + User(reuse/logout). 이름 1개소·이동/복제 금지.
-- [ ] **P21.** S9 관측성 구현(ADR **본문 수정 금지** — ADR-0009:58 에 S9 행 **이미 존재**, README:8-15 immutable): (a) S9 owner(gateway/user-service) **존재·정합 검증** + ADR-0015:42 per-service lint 정합 + Layer1(`02`/`04`) **현재 상태 동기화**. (b) S9 계약 자체를 바꾸는 경우에만 신규 ADR/Status 절차로 분리. dashboard `$application` 변수 + alert per-service + `observability lint` 갱신(도메인 5+인프라 1 = 6). **B11 sweep**: 식별자 치환은 `application=\?"..."` **및** `service=\?"..."` 형제 라벨 양쪽 + JSON/embedded-YAML escaped/unescaped 양쪽 sweep, 브랜드 문자열(`peekcart-*` uid/tag) 제외.
-- [ ] **P22.** **HS512** fallback 제거(overlap 만료 후, dual-validation 종료): **Gateway 검증기 RS256 단일화**(common-auth verifier 는 P14 에서 이미 삭제됨) + `JwtAuthProperties.secret`·HMAC 잔재 sweep. **레거시 `bl:<raw-token>` dual-read 제거**도 여기서 — access token 최대 TTL 경과 증명을 게이트로(보강 a). **ADR-0013 사실 정정(loop2 #8)**: `0013:10,14,29,30` 이 레거시를 "HS256" 으로 기술하나 실제 서명은 **HS512**(512bit secret) — *결정 변경이 아닌 사실 오류*라 README 규칙대로 **`## Update Log` 추가 + `fix(adr):` 커밋**으로 정정(Why 와 구현 사실 분리, 새 ADR 불요). `:65` 의 알고리즘 대안 비교(HS256 vs RS256 vs ES256)는 결정 근거라 **원문 유지**.
-- [ ] **P23.** PR4 테스트: 메트릭 counter 통합테스트(사유 태그별), observability lint **negative**(총계 6 불일치·**Gateway ServiceMonitor 누락**·selector 불일치·escaped-quote 잔존 false-green 차단), HS512 제거 후 부팅/검증 회귀(Gateway).
+- [x] **P20.** S9 auth_failure 메트릭: 인증실패(서명오류/만료)·인가실패(403)·reuse 감지·429 counter(+사유 태그). SSOT = Gateway(인증필터/RateLimiter) + User(reuse/logout). 이름 1개소·이동/복제 금지.
+- [x] **P21.** S9 관측성 구현(ADR **본문 수정 금지** — ADR-0009:58 에 S9 행 **이미 존재**, README:8-15 immutable): (a) S9 owner(gateway/user-service) **존재·정합 검증** + ADR-0015:42 per-service lint 정합 + Layer1(`02`/`04`) **현재 상태 동기화**. (b) S9 계약 자체를 바꾸는 경우에만 신규 ADR/Status 절차로 분리. dashboard `$application` 변수 + alert per-service + `observability lint` 갱신(도메인 5+인프라 1 = 6). **B11 sweep**: 식별자 치환은 `application=\?"..."` **및** `service=\?"..."` 형제 라벨 양쪽 + JSON/embedded-YAML escaped/unescaped 양쪽 sweep, 브랜드 문자열(`peekcart-*` uid/tag) 제외.
+- [x] **P22.** **HS512** fallback 제거(overlap 만료 후, dual-validation 종료): **Gateway 검증기 RS256 단일화**(common-auth verifier 는 P14 에서 이미 삭제됨) + `JwtAuthProperties.secret`·HMAC 잔재 sweep. **레거시 `bl:<raw-token>` dual-read 제거**도 여기서 — access token 최대 TTL 경과 증명을 게이트로(보강 a). **ADR-0013 사실 정정(loop2 #8)**: `0013:10,14,29,30` 이 레거시를 "HS256" 으로 기술하나 실제 서명은 **HS512**(512bit secret) — *결정 변경이 아닌 사실 오류*라 README 규칙대로 **`## Update Log` 추가 + `fix(adr):` 커밋**으로 정정(Why 와 구현 사실 분리, 새 ADR 불요). `:65` 의 알고리즘 대안 비교(HS256 vs RS256 vs ES256)는 결정 근거라 **원문 유지**.
+- [x] **P23.** PR4 테스트: 메트릭 counter 통합테스트(사유 태그별), observability lint **negative**(총계 6 불일치·**Gateway ServiceMonitor 누락**·selector 불일치·escaped-quote 잔존 false-green 차단), HS512 제거 후 부팅/검증 회귀(Gateway).
 
 ### PR3b 세부 — gateway k8s 배포 표면 (P17 분해)
 
@@ -298,8 +298,8 @@
 - [ ] **family-less 토큰 소멸 증명 후** 수용 경로 제거 + `LoginUser.familyId` non-null 불변식. (PR3d)
 - [ ] header-trust 3-state 계약(anonymous 통과 / 완전 인증 / 그 외 401) — 부분·형식오류가 500·anonymous 로 새지 않음. (PR3)
 - [ ] **GKE 보안 smoke 증적** 확보(NetworkPolicy 양성·음성·scrape). 미실행 시 PR3 미완료. (PR3)
-- [ ] S9 auth_failure 메트릭 + ADR-0009 S9 행 + observability lint 6/6(도메인 5+인프라 1). (PR4)
-- [ ] HS512 fallback + 레거시 `bl:` dual-read 제거 후 9모듈 그린, 인증 회귀 0. (PR4)
+- [x] S9 auth_failure 메트릭 + ADR-0009 S9 행 + observability lint 6/6(도메인 5+인프라 1). (PR4 — 자식 계획 `task-impl3-pr4-auth-observability.md` P1~P13. **canonical 5→6 은 ADR-0015 계약 변경이라 ADR-0024 신설**)
+- [x] HS512 fallback + 레거시 `bl:` dual-read 제거 후 **10모듈** 그린(모듈 수는 PR3d-a 의 `internal-token-contract` 신설로 9→10), 인증 회귀 0. (PR4 — 전제 정정: 발급측이 이미 RS256 단독이고 `bl:` writer 가 0 이라 "TTL 경과 증명 게이트"는 불필요했다)
 - [ ] 보안 묶음 L-001/002/003/019 종결, ADR-0013 구현 완료.
 
 ---

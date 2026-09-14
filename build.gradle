@@ -198,10 +198,13 @@ tasks.register('assertGatewayHasNoServletDeps') {
 		}
 		def violations = []
 		// (a) 정적 project 의존 — allowlist 외 전부 금지 (gateway 전용 DTO 사용)
-		//     :internal-token-contract 만 예외 — 프레임워크 의존이 0 인 순수 Java 상수 모듈이며(ADR-0017),
+		//     :internal-token-contract — 프레임워크 의존이 0 인 순수 Java 상수 모듈이며(ADR-0017),
 		//     발행(gateway)/검증(common-auth)이 서로를 의존할 수 없어 이름 계약의 단일 출처로 필요하다.
-		//     이 예외가 servlet 유입 구멍이 되지 않음은 (a2) 자체 검사와 (b) 런타임 classpath 검사가 함께 막는다.
-		def allowedProjectDeps = [':internal-token-contract'] as Set
+		//     :peekcart-common-observability — S1(MeterFilter) 1개소 계약(ADR-0009 S1·ADR-0024 D2).
+		//     actuator/micrometer-core/spring-tx 만 노출해 servlet 유입이 없다. gateway 가 자기 모듈에
+		//     MeterFilter 를 재선언하는 대안은 "서비스 모듈 재선언 금지"를 정면으로 어긴다.
+		//     이 예외들이 servlet 유입 구멍이 되지 않음은 (a2) 자체 검사와 (b) 런타임 classpath 검사가 함께 막는다.
+		def allowedProjectDeps = [':internal-token-contract', ':peekcart-common-observability'] as Set
 		gatewayProject.configurations.each { cfg ->
 			cfg.dependencies.withType(ProjectDependency).each { dep ->
 				if (!allowedProjectDeps.contains(dep.path)) {
@@ -209,17 +212,41 @@ tasks.register('assertGatewayHasNoServletDeps') {
 				}
 			}
 		}
-		// (a2) allowlist 모듈이 나중에 오염되는 것을 막는다 — :internal-token-contract 자신이
-		//      다른 project 나 Spring/servlet 라이브러리를 의존하기 시작하면 (a) 예외가 우회로가 된다.
-		def contractProject = findProject(':internal-token-contract')
-		if (contractProject != null) {
+		// (a2) allowlist 모듈이 나중에 오염되는 것을 막는다 — allowlist 모듈 자신이 다른 project 나
+		//      servlet/web/JPA 라이브러리를 의존하기 시작하면 (a) 예외가 우회로가 된다.
+		//      두 모듈의 금지 축은 다르다(ADR-0024 D2):
+		//        :internal-token-contract        — 프레임워크 **전면** 금지(순수 Java 상수 모듈)
+		//        :peekcart-common-observability  — servlet/web/JPA **만** 금지(actuator/micrometer/spring-tx 는 정당)
+		//      "Spring 전부 금지" 를 후자에 적용하면 spring-tx 때문에 즉시 실패하므로 금지 목록 기반이다.
+		def forbiddenObservabilityDeps = [
+				'spring-boot-starter-web', 'spring-webmvc', 'spring-boot-starter-data-jpa',
+				'spring-boot-starter-jdbc', 'spring-boot-starter-security', 'spring-boot-starter-kafka',
+		] as Set
+		def allowlistPurity = [
+				':internal-token-contract': { dep ->
+					dep.group?.startsWith('org.springframework') || dep.group == 'jakarta.servlet'
+							? "계약 모듈은 프레임워크를 의존할 수 없다" : null
+				},
+				':peekcart-common-observability': { dep ->
+					dep.group == 'jakarta.servlet' || forbiddenObservabilityDeps.contains(dep.name)
+							? "관측성 공유 모듈은 servlet/web/JPA 를 의존할 수 없다 (gateway 가 의존한다)" : null
+				},
+		]
+		allowlistPurity.each { path, forbidden ->
+			def allowlistedProject = findProject(path)
+			if (allowlistedProject == null) {
+				return
+			}
 			['api', 'implementation', 'runtimeOnly', 'compileOnly'].each { cfgName ->
-				def cfg = contractProject.configurations.findByName(cfgName)
+				def cfg = allowlistedProject.configurations.findByName(cfgName)
 				cfg?.dependencies?.each { dep ->
 					if (dep instanceof ProjectDependency) {
-						violations << ":internal-token-contract (${cfgName}) -> ${dep.path} : 계약 모듈은 어떤 project 도 의존할 수 없다".toString()
-					} else if (dep.group?.startsWith('org.springframework') || dep.group == 'jakarta.servlet') {
-						violations << ":internal-token-contract (${cfgName}) -> ${dep.group}:${dep.name} : 계약 모듈은 프레임워크를 의존할 수 없다".toString()
+						violations << "${path} (${cfgName}) -> ${dep.path} : allowlist 모듈은 어떤 project 도 의존할 수 없다".toString()
+						return
+					}
+					def reason = forbidden(dep)
+					if (reason != null) {
+						violations << "${path} (${cfgName}) -> ${dep.group}:${dep.name} : ${reason}".toString()
 					}
 				}
 			}
