@@ -2262,7 +2262,8 @@ KSA 신원을 받아가므로, Pod 자신의 토큰 자동 마운트와 독립�
 ## 구현 ③ PR3d-b-2 — GKE 클러스터 세션 (2026-09-14 ~ 09-15)
 
 계획서 `docs/plans/task-impl3-pr3d-b2-cluster-session.md` P1~P16 중 **P1~P10 수행**, P11~P14 이월.
-증적: `docs/progress/evidence/pr3d-b2-gke-20260914-1320.md`.
+증적: `docs/progress/evidence/pr3d-b2-gke-20260914-1320.md` · PR [#110](https://github.com/Kimgyuilli/PeakCart/pull/110).
+**구현 ③ 은 종결되지 않았다 — TASKS 행은 🔄 유지.**
 
 ### 이 세션이 실제로 고정한 것
 
