@@ -26,6 +26,8 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: peekcart
     spec:
+      # Secret Manager 접근 주체(Workload Identity) — serviceaccount.yml 참조.
+      serviceAccountName: user-service
       # DB-per-service (구현 ② PR2): 각 서비스가 자기 스키마를 독립 Flyway 마이그레이션하므로
       # order-service readiness 게이트(전환기 initContainer)를 제거한다 — cross-service cold-start 순서 의존 소멸.
       #

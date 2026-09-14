@@ -35,7 +35,11 @@ spec:
         app.kubernetes.io/component: gateway
         app.kubernetes.io/part-of: peekcart
     spec:
+      # Secret Manager 접근 주체(Workload Identity) — serviceaccount.yml 참조.
+      # `default` KSA 로 두면 NS 의 모든 Pod 가 내부 토큰 개인키에 접근할 수 있다(P2).
+      serviceAccountName: gateway
       # Kubernetes API 를 호출하지 않는다 — 토큰 자동 마운트 불필요.
+      # CSI provider 는 드라이버의 TokenRequest 로 KSA 신원을 받으므로 이 설정과 무관하다.
       automountServiceAccountToken: false
       # initContainers 없음(계약): gateway 는 마이그레이션·비밀 복사 등 선행 작업이 없다.
       #

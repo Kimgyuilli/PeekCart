@@ -26,6 +26,8 @@ resources:
   - services/notification-service/configmap.yml
   - services/notification-service/secret.yml
   - services/notification-service/servicemonitor.yml
+  # Workload Identity 주체(PR3d-b-2 P2) — CSI 개인키 소비 워크로드는 전용 KSA 를 쓴다.
+  - services/user-service/serviceaccount.yml
   - services/user-service/deployment.yml
   - services/user-service/configmap.yml
   - services/user-service/secret.yml
@@ -47,6 +49,7 @@ resources:
   # gateway(인프라 컴포넌트, ADR-0013 D3 · 구현 ③ PR3b). 도메인 5와 달리:
   #   - k8s Secret 없음: 소비하는 유일한 비밀(내부 토큰 서명 개인키)은 CSI 로만 투영한다(PR3d-b)
   #   - ServiceMonitor 없음: scrape 계약(ADR-0015 S5/S6.d) 확장은 PR4 소관
+  - services/gateway/serviceaccount.yml
   - services/gateway/deployment.yml
   - services/gateway/configmap.yml
   # 관리 포트(8081) scrape — gateway-metrics Service 는 deployment.yml 안에 함께 있다(ADR-0024 D1).
