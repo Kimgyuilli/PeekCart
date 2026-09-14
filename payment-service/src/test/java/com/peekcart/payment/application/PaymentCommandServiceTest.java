@@ -1,160 +1,109 @@
 package com.peekcart.payment.application;
 
-import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.payment.application.dto.ConfirmPaymentCommand;
 import com.peekcart.payment.application.dto.PaymentDetailDto;
-import com.peekcart.payment.domain.exception.PaymentException;
-import com.peekcart.payment.domain.model.Payment;
-import com.peekcart.payment.domain.repository.PaymentRepository;
-import com.peekcart.payment.infrastructure.outbox.PaymentOutboxEventPublisher;
-import com.peekcart.payment.infrastructure.toss.TossConfirmResponse;
-import com.peekcart.payment.infrastructure.toss.TossPaymentClient;
+import com.peekcart.payment.domain.model.PaymentApproval;
+import com.peekcart.payment.domain.model.PaymentStatus;
+import com.peekcart.payment.infrastructure.toss.ApprovalExecutor;
 import com.peekcart.support.ServiceTest;
 import com.peekcart.support.fixture.PaymentFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 
-import java.time.Duration;
-import java.util.Optional;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.inOrder;
 
+/**
+ * {@link PaymentCommandService} 는 이제 <b>오케스트레이션만</b> 한다 (ADR-0023 D1).
+ * 게이트 검증·원장 전이는 {@link PaymentApprovalServiceTest} 소관이므로, 여기서는
+ * <b>T1 → PG → T2 의 순서와 generation 전달</b>이라는 이 클래스 고유의 계약만 본다.
+ */
 @ServiceTest
-@DisplayName("PaymentCommandService 단위 테스트")
+@DisplayName("PaymentCommandService 단위 테스트 — T1/PG/T2 오케스트레이션")
 class PaymentCommandServiceTest {
 
     PaymentCommandService paymentCommandService;
-    @Mock PaymentRepository paymentRepository;
-    @Mock TossPaymentClient tossPaymentClient;
-    @Mock PaymentOutboxEventPublisher outboxEventPublisher;
-
-    /** 승인 마진(계획 GW-2 #1). 마진 자체의 경계 검증은 PaymentTest 소관이라 여기선 0으로 둔다. */
-    private PaymentApprovalProperties approvalProperties;
+    @Mock PaymentApprovalService approvalService;
+    @Mock ApprovalExecutor approvalExecutor;
+    @Mock PaymentQueryService paymentQueryService;
 
     @BeforeEach
     void setUp() {
-        approvalProperties = new PaymentApprovalProperties();
-        approvalProperties.setLeaseApprovalMargin(Duration.ZERO);
-        paymentCommandService = new PaymentCommandService(
-                paymentRepository, tossPaymentClient, outboxEventPublisher, approvalProperties);
+        paymentCommandService = new PaymentCommandService(approvalService, approvalExecutor, paymentQueryService);
     }
 
     @Test
-    @DisplayName("confirmPayment: 성공 시 payment.requested 발행 후 APPROVED 상태와 payment.completed Outbox 이벤트가 발행된다")
-    void confirmPayment_success() {
-        Payment payment = PaymentFixture.readyPaymentWithId();
+    @DisplayName("PG 호출이 T1 커밋 뒤, T2 확정 앞에서 일어난다 — 이 순서가 D-020 수정의 본체다")
+    void confirmPayment_callsPgBetweenTwoCommits() {
         ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
-        TossConfirmResponse response = new TossConfirmResponse(
-                PaymentFixture.DEFAULT_PAYMENT_KEY, command.orderId().toString(),
-                "DONE", "카드", "2026-03-25T14:00:00+09:00");
+        PaymentApproval approval = PaymentFixture.claimedApproval();
+        ApprovalOutcome outcome = ApprovalOutcome.succeeded("카드", LocalDateTime.now(), "{}");
 
-        given(paymentRepository.findByOrderId(command.orderId())).willReturn(Optional.of(payment));
-        given(tossPaymentClient.confirm(command.paymentKey(), command.orderId().toString(), command.amount()))
-                .willReturn(response);
+        given(approvalService.beginApproval(
+                PaymentFixture.DEFAULT_USER_ID, command.orderId(), command.paymentKey(), command.amount()))
+                .willReturn(approval);
+        given(approvalExecutor.execute(approval)).willReturn(new ApprovalExecutor.CallResult(outcome, 1));
+        given(approvalService.finalizeApproval(eq(command.orderId()), anyLong(), any(), anyInt()))
+                .willReturn(PaymentStatus.APPROVED);
+        given(paymentQueryService.getPaymentByOrderId(PaymentFixture.DEFAULT_USER_ID, command.orderId()))
+                .willReturn(PaymentFixture.approvedPaymentDetailDto());
 
         PaymentDetailDto result = paymentCommandService.confirmPayment(PaymentFixture.DEFAULT_USER_ID, command);
 
         assertThat(result.status()).isEqualTo("APPROVED");
-        assertThat(result.method()).isEqualTo("카드");
-        then(outboxEventPublisher).should().publishPaymentRequested(any(Payment.class), eq(PaymentFixture.DEFAULT_USER_ID));
-        then(outboxEventPublisher).should().publishPaymentCompleted(any(Payment.class), eq(PaymentFixture.DEFAULT_USER_ID));
+        InOrder order = inOrder(approvalService, approvalExecutor);
+        order.verify(approvalService).beginApproval(anyLong(), anyLong(), any(), anyLong());
+        order.verify(approvalExecutor).execute(approval);
+        order.verify(approvalService).finalizeApproval(eq(command.orderId()), anyLong(), any(), anyInt());
     }
 
     @Test
-    @DisplayName("confirmPayment: Toss API 실패 시 FAILED 상태와 payment.failed Outbox 이벤트가 발행된다")
-    void confirmPayment_tossFailure_failsPayment() {
-        Payment payment = PaymentFixture.readyPaymentWithId();
+    @DisplayName("확정에 claim 당시 generation 을 그대로 넘긴다 — 소유권이 넘어갔다면 T2 가 무시돼야 한다")
+    void confirmPayment_passesClaimGeneration() {
         ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
+        PaymentApproval approval = PaymentFixture.approval(
+                com.peekcart.payment.domain.model.ApprovalStatus.CLAIMED, 7L, LocalDateTime.now());
+        ApprovalOutcome outcome = ApprovalOutcome.failed("INVALID_CARD", "{}");
 
-        given(paymentRepository.findByOrderId(command.orderId())).willReturn(Optional.of(payment));
-        given(tossPaymentClient.confirm(any(), any(), eq(command.amount())))
-                .willThrow(new RuntimeException("Toss API error"));
+        given(approvalService.beginApproval(anyLong(), anyLong(), any(), anyLong())).willReturn(approval);
+        given(approvalExecutor.execute(approval)).willReturn(new ApprovalExecutor.CallResult(outcome, 1));
+        given(approvalService.finalizeApproval(anyLong(), anyLong(), any(), anyInt()))
+                .willReturn(PaymentStatus.FAILED);
+        given(paymentQueryService.getPaymentByOrderId(anyLong(), anyLong()))
+                .willReturn(PaymentFixture.failedPaymentDetailDto());
+
+        paymentCommandService.confirmPayment(PaymentFixture.DEFAULT_USER_ID, command);
+
+        org.mockito.BDDMockito.then(approvalService).should()
+                .finalizeApproval(command.orderId(), 7L, outcome, 1);
+    }
+
+    @Test
+    @DisplayName("결과 불명이면 PENDING 을 그대로 돌려준다 — 실패로 단언하지 않는다(ADR-0023 D8)")
+    void confirmPayment_unresolved_returnsPending() {
+        ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
+        PaymentApproval approval = PaymentFixture.claimedApproval();
+
+        given(approvalService.beginApproval(anyLong(), anyLong(), any(), anyLong())).willReturn(approval);
+        given(approvalExecutor.execute(approval)).willReturn(
+                new ApprovalExecutor.CallResult(ApprovalOutcome.unresolved("timeout"), 1));
+        given(approvalService.finalizeApproval(anyLong(), anyLong(), any(), anyInt()))
+                .willReturn(PaymentStatus.PENDING);
+        given(paymentQueryService.getPaymentByOrderId(anyLong(), anyLong()))
+                .willReturn(PaymentFixture.pendingPaymentDetailDto());
 
         PaymentDetailDto result = paymentCommandService.confirmPayment(PaymentFixture.DEFAULT_USER_ID, command);
 
-        assertThat(result.status()).isEqualTo("FAILED");
-        then(outboxEventPublisher).should().publishPaymentRequested(any(Payment.class), eq(PaymentFixture.DEFAULT_USER_ID));
-        then(outboxEventPublisher).should().publishPaymentFailed(any(Payment.class), eq(PaymentFixture.DEFAULT_USER_ID));
-    }
-
-    @Test
-    @DisplayName("confirmPayment: 결제 정보가 없으면 PAY-003 예외가 발생한다")
-    void confirmPayment_notFound_throwsPAY003() {
-        ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
-        given(paymentRepository.findByOrderId(command.orderId())).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> paymentCommandService.confirmPayment(PaymentFixture.DEFAULT_USER_ID, command))
-                .isInstanceOf(PaymentException.class)
-                .extracting(e -> ((PaymentException) e).getErrorCode())
-                .isEqualTo(ErrorCode.PAY_003);
-    }
-
-    @Test
-    @DisplayName("confirmPayment: 금액 불일치 시 PAY-001 예외가 발생한다")
-    void confirmPayment_amountMismatch_throwsPAY001() {
-        Payment payment = PaymentFixture.readyPaymentWithId();
-        ConfirmPaymentCommand command = new ConfirmPaymentCommand(
-                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, 99_999L);
-
-        given(paymentRepository.findByOrderId(command.orderId())).willReturn(Optional.of(payment));
-
-        assertThatThrownBy(() -> paymentCommandService.confirmPayment(PaymentFixture.DEFAULT_USER_ID, command))
-                .isInstanceOf(PaymentException.class)
-                .extracting(e -> ((PaymentException) e).getErrorCode())
-                .isEqualTo(ErrorCode.PAY_001);
-    }
-
-    @Test
-    @DisplayName("confirmPayment: 본인 결제가 아니면 PAY-007 로 차단되고 Toss 미호출")
-    void confirmPayment_notOwner_throwsPAY007() {
-        Payment payment = PaymentFixture.readyPaymentWithId();   // userId = DEFAULT_USER_ID(1L)
-        ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
-        given(paymentRepository.findByOrderId(command.orderId())).willReturn(Optional.of(payment));
-
-        assertThatThrownBy(() -> paymentCommandService.confirmPayment(2L, command))
-                .isInstanceOf(PaymentException.class)
-                .extracting(e -> ((PaymentException) e).getErrorCode())
-                .isEqualTo(ErrorCode.PAY_007);
-        then(tossPaymentClient).should(never()).confirm(any(), any(), any(Long.class));
-        then(outboxEventPublisher).should(never()).publishPaymentRequested(any(), any());
-    }
-
-    @Test
-    @DisplayName("confirmPayment: 예약 미확정(reserve→pay 게이트)이면 PAY-008 로 Toss 호출 전 차단되고 payment.requested 미발행")
-    void confirmPayment_reservationNotConfirmed_throwsPAY008() {
-        Payment payment = PaymentFixture.pendingPaymentWithId();   // readyForPayment = false
-        ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
-        given(paymentRepository.findByOrderId(command.orderId())).willReturn(Optional.of(payment));
-
-        assertThatThrownBy(() -> paymentCommandService.confirmPayment(PaymentFixture.DEFAULT_USER_ID, command))
-                .isInstanceOf(PaymentException.class)
-                .extracting(e -> ((PaymentException) e).getErrorCode())
-                .isEqualTo(ErrorCode.PAY_008);
-        then(outboxEventPublisher).should(never()).publishPaymentRequested(any(), any());
-        then(tossPaymentClient).should(never()).confirm(any(), any(), any(Long.class));
-        then(outboxEventPublisher).should(never()).publishPaymentCompleted(any(), any());
-    }
-
-    @Test
-    @DisplayName("confirmPayment: 주문 취소로 종료된 결제(취소 게이트)면 PAY-009 로 차단된다")
-    void confirmPayment_cancelled_throwsPAY009() {
-        Payment payment = PaymentFixture.readyPaymentWithId();
-        payment.cancelBeforePayment();   // order.cancelled 선수신 → CANCELLED
-        ConfirmPaymentCommand command = PaymentFixture.confirmPaymentCommand();
-        given(paymentRepository.findByOrderId(command.orderId())).willReturn(Optional.of(payment));
-
-        assertThatThrownBy(() -> paymentCommandService.confirmPayment(PaymentFixture.DEFAULT_USER_ID, command))
-                .isInstanceOf(PaymentException.class)
-                .extracting(e -> ((PaymentException) e).getErrorCode())
-                .isEqualTo(ErrorCode.PAY_009);
-        then(tossPaymentClient).should(never()).confirm(any(), any(), any(Long.class));
+        assertThat(result.status()).isEqualTo("PENDING");
     }
 }

@@ -80,6 +80,23 @@ class PaymentControllerTest {
 
     @Test
     @WithMockLoginUser
+    @DisplayName("POST /confirm: 결과 불명(PENDING)은 실패가 아니라 PAY-012(409) 다 — 과금이 성립했을 수 있다")
+    void confirmPayment_unresolved_returnsPay012() throws Exception {
+        given(paymentCommandService.confirmPayment(eq(1L), any()))
+                .willReturn(PaymentFixture.pendingPaymentDetailDto());
+
+        ConfirmPaymentRequest request = new ConfirmPaymentRequest(
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT);
+
+        mockMvc.perform(post("/api/v1/payments/confirm")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("PAY-012"));
+    }
+
+    @Test
+    @WithMockLoginUser
     @DisplayName("POST /confirm: paymentKey가 빈 문자열이면 400을 반환한다")
     void confirmPayment_blankPaymentKey_returns400() throws Exception {
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(

@@ -30,11 +30,12 @@ class WebhookServiceTest {
     private static final String WEBHOOK_SECRET = "test-webhook-secret";
 
     @Mock WebhookLogRepository webhookLogRepository;
+    @Mock PaymentApprovalService approvalService;
     private WebhookService webhookService;
 
     @BeforeEach
     void setUp() {
-        webhookService = new WebhookService(webhookLogRepository, WEBHOOK_SECRET);
+        webhookService = new WebhookService(webhookLogRepository, approvalService, WEBHOOK_SECRET);
     }
 
     @Test
@@ -48,6 +49,8 @@ class WebhookServiceTest {
                 .doesNotThrowAnyException();
 
         then(webhookLogRepository).should().save(any(WebhookLog.class));
+        // 웹훅은 진실의 출처가 아니라 신호다 — 순회 우선순위만 올린다(ADR-0023 D7).
+        then(approvalService).should().nudge("pk-123");
     }
 
     @Test
