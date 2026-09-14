@@ -22,6 +22,9 @@ resources:
   # gateway 내부 토큰 공개키 + Spring 바인딩 — 5 도메인 서비스 공용(ADR-0017 D3 · 구현 ③ PR3d-b).
   # gateway 자신은 서명만 하므로 소비하지 않는다(검증 = 리소스 서비스 쪽).
   - services/internal-token-keys.yml
+  # user-service 사용자 토큰 공개키 + Spring 바인딩 — JWKS 게시 원본(ADR-0013 D1).
+  # internal-token-keys 와 **키 도메인이 다르다**(ADR-0017 D3) — 섞이면 JWKS 로 내부 앵커가 샌다.
+  - services/user-jwt-public-keys.yml
   - services/notification-service/deployment.yml
   - services/notification-service/configmap.yml
   - services/notification-service/secret.yml

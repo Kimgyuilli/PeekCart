@@ -1,0 +1,58 @@
+# user-service 사용자 access token **공개키** 배포 — JWKS 게시 원본 (ADR-0013 D1/D2 · 구현 ③)
+#
+# 왜 ConfigMap 인가: 내부 토큰 공개키(services/internal-token-keys.yml)와 **같은 이유**다 —
+# 회전을 이미지 재빌드 없이 끝내려면 공개키 목록이 배포 파이프라인 밖에 있어야 한다.
+# 이 대칭이 없어서 구현 ③ PR3d-b-2 클러스터 세션이 운영 키를 쓰지 못하고 dev 키쌍으로 우회했다:
+# 개인키는 Secret Manager 에서 새 키를 받는데 공개키는 이미지에 베이크된 dev 키라 JWKS 게시값과
+# 모듈러스가 어긋났고, 발급한 토큰을 gateway 가 검증할 수 없었다.
+#
+# [키 도메인 분리 — ADR-0017 D3] 여기 실리는 키는 **사용자 토큰 검증/JWKS 게시용 뿐**이다.
+# gateway 내부 토큰 공개키를 여기에 넣으면 JwkController 가 그것까지 통째로 JWKS 로 게시해
+# 내부 신뢰 앵커가 외부에 노출된다. 이 ConfigMap 이 생기면서 그 누출 경로가 하나 늘었으므로,
+# workload-key-ownership-lint 의 JWKS fingerprint 집합에 **이 ConfigMap 을 포함**시켰다
+# (classpath 정본만 보던 검사를 확장 — WKO-007).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-jwt-public-keys
+  namespace: peekcart
+  labels:
+    app.kubernetes.io/name: user-service
+    app.kubernetes.io/part-of: peekcart
+data:
+  # base 는 dev 키를 담은 템플릿이다 — 이미지 classpath 정본과 같은 키다.
+  # 운영 키는 operator 가 Secret Manager 개인키와 **쌍으로** 교체한다.
+  peekcart-dev-2026.pem: |
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAm/giFVAWs6E18uYDDkCY
+    x+zqPs1XirQa/ugvFfZnYB2coarVrNc5jn4s5vKAb5Mqzn99GWBVRnAG+14naFES
+    Hdv1ofpUevldEuOq04Z2jhTFesCUuR/Wik0QFCcyhqb/H7gh+lrzcYyG9uhfssSN
+    xA6EZdOZXFRWUhgV5OoO8cSgGuI3xUMkbY0VZi3CXL5Ecfgfh7InPhgfr/YNxrTO
+    duD7ZeSrKjH/lVY94ovCITOBt1zk0MYNLwhHtlNWvP1/xtMFc28DuVgwpfMXPF2f
+    hWTIMtfFMfG2piAI3/oj+a0Ljd10ff6JaZFKdgRdyxya1eNqB95kHiy9n7Sn+iXs
+    cwIDAQAB
+    -----END PUBLIC KEY-----
+---
+# Spring 바인딩 — 이미지에 베이크된 classpath 기본값을 덮어쓴다.
+#
+# 인덱스 env 로 노출하는 이유는 internal-token-binding 과 동일하다: 회전 overlap 은 리스트 항목이
+# 1개 → 2개 → 1개로 변하는 일이라, application.yml 에 리스트를 고정하면 previous 키 추가가
+# 이미지 변경이 된다.
+#
+# [중요] Spring 리스트는 인덱스 병합이 아니라 **최고 우선순위 소스가 통째 대체**한다
+# (InternalTokenPropertiesBindingTest 가 확인한 동작 — 같은 계약이 여기에도 적용된다).
+# 따라서 이 ConfigMap 이 곧 **JWKS 로 게시되는 kid 집합의 단일 출처**가 된다.
+#
+# [ADR-0007] active-kid 는 여기 두지 않는다 — 그건 연결 정보가 아니라 발급 정책이라
+# base(application.yml) 가 소유한다. 회전 시에는 operator 가 한시적으로 override 한다.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-jwt-binding
+  namespace: peekcart
+  labels:
+    app.kubernetes.io/name: user-service
+    app.kubernetes.io/part-of: peekcart
+data:
+  APP_JWT_RS256_PUBLICKEYS_0_KID: peekcart-dev-2026
+  APP_JWT_RS256_PUBLICKEYS_0_LOCATION: file:/etc/peekcart/user-jwt-public-keys/peekcart-dev-2026.pem
