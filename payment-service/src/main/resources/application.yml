@@ -69,6 +69,17 @@ app:
   # fence 가 아니라 경합 창 축소이며, 잔여 위험은 계획 §2.6 R-1 로 추적한다.
   payment:
     lease-approval-margin: 2m
+    # 승인 원장 reconciliation (ADR-0023 D5 · D-020) — 동작 정책이므로 base 소유(ADR-0007).
+    # claim-lease 는 환불과 달리 안전 불변식이 아니다: 승인 reconciliation 은 조회만 하고 재호출하지
+    # 않으므로(D5) 조기 회수의 최악은 불필요한 조회 1회다. 부팅 검증은 unresolved-limit > claim-lease
+    # 하나만 강제한다(짧으면 자동 확정 기회를 스스로 없앤다).
+    approval:
+      claim-lease: 2m           # PG 호출 최악(pg-timeout 10s × connect+read = 20s) 보다 넉넉히 길게
+      batch-size: 20
+      max-batches-per-run: 5
+      reconcile-interval-ms: 60000
+      lock-at-most-for: 10m
+      unresolved-limit: 24h     # 초과 시 자동 확정 포기 → 운영 알림 + 수동 종결(감사 필드 필수)
   # 환불 경로 동작 정책 (ADR-0018 · 구현 ④-c-1a) — 동작 정책이므로 base 소유(ADR-0007).
   # claim-lease 는 PG 호출 최악 소요(pg-timeout × max-attempts + 백오프 총합)보다 길어야 한다 —
   # 짧으면 살아있는 claim 을 다른 인스턴스가 회수해 같은 결제에 취소를 두 번 시도한다(부팅 시 fail-fast).

@@ -16,17 +16,25 @@ import java.util.Base64;
 /**
  * Toss 웹훅 이벤트를 처리하는 애플리케이션 서비스.
  * HMAC-SHA256 서명 검증 및 idempotency_key 중복 방지를 담당한다.
+ *
+ * <p>웹훅은 <b>진실의 출처가 아니라 신호다</b> (ADR-0023 D7). payload 를 믿고 상태를 바꾸면
+ * 서명이 유효한 재전송/순서 역전이 로컬 상태를 되돌릴 수 있다. 그래서 여기서는 미확정 승인
+ * 원장의 lease 만 비워 <b>다음 reconcile 순회의 최우선</b>으로 만들고, 확정은 PG 조회에 맡긴다.
+ * 웹훅 트랜잭션 안에서 PG 를 호출하지 않는다는 규약(ADR-0018 D3)도 그대로 적용된다.
  */
 @Service
 @Transactional
 public class WebhookService {
 
     private final WebhookLogRepository webhookLogRepository;
+    private final PaymentApprovalService approvalService;
     private final String webhookSecret;
 
     public WebhookService(WebhookLogRepository webhookLogRepository,
+                          PaymentApprovalService approvalService,
                           @Value("${toss.payments.webhook-secret}") String webhookSecret) {
         this.webhookLogRepository = webhookLogRepository;
+        this.approvalService = approvalService;
         this.webhookSecret = webhookSecret;
     }
 
@@ -45,6 +53,12 @@ public class WebhookService {
         }
         WebhookLog log = WebhookLog.create(paymentKey, eventType, idempotencyKey, payload, "PROCESSED");
         webhookLogRepository.save(log);
+
+        // 미확정 승인이 있으면 순회 우선순위만 올린다(ADR-0023 D7). paymentKey 가 비면 nudge 대상을
+        // 특정할 수 없으므로 로그만 남긴 셈이 된다 — 웹훅 적재 자체는 성공으로 둔다.
+        if (paymentKey != null && !paymentKey.isBlank()) {
+            approvalService.nudge(paymentKey);
+        }
     }
 
     private void verifySignature(String signature, String payload) {

@@ -71,6 +71,11 @@ public class PaymentRefundService {
                     payment.getOrderId());
             throw new PaymentException(ErrorCode.PAY_011);
         }
+        return insertRequest(payment, reason);
+    }
+
+    /** fence 삽입 + 계수 — 정상/고아 두 진입점이 <b>같은 경로</b>를 쓰게 한다. */
+    private boolean insertRequest(Payment payment, String reason) {
         int inserted = refundRepository.insertRequestedIfAbsent(
                 payment.getOrderId(), payment.getPaymentKey(), payment.getUserId(), payment.getAmount());
         if (inserted == 0) {
@@ -112,6 +117,30 @@ public class PaymentRefundService {
         log.info("종결된 환불에 뒤늦은 요청 도착 — 회신 재발행(늦게 생긴 원장 종결용), orderId={}, result={}",
                 orderId, result);
         return true;
+    }
+
+    /**
+     * 고아 과금의 환불 요청 (ADR-0023 D6) — <b>{@code APPROVED} 게이트만 우회</b>한다.
+     *
+     * <p>{@link #requestRefund} 의 상태 게이트는 "요청은 결제 승인 이후에만 발행된다"(감지 3지점이
+     * 모두 {@code payment.completed} 이후)는 전제 위에 서 있다. 승인 reconciliation 은 <b>네 번째
+     * 감지 지점</b>이며, 그 전제를 만족하지 않는다 — PG 에는 과금이 성립했는데 {@code payments} 는
+     * 이미 {@code CANCELLED}/{@code FAILED} 로 닫힌 상태를 발견한다. 게이트를 그대로 두면 실재하는
+     * 과금이 환불 경로에 진입하지 못한다.
+     *
+     * <p>우회가 안전한 근거는 {@link #succeed} 가 이미 {@code payments} 상태를 확인하고
+     * {@code APPROVED} 일 때만 {@code markRefunded()} 한다는 것이다 — 이 건들은 원장에만 종결되고
+     * {@code payments} 를 건드리지 않는다. fence · 중복 no-op · 종결 재발행 · 회신 발행은 전부
+     * 같은 경로를 쓴다.
+     *
+     * @return true = 이번 호출이 fence 를 획득
+     */
+    @Transactional
+    public boolean requestRefundForOrphanedCharge(Payment payment, String reason) {
+        if (republishIfAlreadyResolved(payment.getOrderId())) {
+            return false;
+        }
+        return insertRequest(payment, reason);
     }
 
     /**

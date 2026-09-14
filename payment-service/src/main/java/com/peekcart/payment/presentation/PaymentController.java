@@ -37,7 +37,10 @@ public class PaymentController {
 
     /**
      * 결제를 승인한다.
-     * 트랜잭션 커밋 후 FAILED 상태면 에러 응답을 반환한다.
+     *
+     * <p>확정 후 상태가 종결이 아니면({@code PENDING}) <b>결과 불명</b>이다 — 과금이 성립했을 수도
+     * 있으므로 실패({@code PAY-005})로 돌려주지 않고 {@code PAY-012}(확인 중)로 구분한다.
+     * 실제 결과는 승인 reconciliation 이 PG 조회로 확정한다(ADR-0023 D8).
      */
     @Operation(summary = "결제 승인", description = "Toss Payments에 결제 승인을 요청한다.")
     @PostMapping("/confirm")
@@ -50,6 +53,9 @@ public class PaymentController {
         PaymentDetailDto result = paymentCommandService.confirmPayment(loginUser.userId(), command);
         if ("FAILED".equals(result.status())) {
             throw new PaymentException(ErrorCode.PAY_005);
+        }
+        if ("PENDING".equals(result.status())) {
+            throw new PaymentException(ErrorCode.PAY_012);
         }
         return ResponseEntity.ok(ApiResponse.of(PaymentResponse.from(result)));
     }
