@@ -3,15 +3,16 @@ package com.peekcart.global.jwt;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * JWT 서명/검증 단일 설정 계약 (ADR-0014 D1-b).
- * 발급(JwtTokenSigner, root/User)과 검증(JwtTokenVerifier, common-auth)이
- * 동일 {@code app.jwt.*} 외부 설정을 바인딩하여 secret/algorithm 드리프트를 차단한다.
- * 전환기 대칭키(HS256) — 게이트웨이 도입 시 RS256 으로 전환(ADR-0013, ADR-0014 D2-a).
+ * JWT 토큰 수명 설정 (ADR-0014 D1-b).
  *
- * @param secret             HS256 대칭키 시크릿
- * @param accessTokenExpiry  액세스 토큰 만료(ms)
+ * <p><b>PR4</b>: 전환기 대칭키 {@code secret} 필드를 제거했다. 발급은 RS256 개인키 단독
+ * ({@code JwtTokenSigner} + {@code app.jwt.rs256.*})이고 검증은 Gateway 가 JWKS 로 수행하므로
+ * (ADR-0013 D1), 이 레코드가 남기는 것은 <b>만료 시간</b>뿐이다. 아무도 읽지 않는 시크릿 필드를
+ * 두면 "아직 대칭키로 서명한다"는 거짓 신호가 된다.
+ *
+ * @param accessTokenExpiry  액세스 토큰 만료(ms) — family deny TTL 의 상한이기도 하다
  * @param refreshTokenExpiry 리프레시 토큰 만료(ms)
  */
 @ConfigurationProperties(prefix = "app.jwt")
-public record JwtAuthProperties(String secret, long accessTokenExpiry, long refreshTokenExpiry) {
+public record JwtAuthProperties(long accessTokenExpiry, long refreshTokenExpiry) {
 }

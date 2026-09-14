@@ -59,8 +59,6 @@ dependencies {
     testImplementation testFixtures(project(':common'))
     // Gateway 서명 내부 토큰 fixture — 보안 통합 테스트가 유효/위조 토큰을 만든다(ADR-0017)
     testImplementation testFixtures(project(':internal-token-contract'))
-    // cross-module JWT 회귀(게이트 h) — root signer 와 동일 HS256/app.jwt.secret 으로 토큰 발급해 verifier 검증
-    testImplementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 
     // Testcontainers
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'

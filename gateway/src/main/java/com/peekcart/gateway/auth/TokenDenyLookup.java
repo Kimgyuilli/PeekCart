@@ -18,7 +18,6 @@ import java.util.HexFormat;
  * {@code TokenBlacklistRepository}):
  * <ul>
  *   <li>{@code auth:blacklist:<sha256hex(token)>} — logout 등 개별 토큰 차단(신키)</li>
- *   <li>{@code bl:<token>} — 전환기 legacy 원문 키(read-only). PR4 P22 에서 제거</li>
  *   <li>{@code auth:deny:family:<familyId>} — reuse 감지 family 전체 차단</li>
  * </ul>
  *
@@ -36,7 +35,6 @@ public class TokenDenyLookup {
     private static final Logger log = LoggerFactory.getLogger(TokenDenyLookup.class);
 
     private static final String BLACKLIST_PREFIX = "auth:blacklist:";
-    private static final String LEGACY_PREFIX = "bl:";
     private static final String FAMILY_DENY_PREFIX = "auth:deny:family:";
 
     private final ReactiveStringRedisTemplate redis;
@@ -52,8 +50,10 @@ public class TokenDenyLookup {
      *         Redis 장애 시 {@link DenyLookupUnavailableException} 으로 종료(→503, fail-closed)
      */
     public Mono<Boolean> isDenied(String token, String familyId) {
+        // PR4: 전환기 legacy `bl:<원문토큰>` dual-read 제거 — 그 키를 쓰는 코드가 저장소에
+        // 하나도 없다(write owner 였던 user-service 는 해시 신키만 기록한다). 원문 토큰을 키로
+        // 조회하는 경로가 남아 있는 것 자체가 "원문 저장 금지"(ADR-0014) 와 어긋난 신호였다.
         return hasKey(BLACKLIST_PREFIX + sha256Hex(token))
-                .flatMap(hit -> hit ? Mono.just(true) : hasKey(LEGACY_PREFIX + token))
                 .flatMap(hit -> {
                     if (hit) {
                         return Mono.just(true);
