@@ -2256,3 +2256,67 @@ KSA 신원을 받아가므로, Pod 자신의 토큰 자동 마운트와 독립�
   클러스터 절반에 남는다.
 - **GSA 생성·IAM 바인딩은 클러스터 작업** — 매니페스트만으로는 접근 권한이 생기지 않는다.
 - **리뷰 미수행** — Codex 계획/diff 리뷰 모두 미호출(사용자 지시). "P0/P1 = 0" 주장 없음.
+
+---
+
+## 구현 ③ PR3d-b-2 — GKE 클러스터 세션 (2026-09-14 ~ 09-15)
+
+계획서 `docs/plans/task-impl3-pr3d-b2-cluster-session.md` P1~P16 중 **P1~P10 수행**, P11~P14 이월.
+증적: `docs/progress/evidence/pr3d-b2-gke-20260914-1320.md`.
+
+### 이 세션이 실제로 고정한 것
+
+렌더 축에서만 그린이던 것들이 실 클러스터에서 관측됐다. 가장 큰 건 **PR3c 잔여 편차 2번의 해소**다 —
+PR3c 는 user 개인키를 k8s Secret 으로 마운트해 "PR3d P5 CSI 계약 미충족"으로 기록했는데, 이번에
+Secret Manager + CSI 로 정본화하고 `kubectl get secret` 전수에서 개인키 문자열 0건을 확인했다
+(etcd 미경유). 그리고 crypto barrier (②-4) 가 **유효한** 사용자 토큰을 직접경로로 보내 401 을 받아
+**ADR-0014 D2-c exit** 을 실측으로 고정했다.
+
+### 계획이 틀렸던 세 곳 — 전부 "측정하면 드러나는" 종류였다
+
+1. **P5 `--expect-image`** 는 하나를 전체 workload 에 적용한다. 5서비스는 digest 가 각각 다르므로
+   계획서대로 한 줄로 치면 4개가 불일치로 떨어지거나, `--allow-any-image` 로 뭉개서 digest 검증
+   자체를 잃는다. 서비스별 5회 실행이 맞다.
+
+2. **P6 의 서명 probe 위치**가 틀렸다. ③ 시점은 서비스가 DUAL_ACCEPT 라 평문 주입 gateway 도 200 을
+   받는다 — "200 이면 서명 주입"이 성립하지 않는다. 다행히 스크립트에 이미 방어가 있었다
+   (`assert_downstream_signed_only`). **b-1 Codex 리뷰가 지적했던 바로 그 논증 오류**가 계획서
+   본문에는 남아 있었던 셈이다.
+
+3. **P10 의 기대식 `401 → 200` 은 이 아키텍처에서 관측되지 않는다.** gateway 가 외부 `X-User-*` 를
+   항상 strip 하므로(PR3d-a), 모드를 되돌려도 gateway 를 통과한 평문은 여전히 401 이다. 계획서대로
+   측정했다면 "되돌림이 동작하지 않는다"는 잘못된 결론에 도달했을 것이다. DUAL_ACCEPT 가 바꾸는 것은
+   *서비스가 평문을 수용하는가* 이므로 관측 지점은 NetworkPolicy 가 허용하는 유일한 출발점,
+   즉 **gateway Pod 내부**여야 한다. 옮기고 나니 `401 → 200 → 401` 이 digest 불변으로 깨끗이 나왔다.
+
+이 셋의 공통점은 "설정이 맞다"와 "동작이 관측된다"의 간극이다. P3 에서 공개키 배포 누락을 잡은 것도
+같은 축이었다 — 개인키만 새 키로 바뀌고 공개키는 베이크된 dev 키 그대로라 서명 경로가 깨져 있었는데,
+barrier 는 **공개 경로** 200 만 보고 canary 의 "보호 무토큰 401" 은 키가 깨져도 통과한다.
+보호 경로 **양성 대조군**이 없으면 드러나지 않는 결함이었다.
+
+### 발견한 결함 2건 (별건 PR)
+
+- **`apply -k` 가 HPA 최소값을 깎는다.** `k8s/base/services/gateway/deployment.yml:20` 의
+  `replicas: 1` 이 매 apply 마다 HPA minReplicas(2)를 덮는다. overlay 패치는 "HPA 가 관리한다"는
+  주석만 달고 replicas 를 제거하지 않았다. 배포마다 gateway 가용 Pod 가 최소값 아래로 떨어진다 —
+  가용성 계약 위반이고, 본 세션에서 매 apply 마다 재현됐다.
+- **user 키 도메인에 공개키 override seam 이 없다.** 내부 토큰에는 `internal-token-keys` ConfigMap +
+  인덱스 env 대칭이 있으나 `app.jwt.rs256.public-keys` 는 `classpath:` 고정이고 마운트도 없다.
+  `internal-token-keys` 에 끼워 넣는 우회는 `internal-key-ownership-lint` 가 막는다(그게 그 lint 의
+  목적이다). 이번엔 dev 키쌍을 Secret Manager 에 올려 우회했고, user 도메인의 "운영 전용 키" 축은
+  증명되지 않은 채 남았다.
+
+### 인프라 편차 (증적 §배포 편차에 6건 전부 기록)
+
+관리형 Secret Manager 애드온은 드라이버명·provider 가 커밋 계약과 달라 기각하고 upstream helm 으로
+갔다(계획서가 예고한 대체 경로). 노드는 README §전제의 1대로는 HPA 피크 ~7.3 vCPU 를 못 받아 늘려야
+했는데, SSD 지역 쿼터에 막혀 pd-standard 부팅 디스크 풀로 우회했다. **CPU 쿼터 증설은 자동 거부됐다**
+(신규 프로젝트) — 그래서 loadgen VM 자리를 만들려고 노드를 2대로 줄였고, 이것이 P14 이월의 직접
+원인이다. AR pull 403(노드 SA) · `container.developer`(loadgen VM SA) · 외부 자격증명 placeholder 는
+PR3c 편차와 같은 항목이 그대로 재현됐다 — 클러스터를 새로 세울 때마다 반복된다는 뜻이다.
+
+### 다음 세션 진입 조건
+
+GKE 재생성(프로젝트·GSA·Secret·IAM·AR 이미지는 남아 있음) + **CPU 쿼터 확보**(또는 P14 범위 축소).
+남은 항목: P11 회전 overlap · P12 순서 역전 재현 · P13 scrape 실증 · P14 부하 측정 ·
+P2 음성 대조군.
