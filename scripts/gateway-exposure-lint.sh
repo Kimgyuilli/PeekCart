@@ -118,28 +118,49 @@ if dep["kind"] != "Deployment" or dep["metadata"]["name"] != "gateway":
 
 spec = dep.get("spec") or {}
 
-# --- gateway Pod 를 선택하는 Service 는 정확히 1개, 그것이 정본 gateway Service ---
+# --- gateway Pod 를 선택하는 Service 는 **승인된 2개 정확 일치** (PR4 · ADR-0024 D1) ---
+# 구(PR3b): "정확히 1개". 신: public(8080) + metrics(8081) 두 개다. 이름을 세는 게 아니라
+# **실제 selector 매칭**으로 판정하는 것은 그대로다 — 다른 이름의 Service 가 gateway Pod 를
+# 선택하는 우회를 막는 것이 이 검사의 목적이기 때문이다.
+#
+# metrics Service 는 관리 포트를 게시하므로, public Service 보다 계약이 더 빡빡하다:
+# ClusterIP 고정(overlay 에서 NodePort/LB 로 승격 금지) — 승격되면 PR3a 의 포트 분리가 무의미해진다.
+APPROVED_GW_SERVICES = {"gateway": 8080, "gateway-metrics": 8081}
+
 gw_services = [s for s in services if selects(s.get("spec", {}).get("selector"), pod_labels)]
-if len(gw_services) != 1:
-    names = sorted(s["metadata"]["name"] for s in gw_services)
-    bad(f"gateway Pod 를 선택하는 Service 가 {len(gw_services)}개 (정확히 1개여야 함): {names}"
-        " — PR4 에서 gateway-metrics 추가 시 allow-list 로 확장할 것")
-else:
-    svc = gw_services[0]
-    if svc["metadata"]["name"] != "gateway":
-        bad(f'gateway Pod 를 선택하는 Service 이름이 gateway 가 아님: {svc["metadata"]["name"]}')
+gw_service_names = sorted(s["metadata"]["name"] for s in gw_services)
+if gw_service_names != sorted(APPROVED_GW_SERVICES):
+    bad(f"gateway Pod 를 선택하는 Service 집합 불일치 — expected(승인 2개):"
+        f" {sorted(APPROVED_GW_SERVICES)}, actual: {gw_service_names}")
+
+for svc in gw_services:
+    name = svc["metadata"]["name"]
+    expected_port = APPROVED_GW_SERVICES.get(name)
+    if expected_port is None:
+        continue   # 승인 외 Service — 위 집합 검사가 이미 위반으로 보고했다
 
     ports = svc["spec"].get("ports", []) or []
     if len(ports) != 1:
-        bad(f"gateway Service 포트가 {len(ports)}개 (8080 단일이어야 함): {ports}")
+        bad(f"{name} Service 포트가 {len(ports)}개 (단일이어야 함): {ports}")
     else:
         p = ports[0]
-        if p.get("port") != 8080 or p.get("targetPort") != 8080:
-            bad(f'gateway Service 는 port/targetPort 모두 8080 이어야 함 — 실제 port={p.get("port")}'
-                f' targetPort={p.get("targetPort")} (관리 포트 8081 이 외부로 노출된다)')
+        if p.get("port") != expected_port or p.get("targetPort") != expected_port:
+            bad(f'{name} Service 는 port/targetPort 모두 {expected_port} 이어야 함 — 실제'
+                f' port={p.get("port")} targetPort={p.get("targetPort")}'
+                f' (public 에 8081 이 섞이면 관리 포트가 외부로, metrics 가 8080 을 가리키면'
+                f' scrape 이 업무 트래픽 포트를 긁는다)')
 
-    # overlay 별 노출 형태
     stype = svc["spec"].get("type")
+    if name == "gateway-metrics":
+        # 외부 노출 금지 — overlay patch 로 타입이 바뀌면 관리 포트가 그대로 나간다.
+        if stype not in (None, "ClusterIP"):
+            bad(f"gateway-metrics Service 는 ClusterIP 여야 함 — 실제 type={stype}"
+                " (관리 포트 8081 이 클러스터 밖으로 노출된다)")
+        if svc["spec"].get("externalIPs") or svc["spec"].get("externalName"):
+            bad("gateway-metrics Service 에 external 노출 필드 — 관리 포트 노출 경로다")
+        continue
+
+    # overlay 별 노출 형태 (public Service 한정)
     if overlay == "minikube":
         if stype != "NodePort" or ports and ports[0].get("nodePort") != 30080:
             bad(f'minikube gateway Service 는 NodePort 30080 이어야 함 — 실제 type={stype}'
@@ -160,9 +181,10 @@ if (spec.get("selector") or {}).get("matchExpressions"):
     bad("Deployment selector.matchExpressions 사용 — 계약은 matchLabels 정확 일치다")
 if match_labels != GW_LABELS:
     bad(f"Deployment selector.matchLabels 가 {GW_LABELS} 와 정확히 일치해야 함 — 실제 {match_labels}")
-if gw_services and (gw_services[0]["spec"].get("selector") or {}) != GW_LABELS:
-    bad(f'gateway Service selector 가 {GW_LABELS} 와 정확히 일치해야 함'
-        f' — 실제 {gw_services[0]["spec"].get("selector")}')
+for svc in gw_services:
+    if (svc["spec"].get("selector") or {}) != GW_LABELS:
+        bad(f'{svc["metadata"]["name"]} Service selector 가 {GW_LABELS} 와 정확히 일치해야 함'
+            f' — 실제 {svc["spec"].get("selector")}')
 if not all(pod_labels.get(k) == val for k, val in match_labels.items()):
     bad(f"Deployment selector({match_labels}) 와 Pod template labels({pod_labels}) 불일치")
 
@@ -372,7 +394,7 @@ run_checks() {
     return "$violations"
 }
 
-# ---------- self-test: 조작 입력 9종에서 반드시 실패해야 한다 ----------
+# ---------- self-test: 조작 입력 전 종에서 반드시 실패해야 한다 (현 29종) ----------
 if [[ "${1:-}" == "--self-test" ]]; then
     TMP="$(mktemp -d)"
     trap 'rm -rf "$TMP"; rm -f "$CHECKER"' EXIT
@@ -385,6 +407,9 @@ docs = [d for d in yaml.safe_load_all(open(os.environ["SRC"])) if d]
 mut = os.environ["MUT"]
 dep = next(d for d in docs if d["kind"] == "Deployment" and d["metadata"]["name"] == "gateway")
 svc = next(d for d in docs if d["kind"] == "Service" and d["metadata"]["name"] == "gateway")
+# 관리 포트 scrape 전용 Service (PR4) — public Service 와 계약이 다르므로 따로 조작한다.
+metrics_svc = next((d for d in docs
+                    if d["kind"] == "Service" and d["metadata"]["name"] == "gateway-metrics"), None)
 pod = dep["spec"]["template"]["spec"]
 c = pod["containers"][0]
 
@@ -483,6 +508,20 @@ elif mut in ("csi_zero", "csi_two", "wrong_spc", "csi_writable",
         csi_vol["csi"]["nodePublishSecretRef"] = {"name": "static-creds"}
     elif mut == "spc_wrong_namespace":
         spc["metadata"]["namespace"] = "default"
+elif mut == "metrics_service_deleted":
+    # scrape 표면이 사라지면 S9 가 통째로 수집되지 않는데 나머지 계약은 전부 그대로다.
+    docs.remove(metrics_svc)
+elif mut == "metrics_service_public_port":
+    # metrics Service 가 8080 을 가리키면 scrape 이 업무 포트를 긁고 관리 포트는 안 긁힌다.
+    metrics_svc["spec"]["ports"][0]["port"] = 8080
+    metrics_svc["spec"]["ports"][0]["targetPort"] = 8080
+elif mut == "metrics_service_loadbalancer":
+    # overlay patch 로 타입이 승격되면 관리 포트가 클러스터 밖으로 나간다(PR3a 포트 분리 무력화).
+    metrics_svc["spec"]["type"] = "LoadBalancer"
+elif mut == "metrics_selector_drift":
+    # 여전히 gateway Pod 를 선택하지만 계약 라벨({app: gateway})이 아니다 — 부분집합 판정만으로는
+    # 통과하므로 3자 정확 일치 검사가 살아 있어야 잡힌다.
+    metrics_svc["spec"]["selector"] = {"app.kubernetes.io/name": "gateway"}
 elif mut == "label_drift":
     # 세 맵이 서로 어긋나지만 부분집합 판정만으로는 통과하는 조합(3자 정확 일치 검사 대상).
     dep["spec"]["template"]["metadata"]["labels"]["surface"] = "public"
@@ -499,9 +538,15 @@ PY
     # (예: 컨테이너를 늘리면 probe 부재로도 실패한다).
     declare -A EXPECT=(
         [target_port_8081]="targetPort"
-        [selector_mismatch]="Service 가 0개"
+        # PR4: "정확히 1개" → "승인 2개 집합 정확 일치" 로 계약이 바뀌었다(ADR-0024 D1).
+        # 진단 문구도 집합 비교로 바뀌므로 기대값을 함께 옮긴다.
+        [selector_mismatch]="Service 집합 불일치"
         [two_containers]="컨테이너가 2개"
-        [second_service]="Service 가 2개"
+        [second_service]="Service 집합 불일치"
+        [metrics_service_deleted]="Service 집합 불일치"
+        [metrics_service_public_port]="port/targetPort 모두 8081"
+        [metrics_service_loadbalancer]="ClusterIP 여야 함"
+        [metrics_selector_drift]="정확히 일치해야 함"
         [second_workload]="리소스가 2개"
         [host_port]="hostPort"
         [init_secret]="initContainers 가 있음"
@@ -531,6 +576,8 @@ PY
         [spc_wrong_namespace]="GWX-CSI-005:1"
     )
     MUTATIONS=(target_port_8081 selector_mismatch two_containers second_service second_workload
+               metrics_service_deleted metrics_service_public_port metrics_service_loadbalancer
+               metrics_selector_drift
                host_port init_secret container_secret projected_secret no_configmap
                cronjob_host_port bare_pod label_drift
                csi_zero csi_two wrong_spc csi_writable wrong_mount_path mount_writable

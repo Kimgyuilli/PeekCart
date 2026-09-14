@@ -55,7 +55,8 @@ jobs:
           bash scripts/kustomize-namespace-lint.sh
           bash scripts/image-contract-lint.sh
           bash scripts/gateway-exposure-lint.sh
-          # 조작 입력 9종에서 실제로 실패하는지 — lint 자체가 vacuous-green 으로 썩는 것을 막는다.
+          # 조작 입력 29종에서 실제로 실패하는지 — lint 자체가 vacuous-green 으로 썩는 것을 막는다.
+          # PR4: gateway-metrics(관리 포트 scrape Service) 삭제·포트 오지정·LB 승격·selector 드리프트 포함.
           bash scripts/gateway-exposure-lint.sh --self-test
           # NetworkPolicy backend ingress 제한(PR3c) — 0개 선택·peer 누락·egress 혼입 차단.
           bash scripts/networkpolicy-contract-lint.sh
@@ -94,11 +95,14 @@ jobs:
           # 죽은 채 e2e 가 통과한다(D-020 에서 실제로 그랬다). 30분 e2e 대신 여기서 잡는다.
           python3 scripts/e2e/pg-stub/stub.py --self-test
           bash scripts/servicemonitor-selector-lint.sh
+          # PR4: 이 lint 는 음성 대조군이 없어 canonical 집합(6)을 넓히는 변경이 vacuous-green 이
+          # 될 수 있었다 — SM 삭제/추가·selector 오타·endpoint port 오타·과대매칭 6종.
+          bash scripts/servicemonitor-selector-lint.sh --self-test
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh
-          # 구현 ④-d-1 P5: 신규 메트릭 alert(compensation/dlq backlog)의 라벨 계약이
-          # 조작 입력에서 실제로 실패하는지 6종 — alert 삭제·라벨 제거·서비스 집합 축소·
-          # 메트릭 변조·prometheus entry 삭제·부정 matcher 로 서비스 제외.
+          # 구현 ④-d-1 P5 + PR4: alert 라벨/식 계약과 dashboard 변수 집합이 조작 입력에서
+          # 실제로 실패하는지 17종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
+          # 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, dashboard 드리프트 3종.
           bash scripts/observability-promql-lint.sh --self-test
           # PR3c sweep — 단일 'peekcart' 관측성 식별자(application/service) 잔존 0 강제.
           # escaped-quote(JSON/embedded-yaml) + 형제 라벨(service) 양쪽 매치(PLAN-BLINDSPOTS B11).

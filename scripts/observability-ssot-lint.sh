@@ -53,7 +53,11 @@ EXPECTED_SERVICES = [
 ]
 EXPECTED_BASES = {f"{s}/src/main/resources/application.yml" for s in EXPECTED_SERVICES}
 found_bases = set(glob.glob("*-service/src/main/resources/application.yml"))
-BASES = sorted(EXPECTED_BASES)
+# 인프라 1(gateway) — PR4 에서 S2 계약에 편입됐다(ADR-0024 D1 집합 A). 디렉터리명에 `-service`
+# 접미사가 없어 위 glob 에 잡히지 않으므로 명시 경로로 더한다. 이게 없으면 gateway 의 태그가
+# 프로파일에서 조용히 덮여도(예: application-k8s.yml 재선언) 아무도 모른다.
+INFRA_BASES = ["gateway/src/main/resources/application.yml"]
+BASES = sorted(EXPECTED_BASES) + INFRA_BASES
 
 # ADR-0009 §Decision S2/S3: 각 서비스 base SSOT keys
 SSOT_KEYS = [

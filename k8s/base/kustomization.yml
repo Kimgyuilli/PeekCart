@@ -49,6 +49,8 @@ resources:
   #   - ServiceMonitor 없음: scrape 계약(ADR-0015 S5/S6.d) 확장은 PR4 소관
   - services/gateway/deployment.yml
   - services/gateway/configmap.yml
+  # 관리 포트(8081) scrape — gateway-metrics Service 는 deployment.yml 안에 함께 있다(ADR-0024 D1).
+  - services/gateway/servicemonitor.yml
   # 내부 토큰 서명 개인키 CSI(ADR-0017 D2) — gateway 가 소비하는 유일한 비밀. k8s Secret 금지.
   - services/gateway/secretproviderclass.yml
   # NetworkPolicy(구현 ③ PR3c) — 업무 API(8080) ingress 를 gateway·monitoring scrape 로만 제한.

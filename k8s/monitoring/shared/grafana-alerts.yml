@@ -31,7 +31,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "sum by (application)(rate(http_server_requests_seconds_count{application=~\"notification-service|order-service|payment-service|product-service|user-service\", status=~\"5..\"}[5m]))"
+                  expr: "sum by (application)(rate(http_server_requests_seconds_count{application=~\"gateway|notification-service|order-service|payment-service|product-service|user-service\", status=~\"5..\"}[5m]))"
                   instant: false
                   range: true
               - refId: B
@@ -40,7 +40,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "sum by (application)(rate(http_server_requests_seconds_count{application=~\"notification-service|order-service|payment-service|product-service|user-service\"}[5m]))"
+                  expr: "sum by (application)(rate(http_server_requests_seconds_count{application=~\"gateway|notification-service|order-service|payment-service|product-service|user-service\"}[5m]))"
                   instant: false
                   range: true
               - refId: C
@@ -67,7 +67,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=~\"notification-service|order-service|payment-service|product-service|user-service\", uri!~\"/actuator.*\"}[5m])) by (le, application))"
+                  expr: "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=~\"gateway|notification-service|order-service|payment-service|product-service|user-service\", uri!~\"/actuator.*\"}[5m])) by (le, application))"
                   instant: false
                   range: true
               - refId: B
@@ -255,6 +255,37 @@ data:
             annotations:
               summary: "PeekCart up 시계열 부재 — user-service (ServiceMonitor 미매칭 / 서비스 삭제)"
               description: "user-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+          # gateway 는 도메인 서비스가 아니라 인프라 진입점이지만 scrape 부재의 의미는 같다(ADR-0024 D3).
+          # service 라벨 값이 `gateway` 가 아니라 `gateway-metrics` 인 것은 오타가 아니다 —
+          # up{service=} 는 scrape 된 **Service 의 이름**이고, 관리 포트는 별도 ClusterIP Service 가 게시한다.
+          - uid: peekcart-scrape-absent-gateway-metrics
+            title: "Peekcart Metrics Scrape Absent — gateway-metrics"
+            condition: B
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: "absent(up{namespace=\"peekcart\", service=\"gateway-metrics\"}) or on() vector(0)"
+                  instant: true
+                  range: false
+              - refId: B
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: math
+                  expression: "$A > 0"
+            for: 2m
+            labels:
+              severity: critical
+              service: gateway-metrics
+            annotations:
+              summary: "PeekCart up 시계열 부재 — gateway-metrics (ServiceMonitor 미매칭 / 서비스 삭제)"
+              description: "gateway 관리 포트(8081) scrape 대상인 gateway-metrics Service 의 up 메트릭 series 가 없습니다. 인증 실패·rate limit 메트릭(S9)이 통째로 수집되지 않는 상태입니다. ServiceMonitor selector 미스매치(두 라벨 논리곱), Service 삭제, Prometheus 설정 문제를 확인하십시오."
           # --- 구현 ④-d-1 P4: 미결이 쌓이는 표면만 alert 로 둔다 ---
           # 메트릭을 늘린다고 alert 를 그만큼 만들지 않는다. 울리지 않는 alert 는 소음이고
           # promql-lint 의 required 집합을 그만큼 넓힌다. 예약 성공/확정/복구 같은 흐름 지표는
@@ -317,3 +348,35 @@ data:
             annotations:
               summary: "PeekCart 미결 DLQ 원장 존재 — {{ $labels.application }}"
               description: "dead_letter_records 에 OPEN/ACKED 건이 남아 있습니다. DLQ 유입은 종결이 아니라 원장의 입력이며, 재처리 여부는 사람이 판단합니다. 조치: docs/runbooks/dlq-recovery.md"
+          # --- 구현 ③ PR4(S9): 인증 실패 중 alert 로 올리는 것은 reuse 하나다 ---
+          # 401 은 만료 토큰 재시도 같은 기저율이 있어서 임계를 정할 근거가 아직 없다(baseline 미측정).
+          # reuse 는 다르다 — 정상 클라이언트는 무효화된 refresh token 을 다시 제시하지 않는다.
+          # 발생 자체가 사건이므로 임계가 필요 없다(ADR-0024 D3/§Consequences).
+          - uid: peekcart-token-reuse-detected
+            title: "Refresh Token Reuse Detected (탈취 의심)"
+            condition: B
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  # 발급 owner 는 user-service 단독이다(ADR-0010) — 5서비스 regex 로 걸면 없는 series 를 기다린다.
+                  expr: "sum by (application)(increase(auth_token_reuse_detected_total{application=~\"user-service\"}[5m]))"
+                  instant: true
+                  range: false
+              - refId: B
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: math
+                  expression: "$A > 0"
+            for: 0m
+            labels:
+              severity: critical
+            annotations:
+              summary: "PeekCart refresh token reuse 감지 — {{ $labels.application }}"
+              description: "무효화되었거나 이미 로테이션된 refresh token 이 재제시되었습니다. 해당 family 는 전체 무효화되고 access token 은 family deny 로 차단됩니다(ADR-0013 D4). 정상 동시요청은 grace 창에서 흡수되므로, 이 카운터가 오르는 것은 탈취 또는 클라이언트 토큰 관리 결함을 뜻합니다."

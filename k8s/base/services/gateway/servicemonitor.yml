@@ -1,0 +1,28 @@
+# gateway ServiceMonitor — 관리 포트(8081) scrape (ADR-0024 D1/D3 · 구현 ③ PR4)
+#
+# per-service 1파일 규칙(ADR-0015 S5)을 인프라 컴포넌트에도 그대로 적용한다.
+# selector 는 gateway-metrics Service 의 두 라벨 **논리곱** — `app: gateway` 만 쓰면 8081 이 없는
+# public Service 까지 매칭한다(scripts/servicemonitor-selector-lint.sh 의 endpoint port 검사가 red).
+#
+# `up{service="gateway-metrics"}` 가 scrape-absent alert 의 대상 이름이다(ADR-0024 D1 집합 B).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gateway
+  namespace: peekcart
+  labels:
+    app.kubernetes.io/name: gateway
+    app.kubernetes.io/part-of: peekcart
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: gateway
+      monitoring-role: metrics
+  endpoints:
+    - port: management
+      path: /actuator/prometheus
+      interval: 15s
+  namespaceSelector:
+    matchNames:
+      - peekcart
