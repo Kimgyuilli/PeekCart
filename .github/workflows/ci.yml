@@ -58,6 +58,11 @@ jobs:
           # 조작 입력 29종에서 실제로 실패하는지 — lint 자체가 vacuous-green 으로 썩는 것을 막는다.
           # PR4: gateway-metrics(관리 포트 scrape Service) 삭제·포트 오지정·LB 승격·selector 드리프트 포함.
           bash scripts/gateway-exposure-lint.sh --self-test
+          # HPA 가 소유하는 replicas 를 매니페스트가 다시 뺏지 않는지(구현 ③ PR3d-b-2 클러스터 세션).
+          # base 에 replicas 가 남아 있으면 apply 마다 HPA 가 올려둔 수가 깎여 가용 Pod 가
+          # minReplicas 아래로 떨어진다 — 렌더는 이걸 전부 통과시키고, 주석으로도 막히지 않았다.
+          bash scripts/hpa-replicas-ownership-lint.sh
+          bash scripts/hpa-replicas-ownership-lint.sh --self-test
           # NetworkPolicy backend ingress 제한(PR3c) — 0개 선택·peer 누락·egress 혼입 차단.
           bash scripts/networkpolicy-contract-lint.sh
           bash scripts/networkpolicy-contract-lint.sh --self-test
