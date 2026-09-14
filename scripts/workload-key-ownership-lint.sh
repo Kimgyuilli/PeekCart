@@ -78,6 +78,10 @@ KEY_OWNERS = {
         # project 세그먼트는 배포 시 치환되므로 자유, secret 이름·버전은 고정.
         "resource_re": r"^projects/[^/]+/secrets/peekcart-gateway-internal-signing-key/versions/latest$",
         "alias": "gateway-internal-private.pem",
+        # Workload Identity 주체(P2). 소유자 워크로드는 이 KSA 로만 떠야 하고, 이 KSA 는 이 GSA 에만
+        # 바인딩된다 — 둘 다 exact 로 고정해야 신원 층위의 교차 접근이 막힌다.
+        "ksa": "gateway",
+        "gsa_re": r"^peekcart-gateway-signer@[^@]+\.iam\.gserviceaccount\.com$",
     },
     "user-service-jwt-signing-key": {
         "owner": ("peekcart", "Deployment", "user-service"),
@@ -85,6 +89,8 @@ KEY_OWNERS = {
         "provider": "gcp",
         "resource_re": r"^projects/[^/]+/secrets/peekcart-user-jwt-signing-key/versions/latest$",
         "alias": "jwt-private.pem",
+        "ksa": "user-service",
+        "gsa_re": r"^peekcart-user-signer@[^@]+\.iam\.gserviceaccount\.com$",
     },
 }
 
@@ -210,6 +216,76 @@ for spc, owners in seen_owner_mounts.items():
         bad("WKO-003",
             f"'{spc}' 를 마운트하는 워크로드가 없다 — 검사 대상이 없어 무의미한 통과가 된다"
             " (매니페스트 배선 누락이거나 SPC 이름이 바뀌었다)")
+
+# ---------- (1b) Workload Identity 신원 경계 ----------
+#
+# CSI 마운트 전수 검사((1))만으로는 부족하다. Secret Manager 접근 권한은 **볼륨이 아니라 신원**에
+# 붙는다 — GSA 가 바인딩된 KSA 로 뜨는 Pod 는 CSI 를 마운트하지 않고도 `gcloud secrets versions
+# access` 로 개인키를 그대로 읽는다. (1) 은 그 경로를 전혀 보지 못한다.
+#
+# 그래서 세 가지를 exact 로 고정한다:
+#   (a) 소유자 워크로드가 전용 KSA 로 뜬다 — `default` 나 미지정이면 NS 전체가 그 권한을 공유한다.
+#   (b) 그 KSA 에 승인된 GSA 어노테이션이 달려 있다 — 다른 GSA 면 상대 키 접근이 열린다.
+#   (c) **그 KSA 를 다른 워크로드가 쓰지 않는다** — 디버그 Pod 하나가 빌려 쓰면 (1) 을 통째로 우회한다.
+service_accounts = {}
+for doc in docs:
+    if doc.get("kind") != "ServiceAccount":
+        continue
+    meta = doc.get("metadata") or {}
+    service_accounts[(meta.get("namespace", ""), meta.get("name"))] = doc
+
+approved_ksa = {}  # (ns, ksa) -> spc 이름
+for spc_name, rule in KEY_OWNERS.items():
+    owner_ns, _, _ = rule["owner"]
+    approved_ksa[(owner_ns, rule["ksa"])] = spc_name
+
+for spc_name, rule in KEY_OWNERS.items():
+    owner_ns, owner_kind, owner_name = rule["owner"]
+    owner_doc = next(
+        (d for d in docs
+         if d.get("kind") == owner_kind
+         and (d.get("metadata") or {}).get("name") == owner_name
+         and (d.get("metadata") or {}).get("namespace", "") == owner_ns), None)
+    if owner_doc is None:
+        bad("WKO-012", f"{owner_kind}/{owner_name}: 렌더에 없다 — 신원 경계를 검사할 대상이 없다")
+        continue
+    owner_pod = next((pod for _, _, pod in pod_specs(owner_doc)), {})
+    sa_name = owner_pod.get("serviceAccountName") or owner_pod.get("serviceAccount")
+    if sa_name != rule["ksa"]:
+        bad("WKO-012",
+            f"{owner_kind}/{owner_name}: serviceAccountName={sa_name!r} (승인 {rule['ksa']!r})"
+            f" — '{spc_name}' 개인키 접근 신원이 전용 KSA 가 아니면 NS 의 다른 Pod 도 같은 권한을 갖는다")
+        continue
+
+    sa_doc = service_accounts.get((owner_ns, sa_name))
+    if sa_doc is None:
+        bad("WKO-012",
+            f"ServiceAccount/{sa_name}(ns={owner_ns}) 가 렌더에 없다 —"
+            f" {owner_kind}/{owner_name} 가 존재하지 않는 KSA 를 참조한다(Pod 기동 실패)")
+        continue
+    gsa = ((sa_doc.get("metadata") or {}).get("annotations") or {}).get("iam.gke.io/gcp-service-account")
+    if not gsa:
+        bad("WKO-012",
+            f"ServiceAccount/{sa_name}: iam.gke.io/gcp-service-account 어노테이션이 없다"
+            " — Workload Identity 주체가 없어 CSI 투영이 실패한다")
+    elif not re.match(rule["gsa_re"], str(gsa)):
+        bad("WKO-012",
+            f"ServiceAccount/{sa_name}: GSA={gsa} 가 승인 패턴과 다르다 ({rule['gsa_re']})"
+            " — 다른 GSA 는 상대 키 도메인 접근을 열 수 있다(ADR-0017 D3)")
+
+# (c) 승인 KSA 를 소유자 아닌 워크로드가 빌려 쓰는가.
+for doc in docs:
+    for ident, label, pod in pod_specs(doc):
+        sa_name = pod.get("serviceAccountName") or pod.get("serviceAccount")
+        if sa_name is None:
+            continue
+        spc_name = approved_ksa.get((ident[0], sa_name))
+        if spc_name and ident != KEY_OWNERS[spc_name]["owner"]:
+            owner = KEY_OWNERS[spc_name]["owner"]
+            bad("WKO-013",
+                f"{label} 이 KSA '{sa_name}' 로 뜬다 — 이 신원은 '{spc_name}' 개인키를 Secret Manager 에서"
+                f" 직접 읽을 수 있다. 소유자는 {owner[1]}/{owner[2]} 뿐이다(마운트 없이 CSI 검사 우회)")
+
 
 # ---------- (2) 개인키가 k8s Secret/env 로 새는 경로 ----------
 # 이름 추측에 의존하지 않는다 — data 를 실제로 decode 해 PEM 개인키 marker 를 찾는다.
@@ -553,6 +629,29 @@ elif mut == "spring_application_json":
     dep = next(d for d in docs if d["kind"] == "Deployment" and d["metadata"]["name"] == "order-service")
     dep["spec"]["template"]["spec"]["containers"][0].setdefault("env", []).append(
         {"name": "SPRING_APPLICATION_JSON", "value": "{\"app\":{\"jwt\":{\"rs256\":{}}}}"})
+elif mut == "ksa_default":
+    # serviceAccountName 제거 → default KSA. GSA 를 default 에 바인딩하면 NS 전체가 개인키를 읽는다.
+    gw_pod.pop("serviceAccountName", None)
+elif mut == "ksa_annotation_removed":
+    sa = next(d for d in docs if d["kind"] == "ServiceAccount" and d["metadata"]["name"] == "gateway")
+    sa["metadata"].pop("annotations", None)
+elif mut == "ksa_foreign_gsa":
+    # user KSA 를 gateway GSA 에 바인딩 — CSI 마운트는 분리돼 있어도 신원 층위에서 교차 접근이 열린다.
+    sa = next(d for d in docs if d["kind"] == "ServiceAccount" and d["metadata"]["name"] == "user-service")
+    sa["metadata"]["annotations"]["iam.gke.io/gcp-service-account"] = \
+        "peekcart-gateway-signer@p.iam.gserviceaccount.com"
+elif mut == "ksa_object_removed":
+    docs[:] = [d for d in docs
+               if not (d["kind"] == "ServiceAccount" and d["metadata"]["name"] == "gateway")]
+elif mut == "ksa_borrowed_by_job":
+    # 볼륨을 하나도 마운트하지 않는다 — (1) 의 CSI 전수 검사에는 전혀 걸리지 않는 우회.
+    docs.append({
+        "apiVersion": "batch/v1", "kind": "Job",
+        "metadata": {"name": "dump", "namespace": "peekcart"},
+        "spec": {"template": {"spec": {
+            "serviceAccountName": "gateway",
+            "containers": [{"name": "d", "image": "google/cloud-sdk"}],
+        }}}})
 elif mut == "keys_mount_writable":
     dep = next(d for d in docs if d["kind"] == "Deployment" and d["metadata"]["name"] == "notification-service")
     m = next(m for m in dep["spec"]["template"]["spec"]["containers"][0]["volumeMounts"]
@@ -596,6 +695,12 @@ PY
         [binding_removed]="WKO-010:1"
         [keys_mount_writable]="WKO-010:1"
         [jwt_domain_env]="WKO-011:1"
+        # 신원 경계(P2) — (1) 의 CSI 검사가 전부 통과하는 상태에서만 red 가 되어야 의미가 있다.
+        [ksa_default]="WKO-012:1"
+        [ksa_annotation_removed]="WKO-012:1"
+        [ksa_foreign_gsa]="WKO-012:1"
+        [ksa_object_removed]="WKO-012:1"
+        [ksa_borrowed_by_job]="WKO-013:1"
         [spring_application_json]="WKO-011:1"
     )
     MUTATIONS=(cross_mount_deployment cross_mount_initcontainer cross_mount_job cross_mount_cronjob
@@ -603,7 +708,9 @@ PY
                no_gateway_mount private_key_secret public_key_domain_merge empty_public_keys
                spc_user_points_to_gateway spc_wrong_namespace same_name_job statefulset_mount
                replicaset_mount ephemeral_mount inline_node_publish b64_private_secret
-               binding_removed jwt_domain_env spring_application_json keys_mount_writable)
+               binding_removed jwt_domain_env spring_application_json keys_mount_writable
+               ksa_default ksa_annotation_removed ksa_foreign_gsa ksa_object_removed
+               ksa_borrowed_by_job)
 
     if ! OVERLAY_NAME="gke" OVERLAY_OUT="$TMP/base.yml" REPO_ROOT="$REPO_ROOT" \
          python3 "$CHECKER" >/dev/null 2>&1; then
