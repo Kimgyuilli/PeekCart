@@ -23,6 +23,7 @@ import java.util.Optional;
 public class TossPaymentClient {
 
     private static final String ALREADY_CANCELED = "ALREADY_CANCELED_PAYMENT";
+    private static final String ALREADY_PROCESSED = "ALREADY_PROCESSED_PAYMENT";
     private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
 
     private final RestClient restClient;
@@ -53,20 +54,55 @@ public class TossPaymentClient {
     }
 
     /**
-     * Toss 결제 승인 API를 호출한다.
+     * Toss 결제 승인 API를 호출한다 (ADR-0023 D3).
      *
-     * @throws org.springframework.web.client.RestClientException Toss API 호출 실패 시
+     * <p>예외를 던지지 않고 {@link TossOutcome} 으로 분류해 돌려준다. {@code .retrieve()} 로 예외를
+     * 던지면 <b>타임아웃(과금 성립 가능)과 4xx(성립 불가)가 같은 실패로 뭉개진다</b> — 호출자가 둘을
+     * 구분하지 못하면 일시 실패를 영구 실패로 확정하게 된다(D-020 의 결함 중 하나).
+     *
+     * @param idempotencyKey 재시도·재실행에서 <b>동일한 값</b>이어야 한다. PG 측에서 중복 승인을 흡수한다
      */
-    public TossConfirmResponse confirm(String paymentKey, String orderId, long amount) {
-        return restClient.post()
-                .uri("/payments/confirm")
-                .body(Map.of(
-                        "paymentKey", paymentKey,
-                        "orderId", orderId,
-                        "amount", amount
-                ))
-                .retrieve()
-                .body(TossConfirmResponse.class);
+    public TossOutcome confirm(String paymentKey, String orderId, long amount, String idempotencyKey) {
+        try {
+            return restClient.post()
+                    .uri("/payments/confirm")
+                    .header(IDEMPOTENCY_HEADER, idempotencyKey)
+                    .body(Map.of(
+                            "paymentKey", paymentKey,
+                            "orderId", orderId,
+                            "amount", amount
+                    ))
+                    .exchange((request, response) ->
+                            toConfirmOutcome(response.getStatusCode(), readBody(response)), false);
+        } catch (Exception e) {
+            // 연결 실패·타임아웃·응답 파싱 불가 — 승인이 성립했는지 알 수 없다
+            log.warn("Toss 승인 호출 실패(결과 불명) — paymentKey={}", paymentKey, e);
+            return TossOutcome.unknown(e.getMessage());
+        }
+    }
+
+    /**
+     * 승인 응답 원문에서 {@code method}/{@code approvedAt} 을 읽는다 (ADR-0023 D5).
+     *
+     * <p>승인 호출의 성공 응답과 조회 응답이 <b>같은 필드</b>를 담으므로 파싱을 한 곳에 둔다 —
+     * reconciliation 은 조회 원문으로 같은 값을 얻어야 로컬 전이를 동일하게 만들 수 있다.
+     * JSON 해석은 외부 연동 지식이라 클라이언트 경계에 남긴다.
+     *
+     * @return 파싱 불가 시 필드가 {@code null} 인 응답 (호출자가 대체값을 정한다)
+     */
+    public TossConfirmResponse parseConfirmed(String rawResponse) {
+        try {
+            JsonNode root = objectMapper.readTree(rawResponse);
+            return new TossConfirmResponse(
+                    root.path("paymentKey").asText(null),
+                    root.path("orderId").asText(null),
+                    root.path("status").asText(null),
+                    root.path("method").asText(null),
+                    root.path("approvedAt").asText(null));
+        } catch (Exception e) {
+            log.warn("Toss 승인 응답 파싱 실패 — 원문은 원장에 그대로 남긴다", e);
+            return new TossConfirmResponse(null, null, null, null, null);
+        }
     }
 
     /**
@@ -117,6 +153,26 @@ public class TossPaymentClient {
             log.warn("Toss 결제 조회 실패 — paymentKey={}", paymentKey, e);
             return Optional.empty();
         }
+    }
+
+    /**
+     * 승인 응답 분류. 취소({@link #toOutcome})와 갈라 두는 이유는 "이미 일어남" 코드가 다르기
+     * 때문이다 — 취소는 {@code ALREADY_CANCELED_PAYMENT}, 승인은 {@code ALREADY_PROCESSED_PAYMENT}.
+     * 하나로 합치면 감사 로그의 {@code code} 가 실제로 일어난 사건을 가리키지 못한다.
+     */
+    private TossOutcome toConfirmOutcome(HttpStatusCode status, String body) {
+        if (status.is2xxSuccessful()) {
+            return TossOutcome.succeeded(body);
+        }
+        String code = extractCode(body);
+        if (ALREADY_PROCESSED.equals(code)) {
+            return TossOutcome.alreadyProcessed(body);
+        }
+        if (status.is5xxServerError() || status.value() == 429) {
+            return TossOutcome.transient_(code, body);
+        }
+        // 4xx — 금액 불일치·만료·인증 실패 등. 재시도해도 상태가 바뀌지 않는다.
+        return TossOutcome.permanentFailure(code != null ? code : "HTTP_" + status.value(), body);
     }
 
     private TossOutcome toOutcome(HttpStatusCode status, String body) {

@@ -69,7 +69,8 @@ EXPECTED_MIGRATIONS = {
     # V12/V10/V10/V8 = 발행 축 override 감사 2컬럼 (구현 ④-c-2b-4b P24, ADR-0022 D4)
     "order": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],  # V7 = 커서 페이지네이션 인덱스 (구현 ⑥)
     "product": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
-    "payment": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+    # payment V11 = 승인 원장 (D-020, ADR-0023 D2)
+    "payment": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
     "notification": ["1", "2", "3", "4", "5", "6", "7", "8"],
 }
 
@@ -371,9 +372,14 @@ def outbox_payload(service, event_type, aggregate_id):
 # ----------------------------------------------------------------- 시나리오
 
 def scenario_a():
-    """A — 결제 실패 체인. 실패는 주입이 아니라 **실제 승인 실패**다:
-    stub 의 confirm script 가 5xx 를 돌려주면 PaymentCommandService 의 catch 가
-    payment.fail() + publishPaymentFailed() 를 같은 트랜잭션에서 수행한다."""
+    """A — 결제 실패 체인. 실패는 주입이 아니라 **실제 승인 거절**이다:
+    stub 의 confirm script 가 4xx(카드사 거절)를 돌려주면 T2 가 payment.fail() 과
+    payment.failed 발행을 같은 트랜잭션에서 수행한다(ADR-0023 D1).
+
+    **5xx 가 아니라 4xx 인 것이 핵심이다.** 5xx 는 과금이 성립했는지 알 수 없어 실패로
+    확정하지 않는다(ADR-0023 D5). 그 분기는 여기서 돌리지 않는다 — 미종결 원장을 남기므로
+    SCENARIO_ORDER 의 꼬리 시나리오여야 한다. 현재는 payment-service 통합테스트가 덮는다
+    (`PaymentApprovalServiceTest.unresolved_publishesNothing`, 계획 V-3)."""
     sid = "a"
     user_id = 100
     initial_stock = 5

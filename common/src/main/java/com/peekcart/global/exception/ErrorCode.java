@@ -51,6 +51,10 @@ public enum ErrorCode {
     PAY_009(HttpStatus.CONFLICT, "PAY-009", "결제를 진행할 수 없는 주문 상태입니다."),
     PAY_010(HttpStatus.CONFLICT, "PAY-010", "재고 예약 유효기간이 만료되어 결제를 진행할 수 없습니다. 주문을 다시 시도해주세요."),
     PAY_011(HttpStatus.INTERNAL_SERVER_ERROR, "PAY-011", "환불 대상 결제의 사용자 정보가 없어 환불을 시작할 수 없습니다."),
+    // PAY-012 는 실패가 아니다 (ADR-0023 D8) — 과금이 성립했을 수 있는 건을 PAY-005 로 돌려주면
+    // 사용자에게 "결제 안 됐다"고 단언하게 된다. 결과는 reconciliation 이 확정한다.
+    PAY_012(HttpStatus.CONFLICT, "PAY-012", "결제 결과를 확인 중입니다. 잠시 후 결제 내역을 확인해주세요."),
+    PAY_013(HttpStatus.CONFLICT, "PAY-013", "이미 진행 중이거나 완료된 결제 승인입니다."),
 
     // System
     SYS_001(HttpStatus.INTERNAL_SERVER_ERROR, "SYS-001", "내부 서버 오류가 발생했습니다."),

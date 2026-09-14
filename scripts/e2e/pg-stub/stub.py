@@ -12,7 +12,7 @@ script (paymentKey 접두사):
   e2e-already-part-*  이미 취소됨 + 조회상 금액 부족  POST -> 400 ALREADY_CANCELED / GET -> cancels 합계 < amount
   e2e-already-fail-*  이미 취소됨 + 조회 실패         POST -> 400 ALREADY_CANCELED / GET -> 500
   e2e-timeout-*       응답 지연(클라이언트 타임아웃)   POST -> sleep
-  e2e-cfail-*         승인 실패 (시나리오 A 의 실패 지점) confirm -> 500
+  e2e-cfail-*         승인 확정 거절 (시나리오 A) confirm -> 400 {"code":"REJECT_CARD_COMPANY"}
 
 **script 없는 paymentKey 는 500 `STUB_UNSCRIPTED_KEY`** 다. 기본값을 성공으로 두면
 오타 난 키가 조용히 성공해 시나리오가 무엇을 검증했는지 알 수 없게 된다.
@@ -111,9 +111,38 @@ class Handler(BaseHTTPRequestHandler):
         # 나머지 script 는 아직 취소되지 않은 상태로 보인다
         self._send(200, {"status": "DONE", "cancels": []})
 
-    def do_POST(self):
+    def _read_body(self):
+        """요청 본문을 읽는다. **chunked 를 반드시 처리해야 한다.**
+
+        JDK HttpClient(RestClient 의 기본 팩토리)는 Content-Length 없이
+        `Transfer-Encoding: chunked` 로 보낸다. Content-Length 만 보면 본문이 0 바이트로
+        보여 paymentKey 가 빈 문자열이 되고, script 판정이 통째로 무너진다 — 실제로 이
+        stub 은 그동안 confirm 본문을 한 번도 읽지 못했다(아래 주석 참고).
+
+        읽지 않고 남겨두면 keep-alive 커넥션에 본문이 남아 다음 요청의 파싱까지 어긋난다.
+        """
+        encoding = (self.headers.get("Transfer-Encoding") or "").lower()
+        if "chunked" in encoding:
+            parts = []
+            while True:
+                line = self.rfile.readline().strip()
+                if not line:
+                    break
+                size = int(line.split(b";")[0], 16)
+                if size == 0:
+                    while True:                      # trailer + 종료 CRLF 소비
+                        trailer = self.rfile.readline()
+                        if trailer in (b"\r\n", b"\n", b""):
+                            break
+                    break
+                parts.append(self.rfile.read(size))
+                self.rfile.read(2)                   # 청크 뒤 CRLF
+            return b"".join(parts)
         length = int(self.headers.get("Content-Length") or 0)
-        raw = self.rfile.read(length) if length else b"{}"
+        return self.rfile.read(length) if length else b""
+
+    def do_POST(self):
+        raw = self._read_body() or b"{}"
 
         if self.path == CONFIRM_PATH:
             try:
@@ -123,12 +152,19 @@ class Handler(BaseHTTPRequestHandler):
             payment_key = payload.get("paymentKey", "")
             record("POST", self.path, payment_key, self.headers.get("Idempotency-Key"))
             script = script_of(payment_key)
-            if script is None:
+            if not payment_key:
+                # **미등록 키와 구별한다.** 둘 다 500 으로 뭉개면 본문을 못 읽고 있다는
+                # 사실이 "승인 실패" 로 보여 시나리오가 통과해 버린다(실제로 그랬다).
+                self._send(500, {"code": "STUB_EMPTY_BODY",
+                                 "message": "confirm 본문에 paymentKey 가 없다 — 전송/파싱 확인"})
+            elif script is None:
                 self._send(500, {"code": "STUB_UNSCRIPTED_KEY", "message": payment_key})
             elif script == "cfail":
-                # 시나리오 A 의 실패 지점 — PaymentCommandService 의 catch 가
-                # payment.fail() + publishPaymentFailed() 를 같은 트랜잭션에서 수행한다.
-                self._send(500, {"code": "STUB_CONFIRM_FAILED", "message": "승인 실패 script"})
+                # 시나리오 A 의 실패 지점. **4xx 여야 한다** — 카드사 거절처럼 재시도해도
+                # 상태가 바뀌지 않는 확정 거절이라야 payment.failed 체인이 성립한다.
+                # 5xx 는 ADR-0023 D5 상 "과금이 성립했는지 모름" 이라 원장이 UNRESOLVED 로
+                # 남고 주문 취소·재고 복구가 일어나지 않는다(D-020 의 수정 내용 그 자체다).
+                self._send(400, {"code": "REJECT_CARD_COMPANY", "message": "카드사 거절 script"})
             else:
                 self._send(200, {
                     "paymentKey": payment_key,
@@ -174,6 +210,100 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, {"code": "STUB_NO_ROUTE", "message": self.path})
 
 
+def _self_test():
+    """script 판정이 **본문을 실제로 읽는지** 고정한다.
+
+    이 self-test 가 없어서 다음이 30분짜리 e2e 에서야 드러났다: RestClient 의 기본
+    팩토리(JDK HttpClient)는 `Transfer-Encoding: chunked` 로 보내는데 stub 이
+    Content-Length 만 읽어 paymentKey 가 빈 문자열이 됐고, 그 결과 **confirm script 가
+    한 번도 실행되지 않은 채** 500(STUB_UNSCRIPTED_KEY)만 돌아갔다. 호출자가 5xx 를
+    실패로 뭉개던 시절엔 시나리오가 그대로 통과했다 — false-green 이다.
+    """
+    import http.client
+    import threading
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    port = server.server_address[1]
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+
+    fails = 0
+
+    def check(name, actual, expected):
+        nonlocal fails
+        if actual == expected:
+            print("  ok   [%s]" % name)
+        else:
+            fails += 1
+            print("  FAIL [%s] — 기대 %r / 실제 %r" % (name, expected, actual))
+
+    def post(path, body, chunked):
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        data = body.encode("utf-8")
+        if chunked:
+            conn.putrequest("POST", path)
+            conn.putheader("Content-Type", "application/json")
+            conn.putheader("Transfer-Encoding", "chunked")
+            conn.endheaders()
+            conn.send(b"%x\r\n" % len(data) + data + b"\r\n0\r\n\r\n")
+        else:
+            conn.request("POST", path, body=data,
+                         headers={"Content-Type": "application/json"})
+        resp = conn.getresponse()
+        raw = resp.read().decode("utf-8")
+        conn.close()
+        return resp.status, json.loads(raw or "{}")
+
+    def get(path):
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        conn.request("GET", path)
+        resp = conn.getresponse()
+        raw = resp.read().decode("utf-8")
+        conn.close()
+        return resp.status, json.loads(raw or "{}")
+
+    print("pg-stub self-test")
+
+    body = '{"paymentKey":"e2e-cfail-x-1","orderId":"1","amount":10000}'
+
+    # 핵심 — chunked 로 보내도 script 가 먹어야 한다.
+    status, payload = post(CONFIRM_PATH, body, chunked=True)
+    check("chunked confirm: script 적용", (status, payload.get("code")),
+          (400, "REJECT_CARD_COMPANY"))
+
+    # 대조군 — Content-Length 로도 동일해야 한다(둘 다 같은 판정이라야 의미가 있다).
+    status, payload = post(CONFIRM_PATH, body, chunked=False)
+    check("content-length confirm: script 적용", (status, payload.get("code")),
+          (400, "REJECT_CARD_COMPANY"))
+
+    status, payload = post(CONFIRM_PATH,
+                           '{"paymentKey":"e2e-ok-x-1","orderId":"1","amount":10000}', chunked=True)
+    check("chunked confirm: 성공 script", (status, payload.get("status")), (200, "DONE"))
+
+    # 본문을 못 읽는 상태를 **미등록 키와 구별**한다. 뭉개면 위 함정이 되살아난다.
+    status, payload = post(CONFIRM_PATH, "{}", chunked=True)
+    check("본문 없음 → STUB_EMPTY_BODY", (status, payload.get("code")), (500, "STUB_EMPTY_BODY"))
+
+    status, payload = post(CONFIRM_PATH,
+                           '{"paymentKey":"typo-key","orderId":"1","amount":10000}', chunked=True)
+    check("미등록 키 → STUB_UNSCRIPTED_KEY", (status, payload.get("code")),
+          (500, "STUB_UNSCRIPTED_KEY"))
+
+    # 원장이 빈 키를 기록하면 시나리오의 호출 대조가 전부 무의미해진다.
+    _, ledger = get("/__ledger")
+    keys = [c["paymentKey"] for c in ledger["calls"] if c["path"] == CONFIRM_PATH]
+    check("원장이 실제 paymentKey 를 기록", keys[0], "e2e-cfail-x-1")
+
+    server.shutdown()
+    if fails:
+        print("self-test 실패 %d건" % fails)
+        return 1
+    print("self-test 통과 (6종)")
+    return 0
+
+
 if __name__ == "__main__":
+    import sys
+    if "--self-test" in sys.argv:
+        raise SystemExit(_self_test())
     port = int(os.environ.get("PG_STUB_PORT", "8080"))
     ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()

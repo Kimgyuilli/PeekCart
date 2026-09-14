@@ -2,7 +2,10 @@ package com.peekcart.support.fixture;
 
 import com.peekcart.payment.application.dto.ConfirmPaymentCommand;
 import com.peekcart.payment.application.dto.PaymentDetailDto;
+import com.peekcart.payment.domain.model.ApprovalStatus;
 import com.peekcart.payment.domain.model.Payment;
+import com.peekcart.payment.domain.model.PaymentApproval;
+import org.springframework.beans.BeanUtils;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
@@ -55,6 +58,30 @@ public class PaymentFixture {
         return payment;
     }
 
+    /**
+     * 승인 원장 (ADR-0023 D2). 실제 행 생성은 {@code INSERT IGNORE} 라 엔티티로 만들 수 없으므로,
+     * 단위 테스트에서는 리플렉션으로 T1 직후 상태(CLAIMED · generation=1)를 재현한다.
+     */
+    public static PaymentApproval claimedApproval() {
+        return approval(ApprovalStatus.CLAIMED, 1L, LocalDateTime.now());
+    }
+
+    public static PaymentApproval approval(ApprovalStatus status, long generation, LocalDateTime claimedAt) {
+        // 기본 생성자가 protected 다 — 원장 행은 INSERT IGNORE 로만 만들어지기 때문이다.
+        PaymentApproval approval = BeanUtils.instantiateClass(PaymentApproval.class);
+        ReflectionTestUtils.setField(approval, "id", DEFAULT_PAYMENT_ID);
+        ReflectionTestUtils.setField(approval, "orderId", DEFAULT_ORDER_ID);
+        ReflectionTestUtils.setField(approval, "paymentKey", DEFAULT_PAYMENT_KEY);
+        ReflectionTestUtils.setField(approval, "userId", DEFAULT_USER_ID);
+        ReflectionTestUtils.setField(approval, "amount", DEFAULT_AMOUNT);
+        ReflectionTestUtils.setField(approval, "status", status);
+        ReflectionTestUtils.setField(approval, "attempts", 0);
+        ReflectionTestUtils.setField(approval, "generation", generation);
+        ReflectionTestUtils.setField(approval, "claimedAt", claimedAt);
+        ReflectionTestUtils.setField(approval, "requestedAt", DEFAULT_CREATED_AT);
+        return approval;
+    }
+
     // ── Application DTO ──
 
     public static ConfirmPaymentCommand confirmPaymentCommand() {
@@ -66,6 +93,15 @@ public class PaymentFixture {
                 DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PAYMENT_KEY,
                 DEFAULT_AMOUNT, "APPROVED", DEFAULT_METHOD,
                 DEFAULT_APPROVED_AT, DEFAULT_CREATED_AT
+        );
+    }
+
+    /** 결과 불명(ADR-0023 D8) — 승인이 확정되지 않아 PENDING 으로 남은 응답. */
+    public static PaymentDetailDto pendingPaymentDetailDto() {
+        return new PaymentDetailDto(
+                DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PAYMENT_KEY,
+                DEFAULT_AMOUNT, "PENDING", null,
+                null, DEFAULT_CREATED_AT
         );
     }
 

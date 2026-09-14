@@ -90,6 +90,9 @@ jobs:
           # Testcontainers 는 root 로 돌아 그 차이를 보지 못한다(PR #105 에서 실제로 났다).
           bash scripts/migration-grant-lint.sh
           bash scripts/migration-grant-lint.sh --self-test
+          # PG stub 이 본문을 실제로 읽는지 — 못 읽으면 confirm script 가 통째로
+          # 죽은 채 e2e 가 통과한다(D-020 에서 실제로 그랬다). 30분 e2e 대신 여기서 잡는다.
+          python3 scripts/e2e/pg-stub/stub.py --self-test
           bash scripts/servicemonitor-selector-lint.sh
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh

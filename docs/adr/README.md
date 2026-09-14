@@ -45,4 +45,5 @@
 | [0020](./0020-dlq-replay-contract.md) | DLQ replay 계약 — 재발행 보장·발행 권한 예외·좌표 유효성·종결 축 분리 (ADR-0012 D1/D4 · ADR-0018 producer 규약 부분 무효화 · ADR-0021/0022 로 부분 무효화) | Partially Superseded | Phase 4 | 02, 04 |
 | [0021](./0021-dlq-replay-correlation-anchor.md) | DLQ replay 재실패 상관 — 대조 축을 `record_kind` 에서 원장 앵커 + payload digest 로 (ADR-0020 D5-4 부분 무효화) | Accepted | Phase 4 | 02, 05 |
 | [0022](./0022-replay-entrypoint-rollout-and-drain.md) | replay 개시 진입점의 개방 절차 — 도달 경로 · drain/롤백 계약 · `PUBLISH_UNKNOWN` (ADR-0020 §D6-1/§D6-2b/§D6-4 부분 무효화) | Accepted | Phase 4 | 02, 04, 05 |
+| [0023](./0023-payment-approval-reconciliation.md) | 결제 승인 경계 계약 — 승인 원장 + 멱등키 + 조회 기반 reconciliation (D-020, ADR-0018 D2/D3/D5 를 승인 경로로 확장) | Accepted | Phase 4 | 03, 04 |
 <!-- INDEX:END -->
