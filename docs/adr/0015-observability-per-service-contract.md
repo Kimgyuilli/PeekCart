@@ -1,9 +1,13 @@
 # ADR-0015: 관측성 per-service 계약 — 5서비스 분리 완료 상태로 SSOT 위치·검증 정정
 
-- **Status**: Partially Superseded by ADR-0019
+- **Status**: Partially Superseded by ADR-0019, ADR-0024
   - **무효화된 범위**: Consequences 의 "PromQL 정적 lint 는 syntax + 라벨 invariant 만 검증" 서술.
     ADR-0019 가 lint 범위를 **모든 필수 alert 의 식 동일성**까지 격상했다.
     나머지(per-service SSOT 위치, ground truth 정의, alert 4종의 라벨 규약)는 그대로 유효하다.
+  - **무효화된 범위(ADR-0024)**: canonical 집합의 "5 정확 일치" 전제 — S5 의 "5서비스 각 1파일",
+    S6.a/b 의 "regex 값 == 5서비스", S6.d 의 "5서비스 equality rule 분할", 그리고 단일 상수가
+    세 집합(태그/Service name/SM name)을 동시에 강제한다는 전제. ADR-0024 가 도메인 5 + 인프라 1
+    (gateway)로 확장하고 세 집합을 분리했다. per-service SSOT 위치와 S6.d 의 *정의* 는 유효하다.
 - **Date**: 2026-06-21
 - **Deciders**: 프로젝트 오너
 - **관련 Phase**: Phase 4 (구현 ① PR3c)

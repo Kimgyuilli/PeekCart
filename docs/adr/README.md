@@ -37,7 +37,7 @@
 | [0012](./0012-phase4-db-event-saga-contract.md) | Phase 4 DB-per-service + 이벤트/Saga 계약 | Partially Superseded | Phase 4 | 02, 03, 04, 05 |
 | [0013](./0013-phase4-gateway-security.md) | Phase 4 Gateway 보안 — RS256 + Spring Cloud Gateway + Reuse Detection | Accepted | Phase 4 | 02, 03, 04, 05 |
 | [0014](./0014-transitional-auth-module.md) | 전환기 인증 검증 공유 모듈 — peekcart-common-auth (게이트웨이 이전) | Accepted | Phase 4 | 02 |
-| [0015](./0015-observability-per-service-contract.md) | 관측성 per-service 계약 — 5서비스 분리 완료 상태로 SSOT 위치·검증 정정 (ADR-0009 부분 무효화) | Partially Superseded | Phase 4 | 02 |
+| [0015](./0015-observability-per-service-contract.md) | 관측성 per-service 계약 — 5서비스 분리 완료 상태로 SSOT 위치·검증 정정 (ADR-0009 부분 무효화 · ADR-0019/0024 로 부분 무효화) | Partially Superseded | Phase 4 | 02 |
 | [0016](./0016-reservation-and-payment-table-model.md) | 재고 예약(별도 stock_reservations 테이블) + Payment 취소 테이블 모델 — ADR-0012 D1/D3 재기록 | Accepted | Phase 4 | 05 |
 | [0017](./0017-gateway-signed-internal-token.md) | Gateway 서명 내부 토큰 — header-trust 를 평문 헤더에서 서명 assertion 으로 격상 (defense-in-depth) | Accepted | Phase 4 | 02, 04 |
 | [0018](./0018-compensation-refund-contract.md) | 보상/환불 트리거 계약 — 감지 3지점 → Payment 환불 실행 → 원장 종결 (ADR-0012 D3 ④ 구체화) | Partially Superseded | Phase 4 | 03, 04, 05 |
@@ -46,4 +46,5 @@
 | [0021](./0021-dlq-replay-correlation-anchor.md) | DLQ replay 재실패 상관 — 대조 축을 `record_kind` 에서 원장 앵커 + payload digest 로 (ADR-0020 D5-4 부분 무효화) | Accepted | Phase 4 | 02, 05 |
 | [0022](./0022-replay-entrypoint-rollout-and-drain.md) | replay 개시 진입점의 개방 절차 — 도달 경로 · drain/롤백 계약 · `PUBLISH_UNKNOWN` (ADR-0020 §D6-1/§D6-2b/§D6-4 부분 무효화) | Accepted | Phase 4 | 02, 04, 05 |
 | [0023](./0023-payment-approval-reconciliation.md) | 결제 승인 경계 계약 — 승인 원장 + 멱등키 + 조회 기반 reconciliation (D-020, ADR-0018 D2/D3/D5 를 승인 경로로 확장) | Accepted | Phase 4 | 03, 04 |
+| [0024](./0024-observability-canonical-with-infra.md) | 관측성 canonical 집합 = 도메인 5 + 인프라 1 — gateway 편입과 세 집합(태그/Service/SM)의 분리 (ADR-0015 부분 무효화) | Accepted | Phase 4 | 02 |
 <!-- INDEX:END -->
