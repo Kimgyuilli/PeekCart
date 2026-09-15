@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 회전 드릴 전용 — 지원 환경 아님. 사유·범위는 README.md.
+# base/kustomization.yml 을 참조하지 않고 **필요한 파일만** 직접 나열한다:
+# base 는 5서비스+kafka+ServiceMonitor+SecretProviderClass 를 전량 포함하는데,
+# 그 대부분이 이 축과 무관하거나(4서비스·kafka) minikube 에서 뜨지 않는다(CRD/CSI 부재).
+
+resources:
+  - ../../base/namespace.yml
+  - ../../base/infra/mysql/secret.yml
+  - ../../base/infra/mysql/init-configmap.yml
+  - ../../base/infra/mysql/mysql.yml
+  - ../../base/infra/redis/redis.yml
+  # 사용자 토큰 공개키(JWKS 게시 원본) + Spring 바인딩 — 이 드릴의 조작 대상이다.
+  - ../../base/services/user-jwt-public-keys.yml
+  # gateway 내부 토큰 공개키 — user-service 가 내부 토큰을 검증하는 데 필요하다.
+  - ../../base/services/internal-token-keys.yml
+  - ../../base/services/user-service/serviceaccount.yml
+  - ../../base/services/user-service/deployment.yml
+  - ../../base/services/user-service/configmap.yml
+  - ../../base/services/user-service/secret.yml
+  - ../../base/services/gateway/serviceaccount.yml
+  - ../../base/services/gateway/deployment.yml
+  - ../../base/services/gateway/configmap.yml
+
+patches:
+  # CSI(secrets-store.csi.k8s.io) → k8s Secret 대체. 마운트 경로·파일명은 base 와 동일하게 유지해
+  # 애플리케이션 설정(private-key-location)은 건드리지 않는다.
+  - path: patches/user-service-deployment.yml
+  - path: patches/gateway-deployment.yml
