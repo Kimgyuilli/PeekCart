@@ -1,0 +1,20 @@
+# 드릴: CSI 개인키 볼륨 → k8s Secret. 마운트 경로/파일명은 base 와 동일(/etc/peekcart/user-keys/jwt-private.pem)
+# 이라 application-k8s.yml 의 private-key-location 은 그대로 맞는다.
+# 로컬 이미지 사용(레지스트리 pull 안 함).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      volumes:
+        - name: jwt-signing-key
+          csi: null
+          secret:
+            secretName: drill-user-jwt-signing-key
+      containers:
+        - name: user-service
+          image: peekcart-user-service:drill
+          imagePullPolicy: Never

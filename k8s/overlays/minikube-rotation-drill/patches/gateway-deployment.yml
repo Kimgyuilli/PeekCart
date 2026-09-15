@@ -1,0 +1,20 @@
+# 드릴: gateway 내부 토큰 서명 개인키 CSI → k8s Secret. base 는 "gateway 가 소비하는 유일한 비밀은
+# CSI 로만 투영한다"(ADR-0017 D2)고 못박았는데, 그 규약은 **운영** 규약이다. 이 overlay 는 드릴
+# 하네스이고 CSI 드라이버가 없으므로 Secret 으로 대체한다 — 운영 매니페스트에 역수입 금지.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      volumes:
+        - name: internal-signing-key
+          csi: null
+          secret:
+            secretName: drill-gateway-internal-signing-key
+      containers:
+        - name: gateway
+          image: peekcart-gateway:drill
+          imagePullPolicy: Never
