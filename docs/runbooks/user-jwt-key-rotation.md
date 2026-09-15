@@ -138,12 +138,29 @@ kubectl -n peekcart exec deploy/user-service -- \
 거의 항상 **①~② 가 완료되지 않은 채 ③ 으로 넘어간 경우**다. gateway 가 신 kid 를 모르고,
 refresh 가 구 Pod 에 떨어져 계속 못 찾는다(§1.1).
 
-1. **즉시 ③ 을 되감는다** — `APP_JWT_RS256_ACTIVEKID` 를 구 kid 로 되돌리고 롤링.
-   구 공개키는 ① 에서 지우지 않았으므로 바로 복구된다.
-2. §3.1 로 전 Pod 의 JWKS 를 확인한다. 구·신이 다 보일 때까지 ③ 을 다시 시도하지 않는다.
-3. `auth.failure{reason}` 메트릭에서 사유를 확인한다(ADR-0024 S9).
+> **`active-kid` 만 되돌리면 복구되지 않는다.** ③ 은 `active-kid` 와 **개인키를 함께** 바꾸므로
+> 되돌림도 둘 다여야 한다. kid 만 되돌리면 서비스는 **신 개인키로 서명된 토큰에 구 kid 라벨**이
+> 붙은 것을 받아 계속 401 이다. 구현 ③ PR3d-b-2 세션에서 실측으로 확인했다(내부 토큰 도메인이지만
+> 기전은 동일).
 
-> 되돌림이 `active-kid` env 하나인 것은 내부 토큰 rollback 과 같은 성질이다 — 이미지 교체가 없다.
+1. **개인키를 먼저 되돌린다** — Secret Manager 에 **구 키를 새 버전으로 다시 올린다**.
+   ```bash
+   gcloud secrets versions add peekcart-user-jwt-signing-key --data-file=<구 개인키.pem>
+   ```
+   **버전 비활성화(`versions disable`)로 되돌리지 말 것** — `versions/latest` 는 비활성 버전을
+   건너뛰지 않고 그대로 가리키다 마운트를 통째로 실패시킨다:
+   ```
+   FailedPrecondition: Secret Version [.../versions/N] is in DISABLED state.
+   ```
+   그러면 401 이 아니라 Pod 이 `ContainerCreating` 에 고착된다 — 증상이 더 나빠진다.
+2. **`APP_JWT_RS256_ACTIVEKID` 를 구 kid 로 되돌린다.** 구 공개키는 ① 에서 지우지 않았으므로
+   JWKS 쪽은 손대지 않아도 된다.
+3. 롤링 후 §3.3 으로 **개인키 ↔ JWKS 모듈러스 일치**를 확인한다. 이게 맞아야 복구다.
+4. §3.1 로 전 Pod 의 JWKS 를 확인한다. 구·신이 다 보일 때까지 ③ 을 다시 시도하지 않는다.
+5. `auth.failure{reason}` 메트릭에서 사유를 확인한다(ADR-0024 S9).
+
+> 되돌림에 **이미지 교체는 없다** — env 하나와 Secret Manager 버전 하나다. 그 점은 내부 토큰
+> rollback 과 같지만, "env 하나면 끝" 은 아니다.
 
 ### 4.2 회전 중 503 이 난다
 
@@ -189,10 +206,14 @@ ConfigMap 에 구 공개키를 **다시 넣고** 롤링하면 복구된다(구 �
 
 ## 6. 미검증 / 범위 밖
 
-- **실 클러스터에서 이 절차를 완주한 적이 없다.** 구현 ③ PR3d-b-2 의 P11(회전 overlap)·P12(순서
-  역전 재현)이 미수행이며, 그 세션이 이 runbook 을 실증할 예정이다. 현재 문서는 코드
-  (`JwksKeyRegistry` · `JwtKeyProperties` · `application.yml` 의 TTL·refresh 쿨다운)와 내부 토큰
-  회전 선례에서 도출한 것이다.
+- **User 도메인에서 이 절차를 완주한 적은 없다.** 구현 ③ PR3d-b-2 세션 2(2026-09-15)가 실증한 것은
+  **내부 토큰 도메인**의 회전(P11)과 순서 역전(P12)이다. 기전(선배포→수렴→전환→대기→정리,
+  kid↔개인키 쌍, 롤백 절차)은 동일하지만, **User 도메인 고유의 축인 §1.1(JWKS 를 Service 로
+  조회해 구 Pod 에 떨어지는 문제)은 아직 실측되지 않았다.** §3.1 전수 확인이 그 축을 막기 위한
+  gate 이며, 그 유효성도 미검증이다.
+  증적: `docs/progress/evidence/pr3d-b2-gke-20260915-0854.md`
+- **§4.1 은 세션 2 의 발견으로 수정됐다** — 초판은 "`active-kid` 되돌림만으로 복구" 라고 썼으나
+  실측에서 401 이 유지됐다. 개인키 버전 되돌림이 빠졌고, 비활성화가 아니라 재업로드여야 한다.
 - **§3.1 전수 확인 스크립트가 없다.** 내부 토큰에는 `rollout-convergence-gate.sh
   --gateway-signing-probe` 라는 per-Pod gate 가 있는데, JWKS 판은 위 bash 조각뿐이다.
   P11 수행 시 스크립트화 여부를 판단한다.
