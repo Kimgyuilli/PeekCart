@@ -2396,7 +2396,7 @@ RateLimiter 가 설계대로 동작한 것이고 한도는 키당 40 req/s 다. 
 
 ---
 
-## User 토큰 회전 §1.1/§3.1 축 실증 — 로컬 드릴 (2026-09-15)
+## User 토큰 회전 §1.1/§3.1 축 실증 — 로컬 드릴 (2026-09-15, [#116](https://github.com/Kimgyuilli/PeakCart/pull/116))
 
 구현 ③ PR3d-b-2 세션 2 는 `docs/runbooks/user-jwt-key-rotation.md` §6 에 **"User 도메인에서 이
 절차를 완주한 적은 없다"** 를 남겼다. 내부 토큰 도메인의 회전은 실증했지만, User 고유 축 —
