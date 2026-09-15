@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ⚠️ D-002a 측정 전용 — 운영 매니페스트 아님. 사유·범위는 docs/plans/task-d002a-cache-speedup-session.md
+#
+# 읽기 캐시 배속만 격리하기 위해 **product-service + MySQL + Redis** 만 띄운다.
+# gateway 를 빼는 이유: 인증 오버헤드 상수(+9.9ms, 세션 2 P14)와 RateLimiter(40 req/s fail-closed)가
+# 배속 측정에 섞이면 안 된다. `/api/v1/products/**` 는 ProductSecurityConfig 의 공개 경로다.
+# NetworkPolicy 를 빼는 이유: 8080 ingress 를 gateway 로만 제한해 loadgen VM 이 도달할 수 없다.
+
+resources:
+  - ../../base/namespace.yml
+  - ../../base/infra/mysql/secret.yml
+  - ../../base/infra/mysql/init-configmap.yml
+  - ../../base/infra/mysql/mysql.yml
+  - ../../base/infra/redis/redis.yml
+  # Kafka — 읽기 경로와 무관하지만 **product-service 가 Kafka 없이는 부팅하지 않는다**
+  # (StockReservation/Confirm/Release consumer → internalKafkaListenerEndpointRegistry 시작 실패).
+  # 계획서가 "읽기 경로 무관" 으로 뺐다가 CrashLoopBackOff 로 확인하고 되넣었다.
+  - ../../base/infra/kafka/kafka.yml
+  # product 는 내부 토큰 **공개키**만 소비한다(검증용) — 개인키/CSI 없음.
+  - ../../base/services/internal-token-keys.yml
+  - ../../base/services/product-service/deployment.yml
+  - ../../base/services/product-service/configmap.yml
+  - ../../base/services/product-service/secret.yml
+  - measurement-lb.yml
+
+patches:
+  - path: patches/product-service-deployment.yml
