@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 /**
  * 토픽 config 가 <b>실제 브로커에 적용되는 경로</b>를 검증한다 (ADR-0020 §D4-1 · 계획 V-P4-1~4).
@@ -72,6 +73,22 @@ class KafkaTopicConfigMechanismIntegrationTest {
                     .get(resource).entries().stream()
                     .collect(java.util.stream.Collectors.toMap(ConfigEntry::name, e -> e));
         }
+    }
+
+    /**
+     * 방금 쓴 config 가 {@code describe} 로 보일 때까지 기다린다 (D-021).
+     *
+     * <p><b>왜 필요한가</b>: `incrementalAlterConfigs(...).all().get()` 이나 `createOrModifyTopics` 가
+     * 돌아왔다고 해서 뒤이은 describe 가 즉시 새 값을 주지는 않는다. 붐비는 CI shard 에서 구값을
+     * 받아 <b>셋업 단언</b>이 깨졌다(PR #117 CI, order shard 22m39s — 동일 커밋 재실행은 green).
+     *
+     * <p><b>검증 대상이 아니라 전제에만 쓴다.</b> 계약 단언(modify 이후 값이 무엇이어야 하는가)을
+     * 폴링으로 감싸면 "언젠가 맞으면 통과" 가 되어 하드닝이 풀린다 — D-019 와 같은 선.
+     */
+    private void awaitConfig(String topic, String key, String expected) {
+        await().atMost(Duration.ofSeconds(10))
+                .pollInterval(Duration.ofMillis(200))
+                .untilAsserted(() -> assertThat(describe(topic).get(key).value()).isEqualTo(expected));
     }
 
     private NewTopic business(String name, Map<String, String> configs) {
@@ -168,8 +185,7 @@ class KafkaTopicConfigMechanismIntegrationTest {
                 "retention.ms", String.valueOf(Duration.ofDays(1).toMillis()),
                 "segment.bytes", String.valueOf(64L * 1024 * 1024));
         applyTopics(false, business(topic, old));
-        assertThat(describe(topic).get("retention.ms").value())
-                .isEqualTo(String.valueOf(Duration.ofDays(1).toMillis()));
+        awaitConfig(topic, "retention.ms", String.valueOf(Duration.ofDays(1).toMillis()));
 
         Map<String, String> declared = KafkaTopicConfigs.business(RETENTION, BEFORE_MAX);
 
@@ -217,7 +233,7 @@ class KafkaTopicConfigMechanismIntegrationTest {
                     new AlterConfigOp(new ConfigEntry(foreignKey, foreignValue), AlterConfigOp.OpType.SET)
             ))).all().get();
         }
-        assertThat(describe(topic).get(foreignKey).value()).isEqualTo(foreignValue);
+        awaitConfig(topic, foreignKey, foreignValue);
 
         // 계약 config 를 modify=true 로 다시 적용
         applyTopics(true, business(topic, KafkaTopicConfigs.business(RETENTION, BEFORE_MAX)));
