@@ -1,0 +1,16 @@
+# AR 이미지 고정(2026-09-14T22:07 — 현재 코드와 동일, 재빌드 불필요) + 캐시 토글 노출.
+# peekcart.cache.enabled 는 CacheConfig:69/111 의 대조군 스위치다. 기본 ON, 측정 중 OFF 로 전환한다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      containers:
+        - name: product-service
+          image: asia-northeast3-docker.pkg.dev/peekcart-gke/peekcart/product-service:latest
+          env:
+            - name: PEEKCART_CACHE_ENABLED
+              value: "true"

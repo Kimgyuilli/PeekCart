@@ -1,0 +1,21 @@
+# 측정 전용 Internal LB — loadgen VM(VPC 내부)이 product-service 에 직접 부하를 넣기 위한 한시 표면.
+# PR3c(3ed4fb4)가 5서비스 Internal LB 를 지웠고 그 결정은 유효하다(외부 진입은 gateway 단일).
+# 여기서는 **측정 목적으로만** 복원한다 — `gke-probe-state1` 과 같은 선례. 세션 종료 시 클러스터와 함께 사라진다.
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service-measure
+  namespace: peekcart
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
+  labels:
+    app.kubernetes.io/name: product-service
+    peekcart.io/purpose: measurement-only
+spec:
+  type: LoadBalancer
+  selector:
+    app: product-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
