@@ -2327,7 +2327,8 @@ P2 음성 대조군.
 ## 구현 ③ PR3d-b-2 — GKE 세션 2 (2026-09-15) · **구현 ③ 종결**
 
 계획서 `task-impl3-pr3d-b2-cluster-session.md` 의 잔여(P11·P12·P13·P14·P2 음성 대조군)를 전부 수행.
-증적: `docs/progress/evidence/pr3d-b2-gke-20260915-0854.md`.
+증적: `docs/progress/evidence/pr3d-b2-gke-20260915-0854.md` · PR [#115](https://github.com/Kimgyuilli/PeakCart/pull/115).
+**구현 ③ 종결** — TASKS 행 `🔄` → `✅`. 미수정 발견 3건은 계획서 범위 밖의 새 작업으로 분리한다(서명 probe 진단 메시지 · 계획서 P13 음성 대조 기대값 · 계획서 P14 rate limit 전제).
 
 ### 세션 1 의 결함 2건이 그 사이 고쳐져 이번 세션의 전제가 달라졌다
 
