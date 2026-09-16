@@ -29,3 +29,12 @@
   - `d002bc-verify.sql` **false-green 검사**: 정합 상태에서 위반 0건 → 오버셀링(-7)·음수재고 주입 후
     `diff=-7`, `negative_stock_rows=1` 로 **검출 확인**
   - `./gradlew test` **미실행** — JVM 소스/리소스/빌드스크립트 변경 0건(k8s yaml · sql · k6 js · md 만)
+
+## 2026-09-16 — /ship
+
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/119 (머지하지 않음)
+- precheck: **ok** (warnings 0)
+- 커밋 2개: `chore(d002bc)` 하네스 18파일 / `docs(d002bc)` 계획서·audit·runbook
+- 체크박스 게이트: P1~P3 만 `[x]`. **P4~P13 은 의도적 미완**(GKE 실측 세션) — 사용자 승인 후 진행
+- 갱신: `docs/TASKS.md` 구현표 D-002 행 + 부채 D-002 행(V10 반영) · `docs/progress/PHASE4.md` 이력
+- **D-002 는 ✅ 로 닫지 않았다** — 하네스 단계만 완료
