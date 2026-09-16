@@ -1,0 +1,20 @@
+# 측정: replicas 고정(HPA 미사용 — 스케일러가 아니라 처리량을 잰다) + e2-standard-4 기준 resources.
+# gateway 는 외부 진입점이라 1 대면 그 자체가 병목이 된다. 2 로 고정해 gke overlay 의 minReplicas 와 맞춘다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: peekcart
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: gateway
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi

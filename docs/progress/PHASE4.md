@@ -2455,3 +2455,69 @@ skew 상태를 고정하고 gateway 를 5회 재시작하며 121회 로그인했
 
 증적: `docs/progress/evidence/user-key-rotation-drill-20260915-2040.md` ·
 계획서: `docs/plans/task-user-key-rotation-local-drill.md`
+
+## D-002 잔여 3축 — 측정 하네스 (2026-09-16, [#119](https://github.com/Kimgyuilli/PeakCart/pull/119))
+
+D-002a 세션([#117])은 b'/c 와 "천장 원인 분리"를 다음 세션으로 넘겼다. 이 PR 은 그 세션의
+**하네스만** 만든다. 실측은 GKE 클러스터가 필요해 별도다.
+
+하네스를 먼저 뗀 이유는 반복된 실패 양상 때문이다. 세션 2 는 298 req/s 를 밀었다가 60% 실패를
+봤고 **전부 429** 였다 — 과금 중인 클러스터 위에서 계획을 고쳤다. 세션 3 은 "Kafka 는 읽기 경로와
+무관" 으로 뺐다가 CrashLoopBackOff 로 되넣었다. 둘 다 착수 전에 확인할 수 있는 것이었다.
+
+### 착수 전 코드 검증에서 전제 6건이 뒤집혔다
+
+계획서 §2 의 V1~V12 중 계획을 실제로 바꾼 것:
+
+| | 전제 | 코드가 말한 것 |
+|---|---|---|
+| V3 | 주문 생성이 재고를 차감한다 | 반증. `createOrder` = cart 조회 → 로컬 가격 캐시 단가 → order insert → outbox publish. **b 는 재측정이 아니라 신규 기준선(b')** |
+| V7 | d002a 처럼 gateway 를 빼면 된다 | 전이 불가. order/payment 는 `SIGNED_ONLY` 라 평문 `X-User-*` 를 무시한다 → **gateway 필수** |
+| V8 | RateLimiter 40 req/s 가 측정을 막는다 | 반증. `userKeyResolver` — **사용자별** 키다 → N×40rps 로 우회. **설정을 건드릴 필요가 없었다** |
+| V10 | (D-002a) 천장 원인에서 CPU 는 배제됐다 | **product-service 의 CPU 만 배제됐다.** `gke-d002a` 의 `patches` 는 1건뿐이라 MySQL 은 내내 `limits.cpu:500m` 이었다 |
+| V11 | 상품은 SQL 로 시드한다 | 불가. `product.updated` 미발행 → `product_price_cache` 공백 → 주문 전멸(`ORD-007`) |
+| V12 | 로그인도 사용자별 40/s | 로그인만 **IP 키 10/s** → 부하 준비 단계가 별도 제약 |
+
+### V10 이 가장 크다
+
+D-002a 증적은 "2차 병목은 CPU 도 Hikari 풀도 아니다 — MySQL 내부가 남았다" 로 끝났다. 그런데
+`gke-d002a/kustomization.yml` 의 `patches` 는 product-service **1건**이다. infra 를 patch 하지
+않았으므로 그 세션 내내 MySQL 은 base 값으로 돌았고, **MySQL 자신의 CPU 상한은 "MySQL 내부"
+안에 미분리 상태로 들어가 있었다**. 다음 세션 P5 의 1순위는 InnoDB 대기 이벤트가 아니라 이 숫자다.
+
+overlay 에 손잡이(`patches/mysql-deployment.yml`)를 만들되 **기본값은 base 와 같게** 뒀다 —
+미리 올리면 D-002a 조건 재현(P4)이 불가능해진다.
+
+### 측정 축이 바뀐 것 — D-002c
+
+락은 동기 HTTP 경로를 떠났다. main 코드에서 `InventoryLockFacade` 호출자는
+`StockReservationService` 단 1곳이고 진입점은 `StockReservationConsumer`(Kafka)다. 락 실패
+`PRD-004` 는 응답이 아니라 consumer 예외로 나타나 재시도/DLQ 로 흡수된다 → **관측 지표를
+응답 p95 에서 consumer lag · 재시도 · DLQ · 낙관락 충돌비 · 예약 완결 지연으로 교체**했다.
+
+그리고 그 과정에서 **`InventoryLockFacade` javadoc 이 보장한다는 순서가 그 경로에서 성립하지
+않는다**는 것이 드러났다 — `InventoryService` 가 REQUIRED 라 consumer 트랜잭션에 참여하고
+`finally` 의 unlock 이 커밋보다 먼저 돈다. 정합성은 `Inventory @Version` 이 홀로 지키고 있다.
+
+### 검증
+
+- lint **18/18 PASS** · overlay 렌더 성공(Deployment 8 / Service 9 / CPU requests **3,600m 실측**)
+- SQL 을 **실제 MySQL 8 + 실제 Flyway 스키마**(user 3·product 8·order 10 테이블)에 적용해 통과
+- `d002bc-verify.sql` **false-green 검사** — 정합 상태에서 위반 0건 → 오버셀링(−7)·음수재고 주입 후
+  `diff=-7`, `negative_stock_rows=1` 로 검출 확인
+- `./gradlew test` **미실행** — JVM 소스/리소스/빌드스크립트 변경 0건
+
+### 미충족
+
+- **P4~P13 미수행** — 실측은 별도 세션. **D-002 는 이 PR 로 닫히지 않는다.**
+- **V1 detail 재고 캐시 미적용**(`ProductQueryService:44`) — **D-021 승격 제안**. 캐시 경계 변경은
+  ADR 선행이 맞다.
+- **V5 락 ⊂ 트랜잭션 역전** — 측정으로 드러내기만 한다(P9). 수정 방향에 트레이드오프가 있어
+  ADR 대상이고, 보류 **L-007 과 같은 표면**이다.
+- **V6 테스트 배선 갭** — `InventoryConcurrencyTest` 가 facade 직접 호출이라 역전을 재현하지 않는다.
+  그 테스트가 green 인 것은 반증이 아니다.
+- **`OrderController` swagger 설명 드리프트** — `"재고가 즉시 차감된다"`. 별건.
+- **k6 실행 검증 없음** — 로컬 k6 부재로 파싱까지만. 측정 세션 첫 단계(`ratelimit-probe`)가 그 검증이다.
+- **Codex 리뷰 미호출**(계획 1차 usage limit, 이후 사용자 지시) — **"P0/P1 = 0" 주장 없음.**
+
+계획서: `docs/plans/task-d002-bc-session.md` · runbook: `loadtest/README.md` §D-002b'/c
