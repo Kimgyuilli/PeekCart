@@ -1,0 +1,29 @@
+# ⚠️ 이 patch 가 존재하는 이유 — D-002a 가 배제한 "CPU" 는 **product-service 의 CPU** 였다.
+#
+# gke-d002a 는 infra 를 하나도 patch 하지 않았다(kustomization.yml patches 항목 1건 = product 뿐).
+# 즉 그 세션 내내 MySQL 은 base 값 `limits.cpu: 500m` 으로 돌았고, 그 축은 **한 번도 변경되지 않았다**.
+# 증적(`evidence/d002a-gke-20260916-0030.md:111`)이 "CPU 도 Hikari 풀도 아니다 — MySQL 내부가 남았다"
+# 고 적을 때, MySQL 자신의 CPU 상한은 그 "MySQL 내부" 안에 미분리 상태로 들어가 있었다.
+#
+# 따라서 P5 의 **1순위 후보는 InnoDB 내부가 아니라 이 숫자**다. InnoDB 대기 이벤트를 파기 전에
+# 이것부터 흔든다(P6 은 되돌려서 천장이 다시 내려오는지도 본다).
+#
+# 기본값은 base 와 **동일하게 둔다** — 여기서 미리 올려두면 D-002a 조건 재현(P4)이 불가능해진다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      containers:
+        - name: mysql
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              # P6 에서 흔드는 손잡이. base 와 같은 값으로 시작한다.
+              cpu: 500m
+              memory: 1Gi

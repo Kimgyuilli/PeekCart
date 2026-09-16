@@ -1,0 +1,91 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ⚠️ D-002b'/c 측정 전용 — 운영 매니페스트 아님. 사유·범위는 docs/plans/task-d002-bc-session.md
+#
+# `gke-d002a` 와 무엇이 다른가: a 는 product 읽기 경로라 gateway 를 **뺐지만**, b'/c 는 주문 생성
+# 경로다. order/payment 는 HeaderTrustSecurityConfigurer → InternalTokenAuthenticationFilter
+# (기본 SIGNED_ONLY)를 쓰므로 **평문 X-User-* 를 무시한다** — gateway 가 서명한 내부 토큰 없이는
+# 401 이다(계획서 §2 V7). 따라서 gateway 를 우회할 수 없고, 넣어야 한다.
+#
+# RateLimiter 는 **건드리지 않는다**. 사용자별 키(userKeyResolver)이므로 부하는 사용자 수로 올린다
+# (계획서 §2 V8 · P2). fail-closed 계약(ADR-0013 D3)을 측정 편의로 흔들지 않는다.
+#
+# 이 overlay 는 lint 범위(k8s/overlays/{minikube,gke}) 밖이다 — gke-d002a·gke-probe-state1 과 같다.
+# **운영 매니페스트로 승격 금지.**
+
+resources:
+  - ../../base/namespace.yml
+  # --- 인프라 ---
+  - ../../base/infra/mysql/secret.yml
+  - ../../base/infra/mysql/init-configmap.yml
+  - ../../base/infra/mysql/mysql.yml
+  - ../../base/infra/redis/redis.yml
+  # Kafka 는 b'/c 의 측정 대상 그 자체다(order.created → 예약 → stock.reservation.result).
+  - ../../base/infra/kafka/kafka.yml
+  # --- 키 ---
+  # 내부 토큰 공개키(검증측) + 사용자 access token 공개키. 개인키는 CSI 로만 들어온다.
+  - ../../base/services/internal-token-keys.yml
+  - ../../base/services/user-jwt-public-keys.yml
+  # --- gateway (외부 진입점 · 내부 토큰 발행자) ---
+  - ../../base/services/gateway/serviceaccount.yml
+  - ../../base/services/gateway/secretproviderclass.yml
+  - ../../base/services/gateway/configmap.yml
+  - ../../base/services/gateway/deployment.yml
+  # --- user (로그인 발급) ---
+  - ../../base/services/user-service/serviceaccount.yml
+  - ../../base/services/user-service/secretproviderclass.yml
+  - ../../base/services/user-service/configmap.yml
+  - ../../base/services/user-service/secret.yml
+  - ../../base/services/user-service/deployment.yml
+  # --- product (예약 consumer · 락 경합 지점) ---
+  - ../../base/services/product-service/configmap.yml
+  - ../../base/services/product-service/secret.yml
+  - ../../base/services/product-service/deployment.yml
+  # --- order (측정 대상 경로) ---
+  - ../../base/services/order-service/configmap.yml
+  - ../../base/services/order-service/secret.yml
+  - ../../base/services/order-service/deployment.yml
+  # --- payment (사가 참여자 — 빼면 결제 단계가 열린 채로 남아 사가 완결 지연이 무의미해진다) ---
+  - ../../base/services/payment-service/configmap.yml
+  - ../../base/services/payment-service/secret.yml
+  - ../../base/services/payment-service/deployment.yml
+  - measurement-lb.yml
+
+# notification-service 제외: 이벤트 소비만 하고 측정 경로에 없다. Slack 연동을 들이지 않는다.
+# NetworkPolicy 제외: base/networkpolicy.yml 은 8080 ingress 를 gateway 로만 제한하는데,
+#   loadgen VM → gateway 는 그 정책이 이미 허용한다. 다만 base 전체를 끌어오지 않으므로
+#   여기서는 선언하지 않는다(측정 스택에 격리 정책을 반쯤 적용하면 원인 분리가 흐려진다).
+# HPA 제외 — **의도적**. 오토스케일이 붙으면 처리량 천장을 재는 것이 아니라 스케일러를 재게 된다.
+#   대신 patches 에서 replicas 를 고정한다. (lint 범위 밖이므로 HPA-REPL 계약과 충돌하지 않는다.)
+
+patches:
+  # MySQL CPU 상한 — P5/P6 의 1순위 손잡이. 왜 여기 있는지는 patch 파일 주석 참고.
+  - path: patches/mysql-deployment.yml
+  - path: patches/gateway-deployment.yml
+  - path: patches/gateway-service.yml
+  - path: patches/user-service-deployment.yml
+  - path: patches/product-service-deployment.yml
+  - path: patches/order-service-deployment.yml
+  - path: patches/payment-service-deployment.yml
+  - path: patches/pvc-storageclass.yml
+    target:
+      kind: PersistentVolumeClaim
+
+# PROJECT_ID 치환은 gke overlay README 와 동일 절차.
+images:
+  - name: ghcr.io/kimgyuilli/peekcart-gateway
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/gateway
+    newTag: latest
+  - name: ghcr.io/kimgyuilli/peekcart-user-service
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/user-service
+    newTag: latest
+  - name: ghcr.io/kimgyuilli/peekcart-product-service
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/product-service
+    newTag: latest
+  - name: ghcr.io/kimgyuilli/peekcart-order-service
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/order-service
+    newTag: latest
+  - name: ghcr.io/kimgyuilli/peekcart-payment-service
+    newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/payment-service
+    newTag: latest

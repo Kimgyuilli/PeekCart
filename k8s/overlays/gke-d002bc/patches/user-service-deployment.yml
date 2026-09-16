@@ -1,0 +1,19 @@
+# 측정: replicas 고정 + e2-standard-4 기준 resources (gke overlay 와 동일 값).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: peekcart
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: user-service
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi

@@ -1,0 +1,6 @@
+# GKE: infra PVC (mysql/redis/kafka) 에 StorageClass 명시 (ADR-0004)
+# - standard-rwo: GKE 기본 pd-balanced 기반 ReadWriteOnce SC
+# - target 이 kind: PersistentVolumeClaim 이므로 base 의 PVC 3개 모두에 동일 적용
+- op: add
+  path: /spec/storageClassName
+  value: standard-rwo
