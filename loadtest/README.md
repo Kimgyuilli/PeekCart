@@ -136,3 +136,123 @@ bash loadtest/cleanup.sh              # 실제 삭제
 - 절대값이 아닌 **개선 비율** 에 초점 (§10-7 공통 원칙)
 - 환경·도구·시나리오 파라미터를 리포트에 반드시 함께 기록하여 재현 가능성 확보
 - Task 3-5 (HPA 검증) 는 본 디렉토리 범위 외 — 별도 Task 로 수행
+
+---
+
+# D-002b'/c 측정 세션 (Phase 4)
+
+> 위 절차는 **Phase 3 모놀리스** 기준이다(`seed.sql` 이 단일 스키마를 전제한다). DB-per-service
+> 이후에는 쓸 수 없다. 이 절에서 쓰는 산출물은 전부 `d002bc-` 접두사를 가진다.
+> 계획서: `docs/plans/task-d002-bc-session.md`
+
+## 스택
+
+overlay `k8s/overlays/gke-d002bc` — gateway + user + product + order + payment + mysql/redis/kafka.
+notification 제외, HPA 제외(replicas 고정 — 오토스케일이 붙으면 처리량이 아니라 스케일러를 재게 된다).
+
+```bash
+kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/gke-d002bc | kubectl apply -f -
+```
+
+`--load-restrictor LoadRestrictionsNone` 은 `gke-d002a` 와 같은 이유로 필요하다(base 파일을
+디렉터리가 아니라 파일 단위로 참조한다).
+
+**gateway 를 뺄 수 없다.** order/payment 는 `InternalTokenAuthenticationFilter`(기본 `SIGNED_ONLY`)
+라 평문 `X-User-*` 를 무시한다 — gateway 가 서명한 내부 토큰 없이는 401 이다. 따라서 이 세션은
+`gke-d002a` 와 달리 Secret Manager CSI + Workload Identity 설정이 **필요하다**(gateway 개인키).
+
+## 절차
+
+### 1. 시드
+
+```bash
+# 사용자 (200명 + admin 1)
+kubectl -n peekcart exec -i deploy/mysql -- \
+  mysql -upeekcart_user -ppeekcart_user peekcart_user < loadtest/sql/d002bc-user-seed.sql
+
+# k6 입력 CSV — **USERS 와 같은 수로** 재생성한다(적으면 계정이 겹쳐 사용자별 한도가 무너진다)
+bash loadtest/scripts/generate-users-csv.sh --count 200
+
+# 상품 — SQL 직접 INSERT 금지. admin API 를 태워야 product.updated 가 발행되고
+# order 의 product_price_cache 가 찬다. 스크립트가 캐시 전파까지 기다린다.
+GW=http://<gateway-internal-lb>:8080 bash loadtest/scripts/d002bc-seed-products.sh --count 10
+#   → PRODUCT_IDS=... 를 출력한다. 이후 k6 에 그대로 넘긴다.
+```
+
+### 2. RateLimiter 배선 확인 (측정 전 필수)
+
+```bash
+k6 run -e GW=http://<gateway-lb>:8080 loadtest/scripts/d002bc-ratelimit-probe.js
+```
+
+**429 가 나와야 PASS 다.** 0 건이면 한도가 안 걸리는 것이고, 그 상태에서 "429 없음" 은 한도
+아래에서 쟀다는 증거가 되지 못한다. PASS 전에는 본 측정을 시작하지 않는다.
+
+### 3. D-002b' — 주문 생성 신규 기준선
+
+```bash
+k6 run -e GW=http://<gateway-lb>:8080 -e PRODUCT_IDS=<위 출력> -e USERS=200 -e RPS=2000 \
+  --summary-export=loadtest/reports/<date>/d002bc-order-create.json \
+  loadtest/scripts/d002bc-order-create.js
+```
+
+k6 는 **동기 구간만** 낸다. 사가 완결 지연은 DB 에서 잰다:
+
+```sql
+-- order.created 발행 → stock.reservation.result 반영까지. order 스키마에서.
+SELECT COUNT(*) AS orders,
+       AVG(TIMESTAMPDIFF(MICROSECOND, o.ordered_at, o.updated_at)) / 1000 AS avg_ms
+FROM orders o WHERE o.updated_at IS NOT NULL;
+```
+
+run 사이 초기화:
+
+```bash
+kubectl -n peekcart exec -i deploy/mysql -- mysql -upeekcart_order   -ppeekcart_order   peekcart_order   < loadtest/sql/d002bc-reset.sql
+kubectl -n peekcart exec -i deploy/mysql -- mysql -upeekcart_product -ppeekcart_product peekcart_product < loadtest/sql/d002bc-product-reset.sql
+```
+
+### 4. D-002c — 예약 락 경합 (+ 대조군)
+
+```bash
+# 경합 — 전 주문이 상품 1개로
+k6 run -e GW=... -e PRODUCT_IDS=<ids> -e USERS=200 -e RPS=1000 -e MODE=contend  loadtest/scripts/d002bc-contention.js
+# 대조군 — 같은 부하량, 상품 분산
+k6 run -e GW=... -e PRODUCT_IDS=<ids> -e USERS=200 -e RPS=1000 -e MODE=spread   loadtest/scripts/d002bc-contention.js
+```
+
+두 run 모두 끝난 뒤 서버에서 관측한다 — **응답 p95 는 이 축의 지표가 아니다**:
+
+```bash
+kubectl -n peekcart exec deploy/kafka -- \
+  kafka-consumer-groups.sh --bootstrap-server localhost:9092 \
+  --describe --group product-svc-order-created-group           # lag
+kubectl -n peekcart logs deploy/product-service | grep -c OptimisticLockingFailureException
+kubectl -n peekcart logs deploy/product-service | grep -c PRD-004
+kubectl -n peekcart exec -i deploy/mysql -- \
+  mysql -upeekcart_product -ppeekcart_product peekcart_product < loadtest/sql/d002bc-verify.sql
+```
+
+`PRD-004`(락 대기 초과) 대비 `OptimisticLockingFailureException` 비율이 계획서 P9 의 관심사다.
+
+### 5. MySQL 천장 분해 (D-002a 잔여)
+
+D-002a 가 배제한 "CPU" 는 **product-service 의 CPU** 였다. MySQL 은 그 세션 내내
+`limits.cpu: 500m` 이었고 그 축은 변경된 적이 없다 — `gke-d002a` 는 infra 를 patch 하지 않았다.
+따라서 1순위 손잡이는 InnoDB 내부가 아니라 이 숫자다:
+
+```bash
+# 손잡이: k8s/overlays/gke-d002bc/patches/mysql-deployment.yml 의 limits.cpu
+# 올렸다가 **되돌려서** 천장이 다시 내려오는지도 본다(단방향 관측은 근거가 약하다).
+kubectl -n peekcart exec deploy/mysql -- mysql -uroot -p<pw> -e "SHOW ENGINE INNODB STATUS\G" 
+kubectl -n peekcart exec deploy/mysql -- mysql -uroot -p<pw> -e \
+  "SELECT event_name, count_star, sum_timer_wait FROM performance_schema.events_waits_summary_global_by_event_name ORDER BY sum_timer_wait DESC LIMIT 15;"
+kubectl -n peekcart exec deploy/mysql -- mysql -uroot -p<pw> -e \
+  "SHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool_read%';"
+```
+
+부하 **전/후 두 번** 떠서 차분을 본다. 단일 스냅샷은 귀속 근거가 못 된다.
+
+### 6. 정리 (절대 스킵 금지)
+
+`loadtest/cleanup.sh` + Internal LB·고정 IP·PD 잔여 0 확인. 익일 과금까지 확인한다.
