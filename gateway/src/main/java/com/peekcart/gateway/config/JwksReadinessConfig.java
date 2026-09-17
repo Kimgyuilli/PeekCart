@@ -62,6 +62,8 @@ public class JwksReadinessConfig {
          * 주기 갱신 + readiness 재평가. 갱신에 실패해도 last-known-good 을 유지하므로,
          * 한 번이라도 키를 확보했다면 계속 ACCEPTING_TRAFFIC 이다(P12 LKG).
          */
+        // [SCHED-LOCK exempt] 인스턴스별 스냅샷 갱신이라 ShedLock 을 걸면 안 된다 — 한 파드만 갱신하고
+        // 나머지는 낡은 JWKS 를 서빙하게 되며, 그것이 회전 중 부분 401 장애의 형태다(runbook §1.1).
         @Scheduled(
                 initialDelayString = "${app.gateway.jwt.jwks-refresh-interval:PT5M}",
                 fixedDelayString = "${app.gateway.jwt.jwks-refresh-interval:PT5M}")
