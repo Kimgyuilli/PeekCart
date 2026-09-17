@@ -2510,7 +2510,7 @@ overlay 에 손잡이(`patches/mysql-deployment.yml`)를 만들되 **기본값�
 ### 미충족
 
 - **P4~P13 미수행** — 실측은 별도 세션. **D-002 는 이 PR 로 닫히지 않는다.**
-- **V1 detail 재고 캐시 미적용**(`ProductQueryService:44`) — **D-021 승격 제안**. 캐시 경계 변경은
+- **V1 detail 재고 캐시 미적용**(`ProductQueryService:44`) — **D-026 승격 제안**(초안은 D-021 로 적었으나 그 번호는 이미 사용 중이었다). 캐시 경계 변경은
   ADR 선행이 맞다.
 - **V5 락 ⊂ 트랜잭션 역전** — 측정으로 드러내기만 한다(P9). 수정 방향에 트레이드오프가 있어
   ADR 대상이고, 보류 **L-007 과 같은 표면**이다.
@@ -2579,7 +2579,7 @@ P10 불변식: 음수재고 0 · 품목별 diff 0   ← 오버셀링 없음
 
 ### 이 세션이 밟아서 나온 부채 5건
 
-D-021(detail 재고 캐시 미적용) · D-022(키쌍 preflight 부재) · D-023(infra RollingUpdate + RWO PVC) ·
+D-026(detail 재고 캐시 미적용 — 초안의 D-021 은 중복이라 재번호) · D-022(키쌍 preflight 부재) · D-023(infra RollingUpdate + RWO PVC) ·
 **D-024(스케줄러 스레드 1개가 발행을 굶김 — 가장 무거움)** · D-025(락이 커밋을 감싸지 못함).
 
 전부 D-002 범위 밖이고, D-022/D-023/D-024 는 **측정하려다 실제로 밟아서** 발견됐다.
@@ -2593,3 +2593,67 @@ D-021(detail 재고 캐시 미적용) · D-022(키쌍 preflight 부재) · D-023
   reset SQL 이 `processed_events` 를 지워 멱등 창을 날린다(Kafka 오프셋은 그대로인 비대칭).
 
 증적: `docs/progress/evidence/d002bc-gke-20260917.md` · 계획서: `docs/plans/task-d002-bc-session.md`
+
+## 운영 표면 하드닝 — D-024 · D-022 · D-023 (2026-09-18)
+
+D-002 측정 세션이 **밟아서** 발견한 3건. 셋 다 ADR 불필요(기존 결정을 바꾸지 않고 결정대로
+동작하게 만드는 수정)이라 한 PR 로 묶었다.
+
+### 착수 전 검증에서 전제 3건이 뒤집혔다
+
+| | 전제 | 확인 결과 |
+|---|---|---|
+| V1 | D-024 는 order-service 문제 | **4개 서비스.** `TaskScheduler` 빈이 전 모듈 0건, `spring.task.scheduling` 설정도 0건(payment 12 · order 11 · product 8 · notification 7 잡) |
+| V2 | D-022 는 검사가 없다 | **반증.** `gke-security-smoke.sh:189-206` 에 이미 있다 — 주석이 이 실패 양상을 예상까지 하고 있다 |
+| V3 | 그 검사가 배포 경로에서 돈다 | **아니다.** 호출처가 README 산문 한 줄뿐. 갭은 "검사 부재" 가 아니라 **"강제 부재"** |
+
+V2/V3 때문에 D-022 의 방향이 "preflight 신설" → **"기존 검사를 적용 가능한 형태로 떼어
+배포 경로에 걸고 원인까지 지목"** 으로 바뀌었다. 검사를 하나 더 만들 뻔했다.
+
+### 수정
+
+- **D-024** `spring.task.scheduling.pool.size: 4` (base 소유, ADR-0007 — 동작 규약).
+  **수정 전 red 를 먼저 보였다** — `SchedulerPoolStarvationTest` 가 기아 단언으로 실패 → green.
+  `scheduler-lock-contract-lint.sh` 로 불변식 고정(모든 `@Scheduled` 에 `@SchedulerLock` ·
+  `fixedRate` 0건 · 풀 설정 회귀 검출). gateway JWKS 갱신은 인스턴스별 작업이라
+  `[SCHED-LOCK exempt]` 표기로 면제 — 락을 걸면 한 파드만 갱신하고 나머지는 낡은 키를 서빙한다.
+- **D-023** infra 3종 `strategy: Recreate`. 렌더 검증에서 infra 3개만 Recreate, 도메인 6개는
+  RollingUpdate 유지. PVC 를 쓰는 workload 스윕 결과 정확히 그 3개뿐.
+- **D-022** `auth-roundtrip-gate.sh` — `GW_URL` 하나로 돌아 NetworkPolicy 없는 overlay 에도
+  적용된다. 실패 시 두 키 도메인의 modulus 를 대조해 **어느 쪽이 어긋났는지 지목**한다.
+  `deploy-overlay.sh` 배포 후 단계 + README 2곳 절차에 연결.
+
+### false-green 을 막은 지점
+
+가드가 처음엔 위반을 **못 잡았다** — 주석 처리된 `//@SchedulerLock` 을 유효한 것으로 세고 있었다.
+애노테이션을 줄 시작으로 한정한 뒤 재주입해 SCHED-001/003 양쪽이 exit 1 로 잡히는 것을 확인했다.
+게이트도 양방향 주입으로 확인했다(불일치 → exit 1 + 도메인 지목 / 정상 → exit 0).
+
+### 검증
+
+- lint **19/19 PASS**(신규 포함)
+- `:payment-service:test` **PASS** · `:product-service:test` **PASS**(둘 다 `--rerun-tasks`)
+- **`./gradlew test` 전체는 red 다 — 그리고 main 도 red 다.** 내 브랜치 239 tests 1 failed
+  (`DlqIntegrationTest`), main 188 tests 1 failed(`InventoryConcurrencyTest`) — **실패 테스트가
+  다르다.** 둘 다 타이밍 의존이고(전자 `await(20s)` 타임아웃, 후자 50스레드가 3초 락 대기 초과)
+  전체 스위트에서 Testcontainers 가 대량 병렬로 뜨며 생기는 자원 경합이다. D-019 가 확정한
+  패턴의 재발. 두 실행의 조건이 달랐으므로(증분 13분 vs `--rerun-tasks` 1시간) **통제된 비교는
+  아니다** — 그래서 CI 방식(모듈별)으로 다시 확인했고 양쪽 모듈 모두 통과했다.
+
+### 미충족
+
+- **게이트는 우회를 막지 못하고 보이게만 한다** — `GW_URL` 없으면 건너뛰고(경고), 래퍼 자체도
+  raw `kubectl apply -k` 로 우회 가능하다. 그 래퍼가 이미 자기 문서에 적어둔 한계와 같다.
+- **게이트를 실 클러스터에서 돌리지 못했다** — 측정 세션 종료로 회수한 뒤 작성해 로컬 주입으로 대체.
+- **풀 크기 4의 적정성을 부하로 재측정하지 않았다** — 보수적으로 잡고 근거를 주석에 남겼다.
+- **로컬 전체 스위트가 신뢰할 수 없다**(main 포함) — 별건 부채 후보.
+- **Codex 리뷰 미호출**(사용자 지시) — "P0/P1 = 0" 주장 없음.
+
+### 부수 정정 — 내가 만든 ID 중복
+
+[#120] 에서 등록한 `D-021`(detail 재고 캐시)이 **이미 사용 중인 번호**였다
+(`D-021 | Testing | KafkaTopicConfigMechanismIntegrationTest…`, main 에 선재). 이번에
+**D-026 으로 재번호**하고 참조 문서(TASKS·PHASE4·증적·계획서·audit) 전부를 함께 고쳤다.
+전체 D- ID 중복 검사를 돌려 다른 충돌이 없음을 확인했다.
+
+계획서: `docs/plans/task-ops-hardening-d022-d023-d024.md`
