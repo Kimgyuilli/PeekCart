@@ -107,7 +107,9 @@ Phase 3 Exit Criteria의 "nGrinder 부하 테스트 리포트 (캐싱 전/후 TP
 bash loadtest/cleanup.sh
 ```
 
-실행 후 스크립트가 출력하는 `disks list` / `addresses list` 결과에서 orphan PD 와 예약 IP 잔존 여부를 육안 확인한다.
+스크립트는 클러스터·VM 삭제에 더해 **미부착 PD 와 미사용 예약 IP 를 직접 회수**하고, 마지막에 잔여를
+상태로 검증해 남아있으면 비정상 종료(exit 1)한다. 즉 "정리했다" 가 아니라 "남은 게 없다" 를 종료 코드가
+보장한다. 종료 후 billing 콘솔에서 당일·익일 과금을 재확인하는 것은 그대로 유지한다.
 
 ## References
 - `docs/07-roadmap-portfolio.md` Section 16 Phase 3 Exit Criteria
@@ -115,3 +117,11 @@ bash loadtest/cleanup.sh
 - `docs/03-requirements.md` Section 7-1 — 성능 목표 수치 및 측정 방법
 - `docs/progress/PHASE3.md` — Task 3-1~3-3 minikube 환경 작업 이력
 - 선행: ADR-0003 (본 ADR이 부분 supersede — Task 3-4 이후 범위)
+
+## Update Log
+
+본 ADR 은 `docs/adr/README.md` "본문 정정 예외 (Update Log)" 규칙에 따른 본문 직접 수정 이력을 기록합니다. 의사결정 자체는 변경되지 않았으며, 사실 오류만 정정되었습니다.
+
+| Date | Commit | 변경 내용 | 사유 |
+|------|--------|-----------|------|
+| 2026-09-16 | (본 커밋) | "운영 체크리스트" 의 정리 절차 서술을 정정 — `disks list` / `addresses list` 출력을 **육안 확인**한다 → 스크립트가 미부착 PD·미사용 예약 IP 를 **직접 회수하고 잔여를 exit code 로 검증**한다 | 서술이 스크립트 동작과 어긋나게 됐다. 원래 `cleanup.sh` 3)4) 단계는 목록 출력만 하고 사람에게 넘겼는데, 그 단계는 스킵돼도 스크립트가 성공으로 끝나 실제로 누락됐다 — D-002a 세션(2026-09-16)의 PVC 3개가 회수되지 않은 채 남아 있었고 그 세션 증적의 "잔여 과금 자원 0 확인" 은 **사실과 달랐다**. 스크립트를 회수까지 하도록 고쳤으므로(PR #119) 본문의 사실 진술을 실제 동작에 맞춘다. 트레이드오프·대안·Consequences 변경 없음 |
