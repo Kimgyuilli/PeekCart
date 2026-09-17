@@ -26,6 +26,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+echo "[0/4] 카테고리 확보"
+# 카테고리는 admin API 가 없다(presentation 에 카테고리 컨트롤러 없음) — SQL 로 넣는다.
+# products 와 달리 카테고리는 order 쪽 캐시와 무관하므로 outbox 를 태울 필요가 없다.
+# 이 단계가 없으면 상품 생성이 전부 PRD-003(카테고리를 찾을 수 없습니다)으로 404 난다.
+kubectl -n peekcart exec -i deploy/mysql -- \
+  mysql -upeekcart_product -ppeekcart_product peekcart_product \
+  -e "INSERT IGNORE INTO categories (id, name, parent_id) VALUES (1, 'loadtest', NULL); SELECT COUNT(*) AS categories FROM categories;" 2>&1 | grep -v "Using a password"
+
 echo "[1/4] admin 로그인"
 # 로그인 라우트는 **IP 키 10 req/s**(user-auth-preauth, burstCapacity 10) — 단발이라 여유롭다.
 TOKEN=$(curl -sS -X POST "${GW}/api/v1/auth/login" \
