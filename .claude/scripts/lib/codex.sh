@@ -77,26 +77,13 @@ hpx_codex_allowed() {
     return 1
   fi
 
-  if [ -n "$task_id" ] && hpx_task_id_validate "$task_id" 2>/dev/null; then
-    local plan_file="docs/plans/${task_id}.md"
-    if [ -f "$plan_file" ]; then
-      local fm_value
-      # 선두 --- 블록(frontmatter) 안의 codex: 키만 읽는다. 본문은 보지 않는다.
-      fm_value="$(awk '
-        NR==1 && $0!="---" { exit }
-        NR==1 { infm=1; next }
-        infm && $0=="---" { exit }
-        infm && /^[[:space:]]*codex[[:space:]]*:/ {
-          sub(/^[[:space:]]*codex[[:space:]]*:[[:space:]]*/, "")
-          gsub(/[[:space:]]*$/, "")
-          print
-          exit
-        }
-      ' "$plan_file" 2>/dev/null)"
-      if [ -n "$fm_value" ] && hpx_codex_off_value "$fm_value"; then
-        printf 'blocked\nplan\nfrontmatter codex: %s\n%s/%s\n' "$fm_value" "$(pwd)" "$plan_file"
-        return 1
-      fi
+  if [ -n "$task_id" ]; then
+    local fm_value
+    fm_value="$(hpx_plan_frontmatter "$task_id" codex 2>/dev/null)"
+    if [ -n "$fm_value" ] && hpx_codex_off_value "$fm_value"; then
+      printf 'blocked\nplan\nfrontmatter codex: %s\n%s/docs/plans/%s.md\n' \
+        "$fm_value" "$(pwd)" "$task_id"
+      return 1
     fi
   fi
 

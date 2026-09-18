@@ -16,7 +16,8 @@
 #   state.sh  — state.json atomic write / mutators
 #   sync.sh   — sync context 수집
 #   audit.sh  — audit log / metrics
-#   codex.sh  — Codex 응답 헬퍼
+#   codex.sh  — Codex 응답 헬퍼 + 호출 게이트
+#   plan.sh   — 계획서 frontmatter / 작업 등급
 #   work.sh   — /work: base branch / diff capture / split / risk
 #   ship.sh   — /ship: consistency precheck / commit plan / PR body
 #
@@ -40,6 +41,7 @@ fi
 . "${_hpx_lib_dir}/sync.sh"
 . "${_hpx_lib_dir}/audit.sh"
 . "${_hpx_lib_dir}/codex.sh"
+. "${_hpx_lib_dir}/plan.sh"
 . "${_hpx_lib_dir}/work.sh"
 . "${_hpx_lib_dir}/ship.sh"
 
