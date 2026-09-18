@@ -119,7 +119,7 @@ p2. test(cache): ...  (+23)
 | What | 계획서 §3 작업 항목 중 실제 구현된 것 |
 | How | 핵심 결정과 근거. ADR 이 있으면 `(see ADR-NNNN)` |
 | Test plan | 계획서 §검증 방법의 각 행 + **실제 실행 결과** |
-| 리뷰 이력 | `docs/plans/${TASK_ID}.audit.md` 의 라운드별 요약 |
+| 리뷰 이력 | `docs/plans/${TASK_ID}.audit.md` 의 라운드별 요약 (반영·이월·기각 건수 포함) |
 | 관련 | Task · Plan · ADR · 부채 ID · runbook |
 
 **리뷰 이력 섹션은 audit 의 `상태:` 줄을 그대로 옮긴다.** 4값 중 앞의 셋은 정상 종결이므로
@@ -130,13 +130,17 @@ p2. test(cache): ...  (+23)
 
 - 등급: M
 - 계획 리뷰: 해당 없음(등급 M)
-- diff 리뷰: 수행(1라운드). P0 0건, P1 3건 반영, P2 1건 기각
+- diff 리뷰: 수행(1라운드). 7건 중 반영 3건, 이월 3건, 기각 1건
 ```
 
 등급을 첫 줄에 적는다. 이것이 있어야 "계획 리뷰가 왜 없나"가 본문 안에서 설명된다.
 
 **조건부 섹션** — 해당하면 반드시 넣는다:
-- **Skipped findings** — diff 리뷰에서 기각한 항목. **사유와 재검토 조건**을 함께 적는다
+- **이월** — 리뷰에서 맞다고 인정했으나 이번 범위가 아니라 미룬 항목. **재검토 조건**을 함께
+  적는다. 부채로 승격했으면 `D-0NN` 을 단다. 이 섹션이 비어 있는데 리뷰 라운드가 2회 이상이면
+  처분 규율이 무너진 것이다(실측 기각률 0.3%가 그 상태였다)
+- **Skipped findings** — 리뷰에서 **기각**한 항목. 사유와 재검토 조건을 함께 적는다.
+  이월과 다르다. 이월은 "맞지만 나중", 기각은 "사실과 다름"이다
 - **Skipped consistency checks** — Step 2 에서 `[2]` 를 골랐으면 그 사유
 - **미충족** — 계획서 §미해결 + 작업 중 드러난 한계. "완료했다" 로 뭉개지 않는다
 
@@ -145,6 +149,15 @@ p2. test(cache): ...  (+23)
 `미결` 만 미충족으로 올린다.
 
 본문은 `.cache/pr-body-${TASK_ID}.md` 에 저장한다 (재시도 시 재사용).
+
+#### 4-0. 리뷰 처분 규율 점검
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_review_health "<TASK_ID>"'
+```
+
+`ok` 면 넘어간다. `warnings` 면 항목을 PR 본문 승인 게이트에 함께 제시한다. 진행을 막지는
+않지만, 경고가 떴는데 §이월 섹션이 비어 있으면 그건 처분을 안 갈랐다는 뜻이다.
 
 #### 4-1. 문체 lint (생략 금지)
 
@@ -216,13 +229,15 @@ gh pr create --base "$(hpx_base_branch_name)" --head "$BRANCH" \
    범위가 착수 전과 달라졌으면 **그 사실과 근거를 행에 기록한다** (구현 ④·⑤ 선례)
 2. 편입 부채가 있으면 `docs/progress/phase4-prep-debt-roadmap.md` 의 해당 행에 ✅ + PR 번호
 3. `docs/progress/PHASE{N}.md` — 작업 이력에 PR URL. **미충족 항목을 함께 남긴다**
-4. 결정 사항 분류:
+4. 이월 항목 중 구조적이거나 반복되는 것은 `docs/TASKS.md` 부채 표에 `D-0NN` 으로 등록한다.
+   한두 건짜리 국소 항목은 PR 본문 §이월 에만 두고 부채 ID 를 만들지 않는다
+5. 결정 사항 분류:
    - 대안 비교·후속 전제가 있으면 → ADR (Layer 2)
    - ADR 의 **사실 진술**이 틀렸으면 → 새 ADR 이 아니라 **Update Log + `fix(adr):`** (`docs/adr/README.md` §원칙)
    - 구현 디테일 → progress (Layer 3)
    - 확신이 없으면 사용자에게 묻는다
-5. Layer 1(01~07) 이 코드 사실과 어긋나면 **What 만** 정정. Why 는 ADR
-6. `docs/plans/${TASK_ID}.audit.md` 에 `/ship` 결과 1블록 append (PR URL · precheck 결과 · 갱신 항목).
+6. Layer 1(01~07) 이 코드 사실과 어긋나면 **What 만** 정정. Why 는 ADR
+7. `docs/plans/${TASK_ID}.audit.md` 에 `/ship` 결과 1블록 append (PR URL · precheck 결과 · 갱신 항목).
    **등급 S 는 audit 파일이 없으므로 이 단계를 건너뛴다** — PR URL 은 `docs/TASKS.md` 와
    progress 에 이미 남는다. 없는 파일을 만들자고 audit 을 되살리지 않는다
 
