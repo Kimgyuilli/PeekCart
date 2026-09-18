@@ -35,6 +35,8 @@ bats .claude/scripts/tests/bats/task_id_validate.bats
 | `diff_capture.bats` | `hpx_diff_capture` 의 `.git/index` 격리 + 변경분 누락 0건 |
 | `timeout_wrapper.bats` | `scripts/timeout_wrapper.py` 의 seconds 검증 (0/음수/NaN/Inf) |
 | `codex_gate.bats` | `hpx_codex_allowed` 의 차단 신호 3종, 우선순위, 기본 허용 |
+| `plan_grade.bats` | `hpx_plan_grade` 의 등급 파싱과 L 기본값, frontmatter 범위 |
+| `review_health.bats` | `hpx_review_health` 의 규율 붕괴 신호 3종과 권고 성격(exit 0) |
 
 ## 주의
 
