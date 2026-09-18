@@ -48,6 +48,41 @@ Codex 호출 **전에** 필수 섹션과 stable id 를 자체 점검한다. 형�
 
 ### 5. Codex 리뷰
 
+#### 5-0. 호출 게이트 (생략 금지)
+
+Codex 를 부르기 전에 **먼저** 판정을 받는다. 스스로 판단해서 부르지 않는다.
+
+```bash
+cd "$(git rev-parse --show-toplevel)"
+bash -c 'set -uo pipefail
+source .claude/scripts/shared-logic.sh
+hpx_codex_allowed "<TASK_ID>"
+'
+```
+
+- 1행이 `allowed` 면 아래 5-1 을 수행한다
+- 1행이 `blocked` 면 **5-1 을 건너뛰고 6 으로 간다.** 2행(source), 3행(reason), 4행(origin)을
+  그대로 보고하고, 리뷰 상태를 `의도적 생략(<source>: <reason>)` 으로 기록한다. 이것은
+  **정상 종결**이다. 미결로 남기지 않는다 (§8 참조)
+
+차단 신호는 셋이고 먼저 걸리는 것이 이긴다.
+
+| 신호 | 설정 방법 | 지속 범위 |
+|---|---|---|
+| `HPX_CODEX` 환경변수 | `off` / `0` / `false` / `no`. `on` 은 나머지를 덮는 override | 셸 세션 |
+| `.cache/codex-off` 파일 | 파일을 만들고 첫 줄에 사유를 적는다 | 지울 때까지 |
+| 계획서 frontmatter | `docs/plans/<task-id>.md` 선두 `---` 블록에 `codex: off` | 그 task |
+
+**스위치는 워크트리마다 따로다.** `.cache/` 와 `docs/plans/` 는 현재 워크트리 기준으로
+해석된다. 이 레포는 본 체크아웃과 orca 워크트리에서 서로 다른 task 를 동시에 돌리므로,
+한쪽에서 리뷰를 끈 것이 다른 쪽 작업까지 끄면 안 된다. 스위치가 안 먹는 것처럼 보이면
+4행 origin 이 가리키는 경로부터 확인한다. `.cache/` 가 없으면 `mkdir -p .cache` 가 먼저다.
+
+사용자가 대화에서 "이번엔 Codex 돌리지 마"라고 하면, 그 지시를 기억에 담아두지 말고
+`.cache/codex-off` 에 사유와 함께 적는다. 말로 받은 지시는 다음 세션에서 사라진다.
+
+#### 5-1. 호출
+
 ```bash
 cd "$(git rev-parse --show-toplevel)"
 mkdir -p .cache/codex-reviews
@@ -104,12 +139,31 @@ P0/P1 이 0건이면 자동 통과 — 1줄 요약만 보고한다.
 상한: 3회. 초과 시 사용자에게 명시 확인.
 
 ### 8. 종료
-- audit 파일 `docs/plans/${TASK_ID}.audit.md` 에 라운드별 1블록 append:
+
+**리뷰 상태는 4값이다.** 앞의 셋은 전부 정상 종결이고, 미결은 마지막 하나뿐이다.
+
+| 값 | 의미 | 미충족에 오르나 |
+|---|---|---|
+| `수행(N라운드)` | 돌렸다 | 아니오 |
+| `해당 없음` | 절차상 대상이 아니다 | 아니오 |
+| `의도적 생략(<사유>)` | 대상이지만 판단해서 안 돌렸다. 5-0 게이트 차단 포함 | 아니오 |
+| `미결(<사유>)` | 돌리려 했으나 실패했거나 중단됐다 | 예 |
+
+"안 돌렸다"를 `미결` 로 적지 않는다. 게이트가 `blocked` 를 냈으면 그것은 `의도적 생략` 이고,
+보고와 PR 본문에서 미충족 항목으로 취급하지 않는다.
+
+- audit 파일 `docs/plans/${TASK_ID}.audit.md` 에 1블록 append:
   ```markdown
   ## YYYY-MM-DD HH:MM — 계획 리뷰 라운드 N
+  - 상태: 수행(N라운드)
   - 항목: X건 (P0:N, P1:N, P2:N)
   - 처리: 반영 N건 / 기각 N건 (기각 사유)
   - 뒤집힌 전제: (있으면)
   - raw: .cache/codex-reviews/plan-...json
+  ```
+  생략한 경우는 라운드 블록을 만들지 않고 한 줄로 끝낸다:
+  ```markdown
+  ## YYYY-MM-DD HH:MM — 계획 리뷰
+  - 상태: 의도적 생략(file: GKE 측정 세션이라 리뷰 불필요)
   ```
 - 계획서 경로 · 수용/기각 요약 · 범위 변화 · 다음 단계(`/work`) 보고
