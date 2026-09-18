@@ -4,8 +4,8 @@ import com.peekcart.product.domain.model.Product;
 
 /**
  * 상품 상세 캐싱용 DTO (재고 제외).
- * <p>재고는 차감/복구마다 변경되어 캐시 무효화가 빈번하므로 포함하지 않는다.
- * {@link ProductDetailDto}는 이 DTO + 실시간 재고로 조합된다.
+ * <p>재고는 변경 빈도가 달라 <b>TTL 이 다른 별도 캐시</b>에 있다 (ADR-0026 D2 — 상품 30분 /
+ * 재고 5초). {@link ProductDetailDto}는 이 DTO + 재고 캐시 값으로 조합된다.
  */
 public record ProductInfoDto(
         Long id,

@@ -45,6 +45,15 @@ sum by (cache, result) (rate(cache_gets_total[5m]))
 `cache_gets_total` 의 hit 이 0 으로 떨어지고 `cache_fallback_total{operation="get"}` 이 오르면
 캐시가 통째로 우회되는 중이다.
 
+**캐시는 셋이다** — `product`(상세 정보, TTL 30분) · `products`(목록, TTL 10분) ·
+`productStock`(재고, TTL 5초, ADR-0026). 위 PromQL 은 `cache` 라벨로 갈라지므로 셋이 따로 보인다.
+`productStock` 은 TTL 이 짧아 **정상 상태에서도 miss 비율이 다른 둘보다 구조적으로 높다** —
+그 자체는 장애 신호가 아니다. 이 캐시에서 볼 것은 miss 비율이 아니라 **hit 이 0 인지**다
+(0 이면 TTL 이 제 역할을 못 하는 것이고, ADR-0026 D4 의 승격 조건이 그것을 본다).
+
+**상세 조회는 캐시를 둘 탄다.** 무응답 Redis 구간에서 상세의 타임아웃 예산은 목록의 2배
+(4×500ms = 2s)다 — 상세만 유독 느리다는 신고는 이 구조 때문일 수 있다(ADR-0026 Consequences).
+
 ### 2.1 수동 감시 계약 (alert 도입 전)
 
 `cache_fallback_total` 기반 자동 alert 은 아직 없다(계획 §6 M4). 그 전까지는 **수동 감시**다.
@@ -85,12 +94,18 @@ sum by (cache, result) (rate(cache_gets_total[5m]))
 **아무것도 하지 않는다.** 허용 stale 은 상세 ≤30분 / 목록 ≤10분이고, 그 안에 자연 만료된다.
 대부분의 경우 이게 정답이다.
 
+**재고 캐시(`productStock`)는 TTL 5초라 사실상 기다릴 것이 없다** (ADR-0026 D2). 이 캐시는
+애초에 무효화가 없고 TTL 하나로만 수렴하므로(D3), evict 실패라는 개념 자체가 없다 —
+§4.2 의 수동 삭제 대상도 아니다. 재고가 낡아 보인다는 신고가 5초를 넘겨 지속되면 캐시 문제가
+아니라 **예약 Saga 쪽**을 본다.
+
 ### 4.2 즉시 해소가 필요할 때만 — 수동 삭제
 
 가격 인하·판매중단처럼 **stale 이 사업적으로 문제가 되는 변경**이 evict 실패 구간에 있었다면 삭제한다.
 
 ```bash
 # 1) 대상 확인 — SCAN 으로 센다
+#    productStock 은 TTL 5초라 대상이 아니다(§4.1) — 패턴에 넣지 않는다.
 redis-cli --scan --pattern 'cache:product::*'  | wc -l
 redis-cli --scan --pattern 'cache:products::*' | wc -l
 

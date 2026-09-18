@@ -1,6 +1,11 @@
 package com.peekcart.product.observability;
 
+import com.peekcart.product.application.ProductCommandService;
+import com.peekcart.product.application.dto.CreateProductCommand;
+import com.peekcart.product.domain.model.Category;
 import com.peekcart.support.IntegrationTestConfig;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +62,12 @@ class ProductObservabilityMetricsIntegrationTest {
     @Autowired
     TestRestTemplate restTemplate;
 
+    @Autowired
+    ProductCommandService commandService;
+
+    @Autowired
+    EntityManagerFactory emf;
+
     @Test
     @DisplayName("/api/v1/products 호출 후 /actuator/prometheus 에 application=product-service 태그 + 상품 URI histogram bucket 이 노출된다")
     void prometheus_exposesApplicationTagAndProductHistogram() {
@@ -91,6 +102,45 @@ class ProductObservabilityMetricsIntegrationTest {
         assertThat(body).isNotNull();
         assertCacheGetLine(body, "products", "miss");
         assertCacheGetLine(body, "products", "hit");
+    }
+
+    @Test
+    @DisplayName("상품 상세 호출 후 재고 캐시의 hit/miss 메트릭이 노출된다 (ADR-0026 D2 — S7 확장)")
+    void prometheus_exposesProductStockCacheMetrics() {
+        Long productId = seedProduct();
+
+        assertThat(restTemplate.getForEntity("/api/v1/products/" + productId, String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(restTemplate.getForEntity("/api/v1/products/" + productId, String.class).getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+
+        ResponseEntity<String> prometheus = restTemplate.getForEntity("/actuator/prometheus", String.class);
+        assertThat(prometheus.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String body = prometheus.getBody();
+        assertThat(body).isNotNull();
+        // 적중률을 못 보면 TTL 값이 맞는지 판정할 수단이 없다 — ADR-0026 D4 의 승격 조건이
+        // 바로 이 시계열을 근거로 삼는다.
+        assertCacheGetLine(body, "productStock", "miss");
+        assertCacheGetLine(body, "productStock", "hit");
+    }
+
+    /** 재고 캐시는 상세 조회에서만 타므로 실제 상품이 하나 필요하다. */
+    private Long seedProduct() {
+        EntityManager em = emf.createEntityManager();
+        Long categoryId;
+        try {
+            em.getTransaction().begin();
+            Category category = Category.create("전자기기", null);
+            em.persist(category);
+            em.flush();
+            categoryId = category.getId();
+            em.getTransaction().commit();
+        } finally {
+            em.close();
+        }
+        return commandService.create(
+                new CreateProductCommand(categoryId, "스마트폰", "설명", 1_000_000L, null, 100)).id();
     }
 
     private static void assertCacheGetLine(String prometheusBody, String cacheName, String result) {
