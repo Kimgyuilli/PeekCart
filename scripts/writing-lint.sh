@@ -120,8 +120,14 @@ lint_commits() {
     return 0
   fi
   msg="$(mktemp -t writing-lint-msg.XXXXXX)"
+  local skipped=0
   while IFS= read -r hash; do
     [ -n "$hash" ] || continue
+    # 머지 커밋은 건너뛴다. 제목이 구조적으로 정해지는 자리라 <type>(<scope>) 규약 대상이
+    # 아니다. 오탐이 잦으면 lint 자체를 무시하게 된다.
+    if [ "$(git rev-list --parents -n1 "$hash" | wc -w | tr -d ' ')" -gt 2 ]; then
+      skipped=$((skipped+1)); continue
+    fi
     subject="$(git log -1 --format='%s' "$hash")"
     git log -1 --format='%B' "$hash" > "$msg"
     if ! check_text "${hash:0:7}" title_body "$msg"; then
@@ -132,7 +138,7 @@ lint_commits() {
 $hashes
 EOF
   rm -f "$msg"
-  [ "$rc" -eq 0 ] && echo "커밋 문체 lint 통과 ($(printf '%s\n' "$hashes" | grep -c .)건)"
+  [ "$rc" -eq 0 ] && echo "커밋 문체 lint 통과 ($(printf '%s\n' "$hashes" | grep -c .)건 중 검사 $(( $(printf '%s\n' "$hashes" | grep -c .) - skipped ))건, 머지 ${skipped}건 제외)"
   return "$rc"
 }
 
