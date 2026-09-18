@@ -21,3 +21,15 @@
 - 검증: `:common` 109 tests 0 실패 · `:product-service` 190 tests 0 실패 · lint **19/19 PASS** ·
   전 모듈 `classes/testClasses/testFixturesClasses` 컴파일 OK.
 - raw: 없음 (호출 없음)
+
+## 2026-09-18 — /ship
+
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/123 (머지 안 함)
+- consistency precheck: **ok (warnings 0)** — 게이트 미노출
+- 커밋 4개: `docs(adr)` / `feat(product)` / `test(product)` / `docs(d025)` — 한 커밋 = 한 분류
+- 갱신: `docs/TASKS.md` D-025 ✅+PR · `phase4-prep-debt-roadmap.md` 버킷3 후속 종결 ·
+  `docs/progress/PHASE4.md` 절 제목 · `docs/adr/README.md` 인덱스(0025)
+- Layer 1(01~07) 정정: **없음** — `PRD-004` 는 Layer 1 문서에 등장하지 않고(grep 확인),
+  재고 동시성 수단은 Layer 1 이 기술한 적이 없다. Why 는 ADR-0025 가 갖는다.
+- **커밋에 들어가지 않은 문서 1건**: `docs/learning/09-distributed-lock-optimistic-lock.md` 후기.
+  `docs/learning/` 이 `.gitignore:51` 로 제외돼 있어 로컬에만 반영됐다(레포 정책, 변경하지 않음).
