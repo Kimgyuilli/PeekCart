@@ -2,7 +2,7 @@
 
 > 대상: `app.jwt.rs256` 키쌍 교체 — user-service 가 서명하고 gateway 가 JWKS 로 검증하는 키
 > 전제: `user-jwt-public-keys` / `user-jwt-binding` ConfigMap (구현 ③ 후속)
-> **내부 토큰 회전(`docs/plans/task-impl3-pr3d-internal-token.md` §11)과 순서는 같지만 성질이 다르다.**
+> **내부 토큰 회전(`docs/plans/done/task-impl3-pr3d-internal-token.md` §11)과 순서는 같지만 성질이 다르다.**
 > 그대로 베껴 쓰면 안 되는 이유가 §1 이다.
 
 ---

@@ -1,4 +1,4 @@
-// D-002c — 비동기 재고 예약 **락 경합** (계획서 docs/plans/task-d002-bc-session.md P8~P10)
+// D-002c — 비동기 재고 예약 **락 경합** (계획서 docs/plans/done/task-d002-bc-session.md P8~P10)
 //
 // **응답 p95 는 이 축의 지표가 아니다.** 분산 락은 동기 HTTP 경로를 떠났다(계획서 §2 V4):
 //   StockReservationConsumer.handleOrderCreated(@Transactional)
