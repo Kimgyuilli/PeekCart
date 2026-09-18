@@ -88,5 +88,5 @@ ADR-0009 본문은 불변. **무효화되는 것은 "현 위치 서술·검증 �
 - ADR-0009 (관측성 계약 SSOT — 본 ADR 이 Partially Supersede)
 - ADR-0006 (Monitoring 스택 환경 분리 — S5/S6 위치 분담 유지)
 - ADR-0010/0011 (5서비스 분해·멀티모듈)
-- 계획서: `docs/plans/task-impl1-pr3c-observability.md`
+- 계획서: `docs/plans/done/task-impl1-pr3c-observability.md`
 - `scripts/observability-ssot-lint.sh`, `scripts/observability-promql-lint.sh`, `k8s/monitoring/shared/grafana-alerts.yml`

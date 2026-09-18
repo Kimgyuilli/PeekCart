@@ -32,8 +32,8 @@
 
 ### 구현 (ADR 선행 후 PR 단위) ← 현재 focus
 
-> **구현 ① ✅ 완료 (선행 ADR-0011/ADR-0014, [#48~#68])** — PR1 스켈레톤+common → PR2 서비스 분리(5 peel·root 소멸) → PR3 Dockerfile/CI(#66)·k8s(#67)·관측성(#68). 계획서: `docs/plans/task-impl1-gradle-multimodule.md`.
-> **구현 ② ✅ 완료 (선행 ADR-0012 D1/D5·ADR-0016, [#69·#71·#72])** — PR1 교차 FK 드롭 → PR2 물리 스키마 분리(1 인스턴스+5 스키마) → PR3 retention/cleanup 스케줄러(D5·L-008/011 종결). 계획서: `docs/plans/task-impl2-db-per-service.md`. **다음 focus = 구현 ③(Spring Cloud Gateway, 선행 ADR-0013).** (인스턴스 물리 분리는 URL 교체로 가역 승격 — 후속.)
+> **구현 ① ✅ 완료 (선행 ADR-0011/ADR-0014, [#48~#68])** — PR1 스켈레톤+common → PR2 서비스 분리(5 peel·root 소멸) → PR3 Dockerfile/CI(#66)·k8s(#67)·관측성(#68). 계획서: `docs/plans/done/task-impl1-gradle-multimodule.md`.
+> **구현 ② ✅ 완료 (선행 ADR-0012 D1/D5·ADR-0016, [#69·#71·#72])** — PR1 교차 FK 드롭 → PR2 물리 스키마 분리(1 인스턴스+5 스키마) → PR3 retention/cleanup 스케줄러(D5·L-008/011 종결). 계획서: `docs/plans/done/task-impl2-db-per-service.md`. **다음 focus = 구현 ③(Spring Cloud Gateway, 선행 ADR-0013).** (인스턴스 물리 분리는 URL 교체로 가역 승격 — 후속.)
 > **⚠️ peel 순서 정정 (2026-06-15)**: Product 가 Order 의 동기 빈(`ProductPort`)에 묶여 ① 단독 peel 불가(부팅 실패) — independent 한 **User 를 PR2b 로 먼저** 떼고, Order/Product/Payment 는 ②(DB)/④(Saga)/⑤(캐시)를 교차한 사가 클러스터로 함께 분리한다(ADR-0010 F2·ADR-0012 D3, 새 ADR 불필요). 상세: `phase4-design-roadmap.md §2`.
 
 | 순서 | 작업 | 선행 ADR | 편입 부채 | 상태 |

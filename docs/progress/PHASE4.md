@@ -36,7 +36,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 
 **설계 결정**: 서비스 경계 = §5 정본(5개). 근거·대안(Alt A 5개 vs Alt B 3개)은 ADR-0010.
 
-**프로세스**: `/plan` 2회 Codex 리뷰(1차 5건, 2차 3건 전체 반영) → `/work` 구현 → `/ship` ([PR #44](https://github.com/Kimgyuilli/PeakCart/pull/44)). 계획서·audit: `docs/plans/task-adr0010-service-decomposition.md`.
+**프로세스**: `/plan` 2회 Codex 리뷰(1차 5건, 2차 3건 전체 반영) → `/work` 구현 → `/ship` ([PR #44](https://github.com/Kimgyuilli/PeakCart/pull/44)). 계획서·audit: `docs/plans/done/task-adr0010-service-decomposition.md`.
 
 **다음**: A2(멀티모듈 구조) — `common` 경계·의존 규칙. ADR-0010 §D1 의 5개 서비스 = 5개 모듈.
 
@@ -47,7 +47,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - 핵심 결정: 서비스는 `:common`+`:peekcart-common-observability` 만 의존, 서비스↔서비스 직접 의존 금지(CI 빌드 실패 검출). 이벤트 DTO 는 모듈 소유만, 스키마는 A3 위임(non-authoritative). Docker health smoke 서비스별 유지
 - Layer 1 정합: `02-architecture.md §4-4`(관측성/5서비스 모듈 + `see ADR-0011`), §12(Phase 4 멀티모듈 포인터), `adr/README.md` INDEX
 
-**프로세스**: `/plan` **3회** Codex 리뷰(1차 5건, 2차 2건[ADR-0009 모듈 충돌 발견], 3차 1건[자기모순 cleanup] — 5→2→1 수렴) → `/work` 구현(diff 리뷰 2건) → `/ship` ([PR #45](https://github.com/Kimgyuilli/PeakCart/pull/45)). 계획서·audit: `docs/plans/task-adr0011-multimodule-structure.md`.
+**프로세스**: `/plan` **3회** Codex 리뷰(1차 5건, 2차 2건[ADR-0009 모듈 충돌 발견], 3차 1건[자기모순 cleanup] — 5→2→1 수렴) → `/work` 구현(diff 리뷰 2건) → `/ship` ([PR #45](https://github.com/Kimgyuilli/PeakCart/pull/45)). 계획서·audit: `docs/plans/done/task-adr0011-multimodule-structure.md`.
 
 **다음**: A3(DB-per-service + 이벤트/Saga 계약) · A4(Gateway 보안) — 병렬 가능. 이후 구현 ①(멀티모듈 전환).
 
@@ -59,7 +59,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - Layer 1 정합: `05`(Product DB outbox/processed/예약 컬럼), `04`(§9-6 전략 A→예약 모델, §9-4 Saga, §16 product.updated), `03 §7-2`(예약 경계), `02 §5`(토폴로지 6토픽), `adr/README.md`
 - 편입 부채: L-008/L-011(retention), L-020-2(consumer group 라벨)
 
-**프로세스**: `/plan` **3회** Codex 리뷰(1차 6건, 2차 1건, 3차 0건 — 6→1→0 수렴) → `/work` 구현(diff 리뷰 3건) → `/ship` ([PR #46](https://github.com/Kimgyuilli/PeakCart/pull/46)). 계획서·audit: `docs/plans/task-adr0012-db-event-saga-contract.md`.
+**프로세스**: `/plan` **3회** Codex 리뷰(1차 6건, 2차 1건, 3차 0건 — 6→1→0 수렴) → `/work` 구현(diff 리뷰 3건) → `/ship` ([PR #46](https://github.com/Kimgyuilli/PeakCart/pull/46)). 계획서·audit: `docs/plans/done/task-adr0012-db-event-saga-contract.md`.
 
 **다음**: A4(Gateway 보안) — 마지막 설계 ADR. 이후 구현 ①(멀티모듈 전환).
 
@@ -71,7 +71,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - Layer 1 정합: `04 §10-2/§9-2`, `03 §7-2`, `05 refresh_tokens`(family_id/status/grace_until), `02 §5`, `adr/0009`(S9 행 추가), `adr/README.md`
 - 편입 보안 묶음: L-001(RS256)/L-002(시크릿)/L-003(Reuse Detection)/L-019(관측성)
 
-**프로세스**: `/plan` **3회** Codex 리뷰(1차 8건, 2차 1건, 3차 0건 — 8→1→0 수렴) → `/work` 구현(diff 리뷰 4건) → `/ship` ([PR #47](https://github.com/Kimgyuilli/PeakCart/pull/47)). 계획서·audit: `docs/plans/task-adr0013-gateway-security.md`.
+**프로세스**: `/plan` **3회** Codex 리뷰(1차 8건, 2차 1건, 3차 0건 — 8→1→0 수렴) → `/work` 구현(diff 리뷰 4건) → `/ship` ([PR #47](https://github.com/Kimgyuilli/PeakCart/pull/47)). 계획서·audit: `docs/plans/done/task-adr0013-gateway-security.md`.
 
 **다음**: 🎯 초기 설계 ADR(A1~A4) 완료. **구현 단계 ①(Gradle 멀티모듈 전환)** 부터 — 실제 코드. (구현 ① PR2 착수 중 전환기 인증 보정 ADR-0014 추가 — 아래 A4.5)
 
@@ -86,7 +86,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 
 **핵심 결정**: 검증→`peekcart-common-auth`, 발급/블랙리스트 write→User, 블랙리스트 read=공유 Redis+fail-closed. "라이브러리 공유 ≠ 런타임 중앙화(게이트웨이가 그것)".
 
-**프로세스**: `/plan` **3회** Codex 리뷰(1차 5건, 2차 3건, 3차 1건 — 5→3→1, P0 전 라운드 0; 3차가 Product auth-free 오류 포착) → `/work`(ADR 작성). 계획서·audit: `docs/plans/task-adr0014-transitional-auth-module.md`.
+**프로세스**: `/plan` **3회** Codex 리뷰(1차 5건, 2차 3건, 3차 1건 — 5→3→1, P0 전 라운드 0; 3차가 Product auth-free 오류 포착) → `/work`(ADR 작성). 계획서·audit: `docs/plans/done/task-adr0014-transitional-auth-module.md`.
 
 **다음**: 구현 ① PR2a(Notification) — `peekcart-common-auth` 생성 + 첫 서비스 peel.
 
@@ -101,7 +101,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - 단일 모듈 → `common` + `peekcart-common-observability` + 5개 서비스 모듈 (ADR-0011 §D1)
 - 의존 위반 검출 Gradle task(서비스↔서비스 금지), testFixtures 재배치, Dockerfile/CI matrix/k8s N개화
 - 편입 부채: L-016a(gke `newTag` digest 고정), D-016(GHCR→AR image promotion 자동화)
-- ⚠️ 대규모 리팩토링 — work diff 大, 실제 빌드/테스트 동반. **3-PR 분할 확정**(PR1 스켈레톤+common → PR2 서비스 5개 분리 → PR3 Dockerfile/CI/k8s). 계획서: `docs/plans/task-impl1-gradle-multimodule.md`.
+- ⚠️ 대규모 리팩토링 — work diff 大, 실제 빌드/테스트 동반. **3-PR 분할 확정**(PR1 스켈레톤+common → PR2 서비스 5개 분리 → PR3 Dockerfile/CI/k8s). 계획서: `docs/plans/done/task-impl1-gradle-multimodule.md`.
 
 #### PR1 — 멀티모듈 스켈레톤 + common/observability 추출 ✅ ([#48](https://github.com/Kimgyuilli/PeakCart/pull/48))
 
@@ -419,7 +419,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 
 ## PR3a — 서비스별 Dockerfile + CI 이미지 + image-contract-lint ([#66](https://github.com/Kimgyuilli/PeakCart/pull/66))
 
-> 구현 ① PR3(배포 표면 per-service 재구성) 의 첫 조각. 단일 `peekcart` 전제의 이미지/CI 를 서비스별로 재구성한다. k8s 매니페스트는 PR3b, 관측성 재설계+ADR-0015 는 PR3c 후속. 계획서 `docs/plans/task-impl1-pr3-dockerfile-ci-k8s.md`.
+> 구현 ① PR3(배포 표면 per-service 재구성) 의 첫 조각. 단일 `peekcart` 전제의 이미지/CI 를 서비스별로 재구성한다. k8s 매니페스트는 PR3b, 관측성 재설계+ADR-0015 는 PR3c 후속. 계획서 `docs/plans/done/task-impl1-pr3-dockerfile-ci-k8s.md`.
 
 **완료 항목** (P1·P2·P3 — 3축 단일 계획 중 PR3a):
 - **P1** 단일 `Dockerfile` + `ARG SERVICE`(멀티모듈 COPY 8모듈·`:${SERVICE}:bootJar`·base 이미지 digest 고정 L-016a). 5개 서비스 `docker build` 검증.

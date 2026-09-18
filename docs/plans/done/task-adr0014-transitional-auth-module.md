@@ -61,7 +61,7 @@
 ## 4. 영향 파일
 
 - 신규: `docs/adr/0014-transitional-auth-module.md`
-- 수정: `docs/adr/README.md`(INDEX + ADR-0011 Status), `docs/adr/0011-phase4-multimodule-structure.md`(Status 줄 + 무효화 범위 D1/D2/D3 주석), `docs/plans/task-impl1-gradle-multimodule.md`(7→8모듈 정정: §1·P7·P12·완료조건·영향파일 + PR2 인증 메모 정합), `docs/02-architecture.md`(§4-4 모듈 목록 +auth), `docs/TASKS.md`·`docs/progress/PHASE4.md`("A1~A4 완료/마지막 설계 ADR" 문구 보정 + ADR-0014 A4.5 추적)
+- 수정: `docs/adr/README.md`(INDEX + ADR-0011 Status), `docs/adr/0011-phase4-multimodule-structure.md`(Status 줄 + 무효화 범위 D1/D2/D3 주석), `docs/plans/done/task-impl1-gradle-multimodule.md`(7→8모듈 정정: §1·P7·P12·완료조건·영향파일 + PR2 인증 메모 정합), `docs/02-architecture.md`(§4-4 모듈 목록 +auth), `docs/TASKS.md`·`docs/progress/PHASE4.md`("A1~A4 완료/마지막 설계 ADR" 문구 보정 + ADR-0014 A4.5 추적)
 - 비대상(구현 ① PR2): 실제 모듈 생성·코드 이동·JwtProvider 분리
 
 ## 5. 검증 방법

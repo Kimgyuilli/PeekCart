@@ -142,7 +142,7 @@ Phase 3 Task 3-4 세션 C (시나리오 2: 1,000 VUser 동시 주문) 실행 전
     - `docs/adr/0004-phase3-gcp-gke-migration.md` (ADR immutable)
     - `docs/00-lagacy.md` (레거시 보존)
     - `docs/progress/loadtest-tool-evaluation.md`, `docs/progress/PHASE3.md`, `docs/progress/PHASE2.md` (의사결정·이력)
-    - `docs/plans/task-jmeter-to-k6.md` (본 계획서 자체 — "JMeter → k6 전환" 서술 다수)
+    - `docs/plans/done/task-jmeter-to-k6.md` (본 계획서 자체 — "JMeter → k6 전환" 서술 다수)
     - `loadtest/reports/2026-04-09/*` (세션 B 과거 리포트)
 - **k6 스크립트 로컬 검증** (P7 리허설 기준)
   - `mkdir -p loadtest/reports/local && k6 run --vus 10 --duration 30s --summary-export=loadtest/reports/local/k6-summary.json -e BASE_URL=http://localhost:8080 loadtest/scripts/order-concurrency.js`

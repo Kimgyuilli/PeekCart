@@ -52,4 +52,4 @@ ADR-0012 D1/D3 를 다음으로 재기록한다(코드 정본 채택).
 - [ADR-0012](./0012-phase4-db-event-saga-contract.md) D1/D3
 - 구현 코드: `product-service` `StockReservation`(V5/V8) · `payment-service` `payment_cancellations`(V12)
 - strangler-1 #56(예약 원장) · 결제 게이트 #57~#63
-- `docs/plans/task-impl2-db-per-service.md` P14
+- `docs/plans/done/task-impl2-db-per-service.md` P14

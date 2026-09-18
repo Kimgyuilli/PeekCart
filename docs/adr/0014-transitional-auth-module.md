@@ -117,4 +117,4 @@ ADR-0011 이 Phase 4 모듈 토폴로지를 확정하며 §D2 에서 `auth`/`jwt
 ## References
 - ADR-0011(멀티모듈 토폴로지/D2 auth 소유/D3 의존규칙), ADR-0013(게이트웨이 RS256·신뢰헤더·blacklist fail-closed — §27,48,49,56), ADR-0009(관측성 집중 공용 모듈 선례), ADR-0001(4-Layered)
 - 코드: `global/jwt/JwtProvider.java`, `global/jwt/JwtFilter.java`, `global/auth/TokenBlacklistPort.java`, `product/presentation/AdminProductController.java`, `global/config/SecurityConfig.java`
-- 계획: `docs/plans/task-adr0014-transitional-auth-module.md`, `docs/plans/task-impl1-gradle-multimodule.md`(PR2)
+- 계획: `docs/plans/done/task-adr0014-transitional-auth-module.md`, `docs/plans/done/task-impl1-gradle-multimodule.md`(PR2)

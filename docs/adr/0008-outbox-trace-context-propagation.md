@@ -67,7 +67,7 @@ Phase 4 MSA 분리 + cross-service tracing (OpenTelemetry / micrometer-tracing) 
 
 ## References
 
-- 계획서: `docs/plans/task-d010-outbox-trace-context.md`
+- 계획서: `docs/plans/done/task-d010-outbox-trace-context.md`
 - 선행 작업: D-007 옵션 B (`docs/TASKS.md` Tech Debt 표 행 D-007)
 - 관련 ADR: ADR-0001 (4-Layered + DDD), ADR-0002 (모놀리식 → MSA)
 - 관련 코드: `src/main/java/com/peekcart/global/kafka/{KafkaTraceHeaders,MdcRecordInterceptor}.java`, `src/main/java/com/peekcart/global/outbox/{OutboxEvent,OutboxPollingService}.java`
