@@ -2657,3 +2657,35 @@ V2/V3 때문에 D-022 의 방향이 "preflight 신설" → **"기존 검사를 �
 전체 D- ID 중복 검사를 돌려 다른 충돌이 없음을 확인했다.
 
 계획서: `docs/plans/task-ops-hardening-d022-d023-d024.md`
+
+## L-007 처분 — 버킷 3 종료 (2026-09-18)
+
+보류 항목 L-007("주문 *생성* 경로 '락 ⊃ 트랜잭션' 불변식 + 재고 차감 retry 정책 미정")을 닫는다.
+
+**게이트는 충족됐다.** 원문이 요구한 관측("동일-상품 경합 시 `PRD-004`/낙관락 응답률 유의")을
+D-002 측정 세션([#120])이 냈다 — replicas=3 경합군에서 `PRD-004` **0** ↔
+`OptimisticLockingFailureException` **7** → DLQ 7.
+
+**그런데 측정 대상이 코드에서 옮겨가 있었다.** `OrderCommandService.createOrder` 는 더 이상
+재고를 차감하지 않는다(`order.created` → Product 예약 Saga, ADR-0012 D3). 락의 main 호출자는
+`StockReservationService` **1곳**뿐이다. 즉 *주문 생성 경로*의 불변식은 **검증할 대상이 없어졌다**.
+
+**"자연 해소" 가 아니라 "이동 후 역전" 이다.** 불변식이 필요한 자리는 consumer 로 옮겨갔고,
+그곳에서는 반대로 성립한다 — `InventoryService` 가 REQUIRED 로 consumer 트랜잭션에 참여해
+`InventoryLockFacade` 의 `finally { unlock }` 이 커밋보다 **먼저** 돈다(락 ⊂ 트랜잭션).
+그래서 락이 획득되는데도(`PRD-004`=0) 낙관락 충돌이 난다. retry 정책도 함께 이동했다 —
+충돌은 consumer 재시도 소진 후 DLQ 로 간다. **그 정책의 적절성은 D-025 의 ADR 범위**다.
+
+→ L-007 을 **D-025 로 흡수**한다. L-013 은 이미 [#84] 로 해소됐으므로 **버킷 3 이 비었고,
+`phase4-prep-debt-roadmap.md` 에 미결 버킷이 남지 않는다.**
+
+### 함께 고친 것 — 오해의 출처
+
+코드가 아직 반대로 말하고 있었다. L-007 의 전제("주문 생성이 재고를 차감한다")가 여기서
+재생산되므로 두 곳을 정정했다:
+
+- `OrderCommandService:39` javadoc — "주문을 생성하고 **재고를 즉시 차감한다**"
+- `OrderController:40` swagger `description` — "**재고가 즉시 차감된다**" (공개 API 문서)
+
+`OrderController:91`(취소 설명)도 같은 성격이지만 L-007 전제와 무관한 인접 코드라 **건드리지 않았다**
+(CLAUDE.md §3). 별도로 정리할 대상이다.

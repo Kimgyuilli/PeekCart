@@ -37,7 +37,7 @@ public class OrderController {
     private final OrderCommandService orderCommandService;
     private final OrderQueryService orderQueryService;
 
-    @Operation(summary = "주문 생성", description = "장바구니 상품으로 주문을 생성한다. 재고가 즉시 차감된다.")
+    @Operation(summary = "주문 생성", description = "장바구니 상품으로 주문을 생성한다. 재고 차감은 동기로 일어나지 않고 order.created 이벤트를 받은 Product 예약 Saga 가 처리한다.")
     @PostMapping
     public ResponseEntity<ApiResponse<OrderDetailResponse>> createOrder(
             @CurrentUser LoginUser loginUser,

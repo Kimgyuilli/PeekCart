@@ -37,7 +37,10 @@ public class OrderCommandService {
     private final OrderOutboxEventPublisher outboxEventPublisher;
 
     /**
-     * 장바구니를 기반으로 주문을 생성하고 재고를 즉시 차감한다.
+     * 장바구니를 기반으로 주문을 생성한다.
+     *
+     * <p><b>재고는 여기서 차감하지 않는다</b> — {@code order.created} → Product 예약 Saga 가
+     * 비동기로 처리한다(ADR-0012 D3). 단가도 Product 동기 호출 없이 로컬 가격 캐시에서 읽는다.
      *
      * @throws OrderException 장바구니가 없으면 {@code ORD-006}, 비어있으면 {@code ORD-004}
      */
