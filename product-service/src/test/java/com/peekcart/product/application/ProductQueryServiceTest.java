@@ -4,8 +4,6 @@ import com.peekcart.global.cache.CachedPage;
 import com.peekcart.product.application.dto.ProductDetailDto;
 import com.peekcart.product.application.dto.ProductInfoDto;
 import com.peekcart.product.application.dto.ProductListDto;
-import com.peekcart.product.domain.model.Inventory;
-import com.peekcart.product.domain.repository.InventoryRepository;
 import com.peekcart.support.ServiceTest;
 import com.peekcart.support.fixture.ProductFixture;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +15,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -30,7 +27,6 @@ class ProductQueryServiceTest {
     @InjectMocks ProductQueryService productQueryService;
 
     @Mock ProductCacheService productCacheService;
-    @Mock InventoryRepository inventoryRepository;
 
     private final Pageable pageable = PageRequest.of(0, 10);
 
@@ -65,32 +61,21 @@ class ProductQueryServiceTest {
     // ── getProduct ────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("getProduct: 캐시된 상품 정보와 실시간 재고를 조합하여 DTO를 반환한다")
+    @DisplayName("getProduct: 상품 정보 캐시와 재고 캐시를 조합하여 DTO를 반환한다 (ADR-0026 D2)")
     void getProduct_success_returnsDto() {
         ProductInfoDto infoDto = ProductFixture.productInfoDto();
         given(productCacheService.getProductInfo(ProductFixture.DEFAULT_PRODUCT_ID))
                 .willReturn(infoDto);
-        given(inventoryRepository.findByProductId(ProductFixture.DEFAULT_PRODUCT_ID))
-                .willReturn(Optional.of(ProductFixture.inventoryWithId(ProductFixture.productWithId(ProductFixture.categoryWithId()))));
+        given(productCacheService.getStock(ProductFixture.DEFAULT_PRODUCT_ID))
+                .willReturn(ProductFixture.DEFAULT_STOCK);
 
         ProductDetailDto result = productQueryService.getProduct(ProductFixture.DEFAULT_PRODUCT_ID);
 
         assertThat(result.id()).isEqualTo(ProductFixture.DEFAULT_PRODUCT_ID);
         assertThat(result.name()).isEqualTo(ProductFixture.DEFAULT_PRODUCT_NAME);
         assertThat(result.stock()).isEqualTo(ProductFixture.DEFAULT_STOCK);
-    }
-
-    @Test
-    @DisplayName("getProduct: 재고 정보가 없으면 stock=0을 반환한다")
-    void getProduct_noInventory_returnsZeroStock() {
-        ProductInfoDto infoDto = ProductFixture.productInfoDto();
-        given(productCacheService.getProductInfo(ProductFixture.DEFAULT_PRODUCT_ID))
-                .willReturn(infoDto);
-        given(inventoryRepository.findByProductId(ProductFixture.DEFAULT_PRODUCT_ID))
-                .willReturn(Optional.empty());
-
-        ProductDetailDto result = productQueryService.getProduct(ProductFixture.DEFAULT_PRODUCT_ID);
-
-        assertThat(result.stock()).isZero();
+        // 재고를 리포지터리가 아니라 캐시 서비스에서 받는다는 것이 이 테스트의 계약이다 —
+        // 여기로 되돌아가면 상세의 DB 왕복이 되살아난다(D-026).
+        then(productCacheService).should().getStock(ProductFixture.DEFAULT_PRODUCT_ID);
     }
 }

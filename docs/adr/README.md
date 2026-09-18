@@ -48,4 +48,5 @@
 | [0023](./0023-payment-approval-reconciliation.md) | 결제 승인 경계 계약 — 승인 원장 + 멱등키 + 조회 기반 reconciliation (D-020, ADR-0018 D2/D3/D5 를 승인 경로로 확장) | Accepted | Phase 4 | 03, 04 |
 | [0024](./0024-observability-canonical-with-infra.md) | 관측성 canonical 집합 = 도메인 5 + 인프라 1 — gateway 편입과 세 집합(태그/Service/SM)의 분리 (ADR-0015 부분 무효화) | Accepted | Phase 4 | 02 |
 | [0025](./0025-inventory-concurrency-control.md) | 재고 동시성 제어 — 분산 락 제거, `@Version` 단일 수단 + jitter 재시도 (D-025, 흡수된 L-007) | Accepted | Phase 4 | 02, 04, 05 |
+| [0026](./0026-product-detail-stock-cache-boundary.md) | 상품 상세 재고 캐시 경계 — 재고 전용 짧은 TTL 캐시, 쓰기 경로 무효화 없음 (D-026) | Accepted | Phase 4 | 04, 05 |
 <!-- INDEX:END -->

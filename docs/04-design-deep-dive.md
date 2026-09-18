@@ -400,7 +400,7 @@ Phase 4 MSA 환경에서 주문 생성 시 상품 단가를 즉시 확인해야 
 
 **Redis 조회 캐시의 장애 정책 (L-006)**
 
-Product Service 의 상품 조회 Redis 캐시는 **fail-open** 입니다. `CacheErrorHandler`(`ResilientCacheErrorHandler`)가 조회 실패를 캐시 미스로 흘려 DB 로 우회하므로, Redis 장애가 상품 조회 API 를 5xx 로 만들지 않습니다. 단 `@CacheEvict` 실패는 TTL(상세 30m / 목록 10m) 만료 전까지 stale 을 남기므로 WARN + `cache_fallback_total` 메트릭으로 가시화합니다. Gateway 의 rate limit 이 정반대로 fail-closed 인 이유는 보호 장치와 가속 장치의 차이입니다 (see ADR-0013 D3). 운영 절차: `docs/runbooks/redis-cache-fallback.md`.
+Product Service 의 상품 조회 Redis 캐시는 **fail-open** 입니다. `CacheErrorHandler`(`ResilientCacheErrorHandler`)가 조회 실패를 캐시 미스로 흘려 DB 로 우회하므로, Redis 장애가 상품 조회 API 를 5xx 로 만들지 않습니다. 단 `@CacheEvict` 실패는 TTL(상세 30m / 목록 10m) 만료 전까지 stale 을 남기므로 WARN + `cache_fallback_total` 메트릭으로 가시화합니다. 상품 상세의 **재고는 세 번째 캐시**(`productStock`, TTL 5초)에서 오며 쓰기 경로 무효화가 없습니다 — 정확성의 상한을 TTL 하나가 주고, 상세의 재고는 예약 보증이 아니라 표시용 힌트입니다 (see ADR-0026). 상세가 캐시를 둘 타므로 무응답 Redis 구간의 타임아웃 예산은 목록의 2배입니다. Gateway 의 rate limit 이 정반대로 fail-closed 인 이유는 보호 장치와 가속 장치의 차이입니다 (see ADR-0013 D3). 운영 절차: `docs/runbooks/redis-cache-fallback.md`.
 
 ---
 

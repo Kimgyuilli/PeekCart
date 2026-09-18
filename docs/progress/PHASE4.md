@@ -2755,6 +2755,83 @@ C(비관적 락)는 구조적으로 가장 깔끔하지만 DB 경합이 미측�
 
 ---
 
+## D-026 — 상품 상세 재고 캐시 경계 (2026-09-18)
+
+> ADR-0026 · 계획서 `docs/plans/task-d026-detail-stock-cache-boundary.md`
+
+### 원문의 두 원인 중 하나는 원인이 아니었다
+
+D-002a 증적은 detail 열세(×1.23 vs list ×2.02)의 원인으로 둘을 병기했다 — 재고 DB 조회와
+`@Transactional(readOnly = true)` 개방. 착수 전 코드 검증에서 **후자가 기각됐다.**
+
+`ProductQueryService` 의 `@Transactional` 은 **클래스 레벨**이라 `getProducts` 에도 똑같이
+걸린다. 그런데 list 는 그 상태로 ×2.02 를 냈다 — 공통 비용은 차이를 설명하지 못한다. 게다가
+`open-in-view: false` + Hibernate 지연 커넥션 획득이라 쿼리가 0이면 물리 커넥션조차 잡지 않는다.
+남는 것은 **재고 SELECT 1회**뿐이었고, Hibernate `Statistics` 로 직접 세어 **detail=1 / list=0**
+으로 확증한 뒤 수정 후 **detail=0** 으로 뒤집었다. 증적에는 정정을 추기했다(덮어쓰지 않음).
+
+### 왜 무효화가 아니라 TTL인가
+
+네 선택지 중 **B(재고 전용 캐시 + 짧은 TTL 5초)** 를 골랐다. 결정의 뿌리는 성능이 아니라
+**계약**이다 — 상세 조회의 `stock` 은 **지금도 예약을 보증하지 않는다.** 응답 직후 값이 변할
+수 있고 주문 가능 여부의 진실은 예약 Saga 가 정한다. 그래서 TTL stale 은 새로운 부정확성
+클래스를 만드는 게 아니라 **이미 있던 창을 유계로 넓히는 것**이다(ADR-0026 D1).
+
+쓰기 경로 무효화(선택지 C)를 기각한 이유는 **D-025 와 같은 함정**이다. `InventoryService` ·
+`StockReservationService` 는 REQUIRED 로 consumer 트랜잭션에 참여하므로 `@CacheEvict` 가
+**커밋보다 먼저** 돈다. 그 창의 재조회가 미커밋 구값을 되캐싱하면 stale 이 오히려 TTL 까지
+고착된다. 즉 evict 은 TTL 의 대체재가 아니라 **추가물**이고, 없어도 상한은 TTL 이 준다.
+이것을 "나중에 하자" 가 아니라 **결정**으로 적고(D3), 예약 직후 조회가 구값을 반환하는 것을
+계약 테스트로 고정했다 — 누군가 evict 을 조용히 끼워 넣으면 red 가 되어 ADR 을 읽게 된다.
+
+이벤트 전파(선택지 D)도 기각했다. `product.updated` 페이로드에 `availableStock` 이 이미
+있지만 **발행 지점이 `ProductCommandService` 3곳뿐이고 예약·복구 경로는 발행하지 않는다.**
+소비 측(order-service `ProductPriceCache`)은 그 필드를 **버린다**(소비 0건). 이 축으로 가려면
+예약마다 outbox 발행이 필요한데, 그건 조회 최적화를 위해 **이미 병목인 발행 경로**(D-002 가
+사가 천장으로 지목한 20/s)에 쓰기를 얹는 것이다.
+
+### 실측으로 드러난 비용 — 타임아웃 예산이 2배가 된다
+
+계획에 없던 것이 기존 테스트에 걸렸다. `ProductCacheFallbackIntegrationTest` V3(무응답 Redis)
+가 **2.05s**로 1.5s 상한을 깼다. 상세가 이제 캐시를 **둘** 타므로 각각 get 500ms + put 500ms,
+총 **4회 = 2000ms**다(도입 전 2회 = 1000ms). 상한을 2.6s 로 올리고 근거를 ADR Consequences 에
+적었다 — 장애는 아니지만(타임아웃은 여전히 유계다) Redis 가 매달리는 구간에서 상세만 유독
+느려진다는 뜻이고, 줄일 레버는 TTL 이 아니라 `spring.data.redis.timeout` 이다.
+
+같은 테스트의 V1 에서는 재고 캐시 fallback delta 가 단독 실행 1 ↔ 전체 실행 2 로 갈렸다.
+앞선 테스트가 남긴 Lettuce 재연결 상태 의존이라, **정확히 1** 대신 **1 이상**으로 단언을 맞췄다 —
+고정하려는 계약은 "재고 캐시가 fail-open 경로에 있다" 이지 Lettuce 재시도 횟수가 아니다.
+증가분 단언이므로 경계 소실(0)은 그대로 잡힌다.
+
+### 가드가 실제로 red 가 되는지 주입해서 확인했다
+
+- `getStock` 의 `@Cacheable` 제거 → 왕복이 정확히 1 로 복귀, red
+- TTL 1s → 1h → stale 상한 테스트만 red (쓰기 경로 가드는 green — 축이 분리돼 있다)
+- 쓰기 경로에 `@CacheEvict` 주입 → 쓰기 경로 가드만 red
+
+### 미충족
+
+- **배속 재측정(×1.23 → ?) 없음** — GKE 과금 세션이 필요하다. **D-026 을 "완료" 로 닫지 않고
+  "부분 해소" 로 둔다.** 다음 세션에서 D-002 P5(MySQL CPU 상한 미분리)와 묶는 것이 효율적이다.
+- **2차 병목은 그대로다.** 캐시 OFF 천장이 detail 378.1 / list 380.0 으로 거의 같다는 것은
+  공통 자원이 천장을 쥔다는 뜻이고, 재고 쿼리 1개를 없애도 그 천장은 안 내려간다.
+  이 변경이 개선하는 것은 **캐시 ON 쪽**이다.
+- **Codex 리뷰 미호출**(계획·diff 둘 다, 사용자 지시 + CLI 바이너리 누락). **"P0/P1 = 0" 주장 없음.**
+- **선재 갭 발견, 손대지 않음**: `docs/04-design-deep-dive.md` §9-1 이 재고 동시성을
+  "Redis 분산 락 + DB 낙관적 락" 으로 기술하는데 **ADR-0025 가 그 락을 제거했다**. D-025 범위이고
+  이번 변경과 무관해 그대로 뒀다.
+
+### PR
+
+[#124](https://github.com/Kimgyuilli/PeakCart/pull/124) — 커밋 4개(adr / src / test / docs).
+`./gradlew :product-service:test` **42 클래스 · 196 테스트 · 0 실패**(BUILD SUCCESSFUL 17m 19s).
+lint `observability-ssot` · `observability-promql` 둘 다 exit 0. **머지는 하지 않았다.**
+
+
+계획서: `docs/plans/done/task-d025-inventory-lock-boundary.md`
+
+---
+
 ## 하네스 개선 — 리뷰 루프가 작업을 불리는 문제 (2026-09-18)
 
 제품 코드가 아니라 `.claude/` 하네스 자체를 고쳤다. 사용자가 보고한 불편 세 가지에서
