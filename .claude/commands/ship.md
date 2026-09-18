@@ -10,7 +10,7 @@
 > 사유 — `/plan`·`/work` 는 2026-08-26 축소에서 이미 `state.json` 을 버렸는데 `/ship` 만 그것을 **필수 전제**로 남겨두어, Step 1 이 "state 가 없습니다. /work 를 먼저 완료하세요" 로 **정상 흐름을 차단**했다. 구현 ⑤(#94) 에서 실제로 이 불일치에 부딪혀 Step 1/10 을 건너뛰고 수행했다.
 > 진행 상태는 `state.json` 이 아니라 **git 과 gh 의 사실**(브랜치·커밋·원격·PR)로 판정한다. 이력은 계획서·audit 파일·git 이력에 남는다.
 >
-> 이 축소로 `hpx_ship_pr_body_data` 는 호출처가 사라진다. `hpx_state_*`·`hpx_lock_*`·`hpx_gate_events_append`·`hpx_diff_absorption_status` 는 `/plan`·`/work` 축소 때 이미 죽어 있었다. 셸 라이브러리 정리는 별도 task 로 한 번에 한다 — 이 커맨드는 호출을 멈출 뿐 삭제하지 않는다.
+> 이 축소로 죽은 helper 들은 2026-09-18 정리에서 제거했다. `hpx_ship_pr_body_data`, `hpx_state_*`, `hpx_lock_*`, `hpx_gate_events_*`, `hpx_diff_absorption_status` 등 51개가 대상이었고 `lock.sh`·`state.sh`·`sync.sh` 는 파일째 삭제했다. 이력은 git 에 남는다.
 
 `/ship` 은 Codex 를 호출하지 않는다 (shell precheck / commit / push / gh 만).
 
