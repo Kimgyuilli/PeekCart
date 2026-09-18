@@ -23,6 +23,8 @@ public enum ErrorCode {
     PRD_001(HttpStatus.NOT_FOUND, "PRD-001", "상품을 찾을 수 없습니다."),
     PRD_002(HttpStatus.CONFLICT, "PRD-002", "재고가 부족합니다."),
     PRD_003(HttpStatus.NOT_FOUND, "PRD-003", "카테고리를 찾을 수 없습니다."),
+    // 낙관적 락 충돌(409). 분산 락 획득 실패에도 쓰였으나 그 경로는 ADR-0025 D1 로 사라졌다 —
+    // 남은 의미는 GlobalExceptionHandler 의 OptimisticLockingFailureException → 409 하나다.
     PRD_004(HttpStatus.CONFLICT, "PRD-004", "재고 변경 충돌이 발생했습니다. 다시 시도해주세요."),
 
     // Order
