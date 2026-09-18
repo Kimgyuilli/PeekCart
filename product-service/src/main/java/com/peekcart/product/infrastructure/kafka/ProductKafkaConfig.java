@@ -1,6 +1,6 @@
 package com.peekcart.product.infrastructure.kafka;
 
-import com.peekcart.global.kafka.FixedSequenceBackOff;
+import com.peekcart.global.kafka.JitteredSequenceBackOff;
 import com.peekcart.global.kafka.KafkaTopicConfigs;
 import com.peekcart.global.replay.OriginalRecordReader;
 import com.peekcart.global.kafka.MdcPayloadExtractor;
@@ -111,7 +111,11 @@ public class ProductKafkaConfig {
             } catch (Exception e) {
                 log.warn("DLQ Slack 알림 발송 실패", e);
             }
-        }, new FixedSequenceBackOff(1_000, 5_000, 30_000));
+            // jitter 없이 고정 간격으로 재시도하면 동시에 실패한 소비자들이 같은 순간에 함께 깨어나
+            // 같은 충돌을 반복한다 — 재고 낙관락 경합에서 실측된 형태다(D-025, ADR-0025 D2).
+            // 재고 전용 분기가 아니라 이 서비스의 공용 재시도 성질로 둔다: lockstep 은 낙관락에만
+            // 생기는 문제가 아니다. 다른 서비스의 같은 배선은 이번 범위 밖이다.
+        }, new JitteredSequenceBackOff(0.5, 1_000, 5_000, 30_000));
     }
 
     @Bean

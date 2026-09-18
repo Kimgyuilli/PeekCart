@@ -35,7 +35,6 @@ public class StockReservationService {
 
     private final StockReservationRepository reservationRepository;
     private final InventoryService inventoryService;
-    private final InventoryLockFacade inventoryLockFacade;
     private final ProductOutboxEventPublisher publisher;
     private final ObjectMapper objectMapper;
     private final SlackPort slackPort;
@@ -80,8 +79,12 @@ public class StockReservationService {
             return;
         }
 
+        // 선검사(위)와 차감(아래) 사이의 창을 닫는 것은 락이 아니라 <b>트랜잭션</b>이다 (ADR-0025 D1).
+        // 그 사이에 남이 재고를 가져가면 여기서 PRD-002 가 전파돼 예약·원장·발행이 통째로 롤백되고,
+        // 재시도 때는 선검사가 막는다. 부분 차감이 커밋되는 경우는 없다.
+        // 동시 차감끼리의 경합은 @Version 이 잡아 충돌 → 롤백 → 재시도(jitter, ADR-0025 D2)로 수렴한다.
         for (ReservedItemPayload item : items) {
-            inventoryLockFacade.decreaseStock(item.productId(), item.quantity());
+            inventoryService.decreaseStock(item.productId(), item.quantity());
         }
         StockReservation reservation =
                 StockReservation.reserved(orderId, toJson(items), sourceEventId, leaseProperties.getTtl());

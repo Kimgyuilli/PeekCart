@@ -2689,3 +2689,66 @@ D-002 측정 세션([#120])이 냈다 — replicas=3 경합군에서 `PRD-004` *
 
 `OrderController:91`(취소 설명)도 같은 성격이지만 L-007 전제와 무관한 인접 코드라 **건드리지 않았다**
 (CLAUDE.md §3). 별도로 정리할 대상이다.
+
+## D-025 — 분산 락이 커밋을 감싸지 못한다 (2026-09-18, [#123](https://github.com/Kimgyuilli/PeakCart/pull/123))
+
+`InventoryLockFacade` 를 제거하고 재고 동시성 제어를 `@Version` 하나로 통일했다(ADR-0025).
+흡수돼 있던 L-007 의 "재고 차감 retry 정책 미결"도 여기서 함께 닫힌다.
+
+### 재현이 원문보다 넓었다
+
+부채 원문은 "락 해제가 커밋보다 먼저 돈다"였는데, 코드 검증과 재현이 세 가지를 더 찾았다.
+
+- **락 구간에 쓰기가 아예 없었다.** `InventoryService.decreaseStock` 은 조회 + managed 엔티티
+  필드 변경뿐이고 `save`/`flush` 가 없다. 참여 트랜잭션이라 UPDATE 는 커밋 flush 에 나간다 —
+  락이 감싼 것은 **읽기뿐**이었다. "커밋을 못 감쌌다" 보다 한 단계 더 나쁘다.
+- **락은 재고 변경 3경로 중 1개만 덮었다.** 복구(`restoreStock`, 취소·sweeper 경로)와
+  all-or-nothing 선검사(`hasSufficientStock`)는 락 없이 직접 호출된다. sweeper 는 별도 스레드다.
+- **lease 5초 만료가 조용히 락을 무력화한다.** 만료 후 `unlock` 은 `isHeldByCurrentThread()` 가
+  false 라 예외도 로그도 지표도 없이 통과한다.
+
+기존 `InventoryConcurrencyTest` 가 이걸 못 잡은 이유도 구체적이다 — facade 를 **바깥 트랜잭션
+없이** 직접 호출해서, **불변식이 성립하는 유일한 구성만** 시험하고 있었다(50/50 통과).
+
+### DLQ 7 전량 소진의 해명
+
+실측(GKE replicas=3)은 `PRD-004`=0 · 낙관락 충돌 7 · DLQ 7 이었다. 재시도 예산이 4회인데 전량
+소진된 것이 설명되지 않아, 두 가설을 갈랐다.
+
+- **(b) "애초에 재시도 대상이 아니었다" → 반증.** `ExceptionClassifier.defaultFatalExceptionsList()`
+  를 `spring-kafka-3.3.14.jar` 바이트코드로 직접 읽었다. 목록은 6개뿐이고 낙관락 예외도 그 상위
+  타입도 없다 → **재시도는 실제로 일어났다.** 이 사실을 실행 가능한 단언으로 고정했다.
+- **(a) "재시도가 경합을 재생산했다" → 채택.** `FixedSequenceBackOff` 에는 무작위 성분이 없다.
+  동시에 충돌한 소비자들이 **똑같이** 1s → 5s → 30s 를 기다렸다가 **같은 순간에 함께 깨어나**
+  다시 충돌한다. 재시도가 경합을 흩뜨리는 게 아니라 **보존**한다.
+
+그래서 재시도 횟수를 늘리는 것은 처방이 아니다 — `JitteredSequenceBackOff`(±50%)를 만들어
+`ProductKafkaConfig.kafkaErrorHandler` 에만 물렸다. 나머지 4개 서비스의 같은 배선은 범위 밖이다.
+
+### 왜 B(락 제거)인가
+
+세 선택지를 놓고 골랐다. A(락을 트랜잭션 밖으로)는 lease 만료 창을 **상속**해서 watchdog 등
+부속 장치가 계속 필요해진다 — 기여가 0 으로 측정된 수단을 올바르게 만들기 위해 비용을 쓰는 방향이다.
+C(비관적 락)는 구조적으로 가장 깔끔하지만 DB 경합이 미측정이고, D-002 가 이미 MySQL CPU 를 1차
+병목으로 지목한 상태다. **기각이 아니라 유보** — 충돌률이 허용 범위를 넘으면 C 가 승격 경로고,
+그때는 supersede 가 아니라 D1 부분 무효화로 간다(ADR-0025 Consequences).
+
+### 정정 — 내 B1 스윕이 놓친 참조
+
+계획서 역의존 표에 `PRD_004` 를 "`InventoryLockFacade` 단독"으로 적었는데 **틀렸다**. 스윕 grep 에
+`| head` 를 걸어 출력이 잘렸고, `GlobalExceptionHandler:76`(낙관락 충돌 → 409)을 놓쳤다. 제거했다가
+컴파일이 잡았고 되돌렸다. 오히려 이 ADR 이 낙관락을 유일한 수단으로 정하면서 `PRD-004` 의 의미가
+**하나로 좁혀진다**(ADR-0025 D4-1). P4 초안도 한 번 red 였는데 그쪽은 프로덕션이 아니라 테스트
+버그였다(Redisson 재진입 — 탈취자와 관찰자를 같은 스레드로 둠).
+
+### 미충족
+
+- **Codex 리뷰 미호출**(사용자 지시) — 계획 리뷰·diff 리뷰 둘 다. **"P0/P1 = 0" 주장 없음.**
+- **부하 하 재측정 없음** — jitter 가 DLQ 유입을 실제로 줄이는지는 다음 부하 세션 몫이다.
+  로컬 결과를 클러스터 결과로 주장하지 않는다.
+- **(a) 가설의 인과 확증은 형태 일치까지** — GKE 7건이 정확히 lockstep 경로였다는 것을 로컬에서
+  직접 잇지는 못했다.
+- **`DistributedLockManager` 는 사용처 없이 `:common` 에 남는다**(ADR-0025 D4, 의도된 보존).
+- **다른 4개 서비스의 error handler 는 여전히 jitter 없음** — 같은 lockstep 을 안고 있다.
+
+계획서: `docs/plans/task-d025-inventory-lock-boundary.md`
