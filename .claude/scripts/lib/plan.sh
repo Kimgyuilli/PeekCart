@@ -9,8 +9,13 @@ hpx_plan_frontmatter() {
   [ -n "$task_id" ] && [ -n "$key" ] || return 1
   hpx_task_id_validate "$task_id" 2>/dev/null || return 1
 
+  # 완료된 계획서는 docs/plans/done/ 으로 아카이브된다(scripts/plans-archive.sh).
+  # 재진입이나 재개 작업이 깨지지 않도록 양쪽을 본다. 루트가 우선이다.
   local plan_file="docs/plans/${task_id}.md"
-  [ -f "$plan_file" ] || return 1
+  if [ ! -f "$plan_file" ]; then
+    plan_file="docs/plans/done/${task_id}.md"
+    [ -f "$plan_file" ] || return 1
+  fi
 
   local value
   value="$(awk -v key="$key" '

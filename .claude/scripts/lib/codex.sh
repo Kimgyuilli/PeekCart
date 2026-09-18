@@ -66,8 +66,9 @@ hpx_codex_allowed() {
     local fm_value
     fm_value="$(hpx_plan_frontmatter "$task_id" codex 2>/dev/null)"
     if [ -n "$fm_value" ] && hpx_codex_off_value "$fm_value"; then
-      printf 'blocked\nplan\nfrontmatter codex: %s\n%s/docs/plans/%s.md\n' \
-        "$fm_value" "$(pwd)" "$task_id"
+      local loc="docs/plans/${task_id}.md"
+      [ -f "$loc" ] || loc="docs/plans/done/${task_id}.md"
+      printf 'blocked\nplan\nfrontmatter codex: %s\n%s/%s\n' "$fm_value" "$(pwd)" "$loc"
       return 1
     fi
   fi

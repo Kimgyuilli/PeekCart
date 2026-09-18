@@ -17,6 +17,7 @@ hpx_review_health() {
   hpx_task_id_validate "$task_id" 2>/dev/null || { printf 'ok\n'; return 0; }
 
   local path="docs/plans/${task_id}.audit.md"
+  [ -f "$path" ] || path="docs/plans/done/${task_id}.audit.md"
   [ -f "$path" ] || { printf 'ok\n'; return 0; }
 
   python3 - "$path" <<'PY'
