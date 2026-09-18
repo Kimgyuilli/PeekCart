@@ -54,3 +54,26 @@ fi
 
 echo "$TAG kubectl apply -k $OVERLAY"
 kubectl apply -k "$OVERLAY"
+
+# ── 배포 후 인증 왕복 게이트 (D-022) ─────────────────────────────────────────
+#
+# **왜 배포 뒤인가**: 키쌍이 어긋나도 apply 는 전부 성공하고 파드는 Ready 가 되며 로그인도 200 이다.
+#   깨진 것은 **인증된 요청**뿐이라 배포 시점에는 아무 신호가 없다. D-002 측정 세션이 그렇게 통과했고,
+#   원인(ConfigMap 공개키 ↔ Secret Manager 개인키 불일치)을 찾는 데 40분이 들었다.
+#
+# **강제력**: `GW_URL` 이 있으면 돌리고, 없으면 **건너뛴 사실을 크게 남긴다**. 위 drain preflight 와
+#   같은 철학이다 — 우회를 막을 수 없으니 우회가 보이게 한다. 게이트가 실패하면 배포는 이미 적용된
+#   뒤이므로 이 스크립트는 **되돌리지 않고 exit 1 로 알린다**(롤백 판단은 운영자 몫).
+if [[ -n "${GW_URL:-}" ]]; then
+    echo "$TAG 인증 왕복 게이트 실행 (GW_URL=$GW_URL)"
+    echo "$TAG   롤아웃 완료 대기…"
+    kubectl -n "${NAMESPACE:-peekcart}" rollout status deploy/gateway --timeout="${GATE_ROLLOUT_TIMEOUT:-300s}" || true
+    if ! GW_URL="$GW_URL" bash scripts/auth-roundtrip-gate.sh; then
+        echo "$TAG !! 인증 왕복이 깨졌다 — 배포는 적용됐다. 위 진단을 보고 롤백/수정을 판단하라" >&2
+        exit 1
+    fi
+else
+    echo "$TAG !! 인증 왕복 게이트를 건너뛴다 — GW_URL 미설정"
+    echo "$TAG !! 키쌍이 어긋나면 배포·Ready·로그인이 전부 정상인데 인증 요청만 401 이 된다(D-022)"
+    echo "$TAG !! 수동 실행:  GW_URL=http://<gateway>:8080 bash scripts/auth-roundtrip-gate.sh"
+fi

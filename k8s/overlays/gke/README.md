@@ -77,8 +77,18 @@ kubectl apply -k k8s/monitoring/shared/
 
 # 4. app/infra + HPA + ServiceMonitor
 # 앱 overlay 배포는 래퍼를 쓴다 — drain preflight 선행 (ADR-0022 §D3)
-bash scripts/deploy-overlay.sh k8s/overlays/gke
+#    GW_URL 을 주면 배포 후 **인증 왕복 게이트**(D-022)까지 래퍼가 돌린다.
+#    주지 않으면 건너뛰고 그 사실을 경고로 남긴다 — 건너뛴 채로 두지 말 것.
+GW_URL=http://<gateway-internal-lb>:8080 bash scripts/deploy-overlay.sh k8s/overlays/gke
+
+# 5. (LB IP 를 배포 전에 모를 때) 인증 왕복 게이트를 따로 실행 — **통과해야 완료다**
+GW_URL=http://<gateway-internal-lb>:8080 bash scripts/auth-roundtrip-gate.sh
 ```
+
+> **왜 5단계가 필요한가** (D-022): ConfigMap 공개키가 Secret Manager 개인키와 **다른 쌍**이어도
+> apply 는 전부 성공하고 파드는 Ready 이며 로그인도 200 입니다. 깨지는 것은 **인증된 요청뿐**이라
+> 배포 시점에 아무 신호가 없습니다. `kid` 가 같으면 `unknown_kid` 로도 안 걸리고 `bad_signature`
+> 로만 나타납니다. 게이트가 실패하면 **어느 키 도메인이 어긋났는지 지목**합니다.
 
 > **HPA 전제**: 4단계 적용에 포함된 HPA (`hpa.yml`) 는 CPU Utilization 기반이며 metrics-server API (`metrics.k8s.io`) 가 필요합니다. GKE Standard 는 기본 제공이므로 추가 설치 없이 동작합니다. **도메인 서비스 HPA 는 order-service 단일**(구현 ① PR3b GP-2 #4 · 로드맵 §16 "Phase 4 이후 HPA=Order Service HPA") — 타 4서비스는 HPA 미적용(필요 시 후속). **gateway 는 그 원칙의 명시적 예외**(구현 ③ PR3b): 전 트래픽 단일 진입점이라 단일 replica 가 SPOF 이므로 `minReplicas: 2` HPA 를 둡니다(ADR-0013 D3). minikube overlay 에는 HPA 미포함.
 > HPA 상태 확인: `kubectl get hpa -n peekcart` · `kubectl top pods -n peekcart`.

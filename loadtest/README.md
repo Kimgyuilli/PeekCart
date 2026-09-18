@@ -157,6 +157,15 @@ kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/gke-d002bc
 `--load-restrictor LoadRestrictionsNone` 은 `gke-d002a` 와 같은 이유로 필요하다(base 파일을
 디렉터리가 아니라 파일 단위로 참조한다).
 
+배포 직후 **인증 왕복 게이트를 반드시 통과시킨다** (D-022):
+
+```bash
+GW_URL=http://<gateway-internal-lb>:8080 bash scripts/auth-roundtrip-gate.sh
+```
+
+이 세션이 이 단계를 건너뛰어 **키쌍 불일치 2건**(사용자 토큰·내부 토큰)을 배포 후에야 발견했고,
+원인을 좁히는 데 40분이 들었다. 게이트는 실패 시 어느 도메인이 어긋났는지 지목한다.
+
 **gateway 를 뺄 수 없다.** order/payment 는 `InternalTokenAuthenticationFilter`(기본 `SIGNED_ONLY`)
 라 평문 `X-User-*` 를 무시한다 — gateway 가 서명한 내부 토큰 없이는 401 이다. 따라서 이 세션은
 `gke-d002a` 와 달리 Secret Manager CSI + Workload Identity 설정이 **필요하다**(gateway 개인키).
