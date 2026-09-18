@@ -2820,3 +2820,9 @@ D-002a 증적은 detail 열세(×1.23 vs list ×2.02)의 원인으로 둘을 병
 - **선재 갭 발견, 손대지 않음**: `docs/04-design-deep-dive.md` §9-1 이 재고 동시성을
   "Redis 분산 락 + DB 낙관적 락" 으로 기술하는데 **ADR-0025 가 그 락을 제거했다**. D-025 범위이고
   이번 변경과 무관해 그대로 뒀다.
+
+### PR
+
+[#124](https://github.com/Kimgyuilli/PeakCart/pull/124) — 커밋 4개(adr / src / test / docs).
+`./gradlew :product-service:test` **42 클래스 · 196 테스트 · 0 실패**(BUILD SUCCESSFUL 17m 19s).
+lint `observability-ssot` · `observability-promql` 둘 다 exit 0. **머지는 하지 않았다.**

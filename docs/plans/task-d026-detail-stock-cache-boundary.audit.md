@@ -41,3 +41,16 @@
   (ADR-0025 가 락을 제거했다). D-025 범위라 보고만 한다.
 - 검증: (아래 최종 보고 참조) · lint `observability-ssot` exit 0 · `observability-promql` exit 0
 - raw: 없음 (미실행)
+
+## 2026-09-18 — /ship
+
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/124 (base `main`, 머지 안 함)
+- precheck: `ok` (warnings 0) — 게이트 미노출
+- 커밋 4개: `docs(adr)` / `feat(product)` / `test(product)` / `docs(d026)` — 분류 혼합 없음
+- 검증: product-service 42 클래스 **196 tests 0 failures 0 errors** · lint 2종 exit 0
+- 갱신: `TASKS.md` D-026 행(🔄 부분 해소 + PR 링크) · `PHASE4.md` PR 블록 · 이 파일
+- 편입 부채 없음 → `phase4-prep-debt-roadmap.md` 갱신 대상 아님
+- **정정**: 스위트가 멈춘 줄 알고 Gradle 워커를 죽였으나 실제로는 17m19s 에 정상 완주했다.
+  마무리 단계의 Kafka 컨슈머 재연결 로그를 정지로 오독한 것이다. BUILD SUCCESSFUL 과 결과
+  XML 은 그 전에 기록돼 있어 수치는 온전하다.
+- 미충족: 배속 재측정(GKE 세션) · Codex 리뷰 미호출(계획·diff) · 전 8모듈 스위트 로컬 미완주
