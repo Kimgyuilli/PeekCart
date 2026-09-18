@@ -1,4 +1,4 @@
-// D-002a — product 읽기 캐시 배속 격리 측정 (계획서 docs/plans/task-d002a-cache-speedup-session.md)
+// D-002a — product 읽기 캐시 배속 격리 측정 (계획서 docs/plans/done/task-d002a-cache-speedup-session.md)
 //
 // 캐시 ON/OFF 대조군을 같은 부하로 때려 TPS 비를 낸다. gateway 를 경유하지 않으므로
 // RateLimiter(40 req/s)도 인증 오버헤드(+9.9ms)도 섞이지 않는다.

@@ -69,5 +69,5 @@ ADR-0015 는 `observability-promql-lint` 의 검증 범위를 **PromQL syntax + 
 ## References
 - ADR-0015 (관측성 per-service 계약 — 본 ADR 이 lint 범위 서술을 Partially Supersede)
 - ADR-0009 (관측성 계약 SSOT)
-- 계획서: `docs/plans/task-impl4-d1-saga-metrics.md` · 리뷰 이력 `.audit.md` (diff 3R #1)
+- 계획서: `docs/plans/done/task-impl4-d1-saga-metrics.md` · 리뷰 이력 `.audit.md` (diff 3R #1)
 - `scripts/observability-promql-lint.sh` · `k8s/monitoring/shared/grafana-alerts.yml`

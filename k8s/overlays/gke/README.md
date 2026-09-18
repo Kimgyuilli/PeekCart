@@ -106,7 +106,7 @@ ClusterIP 로 환원했으며, NetworkPolicy 로 업무 API(8080) 진입을 gate
 **NetworkPolicy enforcement 는 CNI 의존입니다** — GKE 는 Dataplane V2 또는 `--enable-network-policy`(Calico)가
 활성이어야 정책이 실제로 적용됩니다. 미활성이면 정책이 조용히 무시되어 직접 경로 spoof 가 열립니다.
 롤아웃 전 `scripts/gke-security-smoke.sh` 가 enforcement 활성을 hard-fail 로 확인합니다
-(절차·안전 순서: `docs/plans/task-impl3-spring-cloud-gateway.md` §8).
+(절차·안전 순서: `docs/plans/done/task-impl3-spring-cloud-gateway.md` §8).
 
 gateway Service 는 **8080 만 게시**합니다 — 관리 포트 8081(actuator)을 이 Service 에 추가하면 LB 가
 `/actuator/prometheus` 까지 노출합니다. `scripts/gateway-exposure-lint.sh` 가 렌더 산출에서 이를 강제합니다

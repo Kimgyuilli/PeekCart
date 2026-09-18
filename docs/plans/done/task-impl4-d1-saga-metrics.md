@@ -164,3 +164,12 @@ notification 은 메트릭 0건이다.
 | 4 | Grafana 대시보드 패널 | 후속 |
 | 5 | DLQ replay · 브로커 retention | ④-c-2b (ADR 선행) |
 | 6 | PG stub + Toss base URL 설정화 | D-020 과 묶는다 (④-d-2 §7 에도 등재) |
+
+---
+
+## 종결
+
+머지 PR: [#91](https://github.com/Kimgyuilli/PeakCart/pull/91) — 구현 ④-d-1 — saga 관측성
+
+계획서 아카이브 판정을 위해 PR 링크를 명시한다. 작업은 위 PR 로 종결됐고 본문의
+체크박스 상태는 당시 갱신되지 않은 것이라 완료 여부의 근거가 아니다.

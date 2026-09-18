@@ -108,3 +108,12 @@
 - 검증: lint 19/19 · `:payment-service:test` PASS · `:product-service:test` PASS ·
   `./gradlew test` 전체는 red(**main 도 red, 실패 테스트가 다름** — 타이밍 flake)
 - 부수: **내가 [#120] 에서 만든 D-021 ID 중복을 D-026 으로 재번호**
+
+---
+
+## 종결
+
+머지 PR: [#121](https://github.com/Kimgyuilli/PeakCart/pull/121) — D-022 · D-023 · D-024 종결
+
+계획서 아카이브 판정을 위해 PR 링크를 명시한다. 작업은 위 PR 로 종결됐고 본문의
+체크박스 상태는 당시 갱신되지 않은 것이라 완료 여부의 근거가 아니다.

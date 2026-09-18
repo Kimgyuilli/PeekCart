@@ -2454,7 +2454,7 @@ skew 상태를 고정하고 gateway 를 5회 재시작하며 121회 로그인했
 - **Codex 리뷰 미호출** — "P0/P1 = 0" 주장 없음.
 
 증적: `docs/progress/evidence/user-key-rotation-drill-20260915-2040.md` ·
-계획서: `docs/plans/task-user-key-rotation-local-drill.md`
+계획서: `docs/plans/done/task-user-key-rotation-local-drill.md`
 
 ## D-002 잔여 3축 — 측정 하네스 (2026-09-16, [#119](https://github.com/Kimgyuilli/PeakCart/pull/119))
 
@@ -2656,7 +2656,7 @@ V2/V3 때문에 D-022 의 방향이 "preflight 신설" → **"기존 검사를 �
 **D-026 으로 재번호**하고 참조 문서(TASKS·PHASE4·증적·계획서·audit) 전부를 함께 고쳤다.
 전체 D- ID 중복 검사를 돌려 다른 충돌이 없음을 확인했다.
 
-계획서: `docs/plans/task-ops-hardening-d022-d023-d024.md`
+계획서: `docs/plans/done/task-ops-hardening-d022-d023-d024.md`
 
 ## L-007 처분 — 버킷 3 종료 (2026-09-18)
 

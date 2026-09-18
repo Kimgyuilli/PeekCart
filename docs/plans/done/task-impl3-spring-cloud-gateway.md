@@ -540,3 +540,12 @@ kubectl -n peekcart rollout status deployment/<svc> --timeout=5m
 
 이미지 rollback 이 NetworkPolicy 제거보다 먼저다 — 정책을 먼저 걷으면 아직 header-trust 인 Pod 가 직접
 경로에 노출된다.
+
+---
+
+## 종결
+
+머지 PR: [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) — 구현 ③ PR4 — 인증 관측성 S9 (구현 ③ 마지막 PR)
+
+계획서 아카이브 판정을 위해 PR 링크를 명시한다. 작업은 위 PR 로 종결됐고 본문의
+체크박스 상태는 당시 갱신되지 않은 것이라 완료 여부의 근거가 아니다.
