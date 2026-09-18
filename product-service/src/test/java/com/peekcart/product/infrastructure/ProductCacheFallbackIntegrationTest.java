@@ -89,6 +89,7 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
     private static final PageRequest DEFAULT_PAGE = PageRequest.of(0, 10);
     private static final String DETAIL_CACHE = "product";
     private static final String LIST_CACHE = "products";
+    private static final String STOCK_CACHE = "productStock";
     private static final int REDIS_PORT = 6379;
     private static final int PROXY_LISTEN_PORT = 8666;
     private static final String TIMEOUT_TOXIC = "redis-no-response";
@@ -231,6 +232,17 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
         assertThat(before.deltaOf(LIST_CACHE, "get"))
                 .as("목록 조회 1회는 products 캐시로 집계돼야 한다 — 라벨이 뭉개지면 여기서 걸린다")
                 .isEqualTo(1.0);
+        // 위 둘과 달리 '정확히 1' 이 아니라 '1 이상' 이다. 재고 캐시는 상세 경로에서 product 캐시
+        // 다음에 오므로, 앞선 테스트가 남긴 Lettuce 재연결 상태에 따라 한 요청이 2회 실패로
+        // 집계되는 것을 실측했다(단독 실행 1 · 전체 실행 2). 여기서 고정하려는 계약은
+        // "재고 캐시가 fail-open 경로에 있다" 이지 Lettuce 의 재시도 횟수가 아니다.
+        // 누적값이 아니라 증가분이므로 경계 소실(0)은 그대로 잡힌다.
+        assertThat(before.deltaOf(STOCK_CACHE, "get"))
+                .as("""
+                        재고 캐시(ADR-0026 D2)도 같은 fail-open 을 타야 한다. 여기가 0 이면 재고 조회가
+                        캐시를 안 거치거나(경계 소실), errorHandler 가 그 캐시에 안 붙은 것이다.
+                        전자면 detail 의 DB 왕복이 되살아난 것이고 후자면 Redis 장애가 500 으로 샌다.""")
+                .isGreaterThanOrEqualTo(1.0);
     }
 
     @Test
@@ -263,8 +275,13 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
 
             assertThat(detail.name()).isEqualTo("스마트폰");
             assertThat(elapsed)
-                    .as("get 500ms + put 500ms + DB/오버헤드. 상한이 깨지면 timeout 설정이 지워진 것이다")
-                    .isLessThan(Duration.ofMillis(1500));
+                    .as("""
+                            상세 조회는 캐시를 <b>둘</b> 탄다(product + productStock, ADR-0026 D2).
+                            무응답 Redis 에서는 각 캐시가 get 500ms + put 500ms 를 소비하므로
+                            타임아웃 예산이 4회 = 2000ms 다 — 재고 캐시 도입 전에는 2회 = 1000ms 였다.
+                            이 배가는 D2 가 실제로 치르는 비용이고 ADR-0026 Consequences 에 적혀 있다.
+                            상한이 깨지면 timeout 설정이 지워졌거나 캐시가 하나 더 늘어난 것이다.""")
+                    .isLessThan(Duration.ofMillis(2600));
 
             // 한 요청이 get·put 두 경로 '모두에서' 타임아웃을 맞았음을 증가분으로 고정한다.
             // 누적값 단언이면 put 경로가 아예 안 타도 앞선 테스트 잔여로 통과한다(diff 리뷰 #2).
