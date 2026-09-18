@@ -107,10 +107,12 @@ D-001(✅), D-005(✅), D-006(✅), D-007(✅), D-008(✅), D-009(✅), D-010(�
 ## 보류 (측정 후 결정)
 
 > 게이트: **17편 후속 부하 세션** 실측. 나오면 모놀리스 단계 선제 승격, 아니면 Phase 4 분리 시 자연해소(L-007)/필수화(L-013).
+>
+> **✅ 버킷 3 종료 (2026-09-18)** — 두 항목 모두 게이트대로 실측 후 처분됐다. L-013 은 [#84] 로 해소, L-007 은 [#120] 측정 세션에서 **전제 소멸 + 표면 이동**이 확인돼 **D-025 로 흡수**한다. 아래 각 행 참조.
 
 | ID | 영역 | 측정 게이트 |
 |---|---|---|
-| L-007 | 주문 *생성* 경로 "락 ⊃ 트랜잭션" 불변식 + 재고 차감 retry 정책 미정 | 동일-상품 경합 시 재고 차감 `PRD-004`/`OptimisticLockingFailureException` 응답률 유의 |
+| ~~L-007~~ | ~~주문 *생성* 경로 "락 ⊃ 트랜잭션" 불변식 + 재고 차감 retry 정책 미정~~ | **✅ 처분 (2026-09-18, [#120](https://github.com/Kimgyuilli/PeakCart/pull/120)) — 전제 소멸 + 표면 이동 → D-025 흡수.** 게이트는 실측됐다(replicas=3 동일-상품 경합: `PRD-004` **0** ↔ `OptimisticLockingFailureException` **7** → DLQ 7). 그런데 **측정 대상이 코드에서 옮겨가 있었다** — `OrderCommandService.createOrder` 는 더 이상 재고를 차감하지 않고(`order.created` → Product 예약 Saga, ADR-0012 D3), 락의 main 호출자는 `StockReservationService` **1곳**뿐이다. 즉 *주문 생성 경로*의 불변식은 **검증할 대상이 없어졌고**, 그 불변식이 필요한 자리는 consumer 로 이동했다. 이동한 자리에서는 불변식이 **반대로 성립한다** — `InventoryService` 가 REQUIRED 로 consumer 트랜잭션에 참여해 `finally { unlock }` 이 커밋보다 **먼저** 돈다(락 ⊂ 트랜잭션). 그래서 락이 획득되는데도 낙관락 충돌이 난다. retry 정책도 같이 이동했다 — 충돌은 consumer 재시도 소진 후 DLQ 로 간다(실측 7건). **그 정책이 적절한가는 D-025 의 ADR 범위**다 | 
 | ~~L-013~~ | ~~주문 *상태 전이* 동시성(`Order @Version` 부재)~~ | **✅ 해소 (2026-08-13, [#84](https://github.com/Kimgyuilli/PeakCart/pull/84))** — 게이트대로 실측 선행. `payment.completed` 소비 ↔ 타임아웃 취소를 두 EntityManager 가 같은 스냅샷을 읽도록 강제한 **결정적** 재현으로 양방향 lost update 확증(취소 선커밋→`PAYMENT_COMPLETED`, 결제 선커밋→`CANCELLED`) → `@Version` 승격 + 충돌 정책 확정. 상세: 계획서 §5.1 |
 
 상세·승격 시 동반 결정: 로드맵 §4.
