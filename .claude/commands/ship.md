@@ -40,10 +40,13 @@ dry-run 통과 후 `--execute` 로 재호출하면 같은 판정을 다시 계�
 
 - 인자에서 `--execute` 를 떼고 남은 것이 `TASK_ID`. 없으면 현재 브랜치명과 `docs/plans/*.md` 에서 추론해 제시하고 승인받는다.
 - `TASK_ID` 는 `[A-Za-z0-9._-]+` 만 허용하고 `..` · 선두 `-`/`.` 를 금지한다.
-- 다음을 확인하고 어긋나면 **중단하고 보고**한다:
-  - `docs/plans/${TASK_ID}.md` 존재 (없으면 `/plan` 부터)
-  - 현재 브랜치가 `main` 이 **아님** (main 에서 직접 ship 금지)
-  - 계획서의 작업 항목 체크박스가 전부 `- [x]` (미완이면 어느 항목이 남았는지 보고)
+- 사전 확인은 한 번에 판정받는다. 계획서 존재 · 브랜치 · 미완 체크박스를 직접 세지 않는다.
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_ship_preflight "<TASK_ID>"'
+```
+
+  1행이 `ok` 면 통과. `blocked` 면 **중단하고** 2행 이하의 사유를 그대로 보고한다.
 
 등급을 읽어 PR 본문 구성에 쓴다. 등급이 낮다고 PR 본문을 줄이지는 않는다 — PR 은 사람이
 읽는 자리이고, 리뷰 절차와 무관하다. 다만 없는 리뷰를 있었던 것처럼 적지 않기 위해 필요하다.
@@ -99,7 +102,15 @@ git log --reverse --format='%h  %s' "$(git merge-base HEAD origin/main)"..HEAD
   - 커밋 메시지: `feat(<scope>)` / `fix(<scope>)` / `refactor(<scope>)` / `test(<scope>)` / `docs(<scope>)` / `chore(<scope>)`
   - 제목과 본문 문체는 `docs/conventions/writing.md` 를 따른다. em dash, 화살표, 이모지,
     귀속 트레일러를 쓰지 않고 제목은 명사형 50자 내외로 끝낸다. Step 4-1 lint 가 검사한다
-  - `git add -- <파일 명시>` 후 `git diff --cached --quiet` 이면 중단 (스테이징이 비었다는 뜻)
+  - `git add -- <파일 명시>` 후 분류가 섞이지 않았는지 판정받는다. 눈으로 지킬 규칙이 아니다.
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_staged_category_check'
+```
+
+  `mixed` 면 커밋하지 말고 분류별로 다시 스테이징한다. `empty` 면 `git add` 가 실패한 것이다.
+  **이미 `git rm` 으로 스테이징된 경로를 `git add` 에 다시 넘기면 pathspec 오류로 죽으면서
+  나머지 스테이징이 통째로 빠진다.** 실제로 그 상태로 커밋돼 수정분이 누락된 적이 있다
 
 분할이 필요하면 승인 게이트를 노출한다:
 ```
@@ -260,7 +271,13 @@ Branch:  <branch> (origin 동기화됨)
 
 ## 재진입
 
-`state.json` 이 아니라 **git/gh 사실**로 판정한다. 같은 명령을 다시 부르면 아래를 확인해 남은 지점부터 진행한다.
+`state.json` 이 아니라 **git/gh 사실**로 판정한다. 명령을 하나씩 돌려 해석하지 말고 판정받는다.
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_ship_resume_point "<TASK_ID>"'
+```
+
+1행이 재개할 Step 번호(`0` 이면 완료), 2행이 근거다. 아래 표는 그 판정 규칙의 정본이다.
 
 | 확인 | 판정 | 재개 지점 |
 |---|---|---|

@@ -28,18 +28,32 @@ scripts/plans-index.sh
 `docs/plans/done/INDEX.md` 는 생성물이다. 손으로 고치지 않는다. `--check` 는 낡았는지만
 확인하고 다르면 1을 반환한다.
 
-다음을 순서대로 읽고 이해하세요:
+## 1. 상태 다이제스트
 
-1. `docs/TASKS.md` — 현재 Phase, 각 Task 상태, 진행 중인 항목
-2. 현재 Phase에 해당하는 `docs/progress/PHASE{N}.md` — 최근 작업 이력, 주요 결정 사항
-3. `docs/adr/README.md` 인덱스 — 활성 ADR 상태 확인. 특히 `Proposed` (구현 대기) / `Partially Superseded` (범위 분기) / `Deprecated` (참조 금지) 항목은 다음 작업 의사결정에 영향을 줄 수 있음
+```bash
+scripts/harness-context.sh
+```
+
+`TASKS.md`(94KB) · `PHASE{N}.md`(294KB) · `adr/README.md` 를 **통독하지 않는다.** 위 한 줄이
+단계 · 진행 중/대기 행 · ADR 비-Accepted · progress 최근 엔트리 · 계획서 현황 · git 을 약 1KB 로
+뽑아 준다. 아래 보고 템플릿이 요구하는 것은 전부 여기 들어 있다.
+
+다이제스트가 `경고: ... 파서 고장` 을 내면 **그때만** 해당 문서를 직접 읽는다. 형식이 바뀐
+것이므로 스크립트도 함께 고친다. 조용히 빈 값을 정상으로 보고하지 않기 위한 장치다.
+
+더 깊이 봐야 할 때만 원문을 연다:
+- 진행 중 Task 의 세부 항목이 필요하면 `docs/TASKS.md` 의 **해당 행만** grep
+- 최근 결정의 근거가 필요하면 `docs/progress/PHASE{N}.md` 의 **마지막 엔트리만**
+- ADR 본문이 필요하면 다이제스트가 지목한 번호만
+
+이어서:
+
 4. 진행 중(`🔄`) Task가 있다면, 해당 Task 목표에 관련된 설계 문서를 선택적으로 읽습니다:
    - 기능 범위가 불명확하면: `docs/03-requirements.md`
    - 아키텍처/패키지 구조가 필요하면: `docs/02-architecture.md`
    - DB 스키마/인덱스가 필요하면: `docs/05-data-design.md`
    - 설계 결정 근거가 필요하면: `docs/04-design-deep-dive.md` 또는 관련 ADR (`docs/adr/NNNN-*.md`)
-5. 진행 중 Task에 해당하는 실제 소스 파일 존재 여부 확인
-6. 최근 git log (`git log --oneline -10`)
+5. 진행 중 Task에 해당하는 실제 소스 파일 존재 여부 확인 (git log 는 다이제스트에 포함)
 
 파악한 내용을 아래 형식으로 요약 보고하세요:
 
