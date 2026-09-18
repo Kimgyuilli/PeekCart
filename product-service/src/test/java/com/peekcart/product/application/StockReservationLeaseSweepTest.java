@@ -40,7 +40,6 @@ class StockReservationLeaseSweepTest {
 
     @Mock StockReservationRepository reservationRepository;
     @Mock InventoryService inventoryService;
-    @Mock InventoryLockFacade inventoryLockFacade;
     @Mock ProductOutboxEventPublisher publisher;
     @Mock SlackPort slackPort;
 
@@ -58,7 +57,7 @@ class StockReservationLeaseSweepTest {
         props.setSweeperGrace(GRACE);
         props.setSweeperBatchSize(200);
         service = new StockReservationService(reservationRepository, inventoryService,
-                inventoryLockFacade, publisher, new ObjectMapper(), slackPort, props,
+                publisher, new ObjectMapper(), slackPort, props,
                 new ProductSagaMetrics(new SimpleMeterRegistry()));
     }
 

@@ -41,7 +41,6 @@ class StockReservationServiceTest {
 
     @Mock StockReservationRepository reservationRepository;
     @Mock InventoryService inventoryService;
-    @Mock InventoryLockFacade inventoryLockFacade;
     @Mock ProductOutboxEventPublisher publisher;
     @Mock SlackPort slackPort;
 
@@ -62,7 +61,7 @@ class StockReservationServiceTest {
         leaseProperties.setTtl(LEASE_TTL);
         leaseProperties.setSweeperGrace(Duration.ofMinutes(5));
         service = new StockReservationService(reservationRepository, inventoryService,
-                inventoryLockFacade, publisher, new ObjectMapper(), slackPort, leaseProperties,
+                publisher, new ObjectMapper(), slackPort, leaseProperties,
                 new ProductSagaMetrics(new SimpleMeterRegistry()));
     }
 
@@ -74,8 +73,8 @@ class StockReservationServiceTest {
 
         service.reserve(ORDER_ID, EVENT_ID, items);
 
-        then(inventoryLockFacade).should().decreaseStock(1L, 2);
-        then(inventoryLockFacade).should().decreaseStock(2L, 3);
+        then(inventoryService).should().decreaseStock(1L, 2);
+        then(inventoryService).should().decreaseStock(2L, 3);
         then(reservationRepository).should().save(any(StockReservation.class));
         then(publisher).should().publishStockReservationResult(eq(ORDER_ID), eq(true), eq(items), isNull(), any(LocalDateTime.class));
     }
@@ -89,7 +88,7 @@ class StockReservationServiceTest {
 
         service.reserve(ORDER_ID, EVENT_ID, items);
 
-        then(inventoryLockFacade).should(never()).decreaseStock(anyLong(), anyInt());
+        then(inventoryService).should(never()).decreaseStock(anyLong(), anyInt());
         then(publisher).should().publishStockReservationResult(ORDER_ID, false, items, "OUT_OF_STOCK", null);
     }
 
@@ -98,7 +97,7 @@ class StockReservationServiceTest {
     void reserve_emptyItems_rejected() {
         service.reserve(ORDER_ID, EVENT_ID, List.of());
 
-        then(inventoryLockFacade).should(never()).decreaseStock(anyLong(), anyInt());
+        then(inventoryService).should(never()).decreaseStock(anyLong(), anyInt());
         then(publisher).should().publishStockReservationResult(eq(ORDER_ID), eq(false), any(), eq("INVALID_ITEMS"), isNull());
     }
 
@@ -110,7 +109,7 @@ class StockReservationServiceTest {
 
         service.reserve(ORDER_ID, EVENT_ID, items);
 
-        then(inventoryLockFacade).should(never()).decreaseStock(anyLong(), anyInt());
+        then(inventoryService).should(never()).decreaseStock(anyLong(), anyInt());
         then(reservationRepository).should(never()).save(any(StockReservation.class));
         then(publisher).should().publishStockReservationResult(ORDER_ID, false, items, "CANCELLED", null);
     }
@@ -123,7 +122,7 @@ class StockReservationServiceTest {
 
         service.reserve(ORDER_ID, EVENT_ID, items);
 
-        then(inventoryLockFacade).should(never()).decreaseStock(anyLong(), anyInt());
+        then(inventoryService).should(never()).decreaseStock(anyLong(), anyInt());
         then(publisher).should(never()).publishStockReservationResult(anyLong(), anyBoolean(), any(), any(), any());
     }
 
