@@ -1,6 +1,6 @@
 # ④-d-1 — saga 관측성 (메트릭 · alert)
 
-> 부모 계획: `docs/plans/task-impl4-choreography-saga.md` **P11**
+> 부모 계획: `docs/plans/done/task-impl4-choreography-saga.md` **P11**
 > 형제: **④-d-2** (P12 E2E · P14 게이트 · P15 종결) — `task-impl4-d2-saga-e2e-gate.md`
 > 선행: ④-a~④-c-1b(머지) · **④-c-2a([#90], 리뷰 중 — P3 의존)**
 > 리뷰 이력: `task-impl4-d1-saga-metrics.audit.md` (d-1/d-2 공통)

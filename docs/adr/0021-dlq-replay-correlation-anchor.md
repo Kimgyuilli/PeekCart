@@ -124,7 +124,7 @@ ADR-0020 §D5-4 의 음성 테스트 목록에서 **`record_kind` 불일치**를
 
 - [ADR-0020](./0020-dlq-replay-contract.md) — DLQ replay 계약 (§D5-4 를 본 ADR 이 부분 무효화, §D3·§D6-2b·§D8-3 은 유지)
 - [ADR-0012](./0012-phase4-db-event-saga-contract.md) — DB-per-service (4벌 복제의 근거)
-- 계획서: `docs/plans/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3 (P14·P15)
+- 계획서: `docs/plans/done/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3 (P14·P15)
 - 코드: `common/.../kafka/ReplayHeaders.java` · `common/.../kafka/DlqHeaders.java` · `*/global/deadletter/DeadLetterRecord.java` · `scripts/dead-letter-schema-parity-lint.sh`
 
 ---

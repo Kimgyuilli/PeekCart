@@ -2,7 +2,7 @@
 
 > 선행 ADR-0013(Accepted). 보안 묶음 L-001/002/003/019 편입. Phase 4 구현 로드맵 ③.
 > PR 분할: PR1 RS256/JWKS(dual-validation) → PR2 Refresh Reuse Detection → PR3 Gateway 모듈 + header-trust 전환(+ ADR-0014 D2-c servlet 검증 exit) → PR4 관측성 S9 + HS512 잔재 제거.
-> **PR3d 재정의(ADR-0017 Accepted, 경로 A)**: PR3d 는 "평문 header-trust 굳히기 + verifier 삭제"에서 **"Gateway 서명 내부 토큰(`X-Internal-Auth`)으로 격상"** 으로 대체됐다. 아래 §PR3 실행 분할 PR3d 행과 **P14 클래스 처분표(loop2 #3)** 는 `docs/plans/task-impl3-pr3d-internal-token.md`(P1~P8)가 정본이다.
+> **PR3d 재정의(ADR-0017 Accepted, 경로 A)**: PR3d 는 "평문 header-trust 굳히기 + verifier 삭제"에서 **"Gateway 서명 내부 토큰(`X-Internal-Auth`)으로 격상"** 으로 대체됐다. 아래 §PR3 실행 분할 PR3d 행과 **P14 클래스 처분표(loop2 #3)** 는 `docs/plans/done/task-impl3-pr3d-internal-token.md`(P1~P8)가 정본이다.
 > 각 PR 은 자체 `/work` + `/ship` 을 거치며, 해당 PR 착수 시 세부 계획을 보강한다(impl② PR3 선례).
 
 ## 1. 목표

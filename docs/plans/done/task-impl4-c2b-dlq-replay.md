@@ -1,6 +1,6 @@
 # ④-c-2b — DLQ replay 경로 (구현)
 
-> 부모 계획: `docs/plans/task-impl4-choreography-saga.md` **P9 · P10 · P13(나머지)**
+> 부모 계획: `docs/plans/done/task-impl4-choreography-saga.md` **P9 · P10 · P13(나머지)**
 > 형제: **④-c-2a (원장 적재)** — `task-impl4-c2a-dlq-ledger.md` ([#90](https://github.com/Kimgyuilli/PeakCart/pull/90))
 > 선행: **[ADR-0020](../adr/0020-dlq-replay-contract.md)** ([#98](https://github.com/Kimgyuilli/PeakCart/pull/98)) · **④-c-2b-0** 브로커 retention 실설정 ([#99](https://github.com/Kimgyuilli/PeakCart/pull/99))
 > 상태: **계획 확정** (2026-09-02, 리뷰 1R 16건 전량 반영). 착수 조건 4개 전부 종료 — 부록 A.3 참조.

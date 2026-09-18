@@ -244,5 +244,5 @@ backlog/age 게이지가 없으면 "미결로 남기지 않는다"는 계약을 
 - ADR-0015 — per-service 관측 계약(`application=<svc>-service`)
 - ADR-0016 — 예약/Payment 취소 테이블 모델(`payment_cancellations` = **승인 전** 취소 선도착 marker, 본 ADR 의 환불 원장과 다른 것)
 - 코드: `StockReservationService.compensatePaidButUnreserved` · `OrderEventConsumer.recordPaidButCancelled` · `PaymentEventConsumer.handleOrderCancelled` · `TossPaymentClient` · `PaymentStatus`
-- 계획서: `docs/plans/task-adr0018-compensation-refund-contract.md` · 구현 `docs/plans/task-impl4-choreography-saga.md` P8
+- 계획서: `docs/plans/done/task-adr0018-compensation-refund-contract.md` · 구현 `docs/plans/done/task-impl4-choreography-saga.md` P8
 - `docs/plans/PLAN-BLINDSPOTS.md` **B12** — 계약 검사와 fence 의 혼동(D3 의 축)

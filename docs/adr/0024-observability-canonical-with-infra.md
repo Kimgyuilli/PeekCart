@@ -122,5 +122,5 @@ ADR-0009 는 S9 의 owner("Gateway + User")와 금지 규칙("이름 1개소")�
 - ADR-0015 (per-service 계약 — 본 ADR 이 canonical 5 정확일치 범위를 Partially Supersede)
 - ADR-0019 (alert 식 정본 고정 — 신규 rule 에도 적용)
 - ADR-0010 §5 (도메인 5 경계) · ADR-0013 D3/D5 (Gateway 보안·관측성) · ADR-0017 (내부 토큰)
-- 계획서: `docs/plans/task-impl3-pr4-auth-observability.md`
+- 계획서: `docs/plans/done/task-impl3-pr4-auth-observability.md`
 - 코드: `scripts/observability-promql-lint.sh`, `scripts/servicemonitor-selector-lint.sh`, `scripts/gateway-exposure-lint.sh`, `build.gradle`(`assertGatewayHasNoServletDeps`), `k8s/base/services/gateway/`, `k8s/monitoring/shared/grafana-alerts.yml`

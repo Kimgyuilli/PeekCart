@@ -1,6 +1,6 @@
 # ④-c-2a — DLQ 원장 적재 + quarantine + runbook
 
-> 부모 계획: `docs/plans/task-impl4-choreography-saga.md` **P9 · P10 · P13(나머지)**
+> 부모 계획: `docs/plans/done/task-impl4-choreography-saga.md` **P9 · P10 · P13(나머지)**
 > 형제: **④-c-2b (replay 경로)** — `task-impl4-c2b-dlq-replay.md`, **ADR 선행 필요**
 > 선행: ④-a([#84](https://github.com/Kimgyuilli/PeakCart/pull/84)) · ④-b([#85](https://github.com/Kimgyuilli/PeakCart/pull/85)) · ADR-0018([#86](https://github.com/Kimgyuilli/PeakCart/pull/86)) · ④-c-1a([#87](https://github.com/Kimgyuilli/PeakCart/pull/87)) · ④-c-1b([#88](https://github.com/Kimgyuilli/PeakCart/pull/88))
 > 후속: ④-c-2b → ④-d(부모 P11·P12·P14·P15)

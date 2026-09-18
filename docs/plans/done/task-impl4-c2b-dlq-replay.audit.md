@@ -1,6 +1,6 @@
 # audit — `task-impl4-c2b-dlq-replay` 계획 리뷰
 
-> 계획서: `docs/plans/task-impl4-c2b-dlq-replay.md`
+> 계획서: `docs/plans/done/task-impl4-c2b-dlq-replay.md`
 > 정정 내용(무엇이 왜 틀렸나)은 계획서 §11 에 있다. 여기에는 **라운드별 집계와 raw 경로**만 남긴다.
 
 ---

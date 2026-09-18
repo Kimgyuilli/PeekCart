@@ -24,7 +24,7 @@ replay 를 계획서 수정만으로 닫을 수 없었던 이유는, **같은 �
 - 2R: `REPLAY_REQUESTED → 발행 → REPLAY_PUBLISHED` 2단 상태머신 → **발행 직후 사망 시 발행 여부 판별 불가**로 반증
 - 3R: 기존 `outbox_events` 재사용 → `OutboxPollingService:83-86` 이 broker ack 후 **별도로** `PUBLISHED` 를 저장하므로 같은 crash window 존재
 
-두 번 반증된 표면은 설계 결정 사안이다. 본 ADR 은 ④-c-2b 착수에 필요한 **D1~D7**(`docs/plans/task-impl4-c2b-dlq-replay.md` §2)과, 계획 검증 중 드러난 **D8**(발행 권한 예외)을 확정한다.
+두 번 반증된 표면은 설계 결정 사안이다. 본 ADR 은 ④-c-2b 착수에 필요한 **D1~D7**(`docs/plans/done/task-impl4-c2b-dlq-replay.md` §2)과, 계획 검증 중 드러난 **D8**(발행 권한 예외)을 확정한다.
 
 ### C1. 착수 전 코드 사실 (검증 완료)
 
@@ -350,7 +350,7 @@ D4 매트릭스의 producer 컬럼은 두 가지를 함께 함의했다 — ① 
 ## Consequences
 
 ### 긍정적 영향
-- ④-c-2b 가 **착수 가능해진다** — `docs/plans/task-impl4-c2b-dlq-replay.md` §4 착수 조건 1(D1~D7 확정)이 닫힌다.
+- ④-c-2b 가 **착수 가능해진다** — `docs/plans/done/task-impl4-c2b-dlq-replay.md` §4 착수 조건 1(D1~D7 확정)이 닫힌다.
 - 두 번 반증된 "중복 발행 0" 이 **계약에서 제거**되고, 보장 문구가 실제 스택으로 지킬 수 있는 수준(publication at-least-once)으로 내려온다.
 - 발행 축과 사건 축이 물리적으로 갈라져 **"발행했으니 끝" 이라는 조기 종결이 구조적으로 불가능**해진다.
 - 브로커 retention 이 **검증 대상**이 된다. 지금까지는 Apache 기본값에 암묵적으로 의존하고 있었고 아무도 그것을 확인하지 않았다.
@@ -379,8 +379,8 @@ D4 매트릭스의 producer 컬럼은 두 가지를 함께 함의했다 — ① 
 
 ## References
 
-- 계획서: `docs/plans/task-adr0020-dlq-replay-contract.md` (명제 N1~N15 · 코드 검증 30행 · 리뷰 3라운드 정정 이력)
-- 입력: `docs/plans/task-impl4-c2b-dlq-replay.md` §2 (D1~D7) · `docs/plans/task-impl4-c2a-dlq-ledger.audit.md`
+- 계획서: `docs/plans/done/task-adr0020-dlq-replay-contract.md` (명제 N1~N15 · 코드 검증 30행 · 리뷰 3라운드 정정 이력)
+- 입력: `docs/plans/done/task-impl4-c2b-dlq-replay.md` §2 (D1~D7) · `docs/plans/done/task-impl4-c2a-dlq-ledger.audit.md`
 - runbook: `docs/runbooks/dlq-recovery.md` §6
 - 선행 ADR: [ADR-0011](./0011-phase4-multimodule-structure.md) D2 · [ADR-0012](./0012-phase4-db-event-saga-contract.md) D1/D4/D5 · [ADR-0018](./0018-compensation-refund-contract.md)
 - 코드: `OutboxPollingService:83-125` · `DlqOrigin:41-63` · `DlqTopology` · `DeadLetterRecorder:25-69` · `DeadLetterRecordJpaRepository:77-96` · `DeadLetterEndpoint` · `IdempotencyRetentionProperties:43-47` · `ProcessedEventCleanupScheduler:41`

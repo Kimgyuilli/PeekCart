@@ -1,6 +1,6 @@
 # ④-d-2 — cross-service saga E2E · 계약 게이트 · ④ 종결
 
-> 부모 계획: `docs/plans/task-impl4-choreography-saga.md` **P12 · P14 · P15**
+> 부모 계획: `docs/plans/done/task-impl4-choreography-saga.md` **P12 · P14 · P15**
 > 형제: ④-d-1 (P11 관측성) — `task-impl4-d1-saga-metrics.md`, ✅ [#91](https://github.com/Kimgyuilli/PeakCart/pull/91)
 > 리뷰 이력: `task-impl4-d1-saga-metrics.audit.md` (d-1/d-2 공통) · `task-impl4-d2-saga-e2e-gate.audit.md`
 > **④-d-2 전체가 끝나면 구현 ④ 가 종결된다.** 이 문서는 두 PR 의 공통 스펙이며, **④-d-2a 는 P1~P9 까지**다 — ④ 종결은 ④-d-2b(P20) 소관이다(§6 분할 주석).

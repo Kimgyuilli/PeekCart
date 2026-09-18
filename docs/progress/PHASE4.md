@@ -706,7 +706,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - **경로 A**: PR3c 가 GKE 증적 미확보 = 평문 header-trust 미배포 → 평문을 실 클러스터에 굳히지 않고 서명 assertion 을 header-trust rollout 으로 직행(dual-accept 경유). GKE 보안 smoke 는 서명 상태에서 1회 수행하며 위조 `X-Internal-Auth`·평문 직접주입 차단을 barrier 에 추가.
 - **기각 대안**: 평문 유지(단일 통제) / HMAC 공유비밀(서비스 1개 컴프로마이즈=위조, blast radius) / mTLS(메시 인프라 과대, Phase 5+) / 원본 JWT 재검증(중복·지연 회귀).
 
-**산출물**: ADR-0017(Accepted)·`docs/plans/task-impl3-pr3d-internal-token.md`(P1~P10 정본 — loop3 에서 P9/P10 추가, 상위 문서 P1~P8 표기는 2026-08-08 정정)·상위 계획 PR3d 행·P14 처분표 대체 표기.
+**산출물**: ADR-0017(Accepted)·`docs/plans/done/task-impl3-pr3d-internal-token.md`(P1~P10 정본 — loop3 에서 P9/P10 추가, 상위 문서 P1~P8 표기는 2026-08-08 정정)·상위 계획 PR3d 행·P14 처분표 대체 표기.
 
 **다음**: 새 브랜치에서 초안 `/plan`(Codex 리뷰 루프) → PR3d `/work`+`/ship`. **선행 게이트 불변: GKE 보안 smoke 증적(위조 서명 차단 포함).**
 
@@ -743,7 +743,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 
 **발견된 결함(PR3d 흡수)**: `gke-security-smoke.sh` 증적 헤더 `- canary:` 가 항상 `n/a` — `CANARY_RESULT` 가 `tee` 파이프라인 서브셸에서 설정돼 부모 셸로 전파되지 않는다. 실제 값은 로그 블록에 보존되어 본 증적은 온전. PR3d P10 이 같은 스크립트를 확장하므로 그때 수정한다.
 
-**다음**: **PR3d 착수 가능**(선행 게이트 해제). `docs/plans/task-impl3-pr3d-internal-token.md` P1~P10 → `/work`. PR3d P10 ②(signed-only crypto barrier)도 위조 401 을 주장하려면 **정상 서명 200 양성 대조군**이 같은 이유로 필요하다.
+**다음**: **PR3d 착수 가능**(선행 게이트 해제). `docs/plans/done/task-impl3-pr3d-internal-token.md` P1~P10 → `/work`. PR3d P10 ②(signed-only crypto barrier)도 위조 401 을 주장하려면 **정상 서명 200 양성 대조군**이 같은 이유로 필요하다.
 
 ---
 
@@ -1552,7 +1552,7 @@ cleanup·수동 삭제로 사라져도 똑같이 관측된다. 자동 강등하�
 
 ### 착수 전 코드 검증이 뒤집은 전제
 
-`docs/plans/task-impl4-c2b-dlq-replay.md` §5 의 C-1~C-14 가 정본. 핵심 2건:
+`docs/plans/done/task-impl4-c2b-dlq-replay.md` §5 의 C-1~C-14 가 정본. 핵심 2건:
 
 - **C-5** — "parity lint 가 대조한다" 는 **거짓**이었다. 기존 lint 는 `dead_letter_records` 전용이고
   `outbox_events` 를 보는 검사가 없었다 → P9-b 신설
@@ -1627,7 +1627,7 @@ common-auth 52 · user 61). 로컬 전체 스위트가 반복 중단돼 **모듈
 
 ## ④-c-2b-3a — replay 상관 표면 (PR [#103](https://github.com/Kimgyuilli/PeakCart/pull/103))
 
-**2026-09-06** · 계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3a (P14)
+**2026-09-06** · 계획서 `docs/plans/done/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3a (P14)
 
 ### ADR 이 스스로와 충돌하고 있었다
 
@@ -1723,7 +1723,7 @@ payment 168 · notification 45) · **lint 15종** green · parity self-test **23
 
 ## ④-c-2b-3b — 원자 상관 + 재개방 (PR [#104](https://github.com/Kimgyuilli/PeakCart/pull/104))
 
-**2026-09-10** · 계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3b (P15·P16·P17·P17-b)
+**2026-09-10** · 계획서 `docs/plans/done/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3b (P15·P16·P17·P17-b)
 
 3a 가 세운 상관 **표면** 위에 **판정과 전이**를 얹었다. 진입점(claim·digest writer)은 2b-4 소관이라
 이 PR 은 **소비 측만** 바꾼다 — 앵커를 쓰는 주체가 없으면 상관 경로가 아예 타지 않아 단독 배포가 안전하다.
@@ -1826,7 +1826,7 @@ consistent-read 스냅샷이 열리지 않았고** `V-15c` 가 다시 vacuous �
 
 ## 2026-09-12 — ④-c-2b-4a: replay 개시 진입점 ([#105](https://github.com/Kimgyuilli/PeekCart/pull/105))
 
-계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` P18~P21·P23·P25. **진입점이 생겼지만 kill-switch 가
+계획서 `docs/plans/done/task-impl4-c2b-dlq-replay.md` P18~P21·P23·P25. **진입점이 생겼지만 kill-switch 가
 닫혀 있어 아직 열리지 않는다** — drain·롤백 계약(4b)이 선 뒤에 연다.
 
 ### 2b-4 를 4a/4b 로 나눈 이유
@@ -1904,7 +1904,7 @@ P22 증적 · **ADR-0022**). **착수 전 계획 리뷰 4R 선행.**
 
 ## 2026-09-13 — ④-c-2b-4b: drain·롤백 계약 + 진입점 도달 경로 ([#106](https://github.com/Kimgyuilli/PeakCart/pull/106))
 
-계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` P22·P24·P26·**P27(신설)**. **구현 ④ 종결.**
+계획서 `docs/plans/done/task-impl4-c2b-dlq-replay.md` P22·P24·P26·**P27(신설)**. **구현 ④ 종결.**
 
 4a 가 진입점을 세우고 kill-switch 를 닫아둔 채 끝났다. 이 PR 은 그 스위치를 **열 수 있게** 만든다 —
 여는 행위가 되돌릴 수 없는 성질 셋(롤백 손상 · 도달 불가 · 교착)을 만들기 때문이다.
@@ -1975,7 +1975,7 @@ reconciler 가 스스로 종착시키므로, 그때도 옮길 수 있게 하면 
 
 ## 2026-09-14 — D-020: 결제 승인 경계 ([#107](https://github.com/Kimgyuilli/PeakCart/pull/107) · 선행 [ADR-0023](../adr/0023-payment-approval-reconciliation.md))
 
-계획서 `docs/plans/task-d020-approval-reconciliation.md` P1~P12. 개발 부채 D-020 해소.
+계획서 `docs/plans/done/task-d020-approval-reconciliation.md` P1~P12. 개발 부채 D-020 해소.
 
 `PaymentCommandService` 가 DB 트랜잭션 안에서 Toss 승인을 호출하고 있었다. 승인 성공 후 커밋이
 실패하면 외부 과금은 남고 로컬은 롤백된다 — 이것이 D-020 이 적어둔 문제였다.
@@ -2075,7 +2075,7 @@ C-9 가 여기서 함정을 하나 막았다: 환불 원장의 `claimForReconcil
 
 ## 2026-09-14 — 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 ([#108](https://github.com/Kimgyuilli/PeakCart/pull/108) · 신설 [ADR-0024](../adr/0024-observability-canonical-with-infra.md))
 
-계획서 `docs/plans/task-impl3-pr4-auth-observability.md` P1~P13. 부모 계획의 PR4(P20~P23) 종결.
+계획서 `docs/plans/done/task-impl3-pr4-auth-observability.md` P1~P13. 부모 계획의 PR4(P20~P23) 종결.
 
 ADR-0009 §Decision 의 S9 행은 2026-05-04 부터 있었다. 코드는 0건이었다 —
 `grep -r "MeterRegistry\|Counter" gateway/src` 가 아무것도 찾지 못한다. Gateway 가 요청을
@@ -2261,7 +2261,7 @@ KSA 신원을 받아가므로, Pod 자신의 토큰 자동 마운트와 독립�
 
 ## 구현 ③ PR3d-b-2 — GKE 클러스터 세션 (2026-09-14 ~ 09-15)
 
-계획서 `docs/plans/task-impl3-pr3d-b2-cluster-session.md` P1~P16 중 **P1~P10 수행**, P11~P14 이월.
+계획서 `docs/plans/done/task-impl3-pr3d-b2-cluster-session.md` P1~P16 중 **P1~P10 수행**, P11~P14 이월.
 증적: `docs/progress/evidence/pr3d-b2-gke-20260914-1320.md` · PR [#110](https://github.com/Kimgyuilli/PeakCart/pull/110).
 **구현 ③ 은 종결되지 않았다 — TASKS 행은 🔄 유지.**
 
@@ -2520,7 +2520,7 @@ overlay 에 손잡이(`patches/mysql-deployment.yml`)를 만들되 **기본값�
 - **k6 실행 검증 없음** — 로컬 k6 부재로 파싱까지만. 측정 세션 첫 단계(`ratelimit-probe`)가 그 검증이다.
 - **Codex 리뷰 미호출**(계획 1차 usage limit, 이후 사용자 지시) — **"P0/P1 = 0" 주장 없음.**
 
-계획서: `docs/plans/task-d002-bc-session.md` · runbook: `loadtest/README.md` §D-002b'/c
+계획서: `docs/plans/done/task-d002-bc-session.md` · runbook: `loadtest/README.md` §D-002b'/c
 
 ## D-002 종결 — GKE 측정 세션 (2026-09-17, [#119](https://github.com/Kimgyuilli/PeakCart/pull/119))
 
@@ -2592,7 +2592,7 @@ D-026(detail 재고 캐시 미적용 — 초안의 D-021 은 중복이라 재번
 - 하네스 결함 2건: `d002bc-seed-products.sh` 카테고리 생성 단계 누락(전부 `PRD-003` 404) ·
   reset SQL 이 `processed_events` 를 지워 멱등 창을 날린다(Kafka 오프셋은 그대로인 비대칭).
 
-증적: `docs/progress/evidence/d002bc-gke-20260917.md` · 계획서: `docs/plans/task-d002-bc-session.md`
+증적: `docs/progress/evidence/d002bc-gke-20260917.md` · 계획서: `docs/plans/done/task-d002-bc-session.md`
 
 ## 운영 표면 하드닝 — D-024 · D-022 · D-023 (2026-09-18)
 
@@ -2751,7 +2751,7 @@ C(비관적 락)는 구조적으로 가장 깔끔하지만 DB 경합이 미측�
 - **`DistributedLockManager` 는 사용처 없이 `:common` 에 남는다**(ADR-0025 D4, 의도된 보존).
 - **다른 4개 서비스의 error handler 는 여전히 jitter 없음** — 같은 lockstep 을 안고 있다.
 
-계획서: `docs/plans/task-d025-inventory-lock-boundary.md`
+계획서: `docs/plans/done/task-d025-inventory-lock-boundary.md`
 
 ---
 

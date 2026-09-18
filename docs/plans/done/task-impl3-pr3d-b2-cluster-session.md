@@ -1,6 +1,6 @@
 # task-impl3-pr3d-b2-cluster-session — 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션
 
-> 부모 계획: `docs/plans/task-impl3-pr3d-internal-token.md` (§7 롤아웃 · §10.3 b-2 범위 · §11 회전 runbook · §12 rollback 행렬)
+> 부모 계획: `docs/plans/done/task-impl3-pr3d-internal-token.md` (§7 롤아웃 · §10.3 b-2 범위 · §11 회전 runbook · §12 rollback 행렬)
 > 선행: PR3d-a [#80] · Layer1 동기화 [#81] · PR3d-b-1 [#83] · PR4 [#108] — 전부 머지됨
 > 이 PR 로 **구현 ③ 이 🔄 → ✅ 로 종결**된다. 남은 것은 코드가 아니라 **실 클러스터 증적**뿐이다.
 

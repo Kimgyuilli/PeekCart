@@ -182,4 +182,4 @@ T2/reconcile 에서 PG 는 `DONE` 인데 로컬이 `PENDING` 이 아닌 경우�
 
 - [ADR-0012](./0012-phase4-db-event-saga-contract.md) — D3 ④ saga 최악 경로의 수렴처
 - [ADR-0018](./0018-compensation-refund-contract.md) — 본 ADR 이 승인 경로로 확장하는 환불 경계 계약(D2/D3/D5)
-- `docs/plans/task-d020-approval-reconciliation.md` — 구현 계획
+- `docs/plans/done/task-d020-approval-reconciliation.md` — 구현 계획
