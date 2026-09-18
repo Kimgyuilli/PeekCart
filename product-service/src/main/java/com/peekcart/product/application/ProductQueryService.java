@@ -3,8 +3,6 @@ package com.peekcart.product.application;
 import com.peekcart.product.application.dto.ProductDetailDto;
 import com.peekcart.product.application.dto.ProductInfoDto;
 import com.peekcart.product.application.dto.ProductListDto;
-import com.peekcart.product.domain.model.Inventory;
-import com.peekcart.product.domain.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductQueryService {
 
     private final ProductCacheService productCacheService;
-    private final InventoryRepository inventoryRepository;
 
     /**
      * 판매 중인 상품 목록을 페이징으로 조회한다.
@@ -36,15 +33,15 @@ public class ProductQueryService {
     /**
      * 상품 상세 정보를 조회한다.
      *
+     * <p>상품 정보와 재고를 <b>각각의 캐시</b>에서 조합한다 — TTL 이 다르기 때문이다
+     * (상품 30분 / 재고 5초, ADR-0026 D2). 재고는 예약 보증이 아니라 표시용 힌트다(D1).
+     *
      * @param productId 조회할 상품 PK
      * @return 상품 상세 DTO (상품 + 재고)
      */
     public ProductDetailDto getProduct(Long productId) {
         ProductInfoDto info = productCacheService.getProductInfo(productId);
-
-        int stock = inventoryRepository.findByProductId(productId)
-                .map(Inventory::getStock)
-                .orElse(0);
+        int stock = productCacheService.getStock(productId);
 
         return new ProductDetailDto(
                 info.id(), info.categoryId(), info.categoryName(),

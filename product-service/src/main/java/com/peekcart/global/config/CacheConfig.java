@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
@@ -53,6 +54,27 @@ public class CacheConfig implements CachingConfigurer {
     public static final String PRODUCT_LIST_CACHE = "products";
 
     /**
+     * 재고 전용 캐시 (ADR-0026 D2). 상품 정보 캐시와 <b>분리</b>하는 이유는 변경 빈도가
+     * 두 자릿수 이상 다르기 때문이다 — 한 엔트리에 합치면 둘 중 하나는 반드시 틀린 TTL 을 갖는다.
+     */
+    public static final String PRODUCT_STOCK_CACHE = "productStock";
+
+    /**
+     * 재고 캐시 TTL 기본값 = <b>노출 가능한 stale 재고의 상한</b> (ADR-0026 D2).
+     * 쓰기 경로에 무효화를 배선하지 않으므로(D3) 이 값이 곧 최악값이다.
+     *
+     * <p>5초인 근거: 포화 기준 상세 ≈ 463 rps 에서 상품당 재고 조회가 <b>5초에 1회</b>로 떨어진다.
+     * 더 늘리면 DB 조회 감소폭은 수확 체감하는데 stale 상한은 선형으로 늘고, 1초 미만으로 줄이면
+     * 적중률이 떨어져 목적이 사라진다. 상세의 {@code stock} 은 예약 보증이 아니라
+     * <b>표시용 힌트</b>라는 계약(ADR-0026 D1)이 이 완화를 허용한다.
+     *
+     * <p><b>기본값은 여기(Java Config)가 소유한다</b> — 동작 규약이므로 프로파일에 두지 않는다
+     * (ADR-0007). 프로퍼티를 뚫어둔 것은 <b>stale 상한을 결정적으로 시험하기 위해서</b>이고
+     * ({@code ProductStockCacheStalenessIntegrationTest}), 환경별로 다르게 쓰라는 뜻이 아니다.
+     */
+    public static final String PRODUCT_STOCK_TTL_PROPERTY = "peekcart.cache.product-stock-ttl";
+
+    /**
      * {@link MeterRegistry} 를 <b>직접 주입하지 않는다</b>. {@code @Configuration} 클래스가 레지스트리를
      * 생성자에서 요구하면 {@code MeterRegistryCustomizer}(공통 태그 {@code application=product-service} 등)
      * 가 적용되기 <b>전에</b> 레지스트리가 만들어져, 이후 모든 메트릭에서 그 태그가 사라진다
@@ -67,7 +89,9 @@ public class CacheConfig implements CachingConfigurer {
 
     @Bean
     @ConditionalOnProperty(name = "peekcart.cache.enabled", havingValue = "true", matchIfMissing = true)
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+    public RedisCacheManager cacheManager(
+            RedisConnectionFactory connectionFactory,
+            @Value("${" + PRODUCT_STOCK_TTL_PROPERTY + ":5s}") Duration productStockTtl) {
         ObjectMapper objectMapper = JsonMapper.builder()
                 .addModule(new JavaTimeModule())
                 .activateDefaultTyping(
@@ -95,10 +119,14 @@ public class CacheConfig implements CachingConfigurer {
         RedisCacheConfiguration productDetailConfig = defaultConfig
                 .entryTtl(Duration.ofMinutes(30));
 
+        RedisCacheConfiguration productStockConfig = defaultConfig
+                .entryTtl(productStockTtl);
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withCacheConfiguration(PRODUCT_DETAIL_CACHE, productDetailConfig)
                 .withCacheConfiguration(PRODUCT_LIST_CACHE, defaultConfig)
+                .withCacheConfiguration(PRODUCT_STOCK_CACHE, productStockConfig)
                 .enableStatistics()
                 .build();
     }
