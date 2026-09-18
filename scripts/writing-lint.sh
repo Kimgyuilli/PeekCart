@@ -44,8 +44,23 @@ TITLE_FORM = re.compile(r'^(feat|fix|refactor|test|docs|chore)(\([^)]+\))?: .+')
 errors, warnings = [], []
 lines = text.splitlines()
 
+# 코드펜스 안은 검사하지 않는다. 명령 출력과 로그를 그대로 인용한 자리라 화살표나
+# 이모지가 들어 있는 것이 정상이고, 고치면 인용이 사실과 달라진다.
+# 실측: PR 백업 124개에서 펜스 안 93건(23개 PR), 펜스 밖 2377건.
+fenced = set()
+inside = False
+for i, line in enumerate(lines, 1):
+    if line.lstrip().startswith('```'):
+        inside = not inside
+        fenced.add(i)
+        continue
+    if inside:
+        fenced.add(i)
+
 for rx, name, hint in BANNED:
     for i, line in enumerate(lines, 1):
+        if i in fenced:
+            continue
         for m in rx.finditer(line):
             errors.append('%s:%d 금지 문자 %s (%r) — %s' % (label, i, name, m.group(), hint))
 
@@ -185,6 +200,14 @@ self_test() {
 
   printf '## Why\n\n분산 락을 제거했습니다.\n\n## What\n\n계획서 P1 부터 P13 까지 전부입니다.\n' > "$tmp/goodbody"
   expect_pass "정상 PR 본문" "$tmp/goodbody" body
+
+  # 코드펜스 안의 인용 출력은 통과해야 한다 (명령 로그에 화살표와 이모지가 정상적으로 들어간다)
+  printf '## Test plan\n\n```\nA \xe2\x86\x92 B \xe2\x9c\x85 \xe2\x80\x94 done\n```\n\n본문입니다.\n' > "$tmp/fence"
+  expect_pass "코드펜스 안 인용" "$tmp/fence" body
+
+  # 펜스가 닫힌 뒤는 다시 검사 대상이다
+  printf '```\nA \xe2\x86\x92 B\n```\n\n밖에서 \xe2\x86\x92 쓰면 걸려야 합니다.\n' > "$tmp/afterfence"
+  expect_fail "펜스 밖은 검사" "$tmp/afterfence" body
 
   return "$rc"
 }
