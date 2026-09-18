@@ -90,6 +90,8 @@ git log --reverse --format='%h  %s' "$(git merge-base HEAD origin/main)"..HEAD
   - **ADR 과 계획서는 별도 커밋.** ADR 본문 정정은 `fix(adr):` 접두사 (see `docs/adr/README.md` §원칙)
   - 100파일 초과 시 재분할
   - 커밋 메시지: `feat(<scope>)` / `fix(<scope>)` / `refactor(<scope>)` / `test(<scope>)` / `docs(<scope>)` / `chore(<scope>)`
+  - 제목과 본문 문체는 `docs/conventions/writing.md` 를 따른다. em dash, 화살표, 이모지,
+    귀속 트레일러를 쓰지 않고 제목은 명사형 50자 내외로 끝낸다. Step 4-1 lint 가 검사한다
   - `git add -- <파일 명시>` 후 `git diff --cached --quiet` 이면 중단 (스테이징이 비었다는 뜻)
 
 분할이 필요하면 승인 게이트를 노출한다:
@@ -133,6 +135,22 @@ p2. test(cache): ...  (+23)
 `미결` 만 미충족으로 올린다.
 
 본문은 `.cache/pr-body-${TASK_ID}.md` 에 저장한다 (재시도 시 재사용).
+
+#### 4-1. 문체 lint (생략 금지)
+
+본문을 사람에게 보이기 **전에** 돌린다. 정본은 `docs/conventions/writing.md`.
+
+```bash
+mkdir -p .cache
+scripts/writing-lint.sh --commits "$(git merge-base HEAD origin/main)..HEAD"
+scripts/writing-lint.sh --file ".cache/pr-body-${TASK_ID}.md"
+```
+
+- `오류` 가 나오면 **고치고 다시 돌린다.** 사람에게 보이지 않는다. 커밋 메시지가 걸렸으면
+  아직 push 전이므로 `git commit --amend` 또는 `git rebase -i` 로 고친다
+- `경고` 는 진행을 막지 않는다. 다만 제목 길이와 추적 태그 위치는 대개 고치는 편이 낫다
+- 오류를 못 고칠 사정이 있으면 그 사유를 승인 게이트에 함께 제시하고 사용자가 판단한다.
+  조용히 넘기지 않는다
 
 ### 5. 본문 승인 게이트 (always)
 
