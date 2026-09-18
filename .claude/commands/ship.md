@@ -45,6 +45,13 @@ dry-run 통과 후 `--execute` 로 재호출하면 같은 판정을 다시 계�
   - 현재 브랜치가 `main` 이 **아님** (main 에서 직접 ship 금지)
   - 계획서의 작업 항목 체크박스가 전부 `- [x]` (미완이면 어느 항목이 남았는지 보고)
 
+등급을 읽어 PR 본문 구성에 쓴다. 등급이 낮다고 PR 본문을 줄이지는 않는다 — PR 은 사람이
+읽는 자리이고, 리뷰 절차와 무관하다. 다만 없는 리뷰를 있었던 것처럼 적지 않기 위해 필요하다.
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_plan_grade "<TASK_ID>"'
+```
+
 ```bash
 git branch --show-current
 git status -sb
@@ -121,16 +128,19 @@ p2. test(cache): ...  (+23)
 ```markdown
 ## 리뷰 이력
 
-- 계획 리뷰: 의도적 생략(file: GKE 측정 세션이라 리뷰 불필요)
-- diff 리뷰: 수행(2라운드) — P0 0, P1 3 반영, P2 1 기각
+- 등급: M
+- 계획 리뷰: 해당 없음(등급 M)
+- diff 리뷰: 수행(1라운드). P0 0건, P1 3건 반영, P2 1건 기각
 ```
+
+등급을 첫 줄에 적는다. 이것이 있어야 "계획 리뷰가 왜 없나"가 본문 안에서 설명된다.
 
 **조건부 섹션** — 해당하면 반드시 넣는다:
 - **Skipped findings** — diff 리뷰에서 기각한 항목. **사유와 재검토 조건**을 함께 적는다
 - **Skipped consistency checks** — Step 2 에서 `[2]` 를 골랐으면 그 사유
 - **미충족** — 계획서 §미해결 + 작업 중 드러난 한계. "완료했다" 로 뭉개지 않는다
 
-**미충족에 넣지 않는 것** — 리뷰 상태가 `해당 없음` 이거나 `의도적 생략` 인 경우. 이것은
+**미충족에 넣지 않는 것** — 리뷰 상태가 `해당 없음(등급 G)` 이거나 `의도적 생략` 인 경우. 이것은
 판단의 결과이지 남은 일이 아니다. 리뷰 이력 한 줄로 끝내고 미충족에는 적지 않는다.
 `미결` 만 미충족으로 올린다.
 
@@ -212,7 +222,9 @@ gh pr create --base "$(hpx_base_branch_name)" --head "$BRANCH" \
    - 구현 디테일 → progress (Layer 3)
    - 확신이 없으면 사용자에게 묻는다
 5. Layer 1(01~07) 이 코드 사실과 어긋나면 **What 만** 정정. Why 는 ADR
-6. `docs/plans/${TASK_ID}.audit.md` 에 `/ship` 결과 1블록 append (PR URL · precheck 결과 · 갱신 항목)
+6. `docs/plans/${TASK_ID}.audit.md` 에 `/ship` 결과 1블록 append (PR URL · precheck 결과 · 갱신 항목).
+   **등급 S 는 audit 파일이 없으므로 이 단계를 건너뛴다** — PR URL 은 `docs/TASKS.md` 와
+   progress 에 이미 남는다. 없는 파일을 만들자고 audit 을 되살리지 않는다
 
 갱신분은 별도 커밋 후 push 한다.
 

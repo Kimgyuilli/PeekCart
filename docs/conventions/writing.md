@@ -97,7 +97,22 @@ InventoryLockFacade 를 제거하고 @Version 단일 수단으로 통일함. 재
 Refs: D-025, ADR-0025
 ```
 
-## 5. 검사
+## 5. PR 본문의 리뷰 이력
+
+등급과 리뷰 상태를 사실대로 적는다. 돌리지 않은 리뷰를 "라운드 0, 미실시"로 적지 않는다.
+그것은 남은 일이 아니라 절차상 없는 단계이거나 의도적 판단이다.
+
+```markdown
+## 리뷰 이력
+
+- 등급: S
+- 계획 리뷰: 해당 없음(등급 S)
+- diff 리뷰: 해당 없음(등급 S)
+```
+
+상태값 넷의 정의는 `.claude/commands/work.md` §9 에 있다. `미결` 만 미충족 항목으로 올린다.
+
+## 6. 검사
 
 ```bash
 scripts/writing-lint.sh --commits "$(git merge-base HEAD origin/main)..HEAD"
