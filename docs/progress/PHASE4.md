@@ -2937,3 +2937,77 @@ CLI 내부 스키마에서 `=== false` 엄격 비교인 것을 확인하고 넣�
   검증. 셋 다 검증할 입력이 없어 보류했고 재개 조건을 부채 행에 달았다
 
 작업 메모였던 `.claude/WORKING.md` 는 내용을 이 문서와 D-027 로 옮기고 지웠다. 임시 파일이었다.
+
+---
+
+## D-028 — 토픽 가시성 셋업 경합 ([PR #126](https://github.com/Kimgyuilli/PeakCart/pull/126), 2026-09-19)
+
+`KafkaTopicConfigMechanismIntegrationTest` 가 붐비는 CI shard 에서 셋업 단언으로 깨졌다.
+PR #125 CI run `35366517910`, order shard 418건 중 2건이 `UnknownTopicOrPartitionException`
+으로 실패했다. `createOrModifyTopics` 가 리턴해도 브로커 메타데이터에 토픽이 아직 안 보이는
+창이 있고 그 창에 `describe` 가 들어간다. 프로덕션 코드는 0줄 건드렸다.
+
+등급 S 로 진행했다. 단일 모듈, 계약 표면 무변화, 되돌림 국소이므로 계획 리뷰와 diff 리뷰
+모두 해당 없음이고 audit 파일도 만들지 않았다. 하네스 축소(2026-09-18) 이후 첫 S 등급
+작업이다.
+
+### 부채 행의 진술 2개가 코드 검증에서 뒤집혔다
+
+계획 전제를 ADR 이 아니라 현재 코드로 검증하는 절차가 실제로 걸러낸 사례다.
+
+| 부채 행의 진술 | 검증 결과 |
+|---|---|
+| 노출 지점은 V-P4-1 과 V-P4-2 | 반증. `describe` 가 공용 헬퍼라 5곳(L117, L148, L169, L188, L236) |
+| `ignoreException(UnknownTopicOrPartitionException)` 이 처방 후보 | 반증. 작동하지 않는다 |
+
+`all().get()` 이 던지는 것은 `UnknownTopicOrPartitionException` 이 아니라 그것을 cause 로
+감싼 `ExecutionException` 이고, Awaitility 4.x 의 `ignoreException` 은 cause 를 풀지 않는다.
+jar 를 `javap` 로 열어 확인했다. 그대로 쓰면 조용히 안 먹고, `ignoreExceptions()` 로 넓히면
+모든 브로커 오류를 삼켜 D-019 선을 넘는다. 부채 행이 적은 두 번째 후보를 택했다.
+
+### 대기를 5곳이 아니라 생성 직후 한 관문에 뒀다
+
+각 `describe` 앞에 붙이면 새 테스트가 추가될 때 빠뜨린다. `applyTopics` 말미가 토픽이
+생기는 유일한 입구다. 이미 존재하는 토픽에 modify 로 부를 때는 즉시 통과한다.
+
+`awaitTopicVisible` 은 cause 가 해당 예외인 동안만 재시도하고 나머지는 재던진다. 삼키면
+진짜 브로커 오류가 10초 타임아웃으로 뭉개져 원인이 사라진다. 대기는 토픽 존재에만 걸고
+config 값에는 걸지 않는다. D-021 의 `awaitConfig` 와 같은 선이다.
+
+### 변이 3종으로 신규 테스트가 결함을 잡는지 확인했다
+
+| 변이 | red 가 된 테스트 |
+|---|---|
+| `try/catch` 제거. cause 를 안 푼다 | 검증 1 |
+| 모든 예외를 삼킨다 | 검증 2 |
+| `setModifyTopicConfigs(true)` 무력화 | V-P4-3 |
+
+각 변이가 정확히 하나씩만 red 로 만들었다. 세 번째가 P3 의 증거다. 가시성 대기가 계약
+단언까지 감쌌다면 V-P4-3 이 green 으로 남았을 것이다. 두 번째 변이가
+`catch (ExecutionException)` 블록 안만 바꿨는데도 검증 2가 깨진 것은 그 테스트가 `throw e`
+분기를 실제로 통과한다는 증거다.
+
+### 곁가지 — 원문 스냅샷 보존이 링크 해소보다 앞선다
+
+`/sync` 에서 `plans-archive.sh` 가 D-026 계획서를 `done/` 으로 옮길 때
+`docs/progress/evidence/pr-bodies-snapshot-20260919.json` 안의 PR #124 본문까지 재작성했다.
+그 디렉터리는 외부 원문을 그대로 떠 둔 스냅샷이고 대기 중인 `task-pr-body-reformat` 의
+입력이다. 되돌린 뒤 스크립트에 제외를 넣었다. 링크가 끊긴 채로 두는 쪽이 출처와 어긋나는
+것보다 낫다.
+
+### 검증
+
+`./gradlew test` **1253 테스트 · 0 실패 · 0 에러 · 0 스킵**(BUILD SUCCESSFUL 45m 56s).
+order-service 는 418 에서 420 으로 늘었다. lint `kafka-subscription-contract` ·
+`ci-test-matrix` · `dead-letter-schema-parity` · `observability-ssot` 전부 exit 0.
+하네스 bats 62/62. 커밋 4개(test / chore / adr / docs). **머지는 하지 않았다.**
+
+### 미충족
+
+- **원 경합이 실제로 사라졌는지는 CI 에서만 확인된다.** 로컬 green 은 회귀가 없다는 것까지만
+  말한다. shard 경합에서만 재현되는 실패이므로 PR #126 CI 가 판정 자리다
+- **`product-service:test` 는 재실행되지 않았다.** `UP-TO-DATE` 로 스킵됐고 196건은 이전
+  실행의 캐시다. 변경이 order-service 테스트 하나라 Gradle 판단은 타당하지만 이번 run 의
+  실측으로 읽어서는 안 된다
+
+계획서: `docs/plans/task-d028-topic-describe-setup-race.md`
