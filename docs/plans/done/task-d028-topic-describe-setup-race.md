@@ -57,3 +57,5 @@ D-021 이 넣은 `awaitConfig` 는 **한 칸 뒤**의 문제를 덮는다 — "�
    `false` 로 되돌려 V-P4-3 이 red 가 되는지 본다. green 이면 대기가 계약 단언을 감쌌다는
    뜻이므로 P3 이 깨진 것이다
 4. 5개 테스트 전부 통과 (`:order-service:test --tests '*KafkaTopicConfigMechanism*'`)
+
+머지 PR: [#126](https://github.com/Kimgyuilli/PeakCart/pull/126) — D-028 종결
