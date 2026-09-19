@@ -30,3 +30,15 @@
   잡아냈다. 사용자 확인 후 P6 으로 편입하고 등급을 L 로 올렸다
 - 검증: `./gradlew test` BUILD SUCCESSFUL (제품 코드 무변경) · selftest V1~V15 **35건 전부 통과**
 - raw: .cache/codex-reviews/diff-task-codex-review-render-r1-*.json
+
+## 2026-09-20 — /ship
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/128
+- preflight: ok · consistency precheck: ok (warnings 0) · review_health: ok
+- 문체 lint: 커밋 6건 통과 · 본문 통과
+- 커밋: 6개 (분류별 분할, mixed 0)
+- 갱신: docs/TASKS.md D-027 행(② 완료 + PR 링크, 상태 🔲 대기에서 🔄 ②완료·①③ 대기로) ·
+  docs/progress/PHASE4.md 엔트리 추가
+- ADR: 작성하지 않음. 스키마 `required` 확장은 대안 비교나 후속 전제가 있는 결정이 아니라
+  현재 API 규격에 맞춘 정정이다. 경위는 progress(Layer 3)에 남긴다
+- 부채 승격: 없음. 이월 2건 모두 국소적이라 PR 본문 §이월 에만 둔다
+- 머지: 하지 않았다
