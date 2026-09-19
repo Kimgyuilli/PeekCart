@@ -144,4 +144,4 @@
 - D-001 봉합 커밋: `715bcfa` (`MetricsConfig.java` 도입)
 - 회귀 테스트: `src/test/java/com/peekcart/global/observability/ObservabilityMetricsIntegrationTest.java`
 - CLAUDE.md `§설정/YAML 프로파일 규칙` 끝의 1줄 참조 ("관측성 계약 SSOT — see ADR-0009")
-- 후속 task: `docs/plans/task-d005-observability-consolidation.md` (본 task 종결 후 작성)
+- 후속 task: `docs/plans/done/task-d005-observability-consolidation.md` (본 task 종결 후 작성)

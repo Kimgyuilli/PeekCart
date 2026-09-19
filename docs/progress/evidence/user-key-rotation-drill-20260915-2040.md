@@ -1,6 +1,6 @@
 # User 토큰 회전 로컬 드릴 — §1.1/§3.1 축 실증 (2026-09-15T11:40Z)
 
-> 계획서: `docs/plans/task-user-key-rotation-local-drill.md`
+> 계획서: `docs/plans/done/task-user-key-rotation-local-drill.md`
 > 대상: `docs/runbooks/user-jwt-key-rotation.md` §6 이 "미검증"으로 남긴 **User 고유 축**
 > 선행: 구현 ③ PR3d-b-2 세션 2 (`pr3d-b2-gke-20260915-0854.md`) — 내부 토큰 도메인 회전 실증
 

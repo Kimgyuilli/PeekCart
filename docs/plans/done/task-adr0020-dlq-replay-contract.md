@@ -4,7 +4,7 @@
 > **리뷰 상태: 미수렴 종료** — 3R 상한에서 P1 12건이 남은 채 사용자 판단으로 종료했다. 근거와 잔여 성격은 §정정 이력 말미.
 > 관련 Phase: Phase 4 (MSA 분리) — 구현 ④ Choreography Saga
 > 선행: ADR-0011(모듈 경계·NewTopic 프로비저닝 소유), ADR-0012(D1 DB 경계·D4 토픽×producer 매트릭스·**D5 retention/재처리 대안**), ADR-0018(보상/환불 — outbox at-least-once, producer 규약)
-> 입력: `docs/plans/task-impl4-c2b-dlq-replay.md` §2 (D1~D7) · `docs/plans/task-impl4-c2a-dlq-ledger.audit.md` · `docs/runbooks/dlq-recovery.md` §6
+> 입력: `docs/plans/done/task-impl4-c2b-dlq-replay.md` §2 (D1~D7) · `docs/plans/done/task-impl4-c2a-dlq-ledger.audit.md` · `docs/runbooks/dlq-recovery.md` §6
 > 후속: 구현 **④-c-2b**(replay 경로 구현 — 본 ADR 확정 후 `/plan task-impl4-c2b-dlq-replay` 재실행)
 > 관련 ADR: 신규 = **ADR-0020** (Proposed → Accepted) · ADR-0012 **D1/D4/D5 관계 판정**(무효화 여부는 채택안에 종속 — §2.2-11) · ADR-0018 producer 규약 관계 판정 · ADR-0011 은 관계 설명만(§2.2-6)
 
@@ -176,7 +176,7 @@
 | **신규 ADR** | `docs/adr/0020-dlq-replay-contract.md` | P8 |
 | ADR 인덱스 | `docs/adr/README.md` | P8 |
 | ADR Status/관계 | `docs/adr/0012-phase4-db-event-saga-contract.md`(D1/D4/D5) · `0018-compensation-refund-contract.md` · `0011-phase4-multimodule-structure.md`(관계 설명만) | P8 |
-| 계획서 갱신 | `docs/plans/task-impl4-c2b-dlq-replay.md` §2·§4 | P8 |
+| 계획서 갱신 | `docs/plans/done/task-impl4-c2b-dlq-replay.md` §2·§4 | P8 |
 | runbook | `docs/runbooks/dlq-recovery.md` §6 (링크만) | P8 |
 | Layer 1 | `docs/04-design-deep-dive.md:445-466` | P8 |
 | **토픽 config (코드)** | `order-service/.../OrderKafkaConfig.java` · `product-service/.../ProductKafkaConfig.java` · `payment-service/.../PaymentKafkaConfig.java` | P4 |

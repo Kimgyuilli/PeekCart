@@ -2,27 +2,88 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["run_id", "summary", "items"],
+  "required": [
+    "run_id",
+    "summary",
+    "items"
+  ],
   "properties": {
-    "run_id": { "type": "string" },
-    "summary": { "type": "string" },
+    "run_id": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
     "items": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "severity", "category", "file", "line", "finding", "suggestion"],
+        "required": [
+          "id",
+          "severity",
+          "category",
+          "file",
+          "line",
+          "finding",
+          "suggestion"
+        ],
         "properties": {
-          "id": { "type": "integer", "minimum": 1 },
-          "severity": { "type": "string", "enum": ["P0", "P1", "P2"] },
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "P0",
+              "P1",
+              "P2"
+            ]
+          },
           "category": {
             "type": "string",
-            "enum": ["architecture", "bug", "security", "test", "doc", "style", "convention"]
+            "enum": [
+              "architecture",
+              "bug",
+              "security",
+              "test",
+              "doc",
+              "style",
+              "convention"
+            ]
           },
-          "file": { "type": "string" },
-          "line": { "type": "integer", "minimum": 0 },
-          "finding": { "type": "string" },
-          "suggestion": { "type": "string" }
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "finding": {
+            "type": "string"
+          },
+          "suggestion": {
+            "type": "string"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "in_scope",
+              "out_of_scope",
+              "new_surface"
+            ],
+            "description": "in_scope: 이번 PR 이 선언한 계약 표면 안. out_of_scope: 범위 밖(기본 이월). new_surface: 이번 변경이 새로 만든 표면"
+          },
+          "suggested_disposition": {
+            "type": "string",
+            "enum": [
+              "reflect",
+              "defer",
+              "reject"
+            ],
+            "description": "리뷰어의 권장 처분. 최종 판정은 사람이 한다"
+          }
         }
       }
     }

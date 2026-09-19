@@ -1,4 +1,4 @@
-// D-002b' — 주문 생성 **신규 기준선** (계획서 docs/plans/task-d002-bc-session.md P7)
+// D-002b' — 주문 생성 **신규 기준선** (계획서 docs/plans/done/task-d002-bc-session.md P7)
 //
 // 원문 D-002 의 "p95 30.21s" 와 **비교하지 않는다**. 그 값은 주문 생성이 동기로 재고를 차감하던
 // 시절의 것이고, 그 전제는 소멸했다(계획서 §2 V3): 현재 createOrder 는

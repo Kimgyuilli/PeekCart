@@ -60,3 +60,12 @@ G1 없이 G2 만 통과시키는 것은 "안 깨지는 걸 안 깨진다고 확�
 - **ADR-0003(minikube)은 Deprecated** 다. 드릴 overlay 는 minikube 를 지원 환경으로 되살리는
   것이 아니라 **드릴 전용 하네스**다. 이름·주석으로 그것을 명시한다.
 - `NetworkPolicy` enforcement 는 minikube CNI 미보장(기존 주석대로) — 이 드릴의 축이 아니다.
+
+---
+
+## 종결
+
+머지 PR: [#116](https://github.com/Kimgyuilli/PeakCart/pull/116) — User 토큰 회전 축 실증 로컬 드릴
+
+계획서 아카이브 판정을 위해 PR 링크를 명시한다. 작업은 위 PR 로 종결됐고 본문의
+체크박스 상태는 당시 갱신되지 않은 것이라 완료 여부의 근거가 아니다.

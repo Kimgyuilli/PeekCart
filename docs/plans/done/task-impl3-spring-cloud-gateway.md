@@ -2,7 +2,7 @@
 
 > 선행 ADR-0013(Accepted). 보안 묶음 L-001/002/003/019 편입. Phase 4 구현 로드맵 ③.
 > PR 분할: PR1 RS256/JWKS(dual-validation) → PR2 Refresh Reuse Detection → PR3 Gateway 모듈 + header-trust 전환(+ ADR-0014 D2-c servlet 검증 exit) → PR4 관측성 S9 + HS512 잔재 제거.
-> **PR3d 재정의(ADR-0017 Accepted, 경로 A)**: PR3d 는 "평문 header-trust 굳히기 + verifier 삭제"에서 **"Gateway 서명 내부 토큰(`X-Internal-Auth`)으로 격상"** 으로 대체됐다. 아래 §PR3 실행 분할 PR3d 행과 **P14 클래스 처분표(loop2 #3)** 는 `docs/plans/task-impl3-pr3d-internal-token.md`(P1~P8)가 정본이다.
+> **PR3d 재정의(ADR-0017 Accepted, 경로 A)**: PR3d 는 "평문 header-trust 굳히기 + verifier 삭제"에서 **"Gateway 서명 내부 토큰(`X-Internal-Auth`)으로 격상"** 으로 대체됐다. 아래 §PR3 실행 분할 PR3d 행과 **P14 클래스 처분표(loop2 #3)** 는 `docs/plans/done/task-impl3-pr3d-internal-token.md`(P1~P8)가 정본이다.
 > 각 PR 은 자체 `/work` + `/ship` 을 거치며, 해당 PR 착수 시 세부 계획을 보강한다(impl② PR3 선례).
 
 ## 1. 목표
@@ -540,3 +540,12 @@ kubectl -n peekcart rollout status deployment/<svc> --timeout=5m
 
 이미지 rollback 이 NetworkPolicy 제거보다 먼저다 — 정책을 먼저 걷으면 아직 header-trust 인 Pod 가 직접
 경로에 노출된다.
+
+---
+
+## 종결
+
+머지 PR: [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) — 구현 ③ PR4 — 인증 관측성 S9 (구현 ③ 마지막 PR)
+
+계획서 아카이브 판정을 위해 PR 링크를 명시한다. 작업은 위 PR 로 종결됐고 본문의
+체크박스 상태는 당시 갱신되지 않은 것이라 완료 여부의 근거가 아니다.

@@ -1,6 +1,6 @@
 # ④-d-1 — saga 관측성 (메트릭 · alert)
 
-> 부모 계획: `docs/plans/task-impl4-choreography-saga.md` **P11**
+> 부모 계획: `docs/plans/done/task-impl4-choreography-saga.md` **P11**
 > 형제: **④-d-2** (P12 E2E · P14 게이트 · P15 종결) — `task-impl4-d2-saga-e2e-gate.md`
 > 선행: ④-a~④-c-1b(머지) · **④-c-2a([#90], 리뷰 중 — P3 의존)**
 > 리뷰 이력: `task-impl4-d1-saga-metrics.audit.md` (d-1/d-2 공통)
@@ -164,3 +164,12 @@ notification 은 메트릭 0건이다.
 | 4 | Grafana 대시보드 패널 | 후속 |
 | 5 | DLQ replay · 브로커 retention | ④-c-2b (ADR 선행) |
 | 6 | PG stub + Toss base URL 설정화 | D-020 과 묶는다 (④-d-2 §7 에도 등재) |
+
+---
+
+## 종결
+
+머지 PR: [#91](https://github.com/Kimgyuilli/PeakCart/pull/91) — 구현 ④-d-1 — saga 관측성
+
+계획서 아카이브 판정을 위해 PR 링크를 명시한다. 작업은 위 PR 로 종결됐고 본문의
+체크박스 상태는 당시 갱신되지 않은 것이라 완료 여부의 근거가 아니다.

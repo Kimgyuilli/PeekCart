@@ -3,7 +3,7 @@
 > 작성: 2026-08-15 (GP-2 반영 개정)
 > 관련 Phase: Phase 4 (MSA 분리) — 구현 ④ Choreography Saga
 > 선행: **ADR-0018**([#86](https://github.com/Kimgyuilli/PeakCart/pull/86), Accepted) · ADR-0012 D3 ④/D4/D5 · ADR-0016 · ADR-0015(관측) · ADR-0007(설정 소유)
-> 부모 계획서: `docs/plans/task-impl4-choreography-saga.md` **P8**
+> 부모 계획서: `docs/plans/done/task-impl4-choreography-saga.md` **P8**
 > 후속: ④-c-2(부모 P9·P10·P13 나머지 — DLQ 원장/runbook) → ④-d(부모 P11·P12·P14·P15)
 
 ## 1. 목표
@@ -134,7 +134,7 @@ ADR-0018 이 확정한 보상/환불 계약을 코드로 구현한다. **④-a �
 | 회신 소비 | `order/product/notification .../kafka/` · `CompensationStatus.java` · `NotificationType.java` | P12 |
 | 메트릭 | `payment-service/.../application`·`infrastructure` | P7 |
 | 테스트 | 4개 서비스 `src/test` (통합 위주) | P14 |
-| 문서 | `docs/TASKS.md` · `docs/progress/PHASE4.md` · `docs/03`/`04`/`05` · `docs/plans/task-impl4-choreography-saga.md` | P13·P15 |
+| 문서 | `docs/TASKS.md` · `docs/progress/PHASE4.md` · `docs/03`/`04`/`05` · `docs/plans/done/task-impl4-choreography-saga.md` | P13·P15 |
 
 > 마이그레이션 **3파일**: payment V4 · product V4 · order V5 (인덱스는 각 파일에 포함)
 

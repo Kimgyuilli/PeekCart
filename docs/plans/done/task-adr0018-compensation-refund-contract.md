@@ -111,7 +111,7 @@ ADR-0012 D3 ④는 최악 경로(결제 승인 후 재고 미확정)의 수렴�
 | 신규 ADR | `docs/adr/0018-compensation-refund-contract.md` | P1~P8 |
 | ADR 인덱스 | `docs/adr/README.md` | P9 |
 | 기존 ADR Status | `docs/adr/0012-phase4-db-event-saga-contract.md` (판정 결과에 따라) | P8·P9 |
-| audit | `docs/plans/task-adr0018-compensation-refund-contract.audit.md` | 리뷰 이력 |
+| audit | `docs/plans/done/task-adr0018-compensation-refund-contract.audit.md` | 리뷰 이력 |
 
 > 코드 파일은 변경하지 않는다. 구현은 ④-c-1.
 

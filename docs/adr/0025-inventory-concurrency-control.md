@@ -145,7 +145,7 @@ consumer 계층에서 productId 정렬 순으로 다중 락을 선획득한 뒤 
 
 ## References
 
-- 계획서: `docs/plans/task-d025-inventory-lock-boundary.md` (§2 코드 검증 V1~V10 · §4-A 재현 결과)
+- 계획서: `docs/plans/done/task-d025-inventory-lock-boundary.md` (§2 코드 검증 V1~V10 · §4-A 재현 결과)
 - 부채 항목: `docs/TASKS.md` D-025 · 처분된 보류 항목 L-007
 - 측정 증적: `docs/progress/evidence/d002bc-gke-20260917.md` ([#119], [#120])
 - 선행: ADR-0012 D3 (예약 Saga 경계 — 재고 차감의 현 위치) · ADR-0016 (예약 테이블 모델)

@@ -36,7 +36,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 
 **설계 결정**: 서비스 경계 = §5 정본(5개). 근거·대안(Alt A 5개 vs Alt B 3개)은 ADR-0010.
 
-**프로세스**: `/plan` 2회 Codex 리뷰(1차 5건, 2차 3건 전체 반영) → `/work` 구현 → `/ship` ([PR #44](https://github.com/Kimgyuilli/PeakCart/pull/44)). 계획서·audit: `docs/plans/task-adr0010-service-decomposition.md`.
+**프로세스**: `/plan` 2회 Codex 리뷰(1차 5건, 2차 3건 전체 반영) → `/work` 구현 → `/ship` ([PR #44](https://github.com/Kimgyuilli/PeakCart/pull/44)). 계획서·audit: `docs/plans/done/task-adr0010-service-decomposition.md`.
 
 **다음**: A2(멀티모듈 구조) — `common` 경계·의존 규칙. ADR-0010 §D1 의 5개 서비스 = 5개 모듈.
 
@@ -47,7 +47,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - 핵심 결정: 서비스는 `:common`+`:peekcart-common-observability` 만 의존, 서비스↔서비스 직접 의존 금지(CI 빌드 실패 검출). 이벤트 DTO 는 모듈 소유만, 스키마는 A3 위임(non-authoritative). Docker health smoke 서비스별 유지
 - Layer 1 정합: `02-architecture.md §4-4`(관측성/5서비스 모듈 + `see ADR-0011`), §12(Phase 4 멀티모듈 포인터), `adr/README.md` INDEX
 
-**프로세스**: `/plan` **3회** Codex 리뷰(1차 5건, 2차 2건[ADR-0009 모듈 충돌 발견], 3차 1건[자기모순 cleanup] — 5→2→1 수렴) → `/work` 구현(diff 리뷰 2건) → `/ship` ([PR #45](https://github.com/Kimgyuilli/PeakCart/pull/45)). 계획서·audit: `docs/plans/task-adr0011-multimodule-structure.md`.
+**프로세스**: `/plan` **3회** Codex 리뷰(1차 5건, 2차 2건[ADR-0009 모듈 충돌 발견], 3차 1건[자기모순 cleanup] — 5→2→1 수렴) → `/work` 구현(diff 리뷰 2건) → `/ship` ([PR #45](https://github.com/Kimgyuilli/PeakCart/pull/45)). 계획서·audit: `docs/plans/done/task-adr0011-multimodule-structure.md`.
 
 **다음**: A3(DB-per-service + 이벤트/Saga 계약) · A4(Gateway 보안) — 병렬 가능. 이후 구현 ①(멀티모듈 전환).
 
@@ -59,7 +59,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - Layer 1 정합: `05`(Product DB outbox/processed/예약 컬럼), `04`(§9-6 전략 A→예약 모델, §9-4 Saga, §16 product.updated), `03 §7-2`(예약 경계), `02 §5`(토폴로지 6토픽), `adr/README.md`
 - 편입 부채: L-008/L-011(retention), L-020-2(consumer group 라벨)
 
-**프로세스**: `/plan` **3회** Codex 리뷰(1차 6건, 2차 1건, 3차 0건 — 6→1→0 수렴) → `/work` 구현(diff 리뷰 3건) → `/ship` ([PR #46](https://github.com/Kimgyuilli/PeakCart/pull/46)). 계획서·audit: `docs/plans/task-adr0012-db-event-saga-contract.md`.
+**프로세스**: `/plan` **3회** Codex 리뷰(1차 6건, 2차 1건, 3차 0건 — 6→1→0 수렴) → `/work` 구현(diff 리뷰 3건) → `/ship` ([PR #46](https://github.com/Kimgyuilli/PeakCart/pull/46)). 계획서·audit: `docs/plans/done/task-adr0012-db-event-saga-contract.md`.
 
 **다음**: A4(Gateway 보안) — 마지막 설계 ADR. 이후 구현 ①(멀티모듈 전환).
 
@@ -71,7 +71,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - Layer 1 정합: `04 §10-2/§9-2`, `03 §7-2`, `05 refresh_tokens`(family_id/status/grace_until), `02 §5`, `adr/0009`(S9 행 추가), `adr/README.md`
 - 편입 보안 묶음: L-001(RS256)/L-002(시크릿)/L-003(Reuse Detection)/L-019(관측성)
 
-**프로세스**: `/plan` **3회** Codex 리뷰(1차 8건, 2차 1건, 3차 0건 — 8→1→0 수렴) → `/work` 구현(diff 리뷰 4건) → `/ship` ([PR #47](https://github.com/Kimgyuilli/PeakCart/pull/47)). 계획서·audit: `docs/plans/task-adr0013-gateway-security.md`.
+**프로세스**: `/plan` **3회** Codex 리뷰(1차 8건, 2차 1건, 3차 0건 — 8→1→0 수렴) → `/work` 구현(diff 리뷰 4건) → `/ship` ([PR #47](https://github.com/Kimgyuilli/PeakCart/pull/47)). 계획서·audit: `docs/plans/done/task-adr0013-gateway-security.md`.
 
 **다음**: 🎯 초기 설계 ADR(A1~A4) 완료. **구현 단계 ①(Gradle 멀티모듈 전환)** 부터 — 실제 코드. (구현 ① PR2 착수 중 전환기 인증 보정 ADR-0014 추가 — 아래 A4.5)
 
@@ -86,7 +86,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 
 **핵심 결정**: 검증→`peekcart-common-auth`, 발급/블랙리스트 write→User, 블랙리스트 read=공유 Redis+fail-closed. "라이브러리 공유 ≠ 런타임 중앙화(게이트웨이가 그것)".
 
-**프로세스**: `/plan` **3회** Codex 리뷰(1차 5건, 2차 3건, 3차 1건 — 5→3→1, P0 전 라운드 0; 3차가 Product auth-free 오류 포착) → `/work`(ADR 작성). 계획서·audit: `docs/plans/task-adr0014-transitional-auth-module.md`.
+**프로세스**: `/plan` **3회** Codex 리뷰(1차 5건, 2차 3건, 3차 1건 — 5→3→1, P0 전 라운드 0; 3차가 Product auth-free 오류 포착) → `/work`(ADR 작성). 계획서·audit: `docs/plans/done/task-adr0014-transitional-auth-module.md`.
 
 **다음**: 구현 ① PR2a(Notification) — `peekcart-common-auth` 생성 + 첫 서비스 peel.
 
@@ -101,7 +101,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - 단일 모듈 → `common` + `peekcart-common-observability` + 5개 서비스 모듈 (ADR-0011 §D1)
 - 의존 위반 검출 Gradle task(서비스↔서비스 금지), testFixtures 재배치, Dockerfile/CI matrix/k8s N개화
 - 편입 부채: L-016a(gke `newTag` digest 고정), D-016(GHCR→AR image promotion 자동화)
-- ⚠️ 대규모 리팩토링 — work diff 大, 실제 빌드/테스트 동반. **3-PR 분할 확정**(PR1 스켈레톤+common → PR2 서비스 5개 분리 → PR3 Dockerfile/CI/k8s). 계획서: `docs/plans/task-impl1-gradle-multimodule.md`.
+- ⚠️ 대규모 리팩토링 — work diff 大, 실제 빌드/테스트 동반. **3-PR 분할 확정**(PR1 스켈레톤+common → PR2 서비스 5개 분리 → PR3 Dockerfile/CI/k8s). 계획서: `docs/plans/done/task-impl1-gradle-multimodule.md`.
 
 #### PR1 — 멀티모듈 스켈레톤 + common/observability 추출 ✅ ([#48](https://github.com/Kimgyuilli/PeakCart/pull/48))
 
@@ -419,7 +419,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 
 ## PR3a — 서비스별 Dockerfile + CI 이미지 + image-contract-lint ([#66](https://github.com/Kimgyuilli/PeakCart/pull/66))
 
-> 구현 ① PR3(배포 표면 per-service 재구성) 의 첫 조각. 단일 `peekcart` 전제의 이미지/CI 를 서비스별로 재구성한다. k8s 매니페스트는 PR3b, 관측성 재설계+ADR-0015 는 PR3c 후속. 계획서 `docs/plans/task-impl1-pr3-dockerfile-ci-k8s.md`.
+> 구현 ① PR3(배포 표면 per-service 재구성) 의 첫 조각. 단일 `peekcart` 전제의 이미지/CI 를 서비스별로 재구성한다. k8s 매니페스트는 PR3b, 관측성 재설계+ADR-0015 는 PR3c 후속. 계획서 `docs/plans/done/task-impl1-pr3-dockerfile-ci-k8s.md`.
 
 **완료 항목** (P1·P2·P3 — 3축 단일 계획 중 PR3a):
 - **P1** 단일 `Dockerfile` + `ARG SERVICE`(멀티모듈 COPY 8모듈·`:${SERVICE}:bootJar`·base 이미지 digest 고정 L-016a). 5개 서비스 `docker build` 검증.
@@ -706,7 +706,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 - **경로 A**: PR3c 가 GKE 증적 미확보 = 평문 header-trust 미배포 → 평문을 실 클러스터에 굳히지 않고 서명 assertion 을 header-trust rollout 으로 직행(dual-accept 경유). GKE 보안 smoke 는 서명 상태에서 1회 수행하며 위조 `X-Internal-Auth`·평문 직접주입 차단을 barrier 에 추가.
 - **기각 대안**: 평문 유지(단일 통제) / HMAC 공유비밀(서비스 1개 컴프로마이즈=위조, blast radius) / mTLS(메시 인프라 과대, Phase 5+) / 원본 JWT 재검증(중복·지연 회귀).
 
-**산출물**: ADR-0017(Accepted)·`docs/plans/task-impl3-pr3d-internal-token.md`(P1~P10 정본 — loop3 에서 P9/P10 추가, 상위 문서 P1~P8 표기는 2026-08-08 정정)·상위 계획 PR3d 행·P14 처분표 대체 표기.
+**산출물**: ADR-0017(Accepted)·`docs/plans/done/task-impl3-pr3d-internal-token.md`(P1~P10 정본 — loop3 에서 P9/P10 추가, 상위 문서 P1~P8 표기는 2026-08-08 정정)·상위 계획 PR3d 행·P14 처분표 대체 표기.
 
 **다음**: 새 브랜치에서 초안 `/plan`(Codex 리뷰 루프) → PR3d `/work`+`/ship`. **선행 게이트 불변: GKE 보안 smoke 증적(위조 서명 차단 포함).**
 
@@ -743,7 +743,7 @@ ADR-0002 의 "모놀리식 → MSA 진화" 4단계 중 최종 단계. 5개 서�
 
 **발견된 결함(PR3d 흡수)**: `gke-security-smoke.sh` 증적 헤더 `- canary:` 가 항상 `n/a` — `CANARY_RESULT` 가 `tee` 파이프라인 서브셸에서 설정돼 부모 셸로 전파되지 않는다. 실제 값은 로그 블록에 보존되어 본 증적은 온전. PR3d P10 이 같은 스크립트를 확장하므로 그때 수정한다.
 
-**다음**: **PR3d 착수 가능**(선행 게이트 해제). `docs/plans/task-impl3-pr3d-internal-token.md` P1~P10 → `/work`. PR3d P10 ②(signed-only crypto barrier)도 위조 401 을 주장하려면 **정상 서명 200 양성 대조군**이 같은 이유로 필요하다.
+**다음**: **PR3d 착수 가능**(선행 게이트 해제). `docs/plans/done/task-impl3-pr3d-internal-token.md` P1~P10 → `/work`. PR3d P10 ②(signed-only crypto barrier)도 위조 401 을 주장하려면 **정상 서명 200 양성 대조군**이 같은 이유로 필요하다.
 
 ---
 
@@ -1552,7 +1552,7 @@ cleanup·수동 삭제로 사라져도 똑같이 관측된다. 자동 강등하�
 
 ### 착수 전 코드 검증이 뒤집은 전제
 
-`docs/plans/task-impl4-c2b-dlq-replay.md` §5 의 C-1~C-14 가 정본. 핵심 2건:
+`docs/plans/done/task-impl4-c2b-dlq-replay.md` §5 의 C-1~C-14 가 정본. 핵심 2건:
 
 - **C-5** — "parity lint 가 대조한다" 는 **거짓**이었다. 기존 lint 는 `dead_letter_records` 전용이고
   `outbox_events` 를 보는 검사가 없었다 → P9-b 신설
@@ -1627,7 +1627,7 @@ common-auth 52 · user 61). 로컬 전체 스위트가 반복 중단돼 **모듈
 
 ## ④-c-2b-3a — replay 상관 표면 (PR [#103](https://github.com/Kimgyuilli/PeakCart/pull/103))
 
-**2026-09-06** · 계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3a (P14)
+**2026-09-06** · 계획서 `docs/plans/done/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3a (P14)
 
 ### ADR 이 스스로와 충돌하고 있었다
 
@@ -1723,7 +1723,7 @@ payment 168 · notification 45) · **lint 15종** green · parity self-test **23
 
 ## ④-c-2b-3b — 원자 상관 + 재개방 (PR [#104](https://github.com/Kimgyuilli/PeakCart/pull/104))
 
-**2026-09-10** · 계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3b (P15·P16·P17·P17-b)
+**2026-09-10** · 계획서 `docs/plans/done/task-impl4-c2b-dlq-replay.md` §PR ④-c-2b-3b (P15·P16·P17·P17-b)
 
 3a 가 세운 상관 **표면** 위에 **판정과 전이**를 얹었다. 진입점(claim·digest writer)은 2b-4 소관이라
 이 PR 은 **소비 측만** 바꾼다 — 앵커를 쓰는 주체가 없으면 상관 경로가 아예 타지 않아 단독 배포가 안전하다.
@@ -1826,7 +1826,7 @@ consistent-read 스냅샷이 열리지 않았고** `V-15c` 가 다시 vacuous �
 
 ## 2026-09-12 — ④-c-2b-4a: replay 개시 진입점 ([#105](https://github.com/Kimgyuilli/PeekCart/pull/105))
 
-계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` P18~P21·P23·P25. **진입점이 생겼지만 kill-switch 가
+계획서 `docs/plans/done/task-impl4-c2b-dlq-replay.md` P18~P21·P23·P25. **진입점이 생겼지만 kill-switch 가
 닫혀 있어 아직 열리지 않는다** — drain·롤백 계약(4b)이 선 뒤에 연다.
 
 ### 2b-4 를 4a/4b 로 나눈 이유
@@ -1904,7 +1904,7 @@ P22 증적 · **ADR-0022**). **착수 전 계획 리뷰 4R 선행.**
 
 ## 2026-09-13 — ④-c-2b-4b: drain·롤백 계약 + 진입점 도달 경로 ([#106](https://github.com/Kimgyuilli/PeakCart/pull/106))
 
-계획서 `docs/plans/task-impl4-c2b-dlq-replay.md` P22·P24·P26·**P27(신설)**. **구현 ④ 종결.**
+계획서 `docs/plans/done/task-impl4-c2b-dlq-replay.md` P22·P24·P26·**P27(신설)**. **구현 ④ 종결.**
 
 4a 가 진입점을 세우고 kill-switch 를 닫아둔 채 끝났다. 이 PR 은 그 스위치를 **열 수 있게** 만든다 —
 여는 행위가 되돌릴 수 없는 성질 셋(롤백 손상 · 도달 불가 · 교착)을 만들기 때문이다.
@@ -1975,7 +1975,7 @@ reconciler 가 스스로 종착시키므로, 그때도 옮길 수 있게 하면 
 
 ## 2026-09-14 — D-020: 결제 승인 경계 ([#107](https://github.com/Kimgyuilli/PeakCart/pull/107) · 선행 [ADR-0023](../adr/0023-payment-approval-reconciliation.md))
 
-계획서 `docs/plans/task-d020-approval-reconciliation.md` P1~P12. 개발 부채 D-020 해소.
+계획서 `docs/plans/done/task-d020-approval-reconciliation.md` P1~P12. 개발 부채 D-020 해소.
 
 `PaymentCommandService` 가 DB 트랜잭션 안에서 Toss 승인을 호출하고 있었다. 승인 성공 후 커밋이
 실패하면 외부 과금은 남고 로컬은 롤백된다 — 이것이 D-020 이 적어둔 문제였다.
@@ -2075,7 +2075,7 @@ C-9 가 여기서 함정을 하나 막았다: 환불 원장의 `claimForReconcil
 
 ## 2026-09-14 — 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 ([#108](https://github.com/Kimgyuilli/PeakCart/pull/108) · 신설 [ADR-0024](../adr/0024-observability-canonical-with-infra.md))
 
-계획서 `docs/plans/task-impl3-pr4-auth-observability.md` P1~P13. 부모 계획의 PR4(P20~P23) 종결.
+계획서 `docs/plans/done/task-impl3-pr4-auth-observability.md` P1~P13. 부모 계획의 PR4(P20~P23) 종결.
 
 ADR-0009 §Decision 의 S9 행은 2026-05-04 부터 있었다. 코드는 0건이었다 —
 `grep -r "MeterRegistry\|Counter" gateway/src` 가 아무것도 찾지 못한다. Gateway 가 요청을
@@ -2261,7 +2261,7 @@ KSA 신원을 받아가므로, Pod 자신의 토큰 자동 마운트와 독립�
 
 ## 구현 ③ PR3d-b-2 — GKE 클러스터 세션 (2026-09-14 ~ 09-15)
 
-계획서 `docs/plans/task-impl3-pr3d-b2-cluster-session.md` P1~P16 중 **P1~P10 수행**, P11~P14 이월.
+계획서 `docs/plans/done/task-impl3-pr3d-b2-cluster-session.md` P1~P16 중 **P1~P10 수행**, P11~P14 이월.
 증적: `docs/progress/evidence/pr3d-b2-gke-20260914-1320.md` · PR [#110](https://github.com/Kimgyuilli/PeakCart/pull/110).
 **구현 ③ 은 종결되지 않았다 — TASKS 행은 🔄 유지.**
 
@@ -2454,7 +2454,7 @@ skew 상태를 고정하고 gateway 를 5회 재시작하며 121회 로그인했
 - **Codex 리뷰 미호출** — "P0/P1 = 0" 주장 없음.
 
 증적: `docs/progress/evidence/user-key-rotation-drill-20260915-2040.md` ·
-계획서: `docs/plans/task-user-key-rotation-local-drill.md`
+계획서: `docs/plans/done/task-user-key-rotation-local-drill.md`
 
 ## D-002 잔여 3축 — 측정 하네스 (2026-09-16, [#119](https://github.com/Kimgyuilli/PeakCart/pull/119))
 
@@ -2520,7 +2520,7 @@ overlay 에 손잡이(`patches/mysql-deployment.yml`)를 만들되 **기본값�
 - **k6 실행 검증 없음** — 로컬 k6 부재로 파싱까지만. 측정 세션 첫 단계(`ratelimit-probe`)가 그 검증이다.
 - **Codex 리뷰 미호출**(계획 1차 usage limit, 이후 사용자 지시) — **"P0/P1 = 0" 주장 없음.**
 
-계획서: `docs/plans/task-d002-bc-session.md` · runbook: `loadtest/README.md` §D-002b'/c
+계획서: `docs/plans/done/task-d002-bc-session.md` · runbook: `loadtest/README.md` §D-002b'/c
 
 ## D-002 종결 — GKE 측정 세션 (2026-09-17, [#119](https://github.com/Kimgyuilli/PeakCart/pull/119))
 
@@ -2592,7 +2592,7 @@ D-026(detail 재고 캐시 미적용 — 초안의 D-021 은 중복이라 재번
 - 하네스 결함 2건: `d002bc-seed-products.sh` 카테고리 생성 단계 누락(전부 `PRD-003` 404) ·
   reset SQL 이 `processed_events` 를 지워 멱등 창을 날린다(Kafka 오프셋은 그대로인 비대칭).
 
-증적: `docs/progress/evidence/d002bc-gke-20260917.md` · 계획서: `docs/plans/task-d002-bc-session.md`
+증적: `docs/progress/evidence/d002bc-gke-20260917.md` · 계획서: `docs/plans/done/task-d002-bc-session.md`
 
 ## 운영 표면 하드닝 — D-024 · D-022 · D-023 (2026-09-18)
 
@@ -2656,7 +2656,7 @@ V2/V3 때문에 D-022 의 방향이 "preflight 신설" → **"기존 검사를 �
 **D-026 으로 재번호**하고 참조 문서(TASKS·PHASE4·증적·계획서·audit) 전부를 함께 고쳤다.
 전체 D- ID 중복 검사를 돌려 다른 충돌이 없음을 확인했다.
 
-계획서: `docs/plans/task-ops-hardening-d022-d023-d024.md`
+계획서: `docs/plans/done/task-ops-hardening-d022-d023-d024.md`
 
 ## L-007 처분 — 버킷 3 종료 (2026-09-18)
 
@@ -2751,7 +2751,7 @@ C(비관적 락)는 구조적으로 가장 깔끔하지만 DB 경합이 미측�
 - **`DistributedLockManager` 는 사용처 없이 `:common` 에 남는다**(ADR-0025 D4, 의도된 보존).
 - **다른 4개 서비스의 error handler 는 여전히 jitter 없음** — 같은 lockstep 을 안고 있다.
 
-계획서: `docs/plans/task-d025-inventory-lock-boundary.md`
+계획서: `docs/plans/done/task-d025-inventory-lock-boundary.md`
 
 ---
 
@@ -2826,3 +2826,114 @@ D-002a 증적은 detail 열세(×1.23 vs list ×2.02)의 원인으로 둘을 병
 [#124](https://github.com/Kimgyuilli/PeakCart/pull/124) — 커밋 4개(adr / src / test / docs).
 `./gradlew :product-service:test` **42 클래스 · 196 테스트 · 0 실패**(BUILD SUCCESSFUL 17m 19s).
 lint `observability-ssot` · `observability-promql` 둘 다 exit 0. **머지는 하지 않았다.**
+
+
+계획서: `docs/plans/done/task-d025-inventory-lock-boundary.md`
+
+---
+
+## 하네스 개선 — 리뷰 루프가 작업을 불리는 문제 (2026-09-18)
+
+제품 코드가 아니라 `.claude/` 하네스 자체를 고쳤다. 사용자가 보고한 불편 세 가지에서
+출발했다. 매번 Codex 리뷰를 도는 것, 작은 작업에도 ADR 과 리뷰가 붙는 것, 커밋과 PR 이
+사람이 읽기 나쁜 것이다. 작업 중 네 번째가 드러났고 그것이 가장 컸다.
+
+브랜치 `chore/harness-review-gate`. 계획서와 ADR 없이 진행했다. 작은 작업에 큰 절차를
+태우지 않는 것이 고치려는 문제인데 그 수정에 큰 절차를 태울 수 없었다.
+
+### 진단 — 하네스에 분기가 없었다
+
+`/plan` 과 `/work` 가 작업 크기와 무관하게 같은 경로를 탔다. 계획서 5섹션, Codex 리뷰,
+재리뷰 판정, audit 블록이 전부 무조건이었다. 불편 세 가지가 전부 여기서 나왔다.
+
+특히 "돌리지 않는다"는 선택지가 문서에 존재하지 않았다. 그래서 사람이 매번 말로 막아야
+했고, 막고 나면 그 사실이 미결로 남았다. PR [#123](https://github.com/Kimgyuilli/PeakCart/pull/123)
+본문의 "계획 리뷰 라운드 0, 미실시"가 그 흔적이다. 의도적 판단이 실패처럼 보였다.
+
+### 측정 — 리뷰 루프 발산의 실체
+
+audit 파일 18개, 56라운드, 442건을 집계했다.
+
+| 항목 | 수치 |
+|---|---|
+| P0 (머지 차단) | 9건, 2.0% |
+| P1 (강력 권고) | 297건, 67.2% |
+| 처리 | 반영 306건, 기각 1건. 기각률 0.3% |
+| 미수렴 종료 | 7회 |
+| 라운드 3(상한) 도달 | 20회 (라운드 1은 25회) |
+
+머지를 막지 않는 지적 98% 를 거의 전부 그 자리에서 구현해 왔다. ADR-0020 계획 리뷰는
+13건, 9건, 15건으로 3라운드에서 오히려 늘었다. 수렴하지 않는다.
+
+원인은 둘이었다. 하나는 처분 메뉴의 기본값이 `P0/P1만 반영` 이었다는 것이다. P1 이 67% 인데
+"강력 권고"라고 이름 붙여놓고 필수로 처리하고 있었다. 다른 하나는 종료 조건이 자기를
+부정한다는 것이다. 종전 조건 "새 계약 표면 무추가 + P1 = 0" 은 P1 을 반영하면 표면이 느는
+구조라, 루프가 만들어내는 것으로 종료를 정의한 셈이었다.
+
+### 적용
+
+| # | 내용 |
+|---|---|
+| H1 | 리뷰 상태를 4값으로 분리. 수행, 해당 없음, 의도적 생략, 미결. 앞의 셋은 미충족에 오르지 않는다 |
+| H2 | Codex 호출 게이트 `hpx_codex_allowed`. 환경변수, `.cache/codex-off` 파일, 계획서 frontmatter 셋 중 하나면 차단 |
+| H3 | 문체 규약 `docs/conventions/writing.md` 와 `scripts/writing-lint.sh`. `/ship` 4-1 에 배선 |
+| H4 | 작업 등급 S/M/L. 정본은 계획서 frontmatter 의 `grade:`, 기본값 L |
+| H6 | 리뷰 처분에 이월 추가, 재리뷰를 닫힌 질문으로, 상한 2, 규율 점검 `hpx_review_health` |
+
+H5(에이전트 중립 코어 분리)는 보류했다. 조사해 보니 내용은 이미 중립이었고 진짜 고유한
+것은 호출 방식 하나였다. 당장 불편이 없다는 사용자 판단으로 넘어갔다.
+
+### H6 이 핵심이다
+
+리뷰 출력을 줄이지 않았다. 리뷰어는 계속 같은 규모로 보고하고 목록도 그대로 읽힌다.
+바꾼 것은 그 출력을 처리하는 규율이다.
+
+- **이월을 1급 처분으로.** 종전에는 반영과 기각뿐이라 기각이 "맞는 지적 무시"로 느껴져
+  아무도 고르지 않았다. 지적이 맞다는 것과 이번에 고친다는 것이 붙어 있었다. 이월이
+  둘을 분리한다. 구조적이면 `D-0NN` 부채로 승격하고 국소면 PR 본문 §이월 에만 둔다.
+- **재리뷰를 검증 라운드로.** 라운드 1에서 반영한 N개 항목만 놓고 원 지적을 해소했는지와
+  기존 동작을 깼는지 둘만 묻는다. 새 개선 제안은 금지다. 종전 프롬프트는 "수정이 만든
+  새 결함을 찾아라"라는 열린 질문이라 매 라운드 새 지적이 나왔다.
+- **라운드 2부터 P0 만 반영, 상한 3에서 2로.** 종료를 예산으로 정한다.
+- **규율 붕괴 감지.** `hpx_review_health` 가 상한 초과, 이월과 기각 0건, 10건 이상 전부
+  반영 셋을 잡는다. 과거 audit 에 돌리면 실제로 전부 경고가 뜬다.
+
+### 부수 결과
+
+**세션 링크 트레일러 제거.** 커밋 말미의 `Claude-Session:` 은 전역 설정
+`attribution.sessionUrl: false` 로 껐다. 기존 `attribution.commit`/`pr` 과 별개 키였고,
+CLI 내부 스키마에서 `=== false` 엄격 비교인 것을 확인하고 넣었다.
+
+**죽은 helper 51개 제거.** 2026-08-26 과 08-30 축소에서 호출만 멈추고 정의를 남겨둔
+것들이다. 커맨드 진입점에서 전이 폐쇄로 도달성을 계산해 정의 61개 중 10개만 살아 있음을
+확인했다. `lock.sh`, `state.sh`, `sync.sh` 는 파일째 삭제했고 `scripts/timeout_wrapper.py` 와
+`settings.json` 의 `HPX_TIMEOUT` 세 개도 함께 지웠다. 대상이 사라진 bats 4개도 지웠다.
+검증 대상이 없는 테스트는 통과해도 아무것도 보장하지 않는다.
+
+같이 드러난 불일치 하나를 해소했다. `hpx_audit_append` 는 `docs/plans/.audit/` 에 쓰는데
+실제 audit 파일과 커맨드 문서는 `docs/plans/<task>.audit.md` 를 쓰고 있었다. 호출처도
+없어 제거 대상에 포함됐다.
+
+### 검증
+
+- bats 62건 통과, 실패 0건. 신규 `codex_gate` 19건, `plan_grade` 14건, `review_health` 11건
+- 살아있는 진입점 5개를 실제 호출로 확인
+- `writing-lint --self-test` 9건 통과. 커밋 12건 전부 문체 lint 통과
+- 하네스 규모: 함수 61개에서 10개로, lib 336줄
+
+### 미충족
+
+- **Codex 리뷰 미실시.** 하네스 자체를 고치는 작업이라 돌리지 않았다. 의도적 생략이다
+- **새 절차를 실제 task 에 돌려보지 않았다.** 등급 판정, 이월 처분, 검증 라운드가 실전에서
+  의도대로 도는지는 다음 `/plan` 부터 확인한다
+- **`writing-lint` 는 톤을 검사하지 못한다.** 금지 문자와 형식만 본다. 문체는 규약의
+  before/after 예시로만 전달된다
+- **H5 보류.** 재개하면 Codex 가 절차를 직접 실행하는 경우는 별도 항목으로 잡는다.
+  Codex 가 자기 diff 를 자기가 리뷰하게 되어 H1~H4 의 전제가 깨진다
+- **Codex 리뷰 금지 상황 목록 미수집.** H2 게이트로 차단 수단은 생겼으나, 실제로 돌리면
+  안 됐던 상황이 어떤 것들이었는지는 답을 받지 못해 커맨드에 예시를 적지 못했다. 반복되는
+  상황이 확인되면 `/plan` §5-0 에 예시로 추가한다
+- **LLM 비용 최적화 잔여 3건은 D-027.** 커맨드 근거 서술 분리, Codex JSON 렌더러, 등급 사후
+  검증. 셋 다 검증할 입력이 없어 보류했고 재개 조건을 부채 행에 달았다
+
+작업 메모였던 `.claude/WORKING.md` 는 내용을 이 문서와 D-027 로 옮기고 지웠다. 임시 파일이었다.

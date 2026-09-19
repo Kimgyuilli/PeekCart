@@ -1,7 +1,7 @@
 # Runbook — Redis 캐시 장애 (fail-open) 대응
 
 > 대상: product-service 의 상품 조회 캐시가 Redis 장애로 fallback 을 타는 상황
-> 구현: 구현 ⑤ / L-006 (계획 `docs/plans/task-impl5-cqrs-cache-fallback.md`)
+> 구현: 구현 ⑤ / L-006 (계획 `docs/plans/done/task-impl5-cqrs-cache-fallback.md`)
 > 관련: `ResilientCacheErrorHandler` · `CacheConfig` · ADR-0009 S7 · ADR-0013 D3(gateway 대조)
 
 ---

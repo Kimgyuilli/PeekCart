@@ -111,7 +111,7 @@ PR3c 는 머지됐으나 **GKE 실 클러스터 rollout 증적 미확보** 상�
 - **계약 이중 지점**: 내부 토큰 claims/iss/kid 계약이 발행(Gateway)·검증(common-auth) 두 곳에 존재 → conformance(golden vector) 테스트로 동등성 고정.
 
 ### 후속 결정에 미치는 영향
-- **PR3d 재정의**: `task-impl3-spring-cloud-gateway.md` PR3d(P14 삭제분·P18 ⑤) 및 클래스 처분표(loop2 #3)를 재작성 — "삭제"였던 `RsaPublicKeyRegistry`/`PemKeyLoader`/JWT 파서를 "내부 토큰 검증기로 용도 변경"으로. 상세: `docs/plans/task-impl3-pr3d-internal-token.md`.
+- **PR3d 재정의**: `task-impl3-spring-cloud-gateway.md` PR3d(P14 삭제분·P18 ⑤) 및 클래스 처분표(loop2 #3)를 재작성 — "삭제"였던 `RsaPublicKeyRegistry`/`PemKeyLoader`/JWT 파서를 "내부 토큰 검증기로 용도 변경"으로. 상세: `docs/plans/done/task-impl3-pr3d-internal-token.md`.
 - **PR4 무영향**: HS512 fallback 제거(P22)는 사용자 access token 검증(Gateway) 소관으로 별개. 내부 토큰은 처음부터 RS256 전용.
 - **롤아웃**: PR3c 가 GKE 증적 미확보라, 본 결정을 **PR3d 로 흡수(경로 A)** 하면 평문 header-trust 를 영구 배포하지 않고 서명 assertion 을 header-trust rollout 으로 직행. GKE 보안 smoke 는 서명 assertion 상태에서 1회 수행.
 - **Layer 1 동기화**: `docs/02-architecture.md`·`docs/04-design-deep-dive.md §10-2`(Gateway 헤더 신뢰 모델)에 서명 assertion 반영.
@@ -119,8 +119,8 @@ PR3c 는 머지됐으나 **GKE 실 클러스터 rollout 증적 미확보** 상�
 ## References
 - ADR-0013(Gateway 보안 — D1 RS256/JWKS, D2 키 저장, D3 헤더 신뢰 모델·SPOF), ADR-0014(전환기 인증 모듈 — D2-c servlet 검증 exit), ADR-0011(common-auth 구조)
 - 코드: `gateway/.../GatewayAuthenticationFilter.java:153,160,163`(strip/주입), `peekcart-common-auth/.../security/HeaderAuthenticationFilter.java:24,44`(평문 신뢰), `peekcart-common-auth/.../jwt/RsaPublicKeyRegistry.java:39`·`JwtKeyProperties.java:22`(재활용 대상), `k8s/base/networkpolicy.yml`
-- 계획: `docs/plans/task-impl3-pr3d-internal-token.md`
+- 계획: `docs/plans/done/task-impl3-pr3d-internal-token.md`
 - `docs/04-design-deep-dive.md §10-2`(Gateway 인증·헤더 신뢰)·§10-6(Redis SPOF)
 
 ## Update Log
-- **2026-07-25** (계획 리뷰 loop1 #1, 사실 정정): D2 의 "Gateway 전용 Secret 신설" 표현이 k8s Secret 으로 오독될 수 있어 명확화한다. D2 가 이미 규정한 대로 gateway 개인키는 **GCP Secret Manager 전용 secret + Secrets Store CSI read-only 파일 마운트**를 의미하며, **k8s Secret(`secretKeyRef`/`secret:` volume)·환경변수 는 금지**한다(ADR-0013 D2 정합, `scripts/gateway-exposure-lint.sh` 의 gateway Secret 참조 금지 규칙과도 정합). 결정 변경이 아닌 표현 정정. 상세: `docs/plans/task-impl3-pr3d-internal-token.md` P5/P7.
+- **2026-07-25** (계획 리뷰 loop1 #1, 사실 정정): D2 의 "Gateway 전용 Secret 신설" 표현이 k8s Secret 으로 오독될 수 있어 명확화한다. D2 가 이미 규정한 대로 gateway 개인키는 **GCP Secret Manager 전용 secret + Secrets Store CSI read-only 파일 마운트**를 의미하며, **k8s Secret(`secretKeyRef`/`secret:` volume)·환경변수 는 금지**한다(ADR-0013 D2 정합, `scripts/gateway-exposure-lint.sh` 의 gateway Secret 참조 금지 규칙과도 정합). 결정 변경이 아닌 표현 정정. 상세: `docs/plans/done/task-impl3-pr3d-internal-token.md` P5/P7.

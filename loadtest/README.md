@@ -143,7 +143,7 @@ bash loadtest/cleanup.sh              # 실제 삭제
 
 > 위 절차는 **Phase 3 모놀리스** 기준이다(`seed.sql` 이 단일 스키마를 전제한다). DB-per-service
 > 이후에는 쓸 수 없다. 이 절에서 쓰는 산출물은 전부 `d002bc-` 접두사를 가진다.
-> 계획서: `docs/plans/task-d002-bc-session.md`
+> 계획서: `docs/plans/done/task-d002-bc-session.md`
 
 ## 스택
 

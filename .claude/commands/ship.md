@@ -10,7 +10,7 @@
 > 사유 — `/plan`·`/work` 는 2026-08-26 축소에서 이미 `state.json` 을 버렸는데 `/ship` 만 그것을 **필수 전제**로 남겨두어, Step 1 이 "state 가 없습니다. /work 를 먼저 완료하세요" 로 **정상 흐름을 차단**했다. 구현 ⑤(#94) 에서 실제로 이 불일치에 부딪혀 Step 1/10 을 건너뛰고 수행했다.
 > 진행 상태는 `state.json` 이 아니라 **git 과 gh 의 사실**(브랜치·커밋·원격·PR)로 판정한다. 이력은 계획서·audit 파일·git 이력에 남는다.
 >
-> 이 축소로 `hpx_ship_pr_body_data` 는 호출처가 사라진다. `hpx_state_*`·`hpx_lock_*`·`hpx_gate_events_append`·`hpx_diff_absorption_status` 는 `/plan`·`/work` 축소 때 이미 죽어 있었다. 셸 라이브러리 정리는 별도 task 로 한 번에 한다 — 이 커맨드는 호출을 멈출 뿐 삭제하지 않는다.
+> 이 축소로 죽은 helper 들은 2026-09-18 정리에서 제거했다. `hpx_ship_pr_body_data`, `hpx_state_*`, `hpx_lock_*`, `hpx_gate_events_*`, `hpx_diff_absorption_status` 등 51개가 대상이었고 `lock.sh`·`state.sh`·`sync.sh` 는 파일째 삭제했다. 이력은 git 에 남는다.
 
 `/ship` 은 Codex 를 호출하지 않는다 (shell precheck / commit / push / gh 만).
 
@@ -40,10 +40,20 @@ dry-run 통과 후 `--execute` 로 재호출하면 같은 판정을 다시 계�
 
 - 인자에서 `--execute` 를 떼고 남은 것이 `TASK_ID`. 없으면 현재 브랜치명과 `docs/plans/*.md` 에서 추론해 제시하고 승인받는다.
 - `TASK_ID` 는 `[A-Za-z0-9._-]+` 만 허용하고 `..` · 선두 `-`/`.` 를 금지한다.
-- 다음을 확인하고 어긋나면 **중단하고 보고**한다:
-  - `docs/plans/${TASK_ID}.md` 존재 (없으면 `/plan` 부터)
-  - 현재 브랜치가 `main` 이 **아님** (main 에서 직접 ship 금지)
-  - 계획서의 작업 항목 체크박스가 전부 `- [x]` (미완이면 어느 항목이 남았는지 보고)
+- 사전 확인은 한 번에 판정받는다. 계획서 존재 · 브랜치 · 미완 체크박스를 직접 세지 않는다.
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_ship_preflight "<TASK_ID>"'
+```
+
+  1행이 `ok` 면 통과. `blocked` 면 **중단하고** 2행 이하의 사유를 그대로 보고한다.
+
+등급을 읽어 PR 본문 구성에 쓴다. 등급이 낮다고 PR 본문을 줄이지는 않는다 — PR 은 사람이
+읽는 자리이고, 리뷰 절차와 무관하다. 다만 없는 리뷰를 있었던 것처럼 적지 않기 위해 필요하다.
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_plan_grade "<TASK_ID>"'
+```
 
 ```bash
 git branch --show-current
@@ -90,7 +100,17 @@ git log --reverse --format='%h  %s' "$(git merge-base HEAD origin/main)"..HEAD
   - **ADR 과 계획서는 별도 커밋.** ADR 본문 정정은 `fix(adr):` 접두사 (see `docs/adr/README.md` §원칙)
   - 100파일 초과 시 재분할
   - 커밋 메시지: `feat(<scope>)` / `fix(<scope>)` / `refactor(<scope>)` / `test(<scope>)` / `docs(<scope>)` / `chore(<scope>)`
-  - `git add -- <파일 명시>` 후 `git diff --cached --quiet` 이면 중단 (스테이징이 비었다는 뜻)
+  - 제목과 본문 문체는 `docs/conventions/writing.md` 를 따른다. em dash, 화살표, 이모지,
+    귀속 트레일러를 쓰지 않고 제목은 명사형 50자 내외로 끝낸다. Step 4-1 lint 가 검사한다
+  - `git add -- <파일 명시>` 후 분류가 섞이지 않았는지 판정받는다. 눈으로 지킬 규칙이 아니다.
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_staged_category_check'
+```
+
+  `mixed` 면 커밋하지 말고 분류별로 다시 스테이징한다. `empty` 면 `git add` 가 실패한 것이다.
+  **이미 `git rm` 으로 스테이징된 경로를 `git add` 에 다시 넘기면 pathspec 오류로 죽으면서
+  나머지 스테이징이 통째로 빠진다.** 실제로 그 상태로 커밋돼 수정분이 누락된 적이 있다
 
 분할이 필요하면 승인 게이트를 노출한다:
 ```
@@ -110,15 +130,61 @@ p2. test(cache): ...  (+23)
 | What | 계획서 §3 작업 항목 중 실제 구현된 것 |
 | How | 핵심 결정과 근거. ADR 이 있으면 `(see ADR-NNNN)` |
 | Test plan | 계획서 §검증 방법의 각 행 + **실제 실행 결과** |
-| 리뷰 이력 | `docs/plans/${TASK_ID}.audit.md` 의 라운드별 요약 |
+| 리뷰 이력 | `docs/plans/${TASK_ID}.audit.md` 의 라운드별 요약 (반영·이월·기각 건수 포함) |
 | 관련 | Task · Plan · ADR · 부채 ID · runbook |
 
+**리뷰 이력 섹션은 audit 의 `상태:` 줄을 그대로 옮긴다.** 4값 중 앞의 셋은 정상 종결이므로
+한 줄로 끝낸다. 없는 라운드를 "라운드 0, 미실시" 로 적지 않는다.
+
+```markdown
+## 리뷰 이력
+
+- 등급: M
+- 계획 리뷰: 해당 없음(등급 M)
+- diff 리뷰: 수행(1라운드). 7건 중 반영 3건, 이월 3건, 기각 1건
+```
+
+등급을 첫 줄에 적는다. 이것이 있어야 "계획 리뷰가 왜 없나"가 본문 안에서 설명된다.
+
 **조건부 섹션** — 해당하면 반드시 넣는다:
-- **Skipped findings** — diff 리뷰에서 기각한 항목. **사유와 재검토 조건**을 함께 적는다
+- **이월** — 리뷰에서 맞다고 인정했으나 이번 범위가 아니라 미룬 항목. **재검토 조건**을 함께
+  적는다. 부채로 승격했으면 `D-0NN` 을 단다. 이 섹션이 비어 있는데 리뷰 라운드가 2회 이상이면
+  처분 규율이 무너진 것이다(실측 기각률 0.3%가 그 상태였다)
+- **Skipped findings** — 리뷰에서 **기각**한 항목. 사유와 재검토 조건을 함께 적는다.
+  이월과 다르다. 이월은 "맞지만 나중", 기각은 "사실과 다름"이다
 - **Skipped consistency checks** — Step 2 에서 `[2]` 를 골랐으면 그 사유
 - **미충족** — 계획서 §미해결 + 작업 중 드러난 한계. "완료했다" 로 뭉개지 않는다
 
+**미충족에 넣지 않는 것** — 리뷰 상태가 `해당 없음(등급 G)` 이거나 `의도적 생략` 인 경우. 이것은
+판단의 결과이지 남은 일이 아니다. 리뷰 이력 한 줄로 끝내고 미충족에는 적지 않는다.
+`미결` 만 미충족으로 올린다.
+
 본문은 `.cache/pr-body-${TASK_ID}.md` 에 저장한다 (재시도 시 재사용).
+
+#### 4-0. 리뷰 처분 규율 점검
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_review_health "<TASK_ID>"'
+```
+
+`ok` 면 넘어간다. `warnings` 면 항목을 PR 본문 승인 게이트에 함께 제시한다. 진행을 막지는
+않지만, 경고가 떴는데 §이월 섹션이 비어 있으면 그건 처분을 안 갈랐다는 뜻이다.
+
+#### 4-1. 문체 lint (생략 금지)
+
+본문을 사람에게 보이기 **전에** 돌린다. 정본은 `docs/conventions/writing.md`.
+
+```bash
+mkdir -p .cache
+scripts/writing-lint.sh --commits "$(git merge-base HEAD origin/main)..HEAD"
+scripts/writing-lint.sh --file ".cache/pr-body-${TASK_ID}.md"
+```
+
+- `오류` 가 나오면 **고치고 다시 돌린다.** 사람에게 보이지 않는다. 커밋 메시지가 걸렸으면
+  아직 push 전이므로 `git commit --amend` 또는 `git rebase -i` 로 고친다
+- `경고` 는 진행을 막지 않는다. 다만 제목 길이와 추적 태그 위치는 대개 고치는 편이 낫다
+- 오류를 못 고칠 사정이 있으면 그 사유를 승인 게이트에 함께 제시하고 사용자가 판단한다.
+  조용히 넘기지 않는다
 
 ### 5. 본문 승인 게이트 (always)
 
@@ -174,13 +240,17 @@ gh pr create --base "$(hpx_base_branch_name)" --head "$BRANCH" \
    범위가 착수 전과 달라졌으면 **그 사실과 근거를 행에 기록한다** (구현 ④·⑤ 선례)
 2. 편입 부채가 있으면 `docs/progress/phase4-prep-debt-roadmap.md` 의 해당 행에 ✅ + PR 번호
 3. `docs/progress/PHASE{N}.md` — 작업 이력에 PR URL. **미충족 항목을 함께 남긴다**
-4. 결정 사항 분류:
+4. 이월 항목 중 구조적이거나 반복되는 것은 `docs/TASKS.md` 부채 표에 `D-0NN` 으로 등록한다.
+   한두 건짜리 국소 항목은 PR 본문 §이월 에만 두고 부채 ID 를 만들지 않는다
+5. 결정 사항 분류:
    - 대안 비교·후속 전제가 있으면 → ADR (Layer 2)
    - ADR 의 **사실 진술**이 틀렸으면 → 새 ADR 이 아니라 **Update Log + `fix(adr):`** (`docs/adr/README.md` §원칙)
    - 구현 디테일 → progress (Layer 3)
    - 확신이 없으면 사용자에게 묻는다
-5. Layer 1(01~07) 이 코드 사실과 어긋나면 **What 만** 정정. Why 는 ADR
-6. `docs/plans/${TASK_ID}.audit.md` 에 `/ship` 결과 1블록 append (PR URL · precheck 결과 · 갱신 항목)
+6. Layer 1(01~07) 이 코드 사실과 어긋나면 **What 만** 정정. Why 는 ADR
+7. `docs/plans/${TASK_ID}.audit.md` 에 `/ship` 결과 1블록 append (PR URL · precheck 결과 · 갱신 항목).
+   **등급 S 는 audit 파일이 없으므로 이 단계를 건너뛴다** — PR URL 은 `docs/TASKS.md` 와
+   progress 에 이미 남는다. 없는 파일을 만들자고 audit 을 되살리지 않는다
 
 갱신분은 별도 커밋 후 push 한다.
 
@@ -201,7 +271,13 @@ Branch:  <branch> (origin 동기화됨)
 
 ## 재진입
 
-`state.json` 이 아니라 **git/gh 사실**로 판정한다. 같은 명령을 다시 부르면 아래를 확인해 남은 지점부터 진행한다.
+`state.json` 이 아니라 **git/gh 사실**로 판정한다. 명령을 하나씩 돌려 해석하지 말고 판정받는다.
+
+```bash
+bash -c 'source .claude/scripts/shared-logic.sh; hpx_ship_resume_point "<TASK_ID>"'
+```
+
+1행이 재개할 Step 번호(`0` 이면 완료), 2행이 근거다. 아래 표는 그 판정 규칙의 정본이다.
 
 | 확인 | 판정 | 재개 지점 |
 |---|---|---|

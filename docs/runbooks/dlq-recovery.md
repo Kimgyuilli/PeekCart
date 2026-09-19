@@ -1,7 +1,7 @@
 # Runbook — DLQ 원장 대응
 
 > 대상: DLQ 로 빠진 메시지의 확인·추적·종결
-> 구현: ④-c-2a (계획 `docs/plans/task-impl4-c2a-dlq-ledger.md`)
+> 구현: ④-c-2a (계획 `docs/plans/done/task-impl4-c2a-dlq-ledger.md`)
 > **재발행(replay)은 아직 불가하다** — ④-c-2b 미구현. §6 참고
 
 ---
@@ -114,7 +114,7 @@ SELECT * FROM dead_letter_records WHERE event_id = '<eventId>';
 ### 3.3 `failed_consumer_group = '__unknown__'` 인 경우
 
 group 헤더를 판독하지 못한 레코드다. **원본 토픽을 발행하는 서비스**가 단일 소유자로 적재한다
-(quarantine 경로). 어느 서비스가 발행자인지는 `docs/plans/task-impl4-c2a-dlq-ledger.md` §4 참고.
+(quarantine 경로). 어느 서비스가 발행자인지는 `docs/plans/done/task-impl4-c2a-dlq-ledger.md` §4 참고.
 
 이 건은 **누가 실패했는지 모른다**. 원본 메시지의 `event_id` 로 다른 서비스 DB 를 교차 조회해
 (§2.4) 실제 소비 실패가 어디서 났는지 좁힌다.

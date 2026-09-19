@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# ⚠️ D-002b'/c 측정 전용 — 운영 매니페스트 아님. 사유·범위는 docs/plans/task-d002-bc-session.md
+# ⚠️ D-002b'/c 측정 전용 — 운영 매니페스트 아님. 사유·범위는 docs/plans/done/task-d002-bc-session.md
 #
 # `gke-d002a` 와 무엇이 다른가: a 는 product 읽기 경로라 gateway 를 **뺐지만**, b'/c 는 주문 생성
 # 경로다. order/payment 는 HeaderTrustSecurityConfigurer → InternalTokenAuthenticationFilter
