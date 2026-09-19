@@ -6,6 +6,7 @@ import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.kafka.config.TopicBuilder;
@@ -13,13 +14,16 @@ import org.springframework.kafka.core.KafkaAdmin;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
+import org.awaitility.core.ConditionTimeoutException;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 /**
@@ -64,6 +68,9 @@ class KafkaTopicConfigMechanismIntegrationTest {
         kafkaAdmin.setModifyTopicConfigs(modifyTopicConfigs);
         kafkaAdmin.setAutoCreate(false);
         kafkaAdmin.createOrModifyTopics(topics);
+        for (NewTopic topic : topics) {
+            awaitTopicVisible(topic.name());
+        }
     }
 
     private Map<String, ConfigEntry> describe(String topic) throws Exception {
@@ -73,6 +80,41 @@ class KafkaTopicConfigMechanismIntegrationTest {
                     .get(resource).entries().stream()
                     .collect(java.util.stream.Collectors.toMap(ConfigEntry::name, e -> e));
         }
+    }
+
+    /**
+     * 토픽이 브로커 메타데이터에 보일 때까지 기다린다 (D-028).
+     *
+     * <p><b>왜 필요한가</b>: {@code createOrModifyTopics} 가 리턴해도 뒤이은 {@code describe} 가
+     * 즉시 그 토픽을 보지는 못한다. 붐비는 CI shard 에서 그 창에 들어가 <b>셋업 단언</b>이
+     * 깨졌다(PR #125 CI, order shard 418건 중 2건 — {@code UnknownTopicOrPartitionException}).
+     *
+     * <p>{@link #awaitConfig} 로는 닿지 않는다. 그쪽은 <b>한 칸 뒤</b>의 문제를 덮는다 —
+     * "토픽은 있는데 값이 구값". {@code untilAsserted} 는 {@code AssertionError} 만 삼키므로
+     * "토픽 자체가 없음" 은 관통한다.
+     *
+     * <p><b>Awaitility 의 {@code ignoreException} 을 쓰지 않는 이유</b>: {@code all().get()} 이
+     * 던지는 것은 {@code UnknownTopicOrPartitionException} 이 아니라 그것을 {@code cause} 로
+     * 감싼 {@code ExecutionException} 이고, {@code ignoreException} 은 {@code cause} 를 풀지
+     * 않는다. {@code ignoreExceptions()} 로 넓히면 진짜 브로커 오류까지 삼켜 타임아웃으로
+     * 뭉개진다. 그래서 {@code cause} 를 직접 보고 <b>그 예외만</b> 재시도한다.
+     *
+     * <p><b>전제에만 쓴다.</b> 토픽 존재에만 걸고 config 값에는 걸지 않는다 — D-019 와 같은 선.
+     */
+    private void awaitTopicVisible(String topic) {
+        await().atMost(Duration.ofSeconds(10))
+                .pollInterval(Duration.ofMillis(200))
+                .until(() -> {
+                    try {
+                        describe(topic);
+                        return true;
+                    } catch (ExecutionException e) {
+                        if (e.getCause() instanceof UnknownTopicOrPartitionException) {
+                            return false;
+                        }
+                        throw e;
+                    }
+                });
     }
 
     /**
@@ -93,6 +135,39 @@ class KafkaTopicConfigMechanismIntegrationTest {
 
     private NewTopic business(String name, Map<String, String> configs) {
         return TopicBuilder.name(name).partitions(1).replicas(1).configs(configs).build();
+    }
+
+    // ── D-028 셋업 대기 자체의 계약 ─────────────────────────────────────────────
+    // awaitTopicVisible 은 다른 모든 테스트의 전제를 떠받치므로, 그것이 실제로 동작하는지를
+    // 실패 주입으로 확인한다. 이 둘이 없으면 대기가 조용히 안 먹거나(cause 를 못 풀거나)
+    // 모든 오류를 삼켜도 나머지가 green 으로 통과해 버린다.
+
+    /**
+     * 토픽이 끝내 안 보이면 대기는 타임아웃해야 한다.
+     *
+     * <p>catch 가 {@code cause} 를 풀지 못하면 {@code ExecutionException} 이 그대로 관통해
+     * 타임아웃이 아닌 다른 예외로 떨어진다 — 그것이 곧 대기가 안 먹는다는 증거다.
+     */
+    @Test
+    @DisplayName("D-028 대기 — 없는 토픽이면 cause 를 풀어 재시도하다 타임아웃한다")
+    void awaitTopicVisibleRetriesWhileTopicAbsent() {
+        assertThatThrownBy(() -> awaitTopicVisible("never-created-" + UUID.randomUUID()))
+                .as("ExecutionException 이 관통하면 catch 가 cause 를 풀지 못한 것이다")
+                .isInstanceOf(ConditionTimeoutException.class);
+    }
+
+    /**
+     * 토픽 부재가 아닌 오류는 즉시 던져야 한다.
+     *
+     * <p>삼키면 진짜 브로커 오류가 10초 뒤 타임아웃으로 뭉개져 원인이 사라진다.
+     * 그래서 {@code ignoreExceptions()} 로 넓히지 않았고, 그 선택을 여기서 고정한다.
+     */
+    @Test
+    @DisplayName("D-028 대기 — 토픽 부재가 아닌 오류는 삼키지 않고 즉시 던진다")
+    void awaitTopicVisibleRethrowsOtherErrors() {
+        assertThatThrownBy(() -> awaitTopicVisible("invalid topic name!"))
+                .as("타임아웃으로 떨어지면 대기가 관계없는 오류까지 삼킨 것이다")
+                .isNotInstanceOf(ConditionTimeoutException.class);
     }
 
     // ── V-P4-1 [측정] 기준선 ────────────────────────────────────────────────────
