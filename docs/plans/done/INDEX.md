@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 46개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 47개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -45,11 +45,12 @@
 | [task-impl3-pr4-auth-observability](./task-impl3-pr4-auth-observability.md) | 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-09-14 | 있음 |
 | [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#115](https://github.com/Kimgyuilli/PeakCart/pull/115) | 2026-09-15 | 있음 |
 
-## 부채 · 측정 (9)
+## 부채 · 측정 (10)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
 | [task-d002-rescope](./task-d002-rescope.md) | D-002 재정의 (착수 전 코드 검증) | [#117](https://github.com/Kimgyuilli/PeakCart/pull/117) |  |  |
+| [task-d028-topic-describe-setup-race](./task-d028-topic-describe-setup-race.md) | task-d028-topic-describe-setup-race | [#126](https://github.com/Kimgyuilli/PeakCart/pull/126) |  |  |
 | [task-d010-outbox-trace-context](./task-d010-outbox-trace-context.md) | Outbox trace context 영속화 + Producer 헤더 전파 |  | 2026-05-01 |  |
 | [task-d011-harness-hardening](./task-d011-harness-hardening.md) | `/plan`·`/work` 공용 shell helper 4건 정비 |  | 2026-05-02 | 있음 |
 | [task-d005-observability-consolidation](./task-d005-observability-consolidation.md) | 관측성 계약 강제 메커니즘 격상 (D-005 잔여 리스크 해결) | [#32](https://github.com/Kimgyuilli/PeakCart/pull/32) | 2026-05-06 | 있음 |
