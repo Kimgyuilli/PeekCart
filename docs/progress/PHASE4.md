@@ -2757,7 +2757,7 @@ C(비관적 락)는 구조적으로 가장 깔끔하지만 DB 경합이 미측�
 
 ## D-026 — 상품 상세 재고 캐시 경계 (2026-09-18)
 
-> ADR-0026 · 계획서 `docs/plans/task-d026-detail-stock-cache-boundary.md`
+> ADR-0026 · 계획서 `docs/plans/done/task-d026-detail-stock-cache-boundary.md`
 
 ### 원문의 두 원인 중 하나는 원인이 아니었다
 

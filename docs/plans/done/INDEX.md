@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 45개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 46개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -45,7 +45,7 @@
 | [task-impl3-pr4-auth-observability](./task-impl3-pr4-auth-observability.md) | 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-09-14 | 있음 |
 | [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#115](https://github.com/Kimgyuilli/PeakCart/pull/115) | 2026-09-15 | 있음 |
 
-## 부채 · 측정 (8)
+## 부채 · 측정 (9)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -57,6 +57,7 @@
 | [task-d020-approval-reconciliation](./task-d020-approval-reconciliation.md) | D-020 — 결제 승인 경계: 승인 원장 + 멱등키 + 조회 기반 reconciliation | [#107](https://github.com/Kimgyuilli/PeakCart/pull/107) | 2026-09-14 | 있음 |
 | [task-d002-bc-session](./task-d002-bc-session.md) | D-002 잔여 3축 측정 세션 (b' / c + a 천장 분리) | [#119](https://github.com/Kimgyuilli/PeakCart/pull/119) | 2026-09-17 | 있음 |
 | [task-d025-inventory-lock-boundary](./task-d025-inventory-lock-boundary.md) | D-025 재고 락 경계 (분산 락이 커밋을 감싸지 못한다) | [#123](https://github.com/Kimgyuilli/PeakCart/pull/123) | 2026-09-18 | 있음 |
+| [task-d026-detail-stock-cache-boundary](./task-d026-detail-stock-cache-boundary.md) | D-026 상품 상세 재고 조회 캐시 경계 | [#124](https://github.com/Kimgyuilli/PeakCart/pull/124) | 2026-09-18 | 있음 |
 
 ## 기타 (7)
 
