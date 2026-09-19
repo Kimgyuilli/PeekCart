@@ -72,6 +72,8 @@ classify() {
 
 # 인바운드 참조 재작성. docs/plans/<base> 를 docs/plans/done/<base> 로 바꾼다.
 # 경로 없는 백틱 언급은 링크가 아니라 산문이므로 건드리지 않는다.
+# docs/progress/evidence/ 는 제외한다 — 외부 원문(PR 본문 등)을 그대로 떠 둔 스냅샷이라
+# 고치면 출처와 어긋난다. D-026 이동 때 PR #124 본문 스냅샷이 실제로 변조됐다.
 rewrite_refs() {
   local base="$1"
   python3 - "$base" <<'PY'
@@ -83,6 +85,8 @@ files = subprocess.run(
 n = 0
 for f in files:
     if f.startswith('./.claude/scripts/tests'):
+        continue
+    if f.startswith('./docs/progress/evidence/'):
         continue
     try:
         s = io.open(f, encoding='utf-8').read()

@@ -161,7 +161,7 @@ race 가 남으므로 상한은 여전히 TTL 이 준다). 그리고 evict 은 �
 
 ## References
 
-- 계획서: `docs/plans/task-d026-detail-stock-cache-boundary.md`
+- 계획서: `docs/plans/done/task-d026-detail-stock-cache-boundary.md`
 - 증적: `docs/progress/evidence/d002a-gke-20260916-0030.md` (§읽는 법 ③ — 본 ADR Context 가 정정)
 - 코드: `ProductQueryService` · `ProductCacheService` · `CacheConfig` · `ProductDetailQueryCostIntegrationTest`
 - 관련 ADR: ADR-0007(설정 소유), ADR-0009/0015(S7 관측성), ADR-0012 §D2(이벤트 페이로드),
