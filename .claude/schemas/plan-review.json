@@ -24,7 +24,9 @@
           "severity",
           "category",
           "finding",
-          "suggestion"
+          "suggestion",
+          "scope",
+          "suggested_disposition"
         ],
         "properties": {
           "id": {
