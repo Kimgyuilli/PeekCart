@@ -3066,4 +3066,4 @@ self-test 9건 통과. 변이 시험으로 바이트 비교가 실제로 결함�
 - **`--all` 은 PR 하나당 `gh` 를 두 번 부른다.** 124개에 수 분이 걸린다. 비상용 경로라
   그대로 뒀다
 
-계획서: `docs/plans/task-pr-body-reformat.md`
+계획서: `docs/plans/done/task-pr-body-reformat.md`

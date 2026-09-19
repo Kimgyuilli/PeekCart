@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 47개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 48개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -60,7 +60,7 @@
 | [task-d025-inventory-lock-boundary](./task-d025-inventory-lock-boundary.md) | D-025 재고 락 경계 (분산 락이 커밋을 감싸지 못한다) | [#123](https://github.com/Kimgyuilli/PeakCart/pull/123) | 2026-09-18 | 있음 |
 | [task-d026-detail-stock-cache-boundary](./task-d026-detail-stock-cache-boundary.md) | D-026 상품 상세 재고 조회 캐시 경계 | [#124](https://github.com/Kimgyuilli/PeakCart/pull/124) | 2026-09-18 | 있음 |
 
-## 기타 (7)
+## 기타 (8)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -71,4 +71,5 @@
 | [task-ci-test-matrix](./task-ci-test-matrix.md) | CI `build` job 분해 — lint / test 매트릭스 / guards / gate | [#97](https://github.com/Kimgyuilli/PeakCart/pull/97) | 2026-09-01 | 있음 |
 | [task-user-key-rotation-local-drill](./task-user-key-rotation-local-drill.md) | User 도메인 키 회전 실증 (로컬 드릴) | [#116](https://github.com/Kimgyuilli/PeakCart/pull/116) | 2026-09-15 |  |
 | [task-ops-hardening-d022-d023-d024](./task-ops-hardening-d022-d023-d024.md) | 운영 표면 하드닝 (D-024 · D-022 · D-023) | [#121](https://github.com/Kimgyuilli/PeakCart/pull/121) | 2026-09-18 |  |
+| [task-pr-body-reformat](./task-pr-body-reformat.md) | 기존 PR 본문 문체 재작성 (PR 1~124) | [#127](https://github.com/Kimgyuilli/PeakCart/pull/127) | 2026-09-19 |  |
 
