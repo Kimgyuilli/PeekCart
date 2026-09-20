@@ -89,6 +89,12 @@ echo "--- 5) 잔여 0 검증 ---"
 # "정리했다" 와 "남은 게 없다" 는 다르다. 삭제가 일부만 성공해도 위 단계들은 계속 진행하므로
 # (run 이 실패를 삼킨다) 마지막에 **상태로** 확인한다. 남아있으면 exit 1 — 측정 세션의
 # 완료 조건(계획서 P12 "과금 0 확인")을 사람 눈이 아니라 종료 코드가 보장하게 한다.
+#
+# forwarding-rules / backend-services / health-checks 추가 (D-026 세션, 2026-09-20):
+# 측정 overlay 가 Internal LB Service 를 띄운다(`measurement-lb.yml`). 그 Service 는
+# GKE 가 대신 만드는 **forwarding rule + backend service + health check** 를 동반하고,
+# 이들은 클러스터 삭제 시 대개 함께 지워지지만 **항상은 아니다**. disks 가 남았던 것과
+# 같은 계열의 누수라 같은 방식(상태로 확인, 남으면 exit 1)으로 닫는다.
 if $DRY_RUN; then
   echo "[dry-run] 삭제를 수행하지 않았으므로 잔여 검증을 건너뛴다"
 else
@@ -97,7 +103,10 @@ else
     "clusters|gcloud container clusters list --filter=name:($CLUSTER_NAME) --format=value(name)" \
     "instances|gcloud compute instances list --filter=name:($LOADGEN_NAME) --format=value(name)" \
     "disks|gcloud compute disks list --filter=zone:($ZONE) --format=value(name)" \
-    "addresses|gcloud compute addresses list --filter=region:($REGION) --format=value(name)"; do
+    "addresses|gcloud compute addresses list --filter=region:($REGION) --format=value(name)" \
+    "forwarding-rules|gcloud compute forwarding-rules list --filter=region:($REGION) --format=value(name)" \
+    "backend-services|gcloud compute backend-services list --filter=region:($REGION) --format=value(name)" \
+    "health-checks|gcloud compute health-checks list --format=value(name)"; do
     label="${q%%|*}"; cmd="${q#*|}"
     out=$($cmd 2>/dev/null)
     if [[ -n "$out" ]]; then
