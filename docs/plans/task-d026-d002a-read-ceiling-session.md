@@ -194,8 +194,9 @@ loadgen `e2-medium`×1 · **StorageClass 고정**(V13).
   **단 `cleanup.sh` 는 exit 1 로 끝났다** — 새로 넣은 검사가 `backend-services` 5 ·
   `health-checks` 1 을 잡았는데, 확인 결과 **이번 세션 것이 아니라 2026-09-14 잔재**다
   (삭제된 구 클러스터의 instance group 참조 · description 이 5서비스 Internal LB · 참조
-  forwarding rule 0). **처분은 사용자 확인 대기** — 이번 세션이 만든 것이 아니고 비가역이다.
-  실질 과금은 거의 없다(과금되는 forwarding rule 은 이미 0). 익일 Billing 확인 미수행.
+  forwarding rule 0). **처분 완료**(사용자 승인) — 삭제 후 재실행한 `cleanup.sh` 가
+  **7종 전부 `[0]`** 으로 정상 종료했다. 익일 Billing 확인만 미수행.
+  즉 새 검사는 **6일 묵은 선재 누수를 드러냈고 그것까지 닫았다.**
 
 ---
 
