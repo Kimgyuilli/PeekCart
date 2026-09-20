@@ -1,5 +1,21 @@
-# AR 이미지 고정(2026-09-14T22:07 — 현재 코드와 동일, 재빌드 불필요) + 캐시 토글 노출.
-# peekcart.cache.enabled 는 CacheConfig:69/111 의 대조군 스위치다. 기본 ON, 측정 중 OFF 로 전환한다.
+# 측정 조건 — product-service 쪽 손잡이 둘.
+#
+# ① `limits.cpu: 3000m` — 기준선 증적의 **조건 B** 값이다
+#    (`docs/progress/evidence/d002a-gke-20260916-0030.md` §측정 행렬).
+#    base 는 1000m 이고(`k8s/base/services/product-service/deployment.yml:58`) 그 값이 실질
+#    천장이었다(기준선 §읽는 법 ②). **지난 세션은 이 3000m 을 overlay 가 아니라 손으로 올렸다.**
+#    그래서 파일에 남지 않았고, 같은 이유로 MySQL 쪽은 아예 잊혔다 — 그 사고가 D-002 ①이다.
+#    조건은 손이 아니라 파일이 기억한다.
+#
+# ② `PEEKCART_CACHE_ENABLED` — 대조군 스위치.
+#    `CacheConfig` 의 `cacheManager`(havingValue="true", matchIfMissing=true) ↔
+#    `noOpCacheManager`(havingValue="false") **상호배타 두 빈**을 가른다.
+#    `productStock` 캐시(D-026/ADR-0026)도 `cacheManager` 안에 배선돼 있어 OFF 면 함께 죽는다.
+#    → OFF 조건이 기준선과 같은 의미를 유지한다.
+#
+# 이미지는 여기서 고정하지 않는다 — `kustomization.yml` 의 `images:` 변환기가 **digest 로** 핀한다.
+# 지난 세션은 이 자리에 `:latest` 를 박았고, 그 가변 태그가 "재빌드 불필요" 라는 낡은 판단을
+# 남겨 이번 세션 착수 시 구버전을 잴 뻔했다.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,7 +26,13 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: asia-northeast3-docker.pkg.dev/peekcart-gke/peekcart/product-service:latest
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 3000m
+              memory: 1Gi
           env:
             - name: PEEKCART_CACHE_ENABLED
               value: "true"

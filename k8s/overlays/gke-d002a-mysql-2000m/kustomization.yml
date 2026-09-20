@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ⚠️ D-002a 읽기 경로 측정 전용 — 운영 매니페스트 아님.
+#
+# 블록 B — **CPU 를 흔든 조건**. 주문 경로에서 이 변경이 ×2.94 를 냈다
+# (#119, `docs/progress/evidence/d002bc-gke-20260917.md:36-46`). 읽기 경로에서도 같은지가 이 세션의 질문.
+#
+# **왜 overlay 를 둘로 쪼갰나.** MySQL CPU 는 이 세션의 독립변수다. 독립변수를
+# `kubectl patch` 나 주석 토글로 두면 "지금 어느 조건인가" 가 파일 밖에 있게 되고,
+# D-002a 가 정확히 그래서 MySQL 을 내내 500m 로 돌렸다(TASKS.md D-002 ①).
+# 두 조건이 **각각 렌더되는 이름**을 가지면 그 실수가 구조적으로 불가능하다.
+#
+# 렌더 (플래그 필수):
+#   kustomize build --load-restrictor LoadRestrictionsNone k8s/overlays/gke-d002a-mysql-2000m
+#
+# 플래그가 필요한 것은 **선재 조건**이다 — `gke-d002a` 가 `../../base/*.yml` 을 파일로 직접
+# 참조해 kustomize root 이탈 제한에 걸린다(이 세션 이전부터 그랬고, 기본 설정으로는 한 번도
+# 렌더된 적이 없다). 구조를 고치는 것은 이 세션 범위 밖이라 플래그를 정본으로 적어둔다.
+resources:
+  - ../gke-d002a
+
+patches:
+  - path: patches/mysql-cpu.yml
