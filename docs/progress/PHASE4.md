@@ -3059,7 +3059,7 @@ bats 62건 통과 · `plans-index --check` 최신 · `writing-lint` 커밋 6건�
 **D-027 ①·③ 은 그대로 대기다.** ① 은 새 절차를 더 돌려야 하고, ③ 은 `grade:` 표본이
 아직 얇다. 이번 작업으로 L 등급 표본이 하나 늘었다.
 
-## D-026 배속 재측정 + D-002a 읽기 경로 천장 — GKE 세션 (2026-09-20)
+## D-026 배속 재측정 + D-002a 읽기 경로 천장 — GKE 세션 ([PR #129](https://github.com/Kimgyuilli/PeekCart/pull/129), 2026-09-20)
 
 > 계획서 `docs/plans/task-d026-d002a-read-ceiling-session.md` · 증적
 > `docs/progress/evidence/d026-d002a-read-ceiling-20260920.md` · preflight 동 디렉터리.

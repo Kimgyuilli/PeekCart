@@ -83,3 +83,15 @@
   절반). 예측을 먼저 적어둔 덕에 "어긋남" 을 발견으로 기록할 수 있었다.
 - compound capture: 3-질문 적용 → **prose 저장 안 함.** "실행 중 스크립트를 편집하지 말 것" 은
   ③ 더 싼 자동검사로 대체 가능(런너를 실행 전 복사해 쓰면 구조적으로 불가능) → 자동화로 라우팅.
+
+## 2026-09-20 — /ship
+- PR: [#129](https://github.com/Kimgyuilli/PeekCart/pull/129) (머지하지 않음)
+- preflight: ok (P7 체크박스 누락을 먼저 메웠다. 실제로는 수행돼 있었다)
+- consistency precheck: ok, warnings 0
+- 커밋 7개. 문체 lint 커밋·본문 모두 통과
+- diff 리뷰 상태: 의도적 생략(plan: frontmatter `codex: off`) — 미충족 아님
+- **커밋 정리 중 결함 1건**: 최초 c2 가 `done/` 추가만 담고 원본 삭제를 빠뜨려 그 커밋
+  시점에 파일이 중복됐다. `--soft` 로 되돌려 rename 으로 다시 잡았다.
+- **선재 잔재 회수**: 09-14 의 backend-services 5 · health-checks 1 을 사용자 승인 후 삭제.
+  재실행한 `cleanup.sh` 가 **7종 전부 `[0]`**. 익일 Billing 확인만 남는다.
+- 갱신: TASKS.md D-026 행 PR 링크 · PHASE4 엔트리 헤딩 PR 링크
