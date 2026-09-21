@@ -190,6 +190,15 @@ lint_file() {
   fi
   if check_text "$path" body "$path"; then
     echo "본문 문체 lint 통과 ($path)"
+    # 통과는 규약 준수가 아니다. 아래 셋은 기계로 판정할 수 없어 검사에서 빠져 있다.
+    # writing.md §6 에도 적혀 있으나 그 문서는 자동으로 읽히지 않는다. 판단이 일어나는
+    # 자리에 띄우는 편이 싸고 확실하다 — PR #129 가 lint 통과를 규약 준수로 읽고 나갔다.
+    cat <<'UNCOVERED'
+  검사에 없음, 눈으로 볼 것 (writing.md §6)
+    1. 수사·반전 금지 — 섹션 제목이 주장이 아니라 대상을 가리키는가
+    2. 시행착오·자기 서사 배제 — 그것은 audit 몫이다
+    3. 문단 3~4줄, 검증 안 한 인과를 단정하지 않았는가
+UNCOVERED
     return 0
   fi
   return 1
