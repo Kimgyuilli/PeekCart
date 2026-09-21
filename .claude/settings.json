@@ -3,15 +3,15 @@
     "codex@openai-codex": true
   },
   "hooks": {
-    "PostToolUse": [
+    "PreToolUse": [
       {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/commit-category-guard.sh\"",
-            "timeout": 15,
-            "statusMessage": "커밋 분류 확인"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/commit-verify-guard.sh\"",
+            "timeout": 10,
+            "statusMessage": "커밋 우회 경로 확인"
           }
         ]
       }

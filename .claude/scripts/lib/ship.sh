@@ -98,7 +98,7 @@ hpx_commit_category() {
     docs/adr/*)                       printf 'adr\n' ;;
     *src/test/*|*src/testFixtures/*|*.bats) printf 'test\n' ;;
     *.md|docs/*)                      printf 'docs\n' ;;
-    .claude/*|scripts/*|*.gradle|gradle/*|.github/*|*.yml|*.yaml|Dockerfile*) printf 'chore\n' ;;
+    .claude/*|.githooks/*|scripts/*|*.gradle|gradle/*|.github/*|*.yml|*.yaml|Dockerfile*) printf 'chore\n' ;;
     *)                                printf 'src\n' ;;
   esac
 }
