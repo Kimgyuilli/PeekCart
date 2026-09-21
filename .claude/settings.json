@@ -1,5 +1,20 @@
 {
   "enabledPlugins": {
     "codex@openai-codex": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/commit-category-guard.sh\"",
+            "timeout": 15,
+            "statusMessage": "커밋 분류 확인"
+          }
+        ]
+      }
+    ]
   }
 }
