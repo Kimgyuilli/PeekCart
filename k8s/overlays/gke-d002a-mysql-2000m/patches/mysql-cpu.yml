@@ -1,0 +1,22 @@
+# MySQL CPU 상한 = 2000m. 이 파일 하나가 이 overlay 의 존재 이유다.
+#
+# 주의: `mysql.yml:24-34` 의 strategy 가 **Recreate**(D-023, RWO PVC 단일 인스턴스)라
+# 이 값을 바꾸면 Pod 가 **재기동**되고 InnoDB 버퍼풀이 식는다. 그래서 측정 설계가
+# 단방향이 아니라 A→B→A′ 되돌림이다(계획서 §3-1, N6) — 재시작 효과와 CPU 효과를 가르기 위해.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      containers:
+        - name: mysql
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 1Gi

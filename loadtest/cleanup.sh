@@ -89,6 +89,12 @@ echo "--- 5) 잔여 0 검증 ---"
 # "정리했다" 와 "남은 게 없다" 는 다르다. 삭제가 일부만 성공해도 위 단계들은 계속 진행하므로
 # (run 이 실패를 삼킨다) 마지막에 **상태로** 확인한다. 남아있으면 exit 1 — 측정 세션의
 # 완료 조건(계획서 P12 "과금 0 확인")을 사람 눈이 아니라 종료 코드가 보장하게 한다.
+#
+# forwarding-rules / backend-services / health-checks 추가 (D-026 세션, 2026-09-20):
+# 측정 overlay 가 Internal LB Service 를 띄운다(`measurement-lb.yml`). 그 Service 는
+# GKE 가 대신 만드는 **forwarding rule + backend service + health check** 를 동반하고,
+# 이들은 클러스터 삭제 시 대개 함께 지워지지만 **항상은 아니다**. disks 가 남았던 것과
+# 같은 계열의 누수라 같은 방식(상태로 확인, 남으면 exit 1)으로 닫는다.
 if $DRY_RUN; then
   echo "[dry-run] 삭제를 수행하지 않았으므로 잔여 검증을 건너뛴다"
 else
@@ -97,7 +103,10 @@ else
     "clusters|gcloud container clusters list --filter=name:($CLUSTER_NAME) --format=value(name)" \
     "instances|gcloud compute instances list --filter=name:($LOADGEN_NAME) --format=value(name)" \
     "disks|gcloud compute disks list --filter=zone:($ZONE) --format=value(name)" \
-    "addresses|gcloud compute addresses list --filter=region:($REGION) --format=value(name)"; do
+    "addresses|gcloud compute addresses list --filter=region:($REGION) --format=value(name)" \
+    "forwarding-rules|gcloud compute forwarding-rules list --filter=region:($REGION) --format=value(name)" \
+    "backend-services|gcloud compute backend-services list --filter=region:($REGION) --format=value(name)" \
+    "health-checks|gcloud compute health-checks list --format=value(name)"; do
     label="${q%%|*}"; cmd="${q#*|}"
     out=$($cmd 2>/dev/null)
     if [[ -n "$out" ]]; then
@@ -115,4 +124,23 @@ else
 fi
 
 echo
-echo "=== 정리 완료. billing 콘솔에서 당일/익일 과금을 반드시 재확인 ==="
+echo "=== 정리 완료 ==="
+echo
+# 과금 재확인 — 잔여 0 은 필요조건이지 충분조건이 아니다.
+# D-002a 증적의 "과금 0 확인" 이 사실과 달랐고 PVC 3개가 남아 있었다.
+#
+# 2026-09-22 부터 BigQuery 결제 내보내기가 켜져 있다
+# (결제 계정 010664-339753-DC57A6 → peekcart-gke:billing_export, 표준 사용량 비용).
+# 적재는 하루 단위라 **세션 종료 직후에는 항상 0행**이다. 게이트로 쓸 수 없고,
+# 다음 세션 착수 시 직전 세션 과금을 확인하는 용도다.
+#
+#   bq query --project_id=peekcart-gke --use_legacy_sql=false '
+#   SELECT service.description AS service, ROUND(SUM(cost),2) AS cost,
+#          ANY_VALUE(currency) AS cur
+#   FROM `peekcart-gke.billing_export.gcp_billing_export_v1_010664_339753_DC57A6`
+#   WHERE DATE(usage_start_time) = "YYYY-MM-DD" AND project.id = "peekcart-gke"
+#   GROUP BY 1 HAVING cost > 0 ORDER BY 2 DESC'
+#
+# 테이블 이름은 첫 적재 후 `bq ls billing_export` 로 확인한다(위는 규칙에 따른 예상값).
+# 콘솔 리포트: https://console.cloud.google.com/billing/010664-339753-DC57A6/reports
+echo "과금 재확인: 내보내기 적재 후 위 주석의 bq 쿼리 또는 콘솔 리포트로 직전 세션 비용을 본다."

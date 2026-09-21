@@ -6,6 +6,17 @@
 
 ---
 
+## 클론 후 1회 설정
+
+```bash
+git config core.hooksPath .githooks
+```
+
+`.githooks/pre-commit` 이 "한 커밋 = 한 분류" 를 강제합니다(`/ship` §3). 설정하지 않으면
+검사가 조용히 빠집니다. 의도한 혼합 커밋은 `HPX_ALLOW_MIXED=1 git commit ...` 으로 통과시킵니다.
+
+---
+
 ## 📖 프로젝트 문서 (Docs)
 
 1.  [**프로젝트 개요 및 기술 스택**](docs/01-project-overview.md)

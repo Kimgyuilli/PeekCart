@@ -9,9 +9,19 @@
 //   DUR      지속 시간 (기본 60s)
 //   IDS      조회할 productId 상한 (기본 100) — 캐시 키 분산
 //   EP       detail | list (기본 detail)
-//            detail = /api/v1/products/{id} — 캐시 적중해도 재고를 DB 에서 읽는다
-//                     (ProductQueryService.getProduct → inventoryRepository.findByProductId)
+//            detail = /api/v1/products/{id}
 //            list   = /api/v1/products      — CachedPage 반환, 적중 시 DB 미접촉
+//
+// [D-026 이후 정정] 위 detail 설명은 원래 "캐시 적중해도 재고를 DB 에서 읽는다
+// (ProductQueryService.getProduct → inventoryRepository.findByProductId)" 였다.
+// **ADR-0026 이 그것을 뒤집었다** — 재고는 이제 전용 캐시 `productStock`(TTL 5s) 뒤에 있고
+// 적중 시 DB 왕복은 0이다(D-026, PR #124). 그 서술이 남아 있으면 이 스크립트로 잰 숫자를
+// 거꾸로 읽게 된다.
+//
+// **키 순회(__ITER % IDS)는 바꾸지 않는다.** 기준선(d002a-gke-20260916-0030.md)과 같아야
+// 비교가 성립한다. 다만 400 VU 가 비슷한 시점에 같은 ID 를 밟고 @Cacheable 에 sync=true 가
+// 없어 TTL 만료 순간 동일 키 stampede 가 가능하다 — 그래서 "상품당 5초에 1회 DB 조회" 는
+// 전제가 아니라 **측정 대상**이다(계획서 §V10).
 import http from 'k6/http';
 import { check } from 'k6';
 import { Trend, Rate } from 'k6/metrics';

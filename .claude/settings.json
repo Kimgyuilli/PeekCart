@@ -1,5 +1,20 @@
 {
   "enabledPlugins": {
     "codex@openai-codex": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/scripts/hooks/commit-verify-guard.sh\"",
+            "timeout": 10,
+            "statusMessage": "커밋 우회 경로 확인"
+          }
+        ]
+      }
+    ]
   }
 }

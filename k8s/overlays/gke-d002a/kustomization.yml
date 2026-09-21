@@ -27,3 +27,19 @@ resources:
 
 patches:
   - path: patches/product-service-deployment.yml
+  # StorageClass 고정 — `gke-d002bc` 선례(ADR-0004). 이 overlay 에는 없었다.
+  # MySQL 천장을 묻는 세션에서 디스크 형상이 자유변수면 비교가 성립하지 않는다.
+  - path: patches/pvc-storageclass.yml
+    target:
+      kind: PersistentVolumeClaim
+
+# 이미지는 **digest 로 핀한다.** 태그가 아니라 digest 인 이유:
+# AR `:latest` 가 2026-09-14 를 가리키는데 D-026 캐시 커밋은 09-18 이라, 태그를 믿으면
+# 캐시 없는 구버전을 재게 된다(계획서 §V2). digest 는 그 혼동이 구조적으로 불가능하다.
+#
+# PLACEHOLDER 는 P2 가 실제 digest 로 치환한다. 치환 전 렌더는 **의도적으로 못 쓰는 값**이다
+# — 안 채우고 배포하면 ImagePullBackOff 로 즉시 드러난다(조용히 다른 걸 재지 않는다).
+images:
+  - name: ghcr.io/kimgyuilli/peekcart-product-service
+    newName: asia-northeast3-docker.pkg.dev/peekcart-gke/peekcart/product-service
+    digest: sha256:07817fd39bd42944b875b0038dd5a3e9bfdee3f215dc88f2c3f60338f61d9db4

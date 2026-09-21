@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit
+#
+# "한 커밋 = 한 분류" 를 커밋 시점에 강제한다 (/ship §3).
+#
+# 왜 git 훅인가: 스테이징이 확정된 뒤, 커밋 객체가 쓰이기 전에 도는 유일한 자리다.
+# Claude Code 의 PreToolUse 는 `git add && git commit` 복합 명령에서 add 전에 돌아
+# 직전 스테이징을 보고, PostToolUse 는 커밋이 생긴 뒤라 막지 못하고 알려줄 뿐이다.
+#
+# 왜 필요한가: `hpx_staged_category_check` 는 mixed 에서 1 을 정확히 반환하는데
+# 호출자가 그 종료 코드를 무시한 채 커밋한 일이 실제로 있었다(PR #129, cf54016).
+# 문서가 유일한 강제 수단이면 건너뛰어진다.
+#
+# 설치: git config core.hooksPath .githooks
+# 탈출구: HPX_ALLOW_MIXED=1 git commit ...
+set -uo pipefail
+
+[ "${HPX_ALLOW_MIXED:-}" = "1" ] && exit 0
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+
+# 라이브러리가 없으면 **막는다**. 조용히 통과시키면 검사가 있는 척하면서 아무것도
+# 안 하는 상태가 되고, 그 silent no-op 이 이 훅이 막으려는 실패 유형 자체다.
+if [ ! -f "$ROOT/.claude/scripts/shared-logic.sh" ]; then
+  echo "pre-commit: .claude/scripts/shared-logic.sh 가 없어 분류 검사를 할 수 없다." >&2
+  echo "  검사 없이 커밋하려면 HPX_ALLOW_MIXED=1 을 붙인다." >&2
+  exit 1
+fi
+
+OUT="$(cd "$ROOT" && bash -c 'source .claude/scripts/shared-logic.sh; hpx_staged_category_check' 2>&1)"
+case "$OUT" in
+  mixed*)
+    printf '%s\n' "$OUT" >&2
+    cat >&2 <<'MSG'
+
+커밋을 중단했다. /ship §3: 한 커밋 = 한 분류.
+분류별로 나눠 스테이징한 뒤 다시 커밋한다.
+의도한 혼합이면 HPX_ALLOW_MIXED=1 git commit ... 으로 실행한다.
+MSG
+    exit 1
+    ;;
+esac
+exit 0
