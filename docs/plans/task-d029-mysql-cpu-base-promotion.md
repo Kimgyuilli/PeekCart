@@ -61,21 +61,21 @@ codex: off
 
 ## §3 작업 항목
 
-- [ ] **P1.** `docs/adr/0027-mysql-cpu-limit-baseline.md` 작성 — 주문·읽기 두 경로를 **한 ADR** 로 묶는다.
+- [x] **P1.** `docs/adr/0027-mysql-cpu-limit-baseline.md` 작성 — 주문·읽기 두 경로를 **한 ADR** 로 묶는다.
       Context 에 F5·F8 의 숫자, Consequences 에 F6·F7 + 증적 §미해결 2를 **"모르는 채로 결정한다"** 로 명기.
-- [ ] **P2.** Alternatives 를 최소 3개 쓴다 — ⓐ base 를 2000m 로 승격(requests 유지) · ⓑ base 승격 +
+- [x] **P2.** Alternatives 를 최소 3개 쓴다 — ⓐ base 를 2000m 로 승격(requests 유지) · ⓑ base 승격 +
       `requests` 동반 상향 · ⓒ base 500m 유지하고 `gke` overlay 에만 2000m patch.
       ⓒ 는 **ADR-0007 과의 충돌 여부**를 판정해야 한다(overlay 는 프로파일이 아니므로 §"프로파일은
       연결 정보만" 이 직접 적용되지 않는다 — 그 논증을 적는다). 각 안에 GKE 노드 형상·비용 영향 포함.
-- [ ] **P3.** 결정된 값을 `k8s/base/infra/mysql/mysql.yml` 에 반영. `requests` 처분은 P2 의 결론에 따른다.
+- [x] **P3.** 결정된 값을 `k8s/base/infra/mysql/mysql.yml` 에 반영. `requests` 처분은 P2 의 결론에 따른다.
       숫자 위에 **왜 이 값인지 한 줄 + ADR-0027 참조** 주석.
-- [ ] **P4.** §2 인바운드 표의 주석 2곳 정정 (`gke-d002a-mysql-500m/kustomization.yml`,
+- [x] **P4.** §2 인바운드 표의 주석 2곳 정정 (`gke-d002a-mysql-500m/kustomization.yml`,
       `gke-d002bc/patches/mysql-deployment.yml`).
-- [ ] **P5.** 측정 overlay `gke-d002a-mysql-500m` / `-2000m` 처분 결정 — base 가 2000m 이면 후자는
+- [x] **P5.** 측정 overlay `gke-d002a-mysql-500m` / `-2000m` 처분 결정 — base 가 2000m 이면 후자는
       no-op 이 된다. **삭제 / 주석으로 역사 보존 중 하나를 고르고 사유를 남긴다.**
       (`list` 재측정이 F6 로 남아 있으므로 삭제가 자명하지 않다.)
-- [ ] **P6.** `docs/adr/README.md` 인덱스 행 추가 (`<!-- INDEX:END -->` 위).
-- [ ] **P7.** `docs/TASKS.md` D-029 행 완료 표기 + `docs/progress/PHASE4.md` 엔트리.
+- [x] **P6.** `docs/adr/README.md` 인덱스 행 추가 (`<!-- INDEX:END -->` 위).
+- [x] **P7.** `docs/TASKS.md` D-029 행 완료 표기 + `docs/progress/PHASE4.md` 엔트리.
 
 ## §검증 방법
 
@@ -89,6 +89,23 @@ codex: off
 | P6 | `docs/adr/README.md` 인덱스가 실제 파일과 일치 | 인덱스 생성/검사 스크립트가 있으면 `--check`; 없으면 `ls docs/adr/0*.md` 개수와 인덱스 행 수 대조 |
 | P1·P2 | ADR 이 명제 3의 (a)(b)(c) **세 미해결을 모두** 인용 | `grep` 으로 `list`·`904`·`캐시 ON` 세 키워드가 Consequences 안에 있는지 |
 
+### 실행 결과 (2026-09-22)
+
+| 검증 | 결과 |
+|---|---|
+| overlay 8개 렌더 | **8/8 성공** · 상속 5개가 2000m 로 함께 이동 · patch 3개 불변 |
+| 주입 A (base `limits` 블록 제거) | **통과** — 상속 5개 전부 `lim=None` 으로 값이 사라졌고, 자체 patch 2개는 500m 유지(대조군 성립) |
+| 주입 B (`-500m` patch 제거) | **통과** — `lim=2000m` 으로 올라갔다. 계획서 예측대로 **base 승격 후 이 overlay 의 역할이 대조군으로 반전**됐음이 실증됨 |
+| 거짓 주석 스윕 | **3곳 정정** (§2 표가 2곳만 예측 — 1곳 초과, 아래 참조) |
+| ADR 인덱스 | ADR 파일 27 = 인덱스 행 27 · 번호 순서 일치 |
+| ADR 미해결 3건 인용 | Consequences §"이 결정은 세 가지를 모르는 채로 내려졌다" 에 1·2·3 으로 명시 |
+
+> **§2 인바운드 표가 1곳을 놓쳤다.** 예측은 2곳(두 파일의 **헤더 주석**)이었으나 실제로는
+> **3곳**이었다 — `gke-d002bc/patches/mysql-deployment.yml:31` 의 `# P6 에서 흔드는 손잡이.
+> base 와 같은 값으로 시작한다.` 가 `resources:` 블록 **안쪽 인라인 주석**이어서
+> 헤더만 훑은 스윕에 걸리지 않았다. 스윕을 파일 헤더가 아니라 **문구 grep**
+> (`base 와 같은 값`, `동일하게 둔다`)으로 돌렸을 때 잡혔다.
+
 ### 렌더 스윕 — 기준선 실측 (2026-09-22, 변경 전)
 
 `kind: Deployment` + `metadata.name: mysql` 의 컨테이너 `resources` 만 뽑는다. `name: mysql` 단순
@@ -100,14 +117,23 @@ for o in k8s/overlays/*/; do
 done
 ```
 
-| overlay | 기준선 |
-|---|---|
-| `gke` · `minikube` · `minikube-rotation-drill` · `gke-d002a` · `gke-d002bc` · `gke-probe-state1` | `req=250m lim=500m` (**base 상속**) |
-| `gke-d002a-mysql-500m` | `req=250m lim=500m` (patch, 값 동일) |
-| `gke-d002a-mysql-2000m` | `req=250m lim=2000m` (patch) |
+| overlay | 기준선(변경 전) | P3 이후 | 출처 |
+|---|---|---|---|
+| `gke` · `minikube` · `minikube-rotation-drill` · `gke-d002a` · `gke-probe-state1` | `lim=500m` | **`lim=2000m`** | base 상속 |
+| `gke-d002bc` | `lim=500m` | `lim=500m` | **자체 patch** |
+| `gke-d002a-mysql-500m` | `lim=500m` | `lim=500m` | 자체 patch |
+| `gke-d002a-mysql-2000m` | `lim=2000m` | `lim=2000m` | 자체 patch (이제 no-op) |
 
-**8/8 빌드 성공.** F2 가 확증됐다 — 참조 경로가 두 갈래여도 **7개가 base 값을 그대로 받는다**.
-P3 이후 이 표를 다시 뽑아 **7개가 새 값으로 함께 움직였는지**가 검증이다.
+`req=250m` 은 8/8 전부 불변. **8/8 빌드 성공.**
+
+> **정정 (구현 중 발견).** 이 표의 초안은 `gke-d002bc` 를 **"base 상속"** 으로 분류하고
+> 상속 overlay 를 **7개**로 셌다. **틀렸다 — 실제 상속은 5개다.** `gke-d002bc` 는
+> `patches/mysql-deployment.yml` 로 500m 을 **자기가 박고 있었다.**
+> 기준선에서는 그 patch 값과 base 값이 **둘 다 500m 이라 구분이 불가능했고**, 초안은
+> kustomization 의 `resources:` 목록만 보고 상속이라 단정했다. base 를 2000m 로 올리는
+> 이 변경이 그 둘을 갈랐다 — 500m 에 남은 것이 patch 를 가진 쪽이다.
+> **같은 값일 때 상속과 명시를 렌더 결과로 구별할 수 없다**는 것이 교훈이고,
+> 그래서 위 표에 **출처 열**을 추가했다.
 
 **클러스터 실측은 이번 범위가 아니다.** 근거 측정 2건이 이미 있고, 새 GKE 세션은 비용을 쓴다.
 이번 산출물은 **결정 문서 + 매니페스트 값**이고 검증은 **렌더 수준**에서 닫는다.
