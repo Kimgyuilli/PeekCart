@@ -9,8 +9,11 @@
 //   DUR      지속 시간 (기본 60s)
 //   IDS      조회할 productId 상한 (기본 100) — 캐시 키 분산
 //   EP       detail | list (기본 detail)
-//            detail = /api/v1/products/{id} — 캐시 적중해도 재고를 DB 에서 읽는다
-//                     (ProductQueryService.getProduct → inventoryRepository.findByProductId)
+//            detail = /api/v1/products/{id} — 상품 정보와 재고를 **각각의 캐시**에서 조합한다
+//                     (ProductQueryService.getProduct → getProductInfo TTL 30분 + getStock TTL 5초).
+//                     ADR-0026 이전에는 재고를 매 호출 DB 에서 읽었고 그것이 배속 ×1.23 의 원인이었다.
+//                     재고 TTL 이 5초라 적중률은 `키당 초당 요청수 × TTL` 의 함수다 — IDS 를 바꾸면
+//                     배속이 따라 움직이므로 비교하려면 IDS 를 고정해야 한다.
 //            list   = /api/v1/products      — CachedPage 반환, 적중 시 DB 미접촉
 import http from 'k6/http';
 import { check } from 'k6';
