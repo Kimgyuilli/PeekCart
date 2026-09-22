@@ -3058,3 +3058,88 @@ bats 62건 통과 · `plans-index --check` 최신 · `writing-lint` 커밋 6건�
 
 **D-027 ①·③ 은 그대로 대기다.** ① 은 새 절차를 더 돌려야 하고, ③ 은 `grade:` 표본이
 아직 얇다. 이번 작업으로 L 등급 표본이 하나 늘었다.
+
+---
+
+## GKE 실측 세션 단계 0 — 준비 ([PR #130](https://github.com/Kimgyuilli/PeakCart/pull/130), 2026-09-22)
+
+> 계획서 `docs/plans/task-gke-measurement-closeout.md` (등급 L, `ship_scope: P1-P5`)
+
+측정 세션 3개([#115]·[#117]·[#119])가 남긴 `미충족` 중 **실측이라야 닫히는 것**만 모아
+한 세션으로 묶었다. 이 PR 은 그중 **과금 전 준비(P1~P5)** 만 담는다.
+
+### 선행 조사에서 이월 목록 하나가 이미 닫혀 있었다
+
+세션2 의 `미충족` 에 "오버셀링 정합성 미검증" 이 있어 회수 대상에 넣었는데,
+[#119] 가 `replicas=3` 에서 `d002bc-verify.sql` 로 **이미 검증**했다(음수재고 0 · 품목별 diff 0).
+`미충족` 절을 그대로 옮기면 이미 한 일을 다시 하는 계획이 된다. 범위에서 뺐다.
+
+### 착수 전 코드 검증에서 전제 3건이 뒤집혔다
+
+| | 초안 전제 | 코드 사실 |
+|---|---|---|
+| V5 | 이미지 재빌드 불필요 (overlay 주석) | AR `product-service:latest` 는 2026-09-14 빌드고 ADR-0026 은 09-18 머지다. **그 이미지로 재면 변경 전 값이 그대로 나온다** |
+| V6 | overlay 가 조건 B 를 재현한다 | patch 에 `resources` 가 없어 CPU 는 base 1000m. 조건 B(3000m)는 세션 중 수동 patch 였고 코드에 안 남았다 |
+| V10 | d002bc 가 경합을 재현한다 | `replicas: 1` 이다. [#119] 가 그 상태에서 경합이 구조적으로 불가능함을 실측했다 |
+
+### 계획 리뷰가 "재현 가능하다" 는 주장을 무너뜨렸다
+
+초안은 조건 B 를 "원 세션과 동일하게" 재현한다고 적었다. 그런데 증적에는 CPU 와 VU 만
+있고 **IDS·DUR·워밍업·집계 구간이 없다**(증적·계획서·README 전수 grep 0건). 계획서 자신이
+"재고 TTL 5초라 배속은 키당 초당 요청수의 함수" 라고 적어놓고 IDS 를 원 세션에서 가져올 수
+있다고 가정한 모순이었다.
+
+→ 이번 세션이 IDS=100·VUS=400·DUR=300s 를 **신설·고정**하고, ×1.23 과의 비교는
+**list 대조군이 ×2.02 ± 15% 안에 들 때만** 직접 비교로 취급한다. 벗어나면 신규 기준선이다.
+
+### event loop 메트릭은 설정으로 못 켠다 — 바이트코드로 확인했다
+
+reactor-netty 1.2.16 의 `TransportConfig$TransportChannelInitializer` 는
+`config.metricsRecorder != null` 일 때만 `MicrometerEventLoopMeterRegistrar.registerMetrics()`
+를 부른다. 프로퍼티로 켤 표면이 없어 `metrics(true)` 커스터마이저가 필요하다.
+
+실패 주입으로 재확인했다. **`metrics(true)` 없이 0개, 켜면 1개.** 과금 세션에 들어가서
+"메트릭이 안 나온다" 를 발견할 경로를 미리 닫았다.
+
+덤으로 명명도 정정했다. `EventLoopMeters` 의 상수는 `PENDING_TASKS` 하나뿐이고 이것은
+**큐 깊이지 시간 단위 lag 이 아니다**(lag ≈ 깊이 / 소진율). 증적에도 그렇게 적는다.
+
+### `/ship` 게이트가 이 레포의 표준 패턴을 막고 있었다
+
+preflight 가 계획서에 미완 체크박스가 하나라도 있으면 막는다. 그런데 이 레포는
+**계획서 1개에 PR 여러 개**가 표준이다. 구현 ①~⑥ 이 전부 그랬고 `task-impl4` 는
+done 1 / todo 14 인 채로 PR ④-a/b/c/d 가 머지됐다.
+
+처음엔 과거에 우회한 것으로 의심했으나, 게이트 도입이 `990fc23`(2026-09-19)이고 그
+계획서들은 6~8월에 shipped 됐다. **우회가 아니라 게이트가 이 패턴을 처음 만난 것**이다.
+
+`ship_scope` frontmatter 로 이번 PR 이 책임지는 범위를 선언하게 했다. 선언이 없으면
+종전대로 전 항목을 본다. bats 8건으로 **양방향**을 잠갔다 — 범위 밖 미완은 통과하고
+범위 안 미완은 반드시 차단한다. 후자가 없으면 `ship_scope` 가 검사 무력화 도구가 된다.
+
+작성 중 구현이 **반전**돼 있었다. 범위 안이 아니라 밖을 출력하고 있었고 preflight 쪽
+테스트 2건은 건수가 우연히 맞아 통과했다. 범위를 직접 확인하는 테스트 3건이 잡았다.
+
+### 검증
+
+lint 12종 exit 0 · bats 8건 통과 · kustomize 렌더 검산(3000m · replicas 3 · digest 형식 ·
+CPU requests 합 4,600m) · `git diff --stat main -- gateway/src` 1파일.
+
+`./gradlew test` 는 돌리지 않았다. 이 트리의 diff 에 `src/`·`build.gradle` 변경이 0건이다.
+측정 브랜치의 Java 1파일은 `:gateway:compileJava` 와 probe 로 확인했다.
+
+### 미충족 / 이월
+
+- **측정이 없다.** P6~P18(빌드·push·클러스터·부하·증적·cleanup)이 남아 있고 거기서 과금이
+  시작된다. **D-026 은 이 PR 로 닫히지 않는다.**
+- **jitter 의 DLQ 감소 효과는 이번 세션에서 실증할 수 없다**(이월). `ProductKafkaConfig:118` 에
+  백오프가 하드코딩돼 토글이 없어 동시 A/B 가 불가능하다. 측정 세션은 **기준선 산출까지만**
+  닫고 감소는 주장하지 않는다. 재검토 조건은 측정용 토글 신설 또는 두 빌드 교대 예산.
+- **Codex 리뷰**: 계획 리뷰는 수행(1라운드, 9건 중 반영 8 · 이월 1), **diff 리뷰는 의도적 생략**
+  (사용자 지시, `.cache/codex-off`). **"P0/P1 = 0" 주장 없음.**
+- **측정 전용 gateway 빌드는 `meas/gateway-eventloop` 에만 있다**(`1027021`). main 미머지이고
+  그 상태를 유지한다.
+
+[#115]: https://github.com/Kimgyuilli/PeakCart/pull/115
+[#117]: https://github.com/Kimgyuilli/PeakCart/pull/117
+[#119]: https://github.com/Kimgyuilli/PeakCart/pull/119

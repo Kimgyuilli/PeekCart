@@ -27,3 +27,20 @@
 - 범위 변화: 작업 항목 14개 → **17개**. 늘어난 3개는 전부 cleanup·검증 분리라 실행 부담이
   아니라 판정 가능성의 증가다. 반대로 §1 명제 2 는 **축소**됐다.
 - raw: `.cache/codex-reviews/plan-task-gke-measurement-closeout-1790014936.json`
+
+## 2026-09-22 14:38 — diff 리뷰
+- 상태: 의도적 생략(file: 사용자 지시 2026-09-22, `.cache/codex-off`)
+- 검증: lint 12종 exit 0 · bats 8건 통과 · kustomize 렌더 검산 · `:gateway:compileJava` 성공.
+  `./gradlew test` 미실행(이 트리 diff 에 `src/`·`build.gradle` 변경 0건).
+  **"P0/P1 = 0" 주장 없음.**
+
+## 2026-09-22 14:38 — /ship
+- PR: https://github.com/Kimgyuilli/PeakCart/pull/130
+- 범위: `ship_scope: P1-P5` (단계 0 준비만). P6~P18 은 과금 세션 몫
+- preflight: 최초 `blocked`(미완 13개) → **게이트 자체를 고쳐서** 통과.
+  이 레포의 "계획서 1개 = PR 여러 개" 패턴을 게이트가 막고 있었고, 게이트 도입(`990fc23`,
+  2026-09-19)이 그 계획서들보다 늦다는 것을 확인했다. 우회가 아니라 미지원이었다
+- consistency precheck: ok (warnings 0) · review health: ok
+- 커밋 6개. 문체 lint 로 커밋 1개를 재작성(금지 문자 '×')
+- 갱신: `docs/TASKS.md` D-026 행(🔄 유지 — 측정 미완) · `docs/progress/PHASE4.md` 엔트리
+- 계획서 재번호: `P5'` 를 평번호로 풀어 P6~P18 로 밀고 상호참조 5곳 정정
