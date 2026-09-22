@@ -8,11 +8,13 @@
 #
 # 오류(exit 1): 금지 문자, 귀속 트레일러, 제목 형식 위반,
 #              PR 본문 어미(~습니다), PR 본문 볼드 과다
-# 경고(exit 0): 제목 길이, 서술 종결(제목), 추적 태그 위치, 커밋 볼드 과다
+# 오류(계속): PR 제목의 추적 태그
+# 경고(exit 0): 제목 길이, 서술 종결(제목), 커밋 제목의 추적 태그, 커밋 볼드 과다
 #
 # 사용:
 #   writing-lint.sh --commits <range>   커밋 메시지 검사 (예: origin/main..HEAD)
 #   writing-lint.sh --file <path>       PR 본문 등 파일 하나 검사
+#   writing-lint.sh --title <text>     PR 제목 한 줄 검사 (gh pr create 직전)
 #   writing-lint.sh --self-test         lint 자신이 위반을 잡는지 (fixture 조작)
 set -uo pipefail
 
@@ -69,7 +71,12 @@ for i, line in enumerate(lines, 1):
     if ATTRIB.search(line):
         errors.append('%s:%d 귀속 트레일러 — 붙이지 않는다: %s' % (label, i, line.strip()))
 
-if mode == 'title_body' and lines:
+# 제목 검사. `title_body`(커밋 메시지 전문)와 `title`(PR 제목 한 줄)이 공유한다.
+#
+# `title` 이 따로 있는 이유: PR 제목은 사람이 `gh pr create --title` 에 손으로 넣는
+# 자리인데 검사 경로가 없었다. 커밋 제목에서 같은 위반을 잡아 고친 직후, 검사가 없는
+# PR 제목에서 그 위반이 그대로 재발했다(PR #131 이 `(D-029)` 를 달고 나갔다).
+if mode in ('title_body', 'title') and lines:
     title = lines[0].strip()
     if not TITLE_FORM.match(title):
         errors.append('%s:1 제목 형식 위반 — "<type>(<scope>): <내용>" 이어야 한다: %s' % (label, title))
@@ -78,9 +85,18 @@ if mode == 'title_body' and lines:
     subject = title.split(': ', 1)[1] if ': ' in title else title
     if re.search(r'(다|다\.|니다|니다\.)$', subject):
         warnings.append('%s:1 서술 종결 — 명사형으로 끝낸다: %s' % (label, subject))
-    if re.search(r'\((?:[A-Z]{2,}-\d+|#\d+)[^)]*\)\s*$', subject):
-        warnings.append('%s:1 추적 태그가 제목에 있다 — 본문 마지막 줄로 옮긴다' % label)
-    if len(lines) > 1 and lines[1].strip():
+    # `[A-Z]{2,}` 였으면 이 프로젝트의 부채 ID `D-029` 를 한 번도 잡지 못한다 —
+    # 대문자 한 글자 접두사다. ADR-0027 과 #131 만 걸리고 D-NNN 은 전부 통과했다.
+    if re.search(r'\((?:[A-Z]+-\d+|#\d+)[^)]*\)\s*$', subject):
+        # 커밋에서는 경고, PR 제목에서는 오류다. 볼드 밀도와 같은 이유로 갈랐다 —
+        # 경고로 두면 넘어가고, 실제로 넘어갔다. 본문 마지막 `Refs:` 줄이 정 위치다.
+        msg = '%s:1 추적 태그가 제목에 있다 — 본문 마지막 줄 Refs 로 옮긴다' % label
+        (errors if mode == 'title' else warnings).append(msg)
+    if mode == 'title':
+        # 제목은 한 줄이다. 두 줄 이상이면 본문이 섞여 들어온 것이다.
+        if len([l for l in lines if l.strip()]) > 1:
+            errors.append('%s:1 제목은 한 줄이어야 한다 (%d줄 입력)' % (label, len(lines)))
+    elif len(lines) > 1 and lines[1].strip():
         errors.append('%s:2 제목 다음 줄은 비운다' % label)
 
 # 어미. PR 본문은 "~습니다" 로 고정한다(writing.md §3 첫 줄).
@@ -142,9 +158,26 @@ for w in warnings:
 sys.exit(1 if errors else 0)
 PY
 
-# check_text <label> <mode:title_body|body> <path>
+# check_text <label> <mode:title_body|body|title> <path>
 check_text() {
   python3 "$PYSRC" "$1" "$2" "$3"
+}
+
+# PR 제목 한 줄. 파일이 아니라 문자열을 받는다 — 호출자가 `gh pr create --title` 에
+# 넘기려는 값을 그대로 검사할 수 있어야 한다.
+lint_title() {
+  local title="$1" tmp rc
+  if [ -z "${title//[[:space:]]/}" ]; then
+    echo "오류  제목이 비어 있다" >&2
+    return 2
+  fi
+  tmp="$(mktemp -t writing-lint-title.XXXXXX)"
+  printf '%s\n' "$title" > "$tmp"
+  check_text "제목" title "$tmp"
+  rc=$?
+  rm -f "$tmp"
+  [ "$rc" -eq 0 ] && echo "제목 문체 lint 통과 ($title)"
+  return "$rc"
 }
 
 lint_commits() {
@@ -291,12 +324,38 @@ self_test() {
   printf '```\nA \xe2\x86\x92 B\n```\n\n밖에서 \xe2\x86\x92 쓰면 걸려야 합니다.\n' > "$tmp/afterfence"
   expect_fail "펜스 밖은 검사" "$tmp/afterfence" body
 
+  # ── title 모드 (PR 제목). PR #131 이 `(D-029)` 를 달고 나간 뒤 추가했다.
+  printf 'chore(k8s): base MySQL CPU 상한 2000m 승격\n' > "$tmp/t_ok"
+  expect_pass "정상 PR 제목" "$tmp/t_ok" title
+
+  # 부채 ID 는 대문자 한 글자 접두사다. `[A-Z]{2,}` 였을 때 이것이 통과했다.
+  printf 'chore(k8s): base MySQL CPU 상한 2000m 승격 (D-029)\n' > "$tmp/t_debt"
+  expect_fail "PR 제목의 부채 ID 태그" "$tmp/t_debt" title
+
+  printf 'docs(adr): 상한 결정 기록 (ADR-0027)\n' > "$tmp/t_adr"
+  expect_fail "PR 제목의 ADR 태그" "$tmp/t_adr" title
+
+  printf 'fix(kafka): 토픽 가시성 대기 (#125)\n' > "$tmp/t_pr"
+  expect_fail "PR 제목의 PR 번호 태그" "$tmp/t_pr" title
+
+  printf 'base MySQL 상한 승격\n' > "$tmp/t_form"
+  expect_fail "PR 제목 형식 위반" "$tmp/t_form" title
+
+  # 제목은 한 줄이다. 본문이 섞여 들어오면 잡는다.
+  printf 'chore(k8s): 상한 승격\n\n본문이 섞였습니다.\n' > "$tmp/t_multi"
+  expect_fail "PR 제목에 본문 혼입" "$tmp/t_multi" title
+
+  # 커밋 모드에서는 추적 태그가 여전히 경고다. 오류로 올리면 기존 커밋 이력이 깨진다.
+  printf 'chore(k8s): 상한 승격 (D-029)\n\n본문입니다.\n' > "$tmp/t_commit_tag"
+  expect_pass "커밋 제목의 태그는 경고" "$tmp/t_commit_tag" title_body
+
   return "$rc"
 }
 
 case "${1:-}" in
   --commits) [ $# -ge 2 ] || { usage; exit 2; }; lint_commits "$2" ;;
   --file)    [ $# -ge 2 ] || { usage; exit 2; }; lint_file "$2" ;;
+  --title)   [ $# -ge 2 ] || { usage; exit 2; }; lint_title "$2" ;;
   --self-test) self_test ;;
   -h|--help|"") usage; exit 0 ;;
   *) echo "알 수 없는 인자: $1" >&2; usage; exit 2 ;;
