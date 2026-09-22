@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# .githooks/commit-msg
+#
+# 커밋 메시지 문체 규약을 커밋 시점에 강제한다 (docs/conventions/writing.md).
+#
+# 왜 commit-msg 인가: 메시지가 확정된 뒤, 커밋 객체가 쓰이기 전에 도는 유일한 자리다.
+# `pre-commit` 은 메시지를 아직 모르고, `writing-lint.sh --commits` 는 **이미 만들어진**
+# 커밋을 읽으므로 둘 다 이 검사를 할 수 없다. 손에 있는 것은 메시지 파일뿐이라
+# `--msg` 모드를 쓴다.
+#
+# 왜 필요한가: `/ship` Step 4-1 이 푸시 전에 잡아 주기는 한다. 그러나 그때는 커밋이
+# 이미 쌓여 있어 `cherry-pick` 재작성이 필요하다. 실제로 D-029 에서 커밋 5개를
+# 통째로 다시 썼다. 위반은 `infra(k8s)` 처럼 허용 type 이 아닌 제목, em dash,
+# 화살표, 이모지였고 전부 커밋 시점에 알 수 있는 것이었다.
+#
+# 설치: git config core.hooksPath .githooks
+# 탈출구: HPX_ALLOW_STYLE=1 git commit ...
+#
+# `HPX_ALLOW_MIXED` 와 변수를 나눈 이유: 분류와 문체는 다른 축이다. 하나로 묶으면
+# 분류 혼합을 의도할 때 문체 검사까지 덩달아 꺼진다.
+set -uo pipefail
+
+[ "${HPX_ALLOW_STYLE:-}" = "1" ] && exit 0
+
+MSG_FILE="${1:-}"
+[ -n "$MSG_FILE" ] || exit 0
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+LINT="$ROOT/scripts/writing-lint.sh"
+
+# 검사기가 없으면 **막는다**. 조용히 통과시키면 검사가 있는 척하면서 아무것도 안 하는
+# 상태가 되고, 그 silent no-op 이 이 훅이 막으려는 실패 유형 자체다 (pre-commit 과 동일).
+if [ ! -x "$LINT" ]; then
+  echo "commit-msg: $LINT 가 없거나 실행 권한이 없어 문체 검사를 할 수 없다." >&2
+  echo "  검사 없이 커밋하려면 HPX_ALLOW_STYLE=1 을 붙인다." >&2
+  exit 1
+fi
+
+OUT="$(bash "$LINT" --msg "$MSG_FILE" 2>&1)"
+RC=$?
+
+# 경고만 있으면 통과시키되 보여준다. 규약이 경고로 둔 항목(제목 길이, 서술 종결,
+# 커밋 제목의 추적 태그)을 오류로 올리면 기존 커밋 이력과 충돌한다.
+if [ "$RC" -eq 0 ]; then
+  [ -n "$OUT" ] && printf '%s\n' "$OUT" >&2
+  exit 0
+fi
+
+printf '%s\n' "$OUT" >&2
+cat >&2 <<'MSG'
+
+커밋을 중단했다. docs/conventions/writing.md 를 따른다.
+메시지를 고쳐 다시 커밋한다. 검사기 단독 실행:
+  scripts/writing-lint.sh --msg .git/COMMIT_EDITMSG
+의도한 위반이면 HPX_ALLOW_STYLE=1 git commit ... 으로 실행한다.
+MSG
+exit 1

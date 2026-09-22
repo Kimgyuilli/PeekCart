@@ -15,6 +15,7 @@
 #   writing-lint.sh --commits <range>   커밋 메시지 검사 (예: origin/main..HEAD)
 #   writing-lint.sh --file <path>       PR 본문 등 파일 하나 검사
 #   writing-lint.sh --title <text>     PR 제목 한 줄 검사 (gh pr create 직전)
+#   writing-lint.sh --msg <path>       커밋 메시지 파일 검사 (commit-msg 훅)
 #   writing-lint.sh --self-test         lint 자신이 위반을 잡는지 (fixture 조작)
 set -uo pipefail
 
@@ -177,6 +178,51 @@ lint_title() {
   rc=$?
   rm -f "$tmp"
   [ "$rc" -eq 0 ] && echo "제목 문체 lint 통과 ($title)"
+  return "$rc"
+}
+
+# 커밋 메시지 파일. `--commits` 는 이미 만들어진 커밋을 읽으므로 commit-msg 훅에서는
+# 쓸 수 없다. 그 시점에는 커밋 객체가 아직 없고 손에 있는 것은 메시지 파일뿐이다.
+#
+# `--file` 로 대신할 수도 없다. 그쪽은 `body` 모드라 제목 형식을 보지 않고, 대신
+# PR 본문 전용인 `~습니다` 어미 검사를 돌려 커밋 규약(`~함`/`~임`)을 전부 오탐한다.
+lint_msg() {
+  local path="$1" tmp rc
+  if [ ! -f "$path" ]; then
+    echo "오류  메시지 파일이 없다: $path" >&2
+    return 2
+  fi
+  tmp="$(mktemp -t writing-lint-msg.XXXXXX)"
+  # git 이 붙이는 주석과 scissors 이후를 걷어낸다. 주석에는 브랜치명과 파일 목록이
+  # 들어오는데 그것을 검사하면 사용자가 고칠 수 없는 오류가 난다.
+  # `verbose` 커밋의 diff 도 scissors 뒤에 있어 같은 자리에서 잘린다.
+  awk '
+    /^# +-+ >8 -+/ { exit }
+    /^#/          { next }
+                  { print }
+  ' "$path" > "$tmp"
+
+  # 제목이 빌 수 있다. 빈 메시지는 git 이 알아서 커밋을 중단하므로 통과시킨다.
+  if [ -z "$(tr -d '[:space:]' < "$tmp")" ]; then
+    rm -f "$tmp"
+    return 0
+  fi
+
+  local first
+  first="$(head -1 "$tmp")"
+  case "$first" in
+    # 머지·revert·fixup 은 제목이 git 이나 도구가 정하는 자리다. `<type>(<scope>)`
+    # 규약 대상이 아니고, 막으면 정상 작업이 멈춘다. `--commits` 가 머지를 건너뛰는
+    # 것과 같은 이유다.
+    Merge\ *|Revert\ *|fixup!\ *|squash!\ *|amend!\ *)
+      rm -f "$tmp"
+      return 0
+      ;;
+  esac
+
+  check_text "커밋 메시지" title_body "$tmp"
+  rc=$?
+  rm -f "$tmp"
   return "$rc"
 }
 
@@ -349,6 +395,66 @@ self_test() {
   printf 'chore(k8s): 상한 승격 (D-029)\n\n본문입니다.\n' > "$tmp/t_commit_tag"
   expect_pass "커밋 제목의 태그는 경고" "$tmp/t_commit_tag" title_body
 
+  # ── msg 모드 (commit-msg 훅). check_text 가 아니라 lint_msg 를 부른다 —
+  # 주석 제거와 머지 스킵이 그 함수 안에 있어 판정기 직접 호출로는 덮이지 않는다.
+  msg_pass() {
+    local name="$1" file="$2"
+    if lint_msg "$file" >/dev/null 2>&1; then
+      echo "  ok  $name"
+    else
+      echo "self-test 실패: '$name' 이 통과해야 하는데 막혔다"; rc=1
+    fi
+  }
+  msg_fail() {
+    local name="$1" file="$2"
+    if lint_msg "$file" >/dev/null 2>&1; then
+      echo "self-test 실패: '$name' 위반을 잡지 못했다"; rc=1
+    else
+      echo "  ok  $name"
+    fi
+  }
+
+  printf 'chore(k8s): 상한 승격\n\n본문임.\n' > "$tmp/m_ok"
+  msg_pass "정상 커밋 메시지" "$tmp/m_ok"
+
+  # git 이 붙이는 주석은 사용자가 고칠 수 없다. 검사하면 안 된다.
+  printf 'chore(k8s): 상한 승격\n\n본문임.\n\n# On branch feat/x → y\n# Changes: a — b ✅\n' > "$tmp/m_comment"
+  msg_pass "git 주석은 검사 제외" "$tmp/m_comment"
+
+  # verbose 커밋의 diff 는 scissors 뒤에 온다. 거기에 화살표가 있는 것이 정상이다.
+  printf 'chore(k8s): 상한 승격\n\n본문임.\n\n# ------------------------ >8 ------------------------\ndiff --git a/x b/x\n-500m → +2000m — bad\n' > "$tmp/m_scissors"
+  msg_pass "scissors 이후는 검사 제외" "$tmp/m_scissors"
+
+  printf "Merge branch 'main' into feat/x\n" > "$tmp/m_merge"
+  msg_pass "머지 메시지는 스킵" "$tmp/m_merge"
+
+  printf 'Revert "chore(k8s): 상한 승격"\n' > "$tmp/m_revert"
+  msg_pass "revert 메시지는 스킵" "$tmp/m_revert"
+
+  printf 'fixup! chore(k8s): 상한 승격\n' > "$tmp/m_fixup"
+  msg_pass "fixup 메시지는 스킵" "$tmp/m_fixup"
+
+  # 빈 메시지는 git 이 알아서 중단한다. 훅이 먼저 죽으면 안내가 엉킨다.
+  printf '\n# 전부 주석임\n' > "$tmp/m_empty"
+  msg_pass "빈 메시지는 git 에 맡김" "$tmp/m_empty"
+
+  # 이번 세션의 실제 위반들. 전부 커밋 시점에 알 수 있었다.
+  printf 'infra(k8s): 상한 승격\n\n본문임.\n' > "$tmp/m_type"
+  msg_fail "허용되지 않는 type" "$tmp/m_type"
+
+  printf 'chore(k8s): 상한 승격\n\n본문 \xe2\x80\x94 em dash 임.\n' > "$tmp/m_dash"
+  msg_fail "커밋 본문의 em dash" "$tmp/m_dash"
+
+  printf 'chore(k8s): 500m \xe2\x86\x92 2000m 승격\n\n본문임.\n' > "$tmp/m_arrow"
+  msg_fail "커밋 제목의 화살표" "$tmp/m_arrow"
+
+  printf 'chore(k8s): 상한 승격 \xe2\x9c\x85\n\n본문임.\n' > "$tmp/m_emoji"
+  msg_fail "커밋 제목의 이모지" "$tmp/m_emoji"
+
+  # 커밋 본문은 평서형이 정상이다. PR 본문 어미 규칙이 새어 들어오면 안 된다.
+  printf 'chore(k8s): 상한 승격\n\n측정 두 건이 같은 결론을 냈다. 되돌림도 확인했다.\n' > "$tmp/m_plain"
+  msg_pass "커밋 본문 평서형은 정상" "$tmp/m_plain"
+
   return "$rc"
 }
 
@@ -356,6 +462,7 @@ case "${1:-}" in
   --commits) [ $# -ge 2 ] || { usage; exit 2; }; lint_commits "$2" ;;
   --file)    [ $# -ge 2 ] || { usage; exit 2; }; lint_file "$2" ;;
   --title)   [ $# -ge 2 ] || { usage; exit 2; }; lint_title "$2" ;;
+  --msg)     [ $# -ge 2 ] || { usage; exit 2; }; lint_msg "$2" ;;
   --self-test) self_test ;;
   -h|--help|"") usage; exit 0 ;;
   *) echo "알 수 없는 인자: $1" >&2; usage; exit 2 ;;

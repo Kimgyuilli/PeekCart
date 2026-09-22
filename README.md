@@ -12,8 +12,15 @@
 git config core.hooksPath .githooks
 ```
 
-`.githooks/pre-commit` 이 "한 커밋 = 한 분류" 를 강제합니다(`/ship` §3). 설정하지 않으면
-검사가 조용히 빠집니다. 의도한 혼합 커밋은 `HPX_ALLOW_MIXED=1 git commit ...` 으로 통과시킵니다.
+훅 두 개가 커밋 시점에 규약을 강제합니다. 설정하지 않으면 검사가 조용히 빠집니다.
+
+| 훅 | 검사 | 탈출구 |
+|---|---|---|
+| `pre-commit` | "한 커밋 = 한 분류" (`/ship` §3) | `HPX_ALLOW_MIXED=1 git commit ...` |
+| `commit-msg` | 메시지 문체 (`docs/conventions/writing.md`) | `HPX_ALLOW_STYLE=1 git commit ...` |
+
+탈출구 변수를 나눈 이유는 분류와 문체가 다른 축이기 때문입니다. 하나로 묶으면 혼합
+커밋을 의도할 때 문체 검사까지 덩달아 꺼집니다.
 
 ---
 
