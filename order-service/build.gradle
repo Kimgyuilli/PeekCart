@@ -94,3 +94,11 @@ jacocoTestReport {
         })
     }
 }
+
+// D-032: 통합 테스트에서 @Scheduled 배경 잡을 끈다.
+// 배경 잡은 자율적으로 DB 를 고치는 주체라, 컨테이너를 공유하는 순간 다른 테스트가 단언하는
+// 상태를 건드린다. 타이머 자체를 검증하는 테스트만 @TestPropertySource 로 다시 켠다
+// (inlined property 가 시스템 프로퍼티보다 우선한다).
+tasks.named('test') {
+    systemProperty 'app.scheduling.enabled', 'false'
+}
