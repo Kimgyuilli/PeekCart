@@ -61,10 +61,16 @@ spec:
                 name: mysql-secret
           resources:
             requests:
+              # 상한만 올리고 이 값은 **의도적으로 유지한다** (ADR-0027 Alternative B 기각).
+              # 되돌림 실험이 흔든 손잡이는 limits 하나였고, 2000m 조건 실사용 1,259m 중
+              # 250m 초과분은 보장되지 않는 버스트다. 노드 경합 측정이 나오면 재검토한다.
               cpu: 250m
               memory: 512Mi
             limits:
-              cpu: 500m
+              # 500m → 2000m (ADR-0027). 500m 은 읽기·쓰기 양쪽의 공통 천장이었다 —
+              # 주문 경로 498m/500m 한도 도달(×2.94 손실), 읽기 경로 60초당 147.6초 스로틀.
+              # 2000m 은 실측된 값이다. 500m~2000m 사이는 측정하지 않았다.
+              cpu: 2000m
               memory: 1Gi
           volumeMounts:
             - name: mysql-data

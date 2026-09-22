@@ -178,7 +178,13 @@ bash -c 'source .claude/scripts/shared-logic.sh; hpx_review_health "<TASK_ID>"'
 mkdir -p .cache
 scripts/writing-lint.sh --commits "$(git merge-base HEAD origin/main)..HEAD"
 scripts/writing-lint.sh --file ".cache/pr-body-${TASK_ID}.md"
+scripts/writing-lint.sh --title "<Step 7 에 넘길 PR 제목>"
 ```
+
+**제목도 검사한다.** Step 7 의 `--title` 은 사람이 손으로 넣는 자리이고 lint 경로가
+없었다. PR #131 이 `(D-029)` 를 제목에 달고 나갔다 — 같은 위반을 커밋 제목에서는
+잡아 고쳤는데, 검사가 없는 제목에서 곧바로 재발했다. 제목 모드에서 추적 태그는
+**오류**다(커밋에서는 경고). 태그는 본문 마지막 `Refs:` 줄이 정 위치다.
 
 - `오류` 가 나오면 **고치고 다시 돌린다.** 사람에게 보이지 않는다. 커밋 메시지가 걸렸으면
   아직 push 전이므로 `git commit --amend` 또는 `git rebase -i` 로 고친다
@@ -222,9 +228,13 @@ git push -u origin "$(git branch --show-current)"
 ```bash
 BRANCH=$(git branch --show-current)
 gh pr list --head "$BRANCH" --state open --json url -q ".[0].url"   # 선조회
+TITLE="<한 줄 요약>"
+scripts/writing-lint.sh --title "$TITLE" || exit 1   # Step 4-1 과 같은 검사. 제목이 여기서 바뀔 수 있다
 gh pr create --base "$(hpx_base_branch_name)" --head "$BRANCH" \
-  --title "<한 줄 요약>" --body-file ".cache/pr-body-<TASK_ID>.md"
+  --title "$TITLE" --body-file ".cache/pr-body-<TASK_ID>.md"
 ```
+
+제목을 Step 4-1 이후에 손댔으면 그 lint 결과는 낡았다. 생성 직전에 한 번 더 돌린다.
 
 - 이미 열린 PR 이 있으면 **생성하지 않고** 그 URL 을 쓴다
 - 실패 시:

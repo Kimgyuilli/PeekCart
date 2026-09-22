@@ -2,7 +2,7 @@
 # loadtest/scripts/d026-run-cell.sh
 #
 # D-026 배속 재측정 + D-002a 읽기 경로 천장 — **셀 1회 실행 프로토콜**.
-# 계획서 `docs/plans/task-d026-d002a-read-ceiling-session.md` P4/P5.
+# 계획서 `docs/plans/done/task-d026-d002a-read-ceiling-session.md` P4/P5.
 #
 # 왜 스크립트인가: 이 세션은 셀당 3회 × 10셀 = **30런**이고, 런마다
 #   ① 조건 캡처(Pod UID·effective CPU limit·cache env·rollout)

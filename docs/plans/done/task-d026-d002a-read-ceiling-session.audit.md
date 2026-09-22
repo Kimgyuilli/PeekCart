@@ -44,7 +44,7 @@
 ## 2026-09-20 — diff 리뷰 (/work)
 - 상태: **의도적 생략**(plan: frontmatter `codex: off` — 사용자 지시, 이번 세션 한정)
   - 게이트 4행 그대로: `blocked` / `plan` / `frontmatter codex: off` /
-    `docs/plans/task-d026-d002a-read-ceiling-session.md`
+    `docs/plans/done/task-d026-d002a-read-ceiling-session.md`
   - 정상 종결이다. 미충족 항목이 아니다(§9). 단 **`P0/P1 = 0` 을 주장하지 않는다.**
 - 진행: **P0·P1 완료**, P2 진행 중, P3~P8 미착수(P3 이 과금 경계)
 - **선재 결함 1건 (범위 밖, 손대지 않음)**: `k8s/overlays/gke-d002a` 는 `../../base/*.yml` 을
