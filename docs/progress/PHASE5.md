@@ -85,18 +85,18 @@ withReuse · 러너 코어 재배분 · e2e PR 제외 · 모듈 분할)의 기�
 
 **미충족**:
 
-- **buildx `type=gha` 캐시가 순손실이다.** main push run 의 `images (order-service)` 로그에서
-  `CACHED` **0스텝**. 매니페스트 import 는 되므로 배선은 동작하나 재사용 레이어가 없어
-  export 비용만 냈고, `images` 가 104~173초에서 **166~257초로 느려졌다**. 원인 후보가 둘이고
-  (GH Actions 캐시 ref 격리 / Dockerfile COPY 구조) 아직 갈리지 않았다. 다음 main push 의
-  `CACHED` 수로 판정한다. **D-034 로 등록**했다
+- ~~buildx `type=gha` 캐시가 순손실이다~~ → **D-034 에서 유지로 판정(2026-09-22).** 다음
+  main push run [35751377973](https://github.com/Kimgyuilli/PeakCart/actions/runs/35751377973)
+  에서 `CACHED` **30스텝**, `images` **86~130초**로 베이스라인(104~173초)보다도 빨랐다.
+  첫 run 이 느렸던 원인은 GitHub Actions 캐시의 ref 격리였다 — PR 브랜치가 채운 캐시를
+  main push 가 읽지 못해 콜드였고 `cache-to mode=max` 의 export 비용만 냈다
 - 로컬 `--load` 재빌드가 6.25초에 CACHED 29스텝이었던 것은 BuildKit 로컬 캐시였고,
   `type=gha` 의 거동을 예측하지 못했다
 - `publish` 가 `e2e` 를 기다리지 않는 것은 **기존 상태**이고 범위 밖으로 두었다. D-033 에서
   e2e 실행 정책을 정할 때 함께 본다
 
-**후속**: D-032(싱글톤 본체, 844초가 표적) · D-033(e2e 음성 대조군 605초 정책 재판정) ·
-D-034(buildx 캐시 순손실 판정).
+**후속**: D-032(싱글톤 본체, 844초가 표적) · D-033(e2e 음성 대조군 605초 정책 재판정).
+D-034 는 같은 날 판정 완료.
 Codex 리뷰는 계획·diff 양쪽 모두 `.cache/codex-off` 로 차단된 상태에서 진행했다(의도적 생략).
 
 ## Phase 5 기반 세팅 — 로드맵 축 제거 ([#134](https://github.com/Kimgyuilli/PeakCart/pull/134), 2026-09-22)
