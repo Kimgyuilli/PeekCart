@@ -58,29 +58,29 @@ lint + `--self-test` 로 고정해 온 것과 같은 자리다.
 
 ## 작업 항목
 
-- [ ] **P1.** `images` 의 `needs` 를 `[lint, gate]` 에서 `[lint]` 로 완화한다.
+- [x] **P1.** `images` 의 `needs` 를 `[lint, gate]` 에서 `[lint]` 로 완화한다.
       `gate` 는 `needs: [test, guards]` 와 `Propagate upstream failure` 를 그대로 두어
       최종 판정자 지위를 유지한다.
 
-- [ ] **P2.** `publish` 의 `needs` 를 `images` 에서 `[images, gate]` 로 바꾼다.
+- [x] **P2.** `publish` 의 `needs` 를 `images` 에서 `[images, gate]` 로 바꾼다.
       P1 이 끊은 간접 게이트를 직접 게이트로 복원한다. `if: github.event_name == 'push'` 는 유지.
 
-- [ ] **P3.** `scripts/ci-release-gate-lint.sh` 신설.
+- [x] **P3.** `scripts/ci-release-gate-lint.sh` 신설.
       `ci.yml` 의 `needs` 를 읽어 `publish` 의 **전이 의존 폐포**를 계산하고 `gate` 가 그 안에
       있는지 검사한다. `--self-test` 로 조작 입력에서 실제로 실패하는지 고정한다
       (최소 4종: `publish.needs` 에서 gate 제거 · `gate.needs` 에서 test 제거 ·
       `Propagate upstream failure` 스텝 삭제 · `publish` 잡 자체 rename).
 
-- [ ] **P4.** P3 을 `lint` 잡의 `Run CI policy lints` 에 `--self-test` 와 함께 추가한다.
+- [x] **P4.** P3 을 `lint` 잡의 `Run CI policy lints` 에 `--self-test` 와 함께 추가한다.
 
-- [ ] **P5.** `images` 의 `Build image` 를 buildx 로 전환한다.
+- [x] **P5.** `images` 의 `Build image` 를 buildx 로 전환한다.
       `docker/setup-buildx-action@v3` + `docker/build-push-action@v6`,
       `load: true`, `cache-from: type=gha,scope=<service>`,
       `cache-to: type=gha,mode=max,scope=<service>`.
       **scope 를 서비스별로 분리한다** — 매트릭스 6개가 단일 scope 를 공유하면 서로의 캐시를
       덮어써 마지막 하나만 남는다(Docker 공식 문서 경고). `--build-arg SERVICE` 는 유지한다.
 
-- [ ] **P6.** `images`·`publish` 의 `matrix.service` 블록을 **한 글자도 건드리지 않는다**(V8).
+- [x] **P6.** `images`·`publish` 의 `matrix.service` 블록을 **한 글자도 건드리지 않는다**(V8).
       P5 는 `steps` 만 바꾼다. 변경 후 `image-contract-lint.sh` 가 6/6 을 그대로 추출하는지 확인.
 
 ## 검증 방법
@@ -100,6 +100,23 @@ lint + `--self-test` 로 고정해 온 것과 같은 자리다.
 | V-9 | 전체 효과 | 변경 PR 의 실제 run 측정 | `images` 시작 시각이 `test` 완료 **이전**. 전체 벽시계 36분에서 20분 이하로 |
 
 V-9 는 회귀 방지가 아니라 **목표 달성 확인**이다. 미달이면 원인을 적고 P1/P5 를 재판정한다.
+
+### 실행 결과 (2026-09-22)
+
+| # | 결과 | 근거 |
+|---|---|---|
+| V-1 | **통과** | self-test 픽스처 + **실제 `ci.yml` 변조**로도 확인. `publish.needs` 에서 gate 를 빼자 `[CRG-002]` 가 끊긴 폐포 `['images', 'lint']` 를 지목하며 exit 1 |
+| V-2 | **통과** | `[CRG-003]` |
+| V-3 | **통과** | `[CRG-004]` |
+| V-4 | **통과** | `[CRG-001]` — job rename 을 "위반 없음" 으로 읽지 않는다 |
+| V-5 | **통과** | `--self-test OK (6/6)` |
+| V-6 | **통과 (양방향)** | 로컬 `docker-container` 드라이버 실측. `--load` 없이 빌드하면 buildx 가 경고를 내고 로컬 daemon 에 이미지가 없으며 `docker save` 가 실패한다. `--load` 를 붙이면 이미지가 올라오고 `save` 가 142M 산출 |
+| V-7 | **미검증** | `type=gha` 캐시는 Actions 런타임 토큰을 요구해 로컬에서 재현되지 않는다. scope 분리는 Docker 공식 문서 근거로 선반영했고, 실효는 V-9 와 같은 run 에서 캐시 히트율로 확인한다 |
+| V-8 | **통과** | `image-contract-lint` 가 `images`·`publish` 양쪽 `manifest-checked: 6/6, full` 유지 |
+| V-9 | **대기** | 실제 CI run 필요 |
+
+부수 측정: `--load` 재빌드가 **6.25초 · CACHED 29스텝**. 레이어 캐시가 실제로 먹는다는
+증거이나, 이것은 로컬 BuildKit 캐시이지 `type=gha` 가 아니다. V-7/V-9 를 대체하지 않는다.
 
 ## 미해결
 
