@@ -27,3 +27,15 @@
   (104~173초에서 166~257초). 원인 후보 둘이 갈리지 않아 D-034 로 승격
 - 예측 실패 기록: 로컬 --load 재빌드 6.25초/CACHED 29스텝을 캐시 효과의 방증으로 적었으나
   BuildKit 로컬 캐시였고 type=gha 거동을 예측하지 못했다. 계획서 §V-7 재판정에 명시
+
+## 2026-09-22 — D-034 판정 (V-7 확정)
+- 판정: 유지. main push run 35751377973 에서 CACHED 30스텝, images 86~130초
+- 원인은 ①(GH Actions 캐시 ref 격리). PR 브랜치 캐시를 main push 가 못 읽어 첫 run 이 콜드
+- 베이스라인(104~173초) 대비로도 이득이라 cache-from/cache-to 를 되돌리지 않는다
+- **측정 실패 2건 기록**:
+  1. 대기 루프 조건이 틀렸다 — conclusion 이 null 이 아니라 빈 문자열이라
+     select(.!=null) 이 미완료 잡을 완료로 셌고 루프가 조기 종료했다.
+     status=="completed" 로 고쳤다
+  2. 그 상태에서 gh run view --log 를 받아 CACHED 0 으로 보고했다. 실제로는 로그가 아니라
+     "run is still in progress" 안내문 한 줄이었다. 잡 단위 API
+     (actions/jobs/<id>/logs)로 재측정했다. "0건"과 "측정 안 됨"을 구분하지 못한 실패다
