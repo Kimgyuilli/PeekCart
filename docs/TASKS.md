@@ -20,7 +20,7 @@
 > 서비스 경계 정본 = §5(5개 풀 분해) 확정. **초기 설계 ADR(A1~A4) 완료 (#44~#47) → 구현 단계.** 구현 ① PR2 착수 중 전환기 인증 보정 **ADR-0014(A4.5)** 추가(`peekcart-common-auth`, ADR-0011 부분 무효화). 상세: `docs/progress/phase4-design-roadmap.md`.
 > 착수 시 상태를 `🔄`, 머지 시 `✅` 로 갱신하고 PR/ADR 링크를 단다. 구현 각 항목의 세부 PR 분할은 해당 항목 `/plan` 착수 시 정의한다.
 >
-> **✅ Phase 4 종결 (2026-09-22)** — 설계 A1~A4.5(ADR-0010~0014) · 구현 ①~⑥ 전부 완료. 모놀리식 → 5서비스(User/Product/Order/Payment/Notification) + Gateway 분리가 끝났고 root app 은 해체됐다.
+> **✅ Phase 4 종결 (2026-09-22, [#133](https://github.com/Kimgyuilli/PeakCart/pull/133))** — 설계 A1~A4.5(ADR-0010~0014) · 구현 ①~⑥ 전부 완료. 모놀리식 → 5서비스(User/Product/Order/Payment/Notification) + Gateway 분리가 끝났고 root app 은 해체됐다.
 > 미착수로 남은 것은 순서표 `운영 관측성` 행 하나이며 **D-030**(Outbox `FAILED` ↔ DLQ Slack 채널 분리 + DLQ 적재량 메트릭)으로 승격해 이월한다. 단계 종결과 무관하게 Live 부채로 추적된다.
 > 진행 중 부채: D-027(하네스, ①③ 재개 조건 미충족 대기) · D-030(신규 이월).
 
@@ -86,7 +86,7 @@
 | D-023 | Deploy / Data safety | infra Deployment 3종(`mysql`·`redis`·`kafka`)에 `strategy:` 선언이 없어 **기본 RollingUpdate** — RWO PVC + 같은 노드에서 신·구 파드가 **같은 datadir 을 동시에 잡는다**. MySQL 한도 변경 시 실제 재현(mysqld 기동 실패, `scale 0→1` 로 회피). 파드 템플릿을 바꾸는 모든 apply 가 트리거. `strategy: Recreate` 또는 StatefulSet | D-002 측정 세션 실측 | ✅ 완료 ([#121](https://github.com/Kimgyuilli/PeakCart/pull/121)) |
 | **D-024** | **Resilience / Availability** | **단일 스케줄러 스레드가 outbox 발행을 굶긴다** — `scheduling-1` 단독(Spring 기본 pool-size=1, 오버라이드 없음)에서 `orderReservationTimeoutJob` 이 185초 실행되는 동안 **발행이 완전 정지**(PUBLISHED 고정), 해제 13초 후 재개. 백로그→잡 지연→발행 정지→백로그의 **양성 피드백**이 성립하며 **부하 상황에서만 발현**한다. 사가 처리율이 이론 상한(20/s)에 못 미친 것도 부분적으로 이것 | D-002 측정 세션 실측 | ✅ 완료 ([#121](https://github.com/Kimgyuilli/PeakCart/pull/121)) |
 | D-025 | Concurrency | **분산 락이 커밋을 감싸지 못한다** — `InventoryService.decreaseStock` 이 REQUIRED 로 `StockReservationConsumer` 트랜잭션에 참여해 `InventoryLockFacade` 의 `finally { unlock }` 이 커밋보다 먼저 돈다(javadoc 이 보장한다는 순서와 반대). replicas=3 실측: `PRD-004`=0(락은 항상 획득)인데 낙관락 충돌 7 → DLQ 7. 정합성은 `@Version` 이 지키지만(오버셀링 0) **락은 필요해지는 시점(레플리카↑)에 정확히 틀린 상태가 된다**. 보류 L-007 과 같은 표면. 테스트 갭 동반: `InventoryConcurrencyTest` 는 facade 를 직접 호출해 이 역전을 재현하지 않는다 | D-002 착수 전 코드 검증(V5/V6) + 측정 실증 | ✅ 완료 ([#123](https://github.com/Kimgyuilli/PeakCart/pull/123)) — **ADR-0025**(분산 락 제거, `@Version` 단일 수단 + jitter 재시도). 재현이 원문보다 넓었다: **락 구간에 쓰기가 아예 없었고**(참여 트랜잭션이라 UPDATE 는 커밋 flush 에 나간다) 락은 재고 변경 **3경로 중 1개만** 덮었으며(복구·선검사는 무방비) lease 5초 만료가 **조용한 no-op** 으로 락을 무력화했다. **DLQ 7 전량 소진도 해명**: spring-kafka 기본 fatal 목록에 낙관락 예외가 없음을 바이트코드로 확인해 "재시도 안 함" 가설을 반증하고, **jitter 부재 lockstep**(동시 충돌자가 같은 순간에 함께 재시도)을 원인으로 확정 → `JitteredSequenceBackOff` 도입. **흡수한 L-007 의 retry 정책 미결도 함께 종결**. 계획서 `task-d025-inventory-lock-boundary.md` |
-| D-030 | Observability / Ops | **Outbox `FAILED` 와 DLQ 가 같은 Slack 채널로 나간다** — `SlackPort` 구현이 `common/.../SlackNotificationClient` 하나이고 설정도 `slack.webhook.url` 단일 웹훅이라, `OutboxPollingService`(발행 실패)와 `DeadLetterRecorder`(처리 실패)의 알림이 한 채널에 섞인다. 둘은 대응이 정반대다 — 전자는 브로커 복구 후 재발행, 후자는 데이터 수정 후 원본 토픽 재투입. 운영자가 알림 문구로만 구분해야 한다. 동반 공백: **DLQ 적재량 메트릭 부재**(단발 알림뿐이라 "지금 몇 건 밀렸나"가 안 보임). 5서비스 분리 완료로 per-service 태그(ADR-0015)가 갖춰져 라우팅 기준은 이미 있다 | Phase 4 순서표 `운영 관측성` 행 이월 (L-004) | 🔲 대기 |
+| D-030 | Observability / Ops | **Outbox `FAILED` 와 DLQ 가 같은 Slack 채널로 나간다** — `SlackPort` 구현이 `common/.../SlackNotificationClient` 하나이고 설정도 `slack.webhook.url` 단일 웹훅이라, `OutboxPollingService`(발행 실패)와 `DeadLetterRecorder`(처리 실패)의 알림이 한 채널에 섞인다. 둘은 대응이 정반대다 — 전자는 브로커 복구 후 재발행, 후자는 데이터 수정 후 원본 토픽 재투입. 운영자가 알림 문구로만 구분해야 한다. 동반 공백: **DLQ 적재량 메트릭 부재**(단발 알림뿐이라 "지금 몇 건 밀렸나"가 안 보임). 5서비스 분리 완료로 per-service 태그(ADR-0015)가 갖춰져 라우팅 기준은 이미 있다 | Phase 4 순서표 `운영 관측성` 행 이월 (L-004, [#133](https://github.com/Kimgyuilli/PeakCart/pull/133)) | 🔲 대기 |
 
 ### 해결 완료 (아카이브 참조)
 
@@ -94,11 +94,11 @@ D-001(✅), D-005(✅), D-006(✅), D-007(✅), D-008(✅), D-009(✅), D-010(�
 
 ---
 
-## Phase 4 — MSA 분리 (✅ 완료, 2026-09-22)
+## Phase 4 — MSA 분리 (✅ 완료, 2026-09-22, [#133](https://github.com/Kimgyuilli/PeakCart/pull/133))
 
 > 로드맵 §3(버킷 2) 이관 부채를 각 Phase 4 task 에 편입. 착수 시 D- 승격 또는 task 항목 흡수.
 >
-> **✅ 종결 (2026-09-22)** — 구현 ①~⑥ 전부 완료. 편입 부채는 각 순서에서 해소됐다(① L-016a/L-020-2/D-002 · ② L-008/L-011 · ③ L-001/L-002/L-003/L-019 · ⑤ L-006).
+> **✅ 종결 (2026-09-22, [#133](https://github.com/Kimgyuilli/PeakCart/pull/133))** — 구현 ①~⑥ 전부 완료. 편입 부채는 각 순서에서 해소됐다(① L-016a/L-020-2/D-002 · ② L-008/L-011 · ③ L-001/L-002/L-003/L-019 · ⑤ L-006).
 > 마지막 행 `운영 관측성 / L-004` 만 미착수 상태로 남아 **D-030 으로 승격해 이월**한다 — Phase 1~3 이 D-003/D-004 를 남기고 닫힌 것과 같은 처리다.
 
 | 순서 | 작업 | 편입 부채 |
