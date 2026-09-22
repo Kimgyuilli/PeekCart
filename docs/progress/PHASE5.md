@@ -36,6 +36,48 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## CI 그래프 직렬화 해소 + 컨테이너 수명 결정 ([#135](https://github.com/Kimgyuilli/PeakCart/pull/135), 2026-09-23)
+
+CI 36분의 구조를 측정으로 분해하고, 그 결과를 ADR-0028 로 고정한 뒤 1단계를 구현했다.
+
+측정이 먼저였다. 실측 [run 35731821466](https://github.com/Kimgyuilli/PeakCart/actions/runs/35731821466)
+에서 `test(order) 1051s` · `gate 15s` · `images 173s` · `e2e 856s` 가 직렬로 이어져 36분 중
+34.5분을 차지했다. 샤드 내부는 더 극단적이었다 — `:order-service:test` 975초 중 JUnit XML 이
+보고하는 클래스 시간은 **131초뿐**이고 나머지 **844초(87%)** 가 컨테이너 부팅·Flyway·context
+기동이다. JUnit 이 static initializer 를 testcase 시간에 넣지 않아 그동안 보이지 않던 구간이다.
+
+**결정(ADR-0028)**: 컨테이너 수명을 per-class 에서 모듈 싱글톤으로 바꾼다. 싱글톤 전환 ·
+`@Container` 금지 lint · 순서 셔플 검증을 한 묶음으로 간다. 대안 6종(JUnit 병렬 · Redpanda ·
+withReuse · 러너 코어 재배분 · e2e PR 제외 · 모듈 분할)의 기각 사유를 함께 남겼다.
+워크플로 그래프 변경은 YAML 한 줄이고 되돌림이 즉시라 ADR 보호 대상에서 제외했다.
+
+**구현(D-031, 1단계)**: `images` 의 needs 를 `[lint]` 로 완화해 test 와 병렬화했다.
+
+착수 후 범위가 늘었다. `publish` 가 `needs: images` 하나만 걸고 있어서 그동안 `images` 를 거쳐
+**간접적으로만** 게이트되고 있었고, 그 경로를 끊으면 테스트가 실패한 main push 에서도 GHCR 에
+`:latest` 가 올라간다. `publish: needs: [images, gate]` 로 직결하고, 그 연결이 다시 끊기지
+않도록 `scripts/ci-release-gate-lint.sh` 를 신설했다. 도달성만 보지 않고 `gate` 의 실패 전파
+스텝 존재까지 본다 — `gate` 는 `if: !cancelled()` 라 선행이 실패해도 초록으로 끝날 수 있어서다.
+이 발견으로 등급이 S 에서 M 으로 올라갔다.
+
+`images` 빌드를 buildx + `type=gha` 캐시로 전환했다. scope 를 서비스별로 나눈다(매트릭스 6개가
+단일 scope 를 공유하면 서로의 캐시를 덮어쓴다). `load: true` 가 필수인데 `docker-container`
+드라이버가 결과를 로컬 daemon 에 남기지 않아 뒤따르는 health smoke 와 `docker save` 가 이미지를
+찾지 못하기 때문이고, 로컬에서 양방향으로 확인했다.
+
+**미충족**:
+
+- **V-7 미검증** — `type=gha` 캐시는 Actions 런타임 토큰을 요구해 로컬에서 재현되지 않는다.
+  scope 분리는 Docker 공식 문서 근거로 선반영했고 실효는 실제 run 에서 확인해야 한다
+- **V-9 대기** — `images` 시작 시각이 `test` 완료 이전인지, 벽시계가 20분 이하인지는 실측 필요
+- 이 PR 은 자기 자신을 검증하지 못한다. `publish` 는 `push` 이벤트 한정이라 PR 에서 돌지 않고,
+  릴리스 게이트의 실제 작동은 머지 후 main push run 에서 확인된다. lint 가 정적으로 대신 막는다
+- `publish` 가 `e2e` 를 기다리지 않는 것은 **기존 상태**이고 범위 밖으로 두었다. D-033 에서
+  e2e 실행 정책을 정할 때 함께 본다
+
+**후속**: D-032(싱글톤 본체, 844초가 표적) · D-033(e2e 음성 대조군 605초 정책 재판정).
+Codex 리뷰는 계획·diff 양쪽 모두 `.cache/codex-off` 로 차단된 상태에서 진행했다(의도적 생략).
+
 ## Phase 5 기반 세팅 — 로드맵 축 제거 ([#134](https://github.com/Kimgyuilli/PeakCart/pull/134), 2026-09-22)
 
 Phase 4 가 종결([#133](https://github.com/Kimgyuilli/PeakCart/pull/133))되면서 사전 로드맵이
