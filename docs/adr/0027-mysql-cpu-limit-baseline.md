@@ -167,4 +167,4 @@ list 380.0)을 두고 **"CPU 도 Hikari 풀도 아니다 — MySQL 내부가 남
 - ADR-0007 — 환경별 분기 판단 기준 (Alternative C 기각 근거)
 - D-023 (`docs/TASKS.md`) · `k8s/base/infra/mysql/mysql.yml:24-33` — `Recreate` 전략 / RWO PVC 단일 인스턴스
 - ADR-0026 — 상품 상세 재고 캐시 경계 (읽기 경로 측정의 대상)
-- `docs/plans/task-d029-mysql-cpu-base-promotion.md` — 이 결정의 계획서
+- `docs/plans/done/task-d029-mysql-cpu-base-promotion.md` — 이 결정의 계획서

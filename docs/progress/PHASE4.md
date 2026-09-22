@@ -3254,7 +3254,7 @@ D-027 ① 재개 시 1순위 대상.
 
 ## D-029 base MySQL CPU 상한 승격 — ADR-0027 ([PR #131](https://github.com/Kimgyuilli/PeekCart/pull/131), 2026-09-22)
 
-> 계획서 `docs/plans/task-d029-mysql-cpu-base-promotion.md` · 결정 `docs/adr/0027-mysql-cpu-limit-baseline.md`
+> 계획서 `docs/plans/done/task-d029-mysql-cpu-base-promotion.md` · 결정 `docs/adr/0027-mysql-cpu-limit-baseline.md`
 > 입력은 측정 2건: [#119](https://github.com/Kimgyuilli/PeakCart/pull/119) 주문 경로 · [#129](https://github.com/Kimgyuilli/PeakCart/pull/129) 읽기 경로.
 > **새 측정을 하지 않았다** — 결정 문서 + 매니페스트 값이 산출물이고 검증은 렌더 수준에서 닫았다.
 
@@ -3329,3 +3329,53 @@ D-029 행은 "minikube 가 2 vCPU 를 MySQL 에 내줄 수 있는가"를 먼저 
 2. 배포 시 **Pod 재기동과 InnoDB 버퍼풀 냉각**이 발생한다 (D-023 `Recreate`). 피할 방법이 없다
 3. **minikube 오버서브스크립션이 7250m 에서 8750m 로 깊어진다** (4코어의 2.2배).
    로컬은 400 VU 를 돌리지 않아 발현 가능성은 낮으나 체감 경합이 늘 수 있다
+
+---
+
+## Phase 4 종결 — 구현 ①~⑥ 완료 · L-004 는 D-030 으로 이월 ([#133](https://github.com/Kimgyuilli/PeakCart/pull/133), 2026-09-22)
+
+**무엇을 했나**: 문서상 단계 종결 처리. 새 코드는 없다.
+
+**왜 지금인가**: 순서표 구현 ①~⑥ 이 전부 머지돼 있는데 `## Phase 4 — MSA 분리 (예정)`
+헤더가 그대로였다. 마지막 계획서(`task-d029-mysql-cpu-base-promotion`)도 아카이브되어
+`docs/plans/` 루트가 비었다. 단계가 끝난 상태와 문서가 어긋나 있었다.
+
+**종결 근거** — 순서표 6개 항목의 머지 확인:
+
+| 순서 | 작업 | 근거 |
+|---|---|---|
+| ① | Gradle 멀티모듈 전환 | #48~#68. `settings.gradle` 에 5서비스 + gateway + 공유 3모듈, root app 해체 |
+| ② | 서비스별 DB 분리 | #69(교차 FK 드롭) · #71(Flyway per-service) · #72(retention) |
+| ③ | Spring Cloud Gateway | #73~. `gateway` + `internal-token-contract` (ADR-0013/0017) |
+| ④ | Choreography Saga | #93 에서 "④ 종결" 명시 |
+| ⑤ | CQRS 로컬 캐시 | #94 |
+| ⑥ | Cursor 페이지네이션 | #96 |
+
+편입 부채도 각 순서에서 해소됐다 — ① L-016a/L-020-2/D-002 · ② L-008/L-011 ·
+③ 보안 묶음 L-001/L-002/L-003/L-019 · ⑤ L-006.
+
+**남은 한 줄을 어떻게 했나**: 순서표 마지막 행 `운영 관측성 / L-004` 는 **미착수다.**
+종결 전에 코드로 확인했고, 미구현이 맞았다:
+
+- `SlackPort` 구현체는 `common/src/main/java/com/peekcart/global/slack/SlackNotificationClient.java`
+  **하나**뿐이고, 설정도 `slack.webhook.url` **단일 웹훅**이다
+- 그래서 `OutboxPollingService`(발행 실패 = Outbox `FAILED`)와
+  `DeadLetterRecorder`(처리 실패 = DLQ)의 알림이 **같은 채널**로 나간다
+- 둘은 대응이 정반대다. 전자는 브로커 복구 후 재발행, 후자는 데이터 수정 후 원본 토픽
+  재투입. 운영자가 알림 문구로만 구분해야 한다
+- 동반 공백으로 **DLQ 적재량 메트릭이 없다** — 단발 알림뿐이라 "지금 몇 건 밀렸나"가
+  안 보인다 (`docs/learning/11-consumer-idempotency-dlq.md:316,431`)
+
+이걸 이유로 단계를 열어두지 않고 **D-030 으로 승격해 이월**했다. Phase 1~3 이
+D-003(Won't Fix)/D-004(운영지식)를 남기고 닫힌 것과 같은 처리다. 단계 종결과 부채 추적은
+별개 축이고, 열린 항목을 지우지 않으면서 단계는 종결된다.
+
+**왜 지금 착수하지 않았나**: 5서비스 분리가 끝나면서 per-service 태그(ADR-0015)가
+갖춰져 라우팅 기준은 이미 있다. 즉 **지금이 착수하기 좋은 시점은 맞다.** 다만 그건
+Phase 4 의 잔여가 아니라 다음 작업의 후보다 — 단계 경계를 흐리지 않기 위해 분리했다.
+
+**함께 진행 중인 부채**: D-027(하네스 비용 최적화) ①③ 은 계획서에 적힌 **재개 조건이
+미충족**이다 — ① 은 새 절차(H1~H6) 안정화 전, ③ 은 `grade:` 표본이 2개뿐이라 임계값을
+정할 수 없다. 대기 유지한다.
+
+**다음**: D-030 (Slack 채널 분리 + DLQ 적재량 메트릭).
