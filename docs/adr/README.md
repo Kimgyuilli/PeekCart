@@ -50,4 +50,5 @@
 | [0025](./0025-inventory-concurrency-control.md) | 재고 동시성 제어 — 분산 락 제거, `@Version` 단일 수단 + jitter 재시도 (D-025, 흡수된 L-007) | Accepted | Phase 4 | 02, 04, 05 |
 | [0026](./0026-product-detail-stock-cache-boundary.md) | 상품 상세 재고 캐시 경계 — 재고 전용 짧은 TTL 캐시, 쓰기 경로 무효화 없음 (D-026) | Accepted | Phase 4 | 04, 05 |
 | [0027](./0027-mysql-cpu-limit-baseline.md) | base MySQL CPU 상한 = 2000m — 공통 읽기/쓰기 천장의 해제 (D-029) | Accepted | Phase 4 | 02 |
+| [0028](./0028-integration-test-container-lifecycle.md) | 통합 테스트 컨테이너 수명 = 모듈 싱글톤 — per-class 재부팅 폐기 | Accepted | Phase 5 | 06, CLAUDE.md |
 <!-- INDEX:END -->
