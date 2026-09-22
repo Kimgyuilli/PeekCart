@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 51개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 52개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -62,10 +62,11 @@
 | [task-d026-d002a-read-ceiling-session](./task-d026-d002a-read-ceiling-session.md) | 이번 세션 한정 — 사용자 지시(2026-09-20) "코덱스 리뷰 돌리지 마세요". | [#129](https://github.com/Kimgyuilli/PeakCart/pull/129) | 2026-09-20 | 있음 |
 | [task-d029-mysql-cpu-base-promotion](./task-d029-mysql-cpu-base-promotion.md) | 사용자 지시(2026-09-22, `.cache/codex-off`) — Codex 리뷰 미호출. | [#131](https://github.com/Kimgyuilli/PeakCart/pull/131) | 2026-09-22 | 있음 |
 
-## 기타 (9)
+## 기타 (10)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
+| [task-phase5-baseline](./task-phase5-baseline.md) | task-phase5-baseline | [#134](https://github.com/Kimgyuilli/PeakCart/pull/134) |  |  |
 | [task-hpa-manifest](./task-hpa-manifest.md) | HPA 매니페스트 작성 |  | 2026-04-21 | 있음 |
 | [task-jmeter-to-k6](./task-jmeter-to-k6.md) | 부하 테스트 도구 JMeter → k6 전환 | [#26](https://github.com/Kimgyuilli/PeakCart/pull/26) | 2026-04-24 | 있음 |
 | [task-loadtest-session-c](./task-loadtest-session-c.md) | Phase 3 세션 C 실행 + Task 3-4 / 3-5 마무리 |  | 2026-04-30 | 있음 |
