@@ -36,7 +36,7 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
-## Phase 5 기반 세팅 — 로드맵 축 제거 (2026-09-22)
+## Phase 5 기반 세팅 — 로드맵 축 제거 ([#134](https://github.com/Kimgyuilli/PeakCart/pull/134), 2026-09-22)
 
 Phase 4 가 종결([#133](https://github.com/Kimgyuilli/PeakCart/pull/133))되면서 사전 로드맵이
 소진됐다. Phase 5 는 순서표를 다시 만들지 않기로 했으므로, **문서가 순서표를 전제하던
@@ -60,6 +60,8 @@ Phase 4 가 종결([#133](https://github.com/Kimgyuilli/PeakCart/pull/133))되�
 
 **부수 정리**: `task-phase4-closure` 계획서가 PR 링크 부재로 `보류` 였다. #133 이 근거임을
 확인해 계획서에 링크를 적고 `done/` 으로 아카이브했다(인덱스 51행).
+
+**미충족**: 없다. Phase 5 는 종결 조건이 없는 단계이므로 "남은 항목" 개념이 이 작업에 없다.
 
 **다음**: D-030 (Slack 채널 분리 + DLQ 적재량 메트릭) — 5서비스 분리로 per-service
 태그(ADR-0015)가 갖춰져 라우팅 기준이 이미 있다.
