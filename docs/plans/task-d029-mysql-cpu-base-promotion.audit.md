@@ -28,3 +28,20 @@
      (상속/patch)를 렌더 두 번으로 판정하는 검사기가 가능하다
   → 셋 다 Yes 아님 + 자동화 가능 → **prose 저장 안 함.** 다만 부채로 올릴 만큼 넓지 않아
      (지금 손잡이는 mysql CPU 하나) 계획서 §2 표의 **출처 열**로 국소 처분했다.
+
+## 2026-09-22 — /ship
+- PR: **[#131](https://github.com/Kimgyuilli/PeekCart/pull/131)** (base `main`, 커밋 5개)
+- preflight `ok` · consistency precheck `ok`(warnings 0) · review health `ok`
+- **커밋 5개를 전부 재작성했다.** Step 4-1 문체 lint 가 오류 19건을 냈다:
+  `infra(k8s)` 가 허용 type 이 아니었고(feat/fix/refactor/test/docs/chore), em dash·화살표·
+  `×`·이모지 `✅` 다수, 커밋 본문 어미가 `~다`(규약은 `~함`/`~임`), 추적 태그가 제목에 있었다.
+  push 전이라 `cherry-pick -n` 으로 재작성하고 `git diff d029-backup HEAD` 가 공백임을 확인해
+  **트리 무변화**를 보장했다. 백업 브랜치 `d029-backup` 은 push 성공 후 삭제 대상.
+  → **pre-commit 훅은 분류만 검사하고 문체는 안 본다**는 사실이 드러났다. 자동화 후보.
+- **PR 본문도 오류 25건이었다.** 어미(`~습니다`)와 볼드 상한(구획당 2개) 외에,
+  `계획의 전제 2건이 구현 중 틀린 것으로 드러남` 과 `TASKS.md 가 적은 1순위가 1순위가
+  아니었다` 두 절을 **PR 에서 제거**했다 — writing.md §3 이 시행착오·자기 서사를 audit 몫으로
+  규정하고, 후자는 제목 자체가 주장이었다. 내용은 이 파일과 PHASE4.md 에 있다.
+- 갱신: TASKS.md D-029 PR 링크 · PHASE4.md 엔트리 제목 + 미충족 3건 · 이 블록
+- 부채 승격 없음. 이월 4건은 D-002/D-026 측정 계열 기존 축에 속해 새 ID 를 만들지 않았다
+- Layer 1(01~07) 정정 불필요 — 계획 §2 F9 가 인용 0건을 확인했다

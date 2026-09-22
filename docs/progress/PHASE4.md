@@ -3252,7 +3252,7 @@ D-027 ① 재개 시 1순위 대상.
 - `/ship` §4 섹션 목록이 규격인지 예시인지 여전히 불명확하다. 섹션 화이트리스트 검사를
   넣지 않은 이유가 이것이다 — 선언되지 않은 계약에 검사기를 붙이면 같은 구조가 반복된다
 
-## D-029 base MySQL CPU 상한 승격 — ADR-0027 (2026-09-22)
+## D-029 base MySQL CPU 상한 승격 — ADR-0027 ([PR #131](https://github.com/Kimgyuilli/PeekCart/pull/131), 2026-09-22)
 
 > 계획서 `docs/plans/task-d029-mysql-cpu-base-promotion.md` · 결정 `docs/adr/0027-mysql-cpu-limit-baseline.md`
 > 입력은 측정 2건: [#119](https://github.com/Kimgyuilli/PeakCart/pull/119) 주문 경로 · [#129](https://github.com/Kimgyuilli/PeakCart/pull/129) 읽기 경로.
@@ -3320,3 +3320,12 @@ D-029 행은 "minikube 가 2 vCPU 를 MySQL 에 내줄 수 있는가"를 먼저 
 3. 캐시 ON 경로(캐시 miss 0)가 DB CPU 에 반응한 이유 미분리 — Alternative B 기각 근거와 동일 항목
 4. `product`(단수) 캐시 측정 누락 (D-026 계열)
 5. `#129` 세션의 익일 Billing 콘솔 확인 — 여전히 미확인
+
+### 미충족 (PR #131 본문과 동일)
+
+1. **2000m 이 실제 클러스터에서 base 로 돌아가는 것은 확인되지 않았다.** 검증을 렌더
+   수준에서 닫은 결과다. 값 자체는 측정 overlay 로 실측됐으나, base 경로로 렌더된
+   매니페스트를 클러스터에 적용한 적은 없다
+2. 배포 시 **Pod 재기동과 InnoDB 버퍼풀 냉각**이 발생한다 (D-023 `Recreate`). 피할 방법이 없다
+3. **minikube 오버서브스크립션이 7250m 에서 8750m 로 깊어진다** (4코어의 2.2배).
+   로컬은 400 VU 를 돌리지 않아 발현 가능성은 낮으나 체감 경합이 늘 수 있다
