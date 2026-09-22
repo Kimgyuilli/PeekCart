@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 50개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 51개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -62,7 +62,7 @@
 | [task-d026-d002a-read-ceiling-session](./task-d026-d002a-read-ceiling-session.md) | 이번 세션 한정 — 사용자 지시(2026-09-20) "코덱스 리뷰 돌리지 마세요". | [#129](https://github.com/Kimgyuilli/PeakCart/pull/129) | 2026-09-20 | 있음 |
 | [task-d029-mysql-cpu-base-promotion](./task-d029-mysql-cpu-base-promotion.md) | 사용자 지시(2026-09-22, `.cache/codex-off`) — Codex 리뷰 미호출. | [#131](https://github.com/Kimgyuilli/PeakCart/pull/131) | 2026-09-22 | 있음 |
 
-## 기타 (8)
+## 기타 (9)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -74,4 +74,5 @@
 | [task-user-key-rotation-local-drill](./task-user-key-rotation-local-drill.md) | User 도메인 키 회전 실증 (로컬 드릴) | [#116](https://github.com/Kimgyuilli/PeakCart/pull/116) | 2026-09-15 |  |
 | [task-ops-hardening-d022-d023-d024](./task-ops-hardening-d022-d023-d024.md) | 운영 표면 하드닝 (D-024 · D-022 · D-023) | [#121](https://github.com/Kimgyuilli/PeakCart/pull/121) | 2026-09-18 |  |
 | [task-codex-review-render](./task-codex-review-render.md) | task-codex-review-render | [#128](https://github.com/Kimgyuilli/PeakCart/pull/128) | 2026-09-20 | 있음 |
+| [task-phase4-closure](./task-phase4-closure.md) | task-phase4-closure | [#133](https://github.com/Kimgyuilli/PeakCart/pull/133) | 2026-09-22 |  |
 
