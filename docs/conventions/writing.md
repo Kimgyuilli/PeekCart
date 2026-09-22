@@ -118,8 +118,19 @@ Refs: D-025, ADR-0025
 scripts/writing-lint.sh --commits "$(git merge-base HEAD origin/main)..HEAD"
 scripts/writing-lint.sh --file .cache/pr-body-<task-id>.md
 scripts/writing-lint.sh --title "chore(k8s): base MySQL CPU 상한 2000m 승격"
+scripts/writing-lint.sh --msg .git/COMMIT_EDITMSG
 scripts/writing-lint.sh --self-test
 ```
+
+`--msg` 는 `.githooks/commit-msg` 가 커밋 시점에 자동으로 돌린다. `--commits` 로는
+그 자리를 대신할 수 없다. 그쪽은 **이미 만들어진** 커밋을 읽으므로 커밋 객체가 없는
+시점에는 쓸 수 없다. `--file` 도 안 된다. `body` 모드라 제목 형식을 보지 않고, 대신
+PR 본문 전용인 `~습니다` 검사를 돌려 커밋 규약(`~함`/`~임`)을 전부 오탐한다.
+
+`--msg` 가 검사하지 않는 것: git 이 붙이는 주석(`#` 줄), `verbose` 커밋의 scissors
+(`# ---- >8 ----`) 이후 diff, 그리고 머지·revert·fixup·squash 메시지다. 앞의 둘은
+사용자가 고칠 수 없는 텍스트이고, 뒤는 제목이 git 이나 도구가 정하는 자리라
+`<type>(<scope>)` 규약 대상이 아니다.
 
 `/ship` 이 PR 본문 승인 게이트 직전에 자동으로 돌린다. 오류는 종료 코드 1, 경고는 0 이다.
 경고는 고치는 편이 낫지만 진행을 막지는 않는다.
@@ -135,6 +146,11 @@ scripts/writing-lint.sh --self-test
 | §3 볼드 최대 2개 | 경고 | **오류** | 해당 없음 |
 | 제목 길이, 서술 종결 | 경고 | 해당 없음 | 경고 |
 | 추적 태그 위치 | 경고 | 해당 없음 | **오류** |
+
+커밋 메시지 검사는 `commit-msg` 훅이 커밋 시점에 돌린다. `/ship` Step 4-1 도 같은
+규칙을 보지만 그때는 커밋이 이미 쌓여 있어 `cherry-pick` 재작성이 필요하다. D-029 에서
+커밋 5개를 통째로 다시 썼고, 위반은 `infra(k8s)` 처럼 허용 type 이 아닌 제목과 em dash,
+화살표였다. 전부 커밋 시점에 알 수 있는 것이었다.
 
 PR 제목 열이 뒤늦게 생긴 경위: PR [#131](https://github.com/Kimgyuilli/PeekCart/pull/131)
 제목이 `(D-029)` 를 달고 나갔다. `--commits` 가 커밋 제목에서 같은 위반을 경고로 잡아
