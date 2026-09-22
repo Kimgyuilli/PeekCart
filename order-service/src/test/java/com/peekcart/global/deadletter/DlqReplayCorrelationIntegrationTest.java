@@ -5,6 +5,7 @@ import com.peekcart.global.kafka.DlqOriginKind;
 import com.peekcart.global.kafka.PayloadDigest;
 import com.peekcart.global.port.SlackPort;
 import com.peekcart.support.AbstractIntegrationTest;
+import com.peekcart.support.SharedContainers;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,18 +15,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -58,26 +53,13 @@ import static org.mockito.Mockito.reset;
  * 아직 없다. 진입점→발행→재실패→상관 전 구간을 한 번 도는 것은 V-35 가 2b-4 에서 맡는다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
-@Import(DlqReplayCorrelationIntegrationTest.SlackRecorderConfig.class)
+@Import({DlqReplayCorrelationIntegrationTest.SlackRecorderConfig.class, SharedContainers.class})
 @DisplayName("DLQ replay 재실패 상관·재개방")
 class DlqReplayCorrelationIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     /**
      * Slack 문구를 <b>종류별로</b> 세기 위한 스텁. no-op mock 으로는 "상관된 자식에 신규 미결 알림이

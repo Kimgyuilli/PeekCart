@@ -2,6 +2,7 @@ package com.peekcart.global.outbox;
 
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -11,16 +12,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -50,7 +45,6 @@ import static org.mockito.Mockito.doAnswer;
  * 따라서 <b>한 사이클의 두 save 를 모두</b> 실패시켜야 행이 PENDING 으로 남는다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
@@ -62,21 +56,9 @@ import static org.mockito.Mockito.doAnswer;
         // "중복이 안 났다" 로 오독된다(실측: 살아남은 레코드의 offset 이 0이었다).
         "app.outbox.polling.publish-timeout=30s"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("outbox 재발행 보장 = at-least-once")
 class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @MockitoSpyBean OutboxEventRepository outboxEventRepository;
     @Autowired OutboxPollingService pollingService;
@@ -101,6 +83,8 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() {
         cleanDatabase();
+        // 공유 브로커라 앞 클래스가 남긴 레코드가 seekToBeginning 에 읽힌다 (D-032).
+        cleanKafkaTopics(SharedContainers.KAFKA.getBootstrapServers(), "order.created");
         outboxEventJpaRepository.deleteAll();
         // **토픽이 준비된 뒤에 측정한다.** 컨테이너가 여럿 뜬 느린 실행에서는 토픽 생성이 끝나기 전에
         // 첫 send 가 나가 메타데이터 대기로 타임아웃한다 — 그러면 그 사이클의 레코드가 아예 생기지 않고
@@ -187,7 +171,7 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
     private void awaitTopicReady() {
         await().atMost(Duration.ofSeconds(60)).until(() -> {
             Properties props = new Properties();
-            props.put("bootstrap.servers", kafka.getBootstrapServers());
+            props.put("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers());
             props.put("group.id", "test-topic-ready-" + UUID.randomUUID());
             props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -204,7 +188,7 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
     /** broker 가 실제로 갖고 있는 레코드 총수. 소비 없이 재므로 group 조율·fetch 타이밍이 개입하지 않는다. */
     private long brokerRecordCount() {
         Properties props = new Properties();
-        props.put("bootstrap.servers", kafka.getBootstrapServers());
+        props.put("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers());
         props.put("group.id", "test-endoffsets-" + UUID.randomUUID());
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -218,7 +202,7 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
 
     private List<ConsumerRecord<String, String>> drain(String topic, int expected) {
         Properties props = new Properties();
-        props.put("bootstrap.servers", kafka.getBootstrapServers());
+        props.put("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers());
         props.put("group.id", "test-drain-" + UUID.randomUUID());
         props.put("auto.offset.reset", "earliest");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");

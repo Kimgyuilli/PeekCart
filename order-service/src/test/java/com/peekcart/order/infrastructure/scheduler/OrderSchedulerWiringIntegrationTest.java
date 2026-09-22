@@ -5,19 +5,15 @@ import com.peekcart.order.domain.model.OrderItemData;
 import com.peekcart.order.domain.model.OrderStatus;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -52,8 +48,15 @@ import static org.awaitility.Awaitility.await;
  * 운영값을 못 보고, 운영값을 쓰면 결정적이지 않다).
  */
 @SpringBootTest
-@Testcontainers
+/**
+ * 이 클래스는 배경 스케줄링을 켠다(D-032 기본값은 off). context 가 캐시되면 자기 테스트가
+ * 끝난 뒤에도 타이머가 계속 돌면서 <b>공유 DB</b> 를 고쳐 다른 클래스의 단언을 깬다.
+ * 클래스 종료 시 context 를 닫아 타이머를 멈춘다. 컨테이너는 static 이라 영향받지 않는다.
+ */
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @TestPropertySource(properties = {
+        // 타이머 발화 자체가 검증 대상이라 배경 스케줄링을 켠다 (D-032 기본값은 off).
+        "app.scheduling.enabled=true",
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
         // 배선만 본다 — 운영 기본값은 OrderSchedulerPropertiesTest 가 고정한다
@@ -63,21 +66,9 @@ import static org.awaitility.Awaitility.await;
         "app.scheduler.order.lock-at-least-for=0s",
         "app.scheduler.order.lock-at-most-for=30s"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("Order 스케줄러 배선 계약")
 class OrderSchedulerWiringIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @BeforeEach
     void setUp() {
