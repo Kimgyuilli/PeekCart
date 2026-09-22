@@ -1,11 +1,22 @@
 # 측정: replicas 고정 + e2-standard-4 기준 resources (gke overlay 와 동일 값).
+#
+# replicas 3 — **경합을 만들기 위한 값이지 용량 설정이 아니다.**
+# PR #119 가 replicas=1 에서 "경합은 구조적으로 불가능" 을 실측했다: 예약 소비 스레드가
+# 시스템 전체에 1개(replicas=1 × listener concurrency 기본 1)라 분산 락에 경쟁자가 없고,
+# 부하를 아무리 올려도 낙관락 충돌이 0 이다. 3 으로 올려야 ADR-0025 가 다루는 lockstep
+# 경로가 재현된다(#119 실측: 충돌 7 = DLQ 7, PRD-004 0).
+# 계획서 task-gke-measurement-closeout.md P3·P11 이 이 값을 전제로 한다.
+#
+# 쿼터: #119 P1 이 렌더 실측한 CPU requests 합 3,600m 에 product 2 replica 분 +1,000m 가
+# 더해져 **4,600m**. 노드 e2-standard-4 × 2 의 allocatable ≈7,800m 이므로 들어간다.
+# 다른 서비스의 replicas 는 건드리지 않는다 — 경합 축을 product 하나로 고립시킨다.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: product-service
   namespace: peekcart
 spec:
-  replicas: 1
+  replicas: 3
   template:
     spec:
       containers:

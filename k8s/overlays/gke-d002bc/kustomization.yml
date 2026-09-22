@@ -73,16 +73,27 @@ patches:
       kind: PersistentVolumeClaim
 
 # PROJECT_ID 치환은 gke overlay README 와 동일 절차.
+#
+# gateway·product-service 는 **가변 태그가 아니라 digest** 로 고정한다. 나머지 3서비스는
+# 이 측정의 관측 대상이 아니라 부하 경로를 성립시키는 배경이라 latest 를 유지한다.
+#   gateway         — 측정 전용 빌드다(브랜치 meas/gateway-eventloop, NettyServerCustomizer 1파일).
+#                     reactor-netty 의 eventloop 메트릭은 TransportConfig.metricsRecorder 가
+#                     null 이 아닐 때만 등록돼(바이트코드 확인) metrics(true) 가 필요하다.
+#                     **이 빌드는 main 에 머지하지 않는다.**
+#   product-service — ADR-0026(PR #124) 이후 코드여야 한다. 그 이전 이미지로 재면 변경 전
+#                     동작을 재는 셈이 된다.
+# DIGEST_PLACEHOLDER 는 PROJECT_ID_PLACEHOLDER 와 같이 **세션 시작 시 치환**한다.
+# 치환한 digest 를 증적에 적는다 — 무엇을 쟀는지 사후에 증명할 수 있어야 한다.
 images:
   - name: ghcr.io/kimgyuilli/peekcart-gateway
     newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/gateway
-    newTag: latest
+    digest: sha256:GATEWAY_MEAS_DIGEST_PLACEHOLDER
   - name: ghcr.io/kimgyuilli/peekcart-user-service
     newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/user-service
     newTag: latest
   - name: ghcr.io/kimgyuilli/peekcart-product-service
     newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/product-service
-    newTag: latest
+    digest: sha256:PRODUCT_ADR0026_DIGEST_PLACEHOLDER
   - name: ghcr.io/kimgyuilli/peekcart-order-service
     newName: asia-northeast3-docker.pkg.dev/PROJECT_ID_PLACEHOLDER/peekcart/order-service
     newTag: latest

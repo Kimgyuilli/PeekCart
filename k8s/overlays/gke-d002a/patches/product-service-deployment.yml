@@ -1,5 +1,28 @@
-# AR 이미지 고정(2026-09-14T22:07 — 현재 코드와 동일, 재빌드 불필요) + 캐시 토글 노출.
+# 측정 전용 patch — 이미지 고정 · 캐시 토글 노출 · 조건 B(CPU 상한) 고정.
+#
+# ⚠️ 이미지 재빌드는 **필수**다. 종전 주석이 "2026-09-14T22:07 빌드 = 현재 코드와 동일,
+#    재빌드 불필요" 라고 적고 있었으나 ADR-0026(재고 전용 캐시, PR #124)이 2026-09-18 에
+#    머지되면서 거짓이 됐다. 그 이미지로 재면 detail 배속이 변경 전 값(×1.23)으로 다시
+#    나오고, 그것을 "개선 없음" 으로 오독하게 된다.
+#    계획서 task-gke-measurement-closeout.md P5 가 재빌드와 digest 고정을 담당한다.
+#
+# image 는 **가변 태그가 아니라 digest** 로 고정한다. PRODUCT_ADR0026_DIGEST_PLACEHOLDER 는
+#   PROJECT_ID_PLACEHOLDER 와 같은 관례로 **세션 시작 시 치환**한다(gke-d002bc 와 같은 값).
+#   치환한 digest 를 증적에 적는다. `:latest` 를 측정 대상으로 삼지 않는다 — 언제 무엇으로
+#   바뀌었는지 사후에 증명할 수 없다.
+#
 # peekcart.cache.enabled 는 CacheConfig:69/111 의 대조군 스위치다. 기본 ON, 측정 중 OFF 로 전환한다.
+#
+# 조건 B — 원 세션(증적 d002a-gke-20260916-0030.md §측정 행렬)이 ×1.23/×2.02 를 낸 조건이다.
+#   `limits.cpu: 3000m` · 400 VU 포화. base 값은 1000m 이고 그것은 조건 A(×1.86/×2.39)다.
+#   원 세션은 이 상한을 **세션 중 수동 patch** 로만 줘서 코드에 남지 않았다 — 여기서 고정한다.
+#
+# k6 파라미터도 함께 못 박는다. 원 세션 증적에 **IDS·DUR 이 기록돼 있지 않아**(전수 grep 0건)
+# 인용할 수 없고, 이번 세션이 신설한다:
+#   IDS=100  재고 캐시 TTL 이 5초라 배속은 `키당 초당 요청수 × TTL` 의 함수다. IDS 가 달라진
+#            측정끼리는 비교할 수 없으므로 이 값이 비교 가능성의 전제다.
+#   VUS=400  조건 B 의 포화 기준.
+#   DUR=300s 워밍업 60s 는 집계에서 제외하고 이 구간만 집계한다.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,7 +33,14 @@ spec:
     spec:
       containers:
         - name: product-service
-          image: asia-northeast3-docker.pkg.dev/peekcart-gke/peekcart/product-service:latest
+          image: asia-northeast3-docker.pkg.dev/peekcart-gke/peekcart/product-service@sha256:PRODUCT_ADR0026_DIGEST_PLACEHOLDER
           env:
             - name: PEEKCART_CACHE_ENABLED
               value: "true"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 3000m
+              memory: 1Gi
