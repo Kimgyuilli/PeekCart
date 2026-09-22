@@ -3061,7 +3061,7 @@ bats 62건 통과 · `plans-index --check` 최신 · `writing-lint` 커밋 6건�
 
 ## D-026 배속 재측정 + D-002a 읽기 경로 천장 — GKE 세션 ([PR #129](https://github.com/Kimgyuilli/PeekCart/pull/129), 2026-09-20)
 
-> 계획서 `docs/plans/task-d026-d002a-read-ceiling-session.md` · 증적
+> 계획서 `docs/plans/done/task-d026-d002a-read-ceiling-session.md` · 증적
 > `docs/progress/evidence/d026-d002a-read-ceiling-20260920.md` · preflight 동 디렉터리.
 > 30런(블록 A 12 · B 12 · A′ 6), 셀당 3회 중앙값.
 
