@@ -53,6 +53,13 @@ jobs:
         # (gateway 가 내부 토큰 서명 개인키를 갖게 됨, ADR-0017 D2). k8s Secret 경유는 여전히 금지다.
         run: |
           bash scripts/kustomize-namespace-lint.sh
+          # D-031: images 가 gate 를 더 이상 물지 않으므로 publish 가 gate 를 직접 문다.
+          # 그 연결은 YAML 을 읽는 사람만 아는 성질이라, 누가 끊어도 CI 는 전부 초록으로
+          # 통과하고 테스트가 빨간 push 에서 GHCR 에 :latest 가 올라간다. 도달성뿐 아니라
+          # gate 의 실패 전파 스텝 존재까지 본다 — gate 는 if: !cancelled() 라 선행이
+          # 실패해도 초록으로 끝날 수 있어서다.
+          bash scripts/ci-release-gate-lint.sh
+          bash scripts/ci-release-gate-lint.sh --self-test
           bash scripts/image-contract-lint.sh
           bash scripts/gateway-exposure-lint.sh
           # 조작 입력 29종에서 실제로 실패하는지 — lint 자체가 vacuous-green 으로 썩는 것을 막는다.
@@ -346,8 +353,13 @@ jobs:
           echo "::error::선행 job 실패 — test=${{ needs.test.result }} guards=${{ needs.guards.result }}"
           exit 1
 
+  # D-031: gate 를 needs 에서 뺀다 — 이미지 빌드는 테스트 결과와 무관한 일인데 전 샤드
+  # 완료를 기다리고 있었다(실측 run 35731821466 에서 images 가 test 보다 18분 늦게 시작).
+  # 대신 **publish 가 gate 를 직접 문다** — 그러지 않으면 테스트가 빨간 push 에서도
+  # GHCR 에 :latest 가 올라간다(D-016/L-016a image promotion 계약). 이 연결이 끊기지
+  # 않는지는 scripts/ci-release-gate-lint.sh 가 강제한다.
   images:
-    needs: [lint, gate]
+    needs: [lint]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -368,8 +380,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # D-031: buildx + GitHub Actions 레이어 캐시. 6개 이미지를 매 실행 밑바닥부터
+      # 빌드하고 있었다(실측 run 35731821466 에서 최장 173초).
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build image
-        run: docker build --build-arg SERVICE=${{ matrix.service }} -t ${{ matrix.service }}:ci .
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: SERVICE=${{ matrix.service }}
+          tags: ${{ matrix.service }}:ci
+          # load 가 필수다 — docker-container 드라이버는 빌드 결과를 로컬 daemon 에
+          # 남기지 않는다. 없으면 뒤따르는 health smoke(docker run)와 docker save 가
+          # 이미지를 찾지 못한다.
+          load: true
+          # scope 를 서비스별로 나눈다. 매트릭스 6개가 단일 scope 를 공유하면 서로의
+          # 캐시를 덮어써 마지막 하나만 남는다.
+          cache-from: type=gha,scope=image-${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=image-${{ matrix.service }}
 
       - name: Health smoke
         run: bash scripts/docker-health-smoke.sh ${{ matrix.service }}:ci
@@ -469,8 +498,11 @@ jobs:
 
   # GHCR publish — main push 한정. smoke 를 통과한 이미지를 load 후 push 한다.
   # packages:write 는 이 job 에만 부여되어 PR build/smoke 경로엔 write 토큰이 닿지 않는다.
+  # D-031: gate 를 직접 문다. images 가 gate 를 물고 있던 동안에는 간접적으로 게이트됐지만,
+  # images 의 needs 완화로 그 경로가 끊겼다. gate 가 test/guards 실패를 exit 1 로 전파하므로
+  # (Propagate upstream failure), 이 연결이 GHCR 푸시의 유일한 테스트 게이트다.
   publish:
-    needs: images
+    needs: [images, gate]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
