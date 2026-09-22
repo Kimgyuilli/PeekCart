@@ -1,5 +1,6 @@
 package com.peekcart.global.kafka;
 
+import com.peekcart.support.SharedContainers;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -11,9 +12,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 import org.awaitility.core.ConditionTimeoutException;
 
 import java.time.Duration;
@@ -38,15 +36,15 @@ import static org.awaitility.Awaitility.await;
  * 순차 적용해 <b>false 에서는 옛 값이 유지됨</b>을 단언한다. 그 단언이 깨지면 이 테스트가
  * 검증하려던 대비 자체가 성립하지 않으므로 즉시 실패시킨다.
  *
- * <p>컨테이너는 <b>클래스당 하나</b>이고 테스트마다 토픽 이름을 새로 만든다 —
- * 두 컨텍스트가 같은 브로커를 봐야 "기존 토픽" 이라는 조건이 성립한다.
+ * <p>브로커는 모듈 싱글톤({@link SharedContainers#KAFKA})이고 테스트마다 토픽 이름을 새로
+ * 만든다 — 두 컨텍스트가 같은 브로커를 봐야 "기존 토픽" 이라는 조건이 성립한다.
+ *
+ * <p>이 클래스는 Spring 컨텍스트가 없다(raw {@code Admin} 클라이언트만 쓴다). 그래서
+ * {@code @Import(SharedContainers.class)} 경로가 닫혀 있고 정적 필드를 직접 읽는다 —
+ * 필드 접근만으로 static initializer 가 돌아 기동이 보장된다(D-032 P3b).
  */
-@Testcontainers
 @DisplayName("토픽 config 적용 경로 — 신규/기존 토픽 · 미선언 config 처분 (ADR-0020 D4-1)")
 class KafkaTopicConfigMechanismIntegrationTest {
-
-    @Container
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     private static final Duration RETENTION = Duration.ofDays(7);
     private static final Duration BEFORE_MAX = Duration.ofDays(9);
@@ -58,13 +56,13 @@ class KafkaTopicConfigMechanismIntegrationTest {
             "message.timestamp.type", "message.timestamp.before.max.ms");
 
     private Admin admin() {
-        return Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers()));
+        return Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, SharedContainers.KAFKA.getBootstrapServers()));
     }
 
     /** {@code NewTopic} 을 선언한 {@link KafkaAdmin} 을 기동해 브로커에 반영시킨다. */
     private void applyTopics(boolean modifyTopicConfigs, NewTopic... topics) {
         KafkaAdmin kafkaAdmin = new KafkaAdmin(
-                Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers()));
+                Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, SharedContainers.KAFKA.getBootstrapServers()));
         kafkaAdmin.setModifyTopicConfigs(modifyTopicConfigs);
         kafkaAdmin.setAutoCreate(false);
         kafkaAdmin.createOrModifyTopics(topics);
