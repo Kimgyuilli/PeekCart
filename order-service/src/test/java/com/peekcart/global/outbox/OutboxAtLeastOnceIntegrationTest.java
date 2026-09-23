@@ -196,7 +196,14 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
             List<TopicPartition> partitions = consumer.partitionsFor(TOPIC).stream()
                     .map(info -> new TopicPartition(TOPIC, info.partition()))
                     .toList();
-            return consumer.endOffsets(partitions).values().stream().mapToLong(Long::longValue).sum();
+            // **beginning 을 빼고 센다.** 컨테이너를 공유하면서 cleanKafkaTopics 가
+            // deleteRecords 로 로그를 자르는데, 그것은 low watermark 만 올리고 end offset 은
+            // 그대로 둔다. 절대값으로 세면 앞 클래스가 발행한 수가 그대로 더해진다(D-032).
+            var end = consumer.endOffsets(partitions);
+            var begin = consumer.beginningOffsets(partitions);
+            return partitions.stream()
+                    .mapToLong(tp -> end.get(tp) - begin.get(tp))
+                    .sum();
         }
     }
 

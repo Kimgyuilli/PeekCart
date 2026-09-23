@@ -723,7 +723,12 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
             consumer.seekToBeginning(partitions);
             List<ConsumerRecord<String, String>> collected = new ArrayList<>();
             long deadline = System.currentTimeMillis() + 15_000;
-            long end = consumer.endOffsets(partitions).values().stream().mapToLong(Long::longValue).sum();
+            // **beginning 을 뺀 상대값이다.** cleanKafkaTopics 의 deleteRecords 는 low watermark 만
+            // 올리고 end offset 은 그대로 둔다. 절대값을 목표로 삼으면 seekToBeginning 이 닿을 수
+            // 없는 수를 기다리다 15초를 통째로 태운다(D-032).
+            var endOff = consumer.endOffsets(partitions);
+            var beginOff = consumer.beginningOffsets(partitions);
+            long end = partitions.stream().mapToLong(tp -> endOff.get(tp) - beginOff.get(tp)).sum();
             while (collected.size() < end && System.currentTimeMillis() < deadline) {
                 consumer.poll(Duration.ofMillis(500)).records(topic).forEach(collected::add);
             }
