@@ -146,4 +146,20 @@ com.peekcart.global.{config|exception|jwt|response}
 - Infrastructure 레이어: 통합 테스트 (Testcontainers)
 - Presentation 레이어: 슬라이스 테스트 (`@WebMvcTest`)
 
+**통합 테스트 컨테이너 규약** (see ADR-0028):
+
+- 컨테이너는 **모듈 싱글톤**이다. `@SpringBootTest` 에 `@Import(SharedContainers.class)` 를 붙이고
+  `@Testcontainers` / `@Container` 를 **선언하지 않는다**. 그 어노테이션 쌍의 수명이 곧 per-class 라,
+  클래스마다 컨테이너·Flyway·Spring context 를 다시 만든다(실측 클래스당 약 31초)
+- Spring 컨텍스트가 없는 테스트는 `SharedContainers.KAFKA` 등 정적 필드를 직접 읽는다
+- 예외는 `scripts/integration-test-container-lint.sh` 의 `ALLOWED` 에 **사유와 함께** 등록한다.
+  목록만 있으면 왜 예외인지 모르는 채 항목이 늘어난다
+- 컨테이너를 공유하므로 **cleanup 이 규약이다**. 데이터 의존 테스트는 `cleanDatabase()`,
+  애플리케이션 고정 토픽(`order.created` 등)을 읽으면 `cleanKafkaTopics()` 를 `@BeforeEach` 에서 호출한다
+- **배경 스케줄링은 테스트에서 기본 off** 다(`app.scheduling.enabled`). 타이머 발화 자체를 검증하는
+  테스트만 `@TestPropertySource` 로 켜고, 그 경우 `@DirtiesContext(AFTER_CLASS)` 로 수명을 자기
+  클래스로 가둔다 — 켜둔 채 context 가 캐시되면 타이머가 계속 돌며 **공유 DB** 를 고친다
+- 클래스 실행 순서는 매 실행 섞인다. 실패 시 로그의 시드로 재현한다
+  (`./gradlew :order-service:test -PtestSeed=<시드>`)
+
 ---

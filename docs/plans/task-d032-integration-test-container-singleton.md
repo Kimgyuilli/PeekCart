@@ -109,6 +109,40 @@ run2 1건 / run3 2건). 순서·타이밍 의존이라는 뜻이고, 세 번째 
 컨테이너는 static 이라 영향받지 않는다. **자율 writer 를 켜는 테스트는 그 수명을 자기
 클래스로 가둔다** 가 일반 규칙이고, 확산 단계에도 그대로 적용한다.
 
+
+### 2-3c. 셔플(V-4)이 드러낸 결함 4건 (2026-09-23)
+
+P7 의 클래스 순서 셔플을 켜자 **순차 실행에서는 한 번도 보이지 않던 결함 4건**이 나왔다.
+run6 의 "420건 전건 통과" 는 순서가 운 좋았던 것이다 — ADR-0028 §Consequences 가 적어둔
+"격리가 필요 없었다 와 이번 순서에서만 운이 좋았다 를 구별하지 못한다" 가 그대로 실증됐다.
+
+| # | 결함 | 원인 | 처분 |
+|---|---|---|---|
+| 1 | `brokerRecordCount()` 가 앞 클래스 발행분을 함께 셈 | `cleanKafkaTopics` 의 `deleteRecords` 는 **low watermark 만** 올리고 end offset 은 그대로 둔다. `seekToBeginning` 기반 drain 은 고쳐지지만 **end offset 절대값을 세는 단언은 전혀 안 고쳐진다** | `end - beginning` 상대값으로 수정 |
+| 2 | `DlqReplayEntrypoint` drain 이 15초씩 타임아웃 | 같은 원인. 잘린 로그에서 도달 불가능한 절대 end offset 을 목표로 폴링 | 동일 수정. **run2 의 2424초가 이것** |
+| 3 | 컨테이너가 stop·재생성되어 이후 전 클래스가 `ConnectException` | `TestcontainersLifecycleBeanPostProcessor` 가 **`DestructionAwareBeanPostProcessor`** 다. 컨테이너를 `@Bean` 으로 노출하면 빈 파괴 시 stop 하고 다음 context 에서 start 해 **새 포트**를 만든다. 캐시된 다른 context 는 옛 포트를 쥔 채 남는다 | `@Bean(destroyMethod = "")` 로는 **막히지 않는다**. 컨테이너를 빈으로 노출하지 않고 `ConnectionDetails` 빈만 노출하도록 재작성 |
+| 4 | `preconditionUsesRealOrderAdapter` 결정적 실패 | **`@KafkaListener` 가 자율 writer 다.** 테스트가 `stock.reservation.result` 에 발행하면 실제 `OrderEventConsumer` 가 먼저 소비해 `confirmReservation()` 을 호출하고, 뒤이은 replay precondition 이 "이미 예약이 확정됐다" 로 거부한다 | **미해결.** §미해결 과 D-036 참조 |
+
+#### 진단 과정에서 틀린 가설 2건 (기록)
+
+- `@Bean(destroyMethod = "")` 로 고쳤다고 판단했으나 **틀렸다.** Spring Boot 의
+  `TestcontainersLifecycleBeanFactoryPostProcessor` 가 이미 inferred destroy method 를 빈
+  문자열로 덮고 있어 그 경로가 아니었다. 바이트코드를 열어 확인했다.
+- `@DynamicPropertySource` 로 접속 정보만 넘기는 방식도 시도했으나 **`@Import` 로 들어온
+  클래스에서는 TestContext 프레임워크가 읽지 않는다**(datasource URL 미설정으로 부팅 실패).
+  실측으로 확인하고 버렸다.
+
+원인을 가른 것은 추론이 아니라 **관측**이었다. `docker ps` 를 5초마다 폴링해
+`mysql=1 → 0 → 1`(redis·kafka 는 유지) 전이를 잡았고, 그 시각이 context 종료와 맞았다.
+
+#### 자율 writer 의 범위를 잘못 잡았다
+
+§2-3b 는 자율 writer 를 **스케줄러로만** 규정했다. 결함 4가 보여준 것은 **`@KafkaListener`
+도 같은 성격**이라는 것이다. 브로커를 공유하면서 그 경합이 상시화됐다. 스케줄러와 대칭으로
+리스너도 기본 off 로 두는 것이 방향이지만, 리스너 소비를 검증하는 테스트가 다수라 opt-in
+대상이 넓고 전수 조사가 필요하다. **D-036 ADR 의 범위를 "테스트에서 자율 writer(스케줄러 +
+Kafka 리스너)를 어떻게 다룰 것인가" 로 넓혀 거기서 결정한다.**
+
 ### 2-4. `cleanDatabase()` 미호출 클래스의 처분 (P1 완료, 2026-09-22)
 
 본문을 전부 읽었다. **DB 의존이 하나도 없다.**
@@ -199,16 +233,16 @@ Gradle 은 모듈마다 test JVM 을 따로 띄우므로 결과적으로 모듈�
 - [x] **P1.** §2-4 의 미확인 클래스 본문을 읽고 표를 채운다. **완료** — DB 의존 0건이라
       `cleanDatabase()` 추가가 필요한 클래스는 없다. 부수로 집계 오탐 2건을 정정했다(§2-4b).
 
-- [ ] **P2.** `common/src/testFixtures/.../SharedContainers.java` 신설 (§2-6 형태).
+- [x] **P2.** `common/src/testFixtures/.../SharedContainers.java` 신설 (§2-6 형태).
       `common/build.gradle` 의 `testFixtures` 에 testcontainers·spring-boot-testcontainers
       의존이 이미 있는지 확인하고, 없으면 추가한다.
 
-- [ ] **P3.** order-service 25개 `@SpringBootTest` 클래스에서 `@Testcontainers`·`@Container` 선언과
+- [x] **P3.** order-service 25개 `@SpringBootTest` 클래스에서 `@Testcontainers`·`@Container` 선언과
       컨테이너 필드를 제거하고 `@Import(SharedContainers.class)` 로 교체한다.
       `OrderCursorQueryPlanTest` 는 **제외** — `mysql:8.0.46` 고정이 의도이므로 현행
       per-class 선언을 유지하고 그 사유를 클래스 주석에 남긴다.
 
-- [ ] **P3b.** `KafkaTopicConfigMechanismIntegrationTest` 를 `SharedContainers.KAFKA`
+- [x] **P3b.** `KafkaTopicConfigMechanismIntegrationTest` 를 `SharedContainers.KAFKA`
       정적 참조로 전환한다(§2-4b). Spring 컨텍스트가 없어 `@Import` 가 안 되는 유일한 경우다.
 
 - [x] **P9.** 테스트 스케줄링 기본값 반전 (§2-3b). `common/.../SchedulingConfig` 로
@@ -222,23 +256,24 @@ Gradle 은 모듈마다 test JVM 을 따로 띄우므로 결과적으로 모듈�
       `Admin.deleteRecords()` 로 로그를 end offset 까지 자른다. 토픽을 **삭제하지 않아**
       D-021·D-028 의 메타데이터 전파 문제를 피한다.
 
-- [ ] **P4.** `AbstractIntegrationTest` 의 클래스 주석에서 "컨테이너 선언은 각 자식
+- [x] **P4.** `AbstractIntegrationTest` 의 클래스 주석에서 "컨테이너 선언은 각 자식
       클래스에서 per-class 수명으로 유지한다" 를 새 규약으로 고친다. 이 문장이 현행
       설계의 출처다.
 
-- [ ] **P5.** `scripts/integration-test-container-lint.sh` 신설.
+- [x] **P5.** `scripts/integration-test-container-lint.sh` 신설.
       서비스 모듈 테스트에서 `@Container` 직접 선언을 금지한다. 화이트리스트는
       `OrderCursorQueryPlanTest` 하나이고 **파일 안에 사유와 함께** 둔다.
       `--self-test` 로 조작 입력 최소 4종(신규 선언 추가 · 화이트리스트 위조 ·
       `@Testcontainers` 부활 · 검사 대상 디렉터리 소멸)에서 실패하는지 고정한다.
 
-- [ ] **P6.** P5 를 `lint` 잡의 `Run CI policy lints` 에 `--self-test` 와 함께 추가한다.
+- [x] **P6.** P5 를 `lint` 잡의 `Run CI policy lints` 에 `--self-test` 와 함께 추가한다.
 
-- [ ] **P7.** 클래스 실행 순서 셔플을 `:order-service:test` 에 도입한다.
+- [x] **P7.** (구현 완료. 검증 V-4 는 미통과 — §V-4 실행 결과)
+- [x] **P7-orig.** 클래스 실행 순서 셔플을 `:order-service:test` 에 도입한다.
       `junit.jupiter.testclass.order.default` 또는 Gradle `test { ... }` 의 난수 시드로
       **CI 에서 항상 섞이게** 한다. 시드를 실패 출력에 찍어 재현 가능하게 한다.
 
-- [ ] **P8.** `CLAUDE.md` §테스트 규칙에 싱글톤 규약을 명문화한다 (ADR-0028 §Decision 3).
+- [x] **P8.** `CLAUDE.md` §테스트 규칙에 싱글톤 규약을 명문화한다 (ADR-0028 §Decision 3).
 
 ## 검증 방법
 
@@ -254,6 +289,27 @@ Gradle 은 모듈마다 test JVM 을 따로 띄우므로 결과적으로 모듈�
 | V-6 | context 캐시 | 테스트 로그의 `Starting OrderApplication` 출현 수 | 25 에서 유의미하게 감소 (지문 동일 17개가 1개로) |
 | V-7 | 효과 | `:order-service:test` 벽시계 | 975초에서 **250초 이하** |
 | V-8 | 회귀 | order-service 테스트 전건 | 통과 수가 전환 전과 동일 |
+
+### V-4 실행 결과 (2026-09-23, 로컬 5회)
+
+계획서는 10회를 적었으나 **5회로 줄였다.** 1회가 4~5분이라 10회면 한 시간이고, 셔플이 이제
+CI 의 모든 실행에 켜져 있어 이후 매 run 이 추가 표본이 된다. 이 축소를 조용히 하지 않는다.
+
+| run | seed | 결과 | 소요 | tests/fail/err |
+|---|---|---|---|---|
+| 1 | 2039100001 | FAIL | 284초 | 420/1/0 |
+| 2 | 1971500002 | FAIL | 295초 | 420/1/0 |
+| 3 | 3124400003 | FAIL | 244초 | 420/1/0 |
+| 4 | 3178300004 | FAIL | 250초 | 420/1/0 |
+| 5 | 2896200005 | FAIL | **7018초** | 420/27/0 |
+
+**V-4 미통과.** 실패 1건이 시드 4개에서 동일하게 재현된다 — 순서 의존이 아니라 **결정적**이다
+(§2-3c 결함 4). 소요는 244~295초로 베이스라인(CI 975초) 대비 크게 줄었다.
+
+run5 의 7018초/27건은 run1~4 의 28배로 **이상치**다. 연속 5회 약 2시간 실행 뒤라 로컬
+Docker·머신 자원 고갈이 유력하나 간헐 결함 가능성을 배제하지 못했다. 로컬에서 2시간짜리
+실행을 반복해 가르는 것은 비용 대비가 나쁘므로 **CI 에서 판별한다** — CI 는 매 run 이 새
+러너라 자원 고갈 축이 없다.
 
 ### 실행 기록 (2026-09-22, 로컬)
 
@@ -276,6 +332,11 @@ V-4 가 이 계획의 중심이다. 순차 실행 1회 green 은 "격리가 필�
 
 ## 미해결
 
+- **V-4 미통과 (blocking).** `preconditionUsesRealOrderAdapter` 가 시드 4개에서 결정적으로
+  실패한다. 원인은 `@KafkaListener` 가 자율 writer 라는 것(§2-3c 결함 4)이고, 처분은
+  **D-036 ADR 로 결정한 뒤** 적용한다. 코드가 결정보다 앞서면 5개 서비스에 퍼진 뒤 근거를
+  쓰게 된다 — ADR-0028 이 이미 겪은 실패다. **이 항목이 닫히기 전에는 머지하지 않는다.**
+- **run5 이상치(7018초/27건)** 의 원인 미판정. CI 에서 재현되는지로 가른다.
 - **확산 4모듈**(product 60 · payment 39 · notification 21 · user 8 선언)은 이 계획서
   범위 밖이다. order-service 에서 V-1~V-8 이 닫힌 뒤 착수한다. 별도 task 로 등록할지
   이 task 의 2차 PR 로 갈지는 그때 판단한다.
@@ -289,3 +350,6 @@ V-4 가 이 계획의 중심이다. 순차 실행 1회 green 은 "격리가 필�
 ## 완료 조건
 
 P1~P8(P3b 포함)이 전부 체크되고, V-1~V-8 이 통과하며, V-7 의 실측값이 계획서에 기록된 상태.
+
+**현재 (2026-09-23): 미완.** 구현 항목은 전부 체크됐으나 **V-4 가 미통과**다. 결함 4의
+처분이 D-036 에 달려 있어 이 계획서만으로 닫을 수 없다.
