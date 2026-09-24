@@ -156,9 +156,13 @@ com.peekcart.global.{config|exception|jwt|response}
   목록만 있으면 왜 예외인지 모르는 채 항목이 늘어난다
 - 컨테이너를 공유하므로 **cleanup 이 규약이다**. 데이터 의존 테스트는 `cleanDatabase()`,
   애플리케이션 고정 토픽(`order.created` 등)을 읽으면 `cleanKafkaTopics()` 를 `@BeforeEach` 에서 호출한다
-- **배경 스케줄링은 테스트에서 기본 off** 다(`app.scheduling.enabled`). 타이머 발화 자체를 검증하는
-  테스트만 `@TestPropertySource` 로 켜고, 그 경우 `@DirtiesContext(AFTER_CLASS)` 로 수명을 자기
-  클래스로 가둔다 — 켜둔 채 context 가 캐시되면 타이머가 계속 돌며 **공유 DB** 를 고친다
+- **자율 writer 는 테스트에서 기본 off** 다 (see ADR-0029). `@Scheduled` 스케줄러
+  (`app.scheduling.enabled`)와 `@KafkaListener` 리스너(`app.kafka.listener.enabled`) 양쪽이다.
+  그 동작 자체를 검증하는 테스트만 `@TestPropertySource` 인라인으로 켜고, 그 경우
+  `@DirtiesContext(AFTER_CLASS)` 로 수명을 자기 클래스로 가둔다 — 켜둔 채 context 가 캐시되면
+  writer 가 계속 돌며 **공유 DB·브로커** 를 고친다. 테스트가 자기 context 의 리스너를 `stop()`
+  하는 것으로는 못 막는다: `groupId` 가 상수라 캐시된 다른 context 의 consumer 가 파티션을
+  넘겨받는다
 - 클래스 실행 순서는 매 실행 섞인다. 실패 시 로그의 시드로 재현한다
   (`./gradlew :order-service:test -PtestSeed=<시드>`)
 

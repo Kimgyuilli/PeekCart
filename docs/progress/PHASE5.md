@@ -36,6 +36,33 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## 테스트 자율 writer 정책 확정 (D-036, ADR-0029 · PR 미생성, 2026-09-24)
+
+D-032 의 V-4 blocker 를 풀기 위한 선행 결정이다. 구현(`SchedulingConfig` 신설,
+`OrderApplication` 의 `@EnableScheduling` 제거)이 결정보다 앞서 있던 상태를 되돌렸다 —
+ADR-0028 은 *컨테이너 수명* 결정이지 *자율 writer 정책* 이 아니다.
+
+**진단이 계획서보다 한 단계 깊었다.** 계획서 §2-3c 는 결함 4를 "`@KafkaListener` 가 자율
+writer 다" 까지 적었으나, 그 테스트에는 **이미 워크어라운드가 있었다**(`@BeforeEach` 에서
+자기 context 의 리스너 컨테이너를 `stop()`, 2026-09-11 `89955c1`). 그런데도 실패하는 이유를
+실측으로 갈랐다 — `@KafkaListener` 의 `groupId` 가 하드코딩 상수라 **모든 캐시된 context 가
+같은 그룹으로 같은 브로커에 붙는다.** 세 클래스만 돌린 런에서 `order-svc-stock-result-group`
+에 서로 다른 context 의 consumer 2개(`-36`, `-44`)가 공존하고 `generation 4` 까지 리밸런스하며
+파티션이 넘어가는 것을 확인했다. **per-context 수단으로는 구조적으로 막을 수 없다** 는 것이
+이 ADR 이 필요했던 이유다.
+
+`spring.kafka.listener.auto-startup` 이 듣지 않는 이유도 함께 확인했다 — 5개 서비스 전부
+`ConcurrentKafkaListenerContainerFactory` 를 손수 `@Bean` 으로 만들어 Boot 의 auto-configured
+factory 를 쓰지 않는다.
+
+**결정(ADR-0029)**: 테스트에서 자율 writer(스케줄러 + Kafka 리스너)는 기본 off, 그 동작을
+검증하는 테스트만 opt-in, 켠 테스트는 `@DirtiesContext(AFTER_CLASS)` 로 수명을 자기 클래스에
+가둔다. 리스너 게이트는 Boot 속성이 아니라 factory 의 `autoStartup` 에 건다. 대안 5종
+(현행 per-context stop · Boot 속성 · `groupId` 랜덤화 · 테스트 전용 프로파일 · `@MockBean`)의
+기각 사유를 함께 남겼다.
+
+**적용은 이 항목 밖이다** — order-service 는 D-032, 나머지 4모듈은 D-035 에서 한다.
+
 ## CI 그래프 직렬화 해소 + 컨테이너 수명 결정 ([#135](https://github.com/Kimgyuilli/PeakCart/pull/135), 2026-09-23)
 
 CI 36분의 구조를 측정으로 분해하고, 그 결과를 ADR-0028 로 고정한 뒤 1단계를 구현했다.

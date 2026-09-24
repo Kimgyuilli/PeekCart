@@ -332,10 +332,19 @@ V-4 가 이 계획의 중심이다. 순차 실행 1회 green 은 "격리가 필�
 
 ## 미해결
 
-- **V-4 미통과 (blocking).** `preconditionUsesRealOrderAdapter` 가 시드 4개에서 결정적으로
-  실패한다. 원인은 `@KafkaListener` 가 자율 writer 라는 것(§2-3c 결함 4)이고, 처분은
-  **D-036 ADR 로 결정한 뒤** 적용한다. 코드가 결정보다 앞서면 5개 서비스에 퍼진 뒤 근거를
-  쓰게 된다 — ADR-0028 이 이미 겪은 실패다. **이 항목이 닫히기 전에는 머지하지 않는다.**
+- **V-4 미통과 (blocking). 처분 확정 — 적용 대기 (2026-09-24).** `preconditionUsesRealOrderAdapter`
+  가 시드 4개에서 결정적으로 실패한다. 원인은 `@KafkaListener` 가 자율 writer 라는 것
+  (§2-3c 결함 4)이고, **처분을 ADR-0029 가 정했다** — 리스너를 container factory 의
+  `autoStartup` 으로 게이트해 테스트 기본 off, 소비를 검증하는 테스트만 opt-in +
+  `@DirtiesContext(AFTER_CLASS)`.
+
+  ADR 작성 중 **진단이 한 단계 더 내려갔다.** 이 테스트에는 이미 `@BeforeEach` 에서 자기
+  context 의 리스너를 `stop()` 하는 워크어라운드가 있었다(`89955c1`). 그런데도 실패하는 이유는
+  `groupId` 가 하드코딩 상수라 **캐시된 다른 context 의 consumer 가 같은 그룹으로 파티션을
+  넘겨받기** 때문이다 — 세 클래스 런에서 `order-svc-stock-result-group` 에 context 2개의
+  consumer(`-36`, `-44`) 공존과 `generation 4` 리밸런스를 관측했다. per-context 수단은
+  구조적으로 무효다. 남은 작업: **P10** (리스너 게이트 구현 + opt-in 대상 전수 조사) → V-4 재실행.
+  **이 항목이 닫히기 전에는 머지하지 않는다.**
 - **run5 이상치(7018초/27건)** 의 원인 미판정. CI 에서 재현되는지로 가른다.
 - **확산 4모듈**(product 60 · payment 39 · notification 21 · user 8 선언)은 이 계획서
   범위 밖이다. order-service 에서 V-1~V-8 이 닫힌 뒤 착수한다. 별도 task 로 등록할지
