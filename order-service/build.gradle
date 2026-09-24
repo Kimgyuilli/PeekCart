@@ -111,6 +111,9 @@ def orderTestSeed = (project.findProperty('testSeed')
 
 tasks.named('test') {
     systemProperty 'app.scheduling.enabled', 'false'
+    // D-036/ADR-0029: @KafkaListener 도 같은 자율 writer 다. 리스너 소비를 검증하는
+    // 테스트만 @TestPropertySource 로 켠다.
+    systemProperty 'app.kafka.listener.enabled', 'false'
     systemProperty 'junit.jupiter.testclass.order.default', 'org.junit.jupiter.api.ClassOrderer$Random'
     systemProperty 'junit.jupiter.execution.order.random.seed', orderTestSeed
     doFirst {
