@@ -10,6 +10,7 @@ import com.peekcart.global.kafka.ReplayHeaders;
 import com.peekcart.global.kafka.DlqOriginKind;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -19,15 +20,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -56,31 +51,16 @@ import static org.awaitility.Awaitility.await;
  * </ul>
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        // **배경 잡을 세운다.** 배경 reconciler 가 fixture 의 REQUESTED 를 먼저 종착시키면
-        // "부재를 강등하지 않는다"·"cleanup 이 제외한다" 가 관측되기 전에 전제가 사라진다.
-        // 배경 poller 도 같은 이유로 세운다 — 전이는 전부 테스트가 직접 호출한다.
-        "app.outbox.polling.delay=1h",
-        "app.dead-letter.reconcile.delay=1h"
+        "spring.flyway.locations=classpath:db/migration"
+        // 배경 잡은 ADR-0029 로 전역 off 다. 배경 reconciler 가 fixture 의 REQUESTED 를 먼저
+        // 종착시키면 "부재를 강등하지 않는다"·"cleanup 이 제외한다" 가 관측되기 전에 전제가
+        // 사라진다. 전이는 전부 테스트가 직접 호출한다.
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("outbox replay 발행 표면")
 class OutboxReplayPublicationIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired OutboxPollingService pollingService;
     @Autowired OutboxEventRepository outboxEventRepository;
@@ -105,6 +85,8 @@ class OutboxReplayPublicationIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() {
         cleanDatabase();
+        // 공유 브로커라 앞 클래스가 남긴 레코드가 seekToBeginning 에 읽힌다 (D-032).
+        cleanKafkaTopics(SharedContainers.KAFKA.getBootstrapServers(), "order.created", "payment.completed");
         ledgerRepository.deleteAll();
         outboxEventJpaRepository.deleteAll();
         awaitTopicsReady("order.created", "payment.completed");
@@ -406,7 +388,7 @@ class OutboxReplayPublicationIntegrationTest extends AbstractIntegrationTest {
     private void awaitTopicsReady(String... topics) {
         await().atMost(Duration.ofSeconds(60)).until(() -> {
             Properties props = new Properties();
-            props.put("bootstrap.servers", kafka.getBootstrapServers());
+            props.put("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers());
             props.put("group.id", "test-topic-ready-" + UUID.randomUUID());
             props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -427,7 +409,7 @@ class OutboxReplayPublicationIntegrationTest extends AbstractIntegrationTest {
 
     private List<ConsumerRecord<String, String>> drain(String topic, int expected) {
         Properties props = new Properties();
-        props.put("bootstrap.servers", kafka.getBootstrapServers());
+        props.put("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers());
         props.put("group.id", "test-drain-" + UUID.randomUUID());
         props.put("auto.offset.reset", "earliest");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");

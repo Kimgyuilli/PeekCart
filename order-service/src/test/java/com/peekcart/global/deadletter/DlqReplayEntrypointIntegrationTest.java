@@ -14,21 +14,17 @@ import org.springframework.kafka.support.KafkaHeaders;
 import com.peekcart.global.outbox.OutboxEventJpaRepository;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -59,29 +55,16 @@ import static org.awaitility.Awaitility.await;
  * </ul>
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        // 배경 잡이 fixture 상태를 바꾸면 단언이 관측 전에 무너진다.
-        "app.outbox.polling.delay=1h",
-        "app.dead-letter.reconcile.delay=1h",
+        "spring.flyway.locations=classpath:db/migration"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
+// 이 클래스는 DLQ 리스너를 손으로 켠다. 켠 자율 writer 의 수명을 자기 클래스에 가둔다
+// (ADR-0029 D3) — context 가 캐시된 채 남으면 이후 클래스의 공유 원장을 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("DLQ replay 개시 진입점")
 class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired DeadLetterReplayService replayService;
     @Autowired DeadLetterTransitionService transitionService;
@@ -111,22 +94,27 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() {
         cleanDatabase();
+        // 공유 브로커라 앞 클래스가 남긴 레코드가 seekToBeginning 에 읽힌다 (D-032).
+        cleanKafkaTopics(SharedContainers.KAFKA.getBootstrapServers(), "order.created", "order.created.dlq", "order.cancelled", "order.cancelled.dlq");
         ledgerRepository.deleteAll();
         outboxEventJpaRepository.deleteAll();
         // 기본값은 false 다. 여는 것은 각 테스트가 명시적으로 한다 — 기본값이 뒤집히면 V-38 이 red 가 된다.
         properties.getReplay().setEnabled(false);
-        // **업무 리스너를 세운다.** 살아 있는 @KafkaListener 가 fixture 레코드를 실제로 소비해
+        // **DLQ 소비자(`dlq-*`)만 세운다.** 리스너는 전역 off 이고(ADR-0029), V-35 가 재실패분을
+        // 실제 `.dlq` 로 흘려 DlqHeaders.parse → DeadLetterConsumer → recorder 를 관통시키므로
+        // 그 계열만 명시적으로 켠다(ADR-0029 D4).
+        //
+        // **업무 리스너는 켜지 않는다.** 살아 있는 @KafkaListener 는 fixture 레코드를 실제로 소비해
         // 도메인 상태를 바꾼다 — 실측: stock.reservation.result 를 심자 consumer 가 먼저
         // confirmReservation 을 적용해 "사전조건 allow" 케이스가 deny 로 뒤집혔다.
-        // `spring.kafka.listener.auto-startup` 은 듣지 않는다 — 서비스가 container factory 를
-        // 직접 만들어(OrderKafkaConfig) Boot 의 listener 속성을 적용하지 않기 때문이다.
         //
-        // **DLQ 소비자(`dlq-*`)는 살려둔다** — V-35 가 재실패분을 실제 `.dlq` 로 흘려
-        // DlqHeaders.parse → DeadLetterConsumer → recorder 를 관통시키기 때문이다(diff 리뷰 2R #3).
+        // 종전에는 여기서 업무 컨테이너를 stop() 했으나 **그것으로는 막히지 않았다**. groupId 가
+        // 상수라 캐시된 다른 context 의 consumer 가 같은 그룹으로 파티션을 넘겨받는다(ADR-0029
+        // §Context). 막는 지점은 per-context stop 이 아니라 factory 의 autoStartup 이다.
         listenerRegistry.getListenerContainers().stream()
-                .filter(container -> container.getListenerId() == null
-                        || !container.getListenerId().startsWith(DeadLetterContainerGuard.LISTENER_ID_PREFIX))
-                .forEach(org.springframework.kafka.listener.MessageListenerContainer::stop);
+                .filter(container -> container.getListenerId() != null
+                        && container.getListenerId().startsWith(DeadLetterContainerGuard.LISTENER_ID_PREFIX))
+                .forEach(org.springframework.kafka.listener.MessageListenerContainer::start);
         // lockAtLeastFor(PT4S) 가 남아 있으면 두 번째 이후의 reconcile() 호출이 통째로 건너뛰어지고,
         // 그 테스트는 "아무 일도 안 일어났다" 를 관측하며 green 이 된다.
         jdbcTemplate.update("UPDATE shedlock SET lock_until = NOW() - INTERVAL 1 DAY WHERE name = ?",
@@ -726,7 +714,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
 
     private List<ConsumerRecord<String, String>> readAll(String topic) {
         Properties props = new Properties();
-        props.put("bootstrap.servers", kafka.getBootstrapServers());
+        props.put("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers());
         props.put("group.id", "test-read-" + UUID.randomUUID());
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -739,7 +727,12 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
             consumer.seekToBeginning(partitions);
             List<ConsumerRecord<String, String>> collected = new ArrayList<>();
             long deadline = System.currentTimeMillis() + 15_000;
-            long end = consumer.endOffsets(partitions).values().stream().mapToLong(Long::longValue).sum();
+            // **beginning 을 뺀 상대값이다.** cleanKafkaTopics 의 deleteRecords 는 low watermark 만
+            // 올리고 end offset 은 그대로 둔다. 절대값을 목표로 삼으면 seekToBeginning 이 닿을 수
+            // 없는 수를 기다리다 15초를 통째로 태운다(D-032).
+            var endOff = consumer.endOffsets(partitions);
+            var beginOff = consumer.beginningOffsets(partitions);
+            long end = partitions.stream().mapToLong(tp -> endOff.get(tp) - beginOff.get(tp)).sum();
             while (collected.size() < end && System.currentTimeMillis() < deadline) {
                 consumer.poll(Duration.ofMillis(500)).records(topic).forEach(collected::add);
             }

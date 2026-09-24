@@ -36,6 +36,67 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## 통합 테스트 컨테이너 모듈 싱글톤 전환 (D-032, [#138](https://github.com/Kimgyuilli/PeakCart/pull/138), 2026-09-24)
+
+ADR-0028 의 결정을 order-service 에 구현했다. `:order-service:test` 975초 중 844초(87%)가
+컨테이너 부팅·Flyway·context 기동이었고, 그것을 모듈 싱글톤으로 합쳤다. 로컬 221~277초.
+
+**착수 후 범위가 늘었다.** 계획서의 "Kafka 위험 없음" 판정이 오판이었고(테스트 헬퍼의 UUID
+토픽만 보고 애플리케이션 고정 토픽을 놓쳤다), 그 아래에 **자율 writer 가 테스트에서 기본
+on** 이라는 근본 원인이 있었다. 스케줄러와 `@KafkaListener` 둘 다였고, 프로덕션 코드를
+건드리는 결정이라 ADR-0029 로 먼저 고정한 뒤 적용했다 (see ADR-0029).
+
+**셔플(V-4)이 결함 4건을 드러냈다.** 순차 실행 420건 전건 통과는 순서가 운 좋았던 것이다.
+그중 리스너 결함은 기존 워크어라운드가 무효라는 것까지 파고들어야 했다 — `groupId` 가
+상수라 캐시된 다른 context 의 consumer 가 파티션을 넘겨받는다. 컨테이너를 빈으로 노출하면
+context 파괴 시 새 포트로 재기동돼 캐시된 다른 context 가 전멸하는 것도 여기서 나왔고,
+그 때문에 **ADR-0028 §Decision 의 메커니즘 서술이 사실과 달라져** `fix(adr):` 로 정정했다.
+
+**V-7 CI 실측**: `:order-service:test` 가 975초에서 **224초**로 줄었다(4.35배). 잡 벽시계는
+18.6분에서 5.2분이다. run5 이상치(7018초/27건)는 CI 에서 재현되지 않아 로컬 자원 고갈
+가설이 남는다.
+
+**그런데 CI 전체 벽시계는 줄지 않았다** — 19분 03초에서 20분 49초다. D-031 이 test 를
+임계경로에서 뺀 뒤라 임계경로는 `images → e2e` 이고, test 에서 13.4분을 걷어내도 전체는
+그만큼 줄지 않는다. **ADR-0028 이 적은 "19분 → 약 16분" 예측이 빗나갔다.** 이번 run 의
+`images` 가 1.9분에서 3.4분으로 늘어난 것은 새 브랜치라 `type=gha` 캐시가 콜드였던
+것이다(D-034 가 기록한 ref 격리와 같은 현상). 이 전환의 값어치는 CI 벽시계가 아니라
+**로컬 반복 비용과 확장성**이고, 그 판단은 계획서 §명제가 처음부터 적어둔 것이다.
+
+부수로 `e2e` 16.1분이 단독 병목이라는 **D-033 의 전제가 실측으로 확증**됐다.
+
+V-6 은 기대에 못 미쳤다. 25개 context 가 15회 기동하는데, `@DirtiesContext` 를 붙인
+4클래스가 재생성을 강제하기 때문이다. **격리를 사서 캐시 적중을 일부 내준 것**이고
+ADR-0029 §Consequences 의 트레이드오프가 수치로 나타났다. 확산(D-035)에서 opt-in 이 늘면
+이 수가 이득을 깎는다.
+
+## 테스트 자율 writer 정책 확정 (D-036, ADR-0029, [#138](https://github.com/Kimgyuilli/PeakCart/pull/138), 2026-09-24)
+
+D-032 의 V-4 blocker 를 풀기 위한 선행 결정이다. 구현(`SchedulingConfig` 신설,
+`OrderApplication` 의 `@EnableScheduling` 제거)이 결정보다 앞서 있던 상태를 되돌렸다 —
+ADR-0028 은 *컨테이너 수명* 결정이지 *자율 writer 정책* 이 아니다.
+
+**진단이 계획서보다 한 단계 깊었다.** 계획서 §2-3c 는 결함 4를 "`@KafkaListener` 가 자율
+writer 다" 까지 적었으나, 그 테스트에는 **이미 워크어라운드가 있었다**(`@BeforeEach` 에서
+자기 context 의 리스너 컨테이너를 `stop()`, 2026-09-11 `89955c1`). 그런데도 실패하는 이유를
+실측으로 갈랐다 — `@KafkaListener` 의 `groupId` 가 하드코딩 상수라 **모든 캐시된 context 가
+같은 그룹으로 같은 브로커에 붙는다.** 세 클래스만 돌린 런에서 `order-svc-stock-result-group`
+에 서로 다른 context 의 consumer 2개(`-36`, `-44`)가 공존하고 `generation 4` 까지 리밸런스하며
+파티션이 넘어가는 것을 확인했다. **per-context 수단으로는 구조적으로 막을 수 없다** 는 것이
+이 ADR 이 필요했던 이유다.
+
+`spring.kafka.listener.auto-startup` 이 듣지 않는 이유도 함께 확인했다 — 5개 서비스 전부
+`ConcurrentKafkaListenerContainerFactory` 를 손수 `@Bean` 으로 만들어 Boot 의 auto-configured
+factory 를 쓰지 않는다.
+
+**결정(ADR-0029)**: 테스트에서 자율 writer(스케줄러 + Kafka 리스너)는 기본 off, 그 동작을
+검증하는 테스트만 opt-in, 켠 테스트는 `@DirtiesContext(AFTER_CLASS)` 로 수명을 자기 클래스에
+가둔다. 리스너 게이트는 Boot 속성이 아니라 factory 의 `autoStartup` 에 건다. 대안 5종
+(현행 per-context stop · Boot 속성 · `groupId` 랜덤화 · 테스트 전용 프로파일 · `@MockBean`)의
+기각 사유를 함께 남겼다.
+
+**적용은 이 항목 밖이다** — order-service 는 D-032, 나머지 4모듈은 D-035 에서 한다.
+
 ## CI 그래프 직렬화 해소 + 컨테이너 수명 결정 ([#135](https://github.com/Kimgyuilli/PeakCart/pull/135), 2026-09-23)
 
 CI 36분의 구조를 측정으로 분해하고, 그 결과를 ADR-0028 로 고정한 뒤 1단계를 구현했다.

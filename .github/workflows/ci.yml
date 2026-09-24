@@ -60,6 +60,12 @@ jobs:
           # 실패해도 초록으로 끝날 수 있어서다.
           bash scripts/ci-release-gate-lint.sh
           bash scripts/ci-release-gate-lint.sh --self-test
+          # D-032: 통합 테스트가 컨테이너를 직접 선언하지 못하게 한다(ADR-0028).
+          # 규약을 코드로 강제하지 않으면 새 테스트가 관행대로 @Container 를 선언하고,
+          # 그 클래스만 조용히 컨테이너를 다시 띄운다 — CI 는 초록이고 테스트 시간만 우상향한다.
+          # 실측으로 그 비용이 클래스당 약 31초였다.
+          bash scripts/integration-test-container-lint.sh
+          bash scripts/integration-test-container-lint.sh --self-test
           bash scripts/image-contract-lint.sh
           bash scripts/gateway-exposure-lint.sh
           # 조작 입력 29종에서 실제로 실패하는지 — lint 자체가 vacuous-green 으로 썩는 것을 막는다.

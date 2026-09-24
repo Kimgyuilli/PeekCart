@@ -2,6 +2,7 @@ package com.peekcart.global.replay;
 
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -10,14 +11,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -35,28 +30,13 @@ import static org.assertj.core.api.Assertions.assertThat;
  * compact 거부, 좌표 범위 밖 처리가 <b>깨져도 green</b> 이었다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        "app.outbox.polling.delay=1h",
-        "app.dead-letter.reconcile.delay=1h"
+        "spring.flyway.locations=classpath:db/migration"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("replay 좌표 reader")
 class OriginalRecordReaderIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired OriginalRecordReader reader;
 
@@ -147,7 +127,7 @@ class OriginalRecordReaderIntegrationTest extends AbstractIntegrationTest {
 
     private String newTopic(Map<String, String> configs) {
         String name = "reader-test-" + UUID.randomUUID();
-        try (Admin admin = Admin.create(Map.of("bootstrap.servers", kafka.getBootstrapServers()))) {
+        try (Admin admin = Admin.create(Map.of("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers()))) {
             admin.createTopics(List.of(new NewTopic(name, 1, (short) 1).configs(configs))).all().get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -160,7 +140,7 @@ class OriginalRecordReaderIntegrationTest extends AbstractIntegrationTest {
 
     private long send(String topic, byte[] key, byte[] value) {
         Properties props = new Properties();
-        props.put("bootstrap.servers", kafka.getBootstrapServers());
+        props.put("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers());
         props.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
         try (KafkaProducer<byte[], byte[]> producer = new KafkaProducer<>(props)) {

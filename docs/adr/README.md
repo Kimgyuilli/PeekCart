@@ -51,4 +51,5 @@
 | [0026](./0026-product-detail-stock-cache-boundary.md) | 상품 상세 재고 캐시 경계 — 재고 전용 짧은 TTL 캐시, 쓰기 경로 무효화 없음 (D-026) | Accepted | Phase 4 | 04, 05 |
 | [0027](./0027-mysql-cpu-limit-baseline.md) | base MySQL CPU 상한 = 2000m — 공통 읽기/쓰기 천장의 해제 (D-029) | Accepted | Phase 4 | 02 |
 | [0028](./0028-integration-test-container-lifecycle.md) | 통합 테스트 컨테이너 수명 = 모듈 싱글톤 — per-class 재부팅 폐기 | Accepted | Phase 5 | 06, CLAUDE.md |
+| [0029](./0029-test-autonomous-writer-policy.md) | 테스트에서 자율 writer(스케줄러 · Kafka 리스너)는 기본 off + opt-in | Accepted | Phase 5 | 06, CLAUDE.md |
 <!-- INDEX:END -->

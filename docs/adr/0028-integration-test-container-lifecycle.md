@@ -104,9 +104,16 @@ Spring context 도 같이 버려진다. 컨테이너 포트가 매번 달라 con
 
 **통합 테스트의 컨테이너 수명을 per-class 에서 모듈 싱글톤으로 바꾼다.**
 
-각 서비스 모듈은 `TestcontainersConfiguration` 하나에 MySQL·Redis·Kafka 를 `static`
-필드로 선언하고, `@ServiceConnection @Bean` 메서드가 **같은 인스턴스를 반환**한다.
-테스트 클래스는 `@Import` 만 하고 `@Testcontainers` / `@Container` 를 **선언하지 않는다.**
+공유 설정 클래스 하나(`common` testFixtures 의 `SharedContainers`)에 MySQL·Redis·Kafka 를
+`static` 필드로 선언하고, `JdbcConnectionDetails`·`RedisConnectionDetails`·
+`KafkaConnectionDetails` **빈만** 노출한다. 테스트 클래스는 `@Import` 만 하고
+`@Testcontainers` / `@Container` 를 **선언하지 않는다.**
+
+컨테이너 자체를 `@ServiceConnection @Bean` 으로 노출하지는 않는다. Spring Boot 의
+`TestcontainersLifecycleBeanPostProcessor` 가 `DestructionAwareBeanPostProcessor` 라,
+빈으로 노출하면 context 파괴 시 컨테이너를 stop 하고 다음 context 에서 새 포트로 재기동해
+캐시된 다른 context 가 전멸한다(`@Bean(destroyMethod = "")` 로 막히지 않는다).
+`ConnectionDetails` 는 `Startable` 이 아니라 그 post-processor 의 대상이 아니다.
 
 이 결정은 세 가지를 한 묶음으로 포함한다. 분리하지 않는 이유는 §Consequences 에 적는다.
 
@@ -243,3 +250,9 @@ lint 없이 싱글톤만 하면 **반년 뒤 원상복구된다.** 새 통합 �
 - [Docker — GitHub Actions cache backend](https://docs.docker.com/build/cache/backends/gha/) — 매트릭스 빌드의 `scope` 분리
 - [미리디 — 테스트가 늘수록 느려지던 CI, 16분에서 3분이 되기까지](https://medium.com/miridih/%ED%85%8C%EC%8A%A4%ED%8A%B8%EA%B0%80-%EB%8A%98%EC%88%98%EB%A1%9D-%EB%8A%90%EB%A0%A4%EC%A7%80%EB%8D%98-ci-16%EB%B6%84%EC%97%90%EC%84%9C-3%EB%B6%84%EC%9D%B4-%EB%90%98%EA%B8%B0%EA%B9%8C%EC%A7%80-2744ffbbee25)
   — 같은 형태의 진단(`import 1354s vs tests 243s`)과, 규칙을 저장소에 고정해 효과를 유지하는 방법
+
+## Update Log
+
+| 일자 | 커밋 | 변경 |
+|---|---|---|
+| 2026-09-24 | (이 PR) | §Decision 의 구체 메커니즘 정정. 작성 당시 `TestcontainersConfiguration` 에 `@ServiceConnection @Bean` 으로 컨테이너를 노출한다고 적었으나, 구현에서 그 방식이 **context 캐시를 전멸시킨다**는 것이 실측으로 드러나(D-032 §2-3c 결함 3) `SharedContainers` 가 `ConnectionDetails` 빈만 노출하는 형태로 바뀌었다. 클래스명도 실제와 달랐다. **결정 자체(컨테이너 수명 = 모듈 싱글톤)는 그대로이고, 그것을 실현하는 메커니즘 서술만 사실에 맞춘다** |

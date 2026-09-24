@@ -2,19 +2,15 @@ package com.peekcart.order.infrastructure.scheduler;
 
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -39,26 +35,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 제한 시간 안에 시작하지 못한다.
  */
 @SpringBootTest
-@Testcontainers
+/**
+ * 이 클래스는 배경 스케줄링을 켠다(D-032 기본값은 off). context 가 캐시되면 자기 테스트가
+ * 끝난 뒤에도 타이머가 계속 돌면서 <b>공유 DB</b> 를 고쳐 다른 클래스의 단언을 깬다.
+ * 클래스 종료 시 context 를 닫아 타이머를 멈춘다. 컨테이너는 static 이라 영향받지 않는다.
+ */
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @TestPropertySource(properties = {
+        // 타이머 발화 자체가 검증 대상이라 배경 스케줄링을 켠다 (D-032 기본값은 off).
+        "app.scheduling.enabled=true",
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("스케줄러 풀 기아 (D-024)")
 class SchedulerPoolStarvationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     /** 블로킹 잡이 점유하는 시간. 아래 대기 한도보다 충분히 길어야 "굶었다" 를 구분할 수 있다. */
     private static final Duration BLOCKING_JOB = Duration.ofSeconds(5);

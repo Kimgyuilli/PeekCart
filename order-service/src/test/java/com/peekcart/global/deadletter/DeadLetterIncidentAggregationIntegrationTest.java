@@ -4,22 +4,17 @@ import com.peekcart.global.kafka.DlqOrigin;
 import com.peekcart.global.kafka.DlqOriginKind;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -44,26 +39,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 으로만 한다 — ④-c-2a 에서 runbook 이 직접 UPDATE 를 안내해 가드를 우회시킨 전례가 있다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("DLQ 원장 incident 집계 회귀")
 class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired DeadLetterRecorder recorder;
     @Autowired DeadLetterRecordJpaRepository repository;
@@ -396,7 +378,7 @@ class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTe
                 .pollInterval(java.time.Duration.ofMillis(50))
                 .until(() -> {
                     try (java.sql.Connection conn = java.sql.DriverManager.getConnection(
-                            mysql.getJdbcUrl(), "root", mysql.getPassword());
+                            SharedContainers.MYSQL.getJdbcUrl(), "root", SharedContainers.MYSQL.getPassword());
                          java.sql.PreparedStatement st = conn.prepareStatement(
                                  "SELECT COUNT(*) FROM information_schema.INNODB_TRX "
                                          + "WHERE trx_state = 'LOCK WAIT' AND trx_mysql_thread_id = ?")) {

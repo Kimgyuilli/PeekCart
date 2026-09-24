@@ -94,3 +94,30 @@ jacocoTestReport {
         })
     }
 }
+
+// D-032: 통합 테스트에서 @Scheduled 배경 잡을 끈다.
+// 배경 잡은 자율적으로 DB 를 고치는 주체라, 컨테이너를 공유하는 순간 다른 테스트가 단언하는
+// 상태를 건드린다. 타이머 자체를 검증하는 테스트만 @TestPropertySource 로 다시 켠다
+// (inlined property 가 시스템 프로퍼티보다 우선한다).
+// D-032 P7: 클래스 실행 순서를 매 실행 섞는다.
+// 순차 실행 한 번이 초록인 것은 "격리가 필요 없었다" 와 "이번 순서에서만 운이 좋았다" 를
+// 구별하지 못한다(ADR-0028). 컨테이너를 공유하는 지금 그 구별이 곧 검증이다.
+// 시드를 찍어 실패를 재현할 수 있게 한다: ./gradlew :order-service:test -PtestSeed=<시드>
+// 대가: 시드가 매번 바뀌므로 test 태스크가 UP-TO-DATE 로 건너뛰지 않는다. 섞는 것이 목적이므로
+// 받아들인다 — 재현할 때는 -PtestSeed 로 고정하면 된다.
+def orderTestSeed = (project.findProperty('testSeed')
+        ?: System.getenv('TEST_SEED')
+        ?: System.currentTimeMillis()).toString()
+
+tasks.named('test') {
+    systemProperty 'app.scheduling.enabled', 'false'
+    // D-036/ADR-0029: @KafkaListener 도 같은 자율 writer 다. 리스너 소비를 검증하는
+    // 테스트만 @TestPropertySource 로 켠다.
+    systemProperty 'app.kafka.listener.enabled', 'false'
+    systemProperty 'junit.jupiter.testclass.order.default', 'org.junit.jupiter.api.ClassOrderer$Random'
+    systemProperty 'junit.jupiter.execution.order.random.seed', orderTestSeed
+    doFirst {
+        logger.lifecycle("[D-032] test class order seed = ${orderTestSeed} " +
+                "(재현: ./gradlew :order-service:test -PtestSeed=${orderTestSeed})")
+    }
+}
