@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
 import java.nio.ByteBuffer;
@@ -37,8 +38,13 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration"
+        "spring.flyway.locations=classpath:db/migration",
+        // ADR-0029: 리스너는 테스트에서 기본 off 다. 실제 Kafka 왕복으로 DLQ listener 배선을 고정하는 것이 검증 대상이다.
+        "app.kafka.listener.enabled=true"
 })
+// 켠 자율 writer 의 수명을 자기 클래스에 가둔다 (ADR-0029 D3) — context 가 캐시된 채 남으면
+// 리스너가 이후 클래스의 공유 브로커·DB 를 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("DLQ 원장 적재 통합 테스트")
 class DeadLetterLedgerIntegrationTest extends AbstractIntegrationTest {

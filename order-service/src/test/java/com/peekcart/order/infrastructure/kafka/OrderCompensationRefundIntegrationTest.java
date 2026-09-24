@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -62,8 +63,13 @@ import static org.mockito.BDDMockito.willThrow;
 @SpringBootTest
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration"
+        "spring.flyway.locations=classpath:db/migration",
+        // ADR-0029: 리스너는 테스트에서 기본 off 다. payment.refunded 회신 소비가 검증 대상이다.
+        "app.kafka.listener.enabled=true"
 })
+// 켠 자율 writer 의 수명을 자기 클래스에 가둔다 (ADR-0029 D3) — context 가 캐시된 채 남으면
+// 리스너가 이후 클래스의 공유 브로커·DB 를 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("Order 환불 보상 계약 통합 테스트")
 class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {

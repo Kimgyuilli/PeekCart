@@ -53,12 +53,10 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        // **배경 잡을 세운다.** 배경 reconciler 가 fixture 의 REQUESTED 를 먼저 종착시키면
-        // "부재를 강등하지 않는다"·"cleanup 이 제외한다" 가 관측되기 전에 전제가 사라진다.
-        // 배경 poller 도 같은 이유로 세운다 — 전이는 전부 테스트가 직접 호출한다.
-        "app.outbox.polling.delay=1h",
-        "app.dead-letter.reconcile.delay=1h"
+        "spring.flyway.locations=classpath:db/migration"
+        // 배경 잡은 ADR-0029 로 전역 off 다. 배경 reconciler 가 fixture 의 REQUESTED 를 먼저
+        // 종착시키면 "부재를 강등하지 않는다"·"cleanup 이 제외한다" 가 관측되기 전에 전제가
+        // 사라진다. 전이는 전부 테스트가 직접 호출한다.
 })
 @Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("outbox replay 발행 표면")

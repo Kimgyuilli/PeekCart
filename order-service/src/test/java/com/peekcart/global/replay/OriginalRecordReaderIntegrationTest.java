@@ -32,9 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        "app.outbox.polling.delay=1h",
-        "app.dead-letter.reconcile.delay=1h"
+        "spring.flyway.locations=classpath:db/migration"
 })
 @Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("replay 좌표 reader")

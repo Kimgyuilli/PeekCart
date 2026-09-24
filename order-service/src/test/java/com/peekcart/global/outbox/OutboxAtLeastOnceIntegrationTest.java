@@ -48,10 +48,8 @@ import static org.mockito.Mockito.doAnswer;
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
-        // **배경 잡을 세운다.** 이 테스트는 "같은 이벤트가 몇 번 발행됐나" 를 세므로 같은 행을 집어가는
-        // 다른 발행 주체가 있으면 관측이 흔들린다. 사이클은 테스트가 직접 돌린다.
-        "app.outbox.polling.delay=1h",
-        "app.dead-letter.reconcile.delay=1h",
+        // 배경 잡은 ADR-0029 로 전역 off 다. 이 테스트는 "같은 이벤트가 몇 번 발행됐나" 를 세므로
+        // 같은 행을 집어가는 다른 발행 주체가 있으면 관측이 흔들린다. 사이클은 테스트가 직접 돌린다.
         // 첫 발행이 메타데이터 조회 등으로 6s 기본 타임아웃을 넘기면 그 사이클의 레코드가 조용히 사라져
         // "중복이 안 났다" 로 오독된다(실측: 살아남은 레코드의 offset 이 0이었다).
         "app.outbox.polling.publish-timeout=30s"
@@ -140,7 +138,6 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
         // 타이밍에 따라 달라진다 — 실측에서 3개가 나왔다. 그리고 애초에 ADR-0020 D1 은 중복 수에
         // 상한을 두지 않는다. 정확한 수를 단언하면 계약이 말하지 않는 것을 테스트가 주장하게 되고,
         // 스케줄러 타이밍에 흔들리는 flaky 가 된다.
-        // 배경 잡을 세웠으므로 발행 주체는 이 테스트뿐이고, 두 사이클이 각각 1건씩 낸다.
         // 그래도 ">= 2" 로 적는 이유는 ADR-0020 D1 이 중복 수에 상한을 두지 않기 때문이다 —
         // 계약이 말하지 않는 수를 단언하면 그 수가 바뀔 때 계약이 아니라 테스트가 깨진다.
         assertThat(brokerRecordCount()).as("2사이클이 같은 이벤트를 다시 발행했다")
