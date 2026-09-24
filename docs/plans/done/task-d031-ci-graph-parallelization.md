@@ -111,7 +111,7 @@ V-9 는 회귀 방지가 아니라 **목표 달성 확인**이다. 미달이면 
 | V-4 | **통과** | `[CRG-001]` — job rename 을 "위반 없음" 으로 읽지 않는다 |
 | V-5 | **통과** | `--self-test OK (6/6)` |
 | V-6 | **통과 (양방향)** | 로컬 `docker-container` 드라이버 실측. `--load` 없이 빌드하면 buildx 가 경고를 내고 로컬 daemon 에 이미지가 없으며 `docker save` 가 실패한다. `--load` 를 붙이면 이미지가 올라오고 `save` 가 142M 산출 |
-| V-7 | **미달 (순손실)** | 머지 후 main push run 에서 `CACHED` 0스텝. 캐시 매니페스트는 가져왔으나 재사용 레이어가 없고 `cache-to mode=max` 의 export 비용만 냈다. `images` 가 104~173초에서 **166~257초로 느려졌다**. 아래 §V-7 재판정 참조 |
+| V-7 | **통과** | 두 번째 main push run [35751377973](https://github.com/Kimgyuilli/PeakCart/actions/runs/35751377973) 에서 `CACHED` **30스텝**, `images` **86~130초**. 첫 run 은 콜드라 export 비용만 냈다. 아래 §V-7 재판정 참조 |
 | V-8 | **통과** | `image-contract-lint` 가 `images`·`publish` 양쪽 `manifest-checked: 6/6, full` 유지 |
 | V-9 | **조건1 충족 · 조건2 미달** | PR run [35744585147](https://github.com/Kimgyuilli/PeakCart/actions/runs/35744585147): `images` 가 15:04:50 시작, `test(order)` 는 15:20:29 종료. **15분39초 앞서 시작**해 직렬 사슬이 실제로 끊겼다. 다만 벽시계 **21분51초**로 목표 20분을 1분51초 초과 |
 
@@ -144,23 +144,26 @@ V-9 는 회귀 방지가 아니라 **목표 달성 확인**이다. 미달이면 
 
 ### V-7 재판정
 
-`type=gha` 캐시는 **현재 순손실이다.** `images` 가 베이스라인 104~173초에서 166~257초로
-느려졌고, main push run 의 `images (order-service)` 로그에서 `CACHED` 가 **0스텝**이다.
-매니페스트 import 는 일어났으므로 배선 자체는 동작한다.
+`type=gha` 캐시는 **유지한다.**
 
-원인 후보가 둘이고 **아직 갈리지 않았다.**
+| run | 성격 | `images` 소요 | `CACHED` |
+|---|---|---|---|
+| [35737030262](https://github.com/Kimgyuilli/PeakCart/actions/runs/35737030262) | 베이스라인(buildx 이전) | 104~173초 | 해당 없음 |
+| [35747847666](https://github.com/Kimgyuilli/PeakCart/actions/runs/35747847666) | 캐시 도입 첫 main push | 200~257초 | 0 |
+| [35751377973](https://github.com/Kimgyuilli/PeakCart/actions/runs/35751377973) | 그 다음 main push | **86~130초** | **30** |
 
-1. GitHub Actions 캐시의 ref 격리 — PR 브랜치가 쓴 캐시는 그 ref 에만 보이고 main push 는
-   읽지 못한다. 두 run 다 콜드였고 쓰기 비용만 냈다는 설명. 이 경우 **다음 main push 부터**
-   히트가 난다
-2. Dockerfile 의 COPY 구조상 애초에 재사용 가능한 레이어가 적다. 이 경우 캐시는 계속 순손실이고
-   **되돌리는 것이 맞다**
+계획서가 적어둔 판정 기준("다음 main push 의 `CACHED` 수가 0이면 제거, 늘어나면 유지")에
+따라 유지다. 원인 후보 ①(GitHub Actions 캐시의 ref 격리)이 맞았다. PR 브랜치가 채운 캐시를
+main push 가 읽지 못해 첫 run 이 콜드였고, `cache-to mode=max` 의 export 비용만 내서
+느려졌다. 두 번째 run 부터 `importing cache manifest from gha:...` 이후 30스텝이 재사용된다.
 
-판정 방법: 다음 main push run 의 `images` 로그에서 `CACHED` 수를 센다. 0이면 (2)이고
-`cache-from`/`cache-to` 를 제거한다. 늘어나면 (1)이고 유지한다.
+베이스라인 대비로도 이득이다 — 최장 173초에서 130초, 최단 104초에서 86초다.
 
-`load: true` 와 `docker/setup-buildx-action` 은 이 판정과 무관하게 유지한다 —
-`cache-*` 를 빼더라도 V-6 의 제약은 그대로다.
+**중간 보고 정정**: 첫 판정 시도에서 `CACHED` 를 0으로 읽었으나 그것은 측정이 아니었다.
+`gh run view --log` 는 run 전체가 완료되기 전에는 로그 대신 안내문 한 줄을 반환하는데,
+그 한 줄에 grep 을 돌린 결과였다. 잡 단위 API(`actions/jobs/<id>/logs`)로 다시 받아
+측정했다. "0건"과 "측정 안 됨"을 구분하지 못한 실패이고, 이 레포의 lint 들이 막으려는
+vacuous-green 과 같은 종류다.
 
 ## 미해결
 
@@ -170,13 +173,12 @@ V-9 는 회귀 방지가 아니라 **목표 달성 확인**이다. 미달이면 
   범위 밖으로 두되 D-033 에서 e2e 실행 정책을 정할 때 함께 본다.
 - Gradle 빌드 캐시(`gradle.properties`, `setup-gradle`)는 표적인 컴파일 구간이 60초뿐이라
   이번 범위에 넣지 않는다 (ADR-0028 §후속 ③).
-- **buildx `type=gha` 캐시가 순손실 상태다** (§V-7 재판정). 다음 main push run 의 `CACHED`
-  수로 유지/되돌림을 가른다. **D-034 로 승격**했다 — 원인 후보 둘이 갈리지 않은 채
-  느려진 상태로 main 에 들어가 있어서, PR 본문 각주로 두면 잊힌다.
+- ~~buildx `type=gha` 캐시가 순손실 상태다~~ → **해소.** D-034 에서 유지로 판정했다
+  (§V-7 재판정). `CACHED` 30스텝, `images` 86~130초로 베이스라인보다도 빠르다.
 
 ## 완료 조건
 
 P1~P6 이 전부 체크되고, V-1~V-8 이 통과하며, V-9 의 실측값이 계획서에 기록된 상태.
 
-**판정 (2026-09-22): 완료.** 단 V-7 이 미달로 닫혔고 그 처분이 D-034 로 이월됐다.
+**판정 (2026-09-22): 완료.** V-7 은 D-034 판정으로 통과가 확정됐다.
 V-9 는 조건1 충족·조건2 미달이며, 미달 원인이 이 계획서의 범위 밖(e2e)이라 재판정하지 않는다.
