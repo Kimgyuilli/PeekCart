@@ -275,6 +275,33 @@ Gradle 은 모듈마다 test JVM 을 따로 띄우므로 결과적으로 모듈�
 
 - [x] **P8.** `CLAUDE.md` §테스트 규칙에 싱글톤 규약을 명문화한다 (ADR-0028 §Decision 3).
 
+- [x] **P10.** 리스너 게이트 (ADR-0029 D1~D4, 2026-09-24). 결함 4의 처분이다.
+      - `common/.../KafkaListenerStartupConfig` 신설. `app.kafka.listener.enabled=false` 일 때만
+        등록되는 `BeanPostProcessor` 가 `AbstractKafkaListenerContainerFactory` 의 `autoStartup`
+        을 끈다. **이름이 아니라 타입으로 잡는다** — 서비스마다 factory 이름·개수가 다르고,
+        새 factory 가 생겨도 게이트에서 새지 않아야 한다. `common` 이 spring-kafka 를 `api` 로
+        내보내므로 5개 서비스 전부에 한 클래스로 닿는다
+      - `order-service/build.gradle` 의 `test` 에 시스템 프로퍼티 추가
+      - **opt-in 전수 조사** — `@SpringBootTest` 전 클래스를 훑어 리스너 기동이 필요한 것만 골랐다.
+        판정 기준은 "consumer 빈을 직접 호출하는가, 브로커를 거치는가" 다
+
+        | 클래스 | 처분 |
+        |---|---|
+        | `ProductPriceCacheSagaIntegrationTest` | opt-in (product.updated → 리스너 → 캐시가 검증 대상) |
+        | `OrderCompensationRefundIntegrationTest` | opt-in (payment.refunded 회신 소비) |
+        | `DeadLetterLedgerIntegrationTest` | opt-in (실제 Kafka 왕복으로 DLQ listener 배선 고정) |
+        | `DlqReplayEntrypointIntegrationTest` | **선택 기동** — DLQ 계열만 `start()`, 업무 리스너는 끈 채로 |
+        | `OrderCancelledEventContract` · `OrderPaidButCancelled` · `OrderEventConsumerTest` · `LedgerOwnerWiringTest` | 불필요 (consumer 빈을 직접 호출) |
+        | `OrderApplicationTests` | 불필요 (factory 빈 **존재**만 단언, 기동은 안 본다) |
+        | `OriginalRecordReaderIntegrationTest` | 불필요 (reader 가 직접 읽는다) |
+
+        켠 4클래스 전부에 `@DirtiesContext(AFTER_CLASS)` (D3)
+      - `DlqReplayEntrypointIntegrationTest` 의 **stop 워크어라운드를 걷어냈다.** 무효였다 —
+        자기 context 만 멈춘다(§미해결). `dlq-*` 만 `start()` 하는 것으로 바꿨다
+      - **죽은 opt-out 잔재 제거.** `app.outbox.polling.delay=1h` · `app.dead-letter.reconcile.delay=1h`
+        가 4클래스에 남아 있었다. 스케줄링이 전역 off 가 된 뒤로는 아무것도 끄지 않으면서
+        **context 캐시 키만 쪼갠다** — ADR-0029 §Consequences 가 적은 "지문 수렴" 이 이것이다
+
 ## 검증 방법
 
 각 행은 **실패를 주입한 뒤** 확인한다.
@@ -311,6 +338,26 @@ Docker·머신 자원 고갈이 유력하나 간헐 결함 가능성을 배제�
 실행을 반복해 가르는 것은 비용 대비가 나쁘므로 **CI 에서 판별한다** — CI 는 매 run 이 새
 러너라 자원 고갈 축이 없다.
 
+### V-4 재실행 결과 (2026-09-24, 리스너 게이트 적용 후)
+
+P10(ADR-0029) 적용 후 **재현되던 4시드를 그대로 다시 돌렸다.** 새 시드 2개를 더 얹었다.
+
+| seed | 출처 | 결과 | 소요 | tests/fail/err |
+|---|---|---|---|---|
+| 2039100001 | run1 재현 | PASS | 221초 | 420/0/0 |
+| 1971500002 | run2 재현 | PASS | 277초 | 420/0/0 |
+| 3124400003 | run3 재현 | PASS | 234초 | 420/0/0 |
+| 3178300004 | run4 재현 | PASS | 253초 | 420/0/0 |
+| 909090901 | 신규 | PASS | 264초 | 420/0/0 |
+| 555000777 | 신규 | PASS | 234초 | 420/0/0 |
+
+**V-4 통과.** 결함 4가 결정적이었으므로 그 4시드의 통과가 곧 처분의 유효성 확인이다.
+
+**run5 이상치(7018초/27건)는 재현되지 않았다.** 이번 6회가 221~277초로 균일하다. 다만
+이것으로 "간헐 결함 아님" 이 증명되지는 않는다 — 6회는 28배 이상치를 배제할 표본이 아니고,
+원래 가설(연속 실행 뒤 로컬 자원 고갈)도 이번 실행 패턴으로는 재현 조건에 닿지 않는다.
+**판정은 예정대로 CI 에 맡긴다**(V-7).
+
 ### 실행 기록 (2026-09-22, 로컬)
 
 | 실행 | 조치 | 실패 | 소요 |
@@ -332,19 +379,16 @@ V-4 가 이 계획의 중심이다. 순차 실행 1회 green 은 "격리가 필�
 
 ## 미해결
 
-- **V-4 미통과 (blocking). 처분 확정 — 적용 대기 (2026-09-24).** `preconditionUsesRealOrderAdapter`
-  가 시드 4개에서 결정적으로 실패한다. 원인은 `@KafkaListener` 가 자율 writer 라는 것
-  (§2-3c 결함 4)이고, **처분을 ADR-0029 가 정했다** — 리스너를 container factory 의
-  `autoStartup` 으로 게이트해 테스트 기본 off, 소비를 검증하는 테스트만 opt-in +
-  `@DirtiesContext(AFTER_CLASS)`.
+- ~~**V-4 미통과 (blocking)**~~ **해소 (2026-09-24).** 원인은 `@KafkaListener` 가 자율
+  writer 라는 것이었고(§2-3c 결함 4), 처분을 ADR-0029 가 정한 뒤 P10 으로 적용했다.
 
   ADR 작성 중 **진단이 한 단계 더 내려갔다.** 이 테스트에는 이미 `@BeforeEach` 에서 자기
-  context 의 리스너를 `stop()` 하는 워크어라운드가 있었다(`89955c1`). 그런데도 실패하는 이유는
+  context 의 리스너를 `stop()` 하는 워크어라운드가 있었다(`89955c1`). 그런데도 실패한 이유는
   `groupId` 가 하드코딩 상수라 **캐시된 다른 context 의 consumer 가 같은 그룹으로 파티션을
   넘겨받기** 때문이다 — 세 클래스 런에서 `order-svc-stock-result-group` 에 context 2개의
   consumer(`-36`, `-44`) 공존과 `generation 4` 리밸런스를 관측했다. per-context 수단은
-  구조적으로 무효다. 남은 작업: **P10** (리스너 게이트 구현 + opt-in 대상 전수 조사) → V-4 재실행.
-  **이 항목이 닫히기 전에는 머지하지 않는다.**
+  구조적으로 무효이고, 막는 지점은 factory 의 `autoStartup` 이다. §V-4 재실행 결과 참고.
+
 - **run5 이상치(7018초/27건)** 의 원인 미판정. CI 에서 재현되는지로 가른다.
 - **확산 4모듈**(product 60 · payment 39 · notification 21 · user 8 선언)은 이 계획서
   범위 밖이다. order-service 에서 V-1~V-8 이 닫힌 뒤 착수한다. 별도 task 로 등록할지
@@ -360,5 +404,6 @@ V-4 가 이 계획의 중심이다. 순차 실행 1회 green 은 "격리가 필�
 
 P1~P8(P3b 포함)이 전부 체크되고, V-1~V-8 이 통과하며, V-7 의 실측값이 계획서에 기록된 상태.
 
-**현재 (2026-09-23): 미완.** 구현 항목은 전부 체크됐으나 **V-4 가 미통과**다. 결함 4의
-처분이 D-036 에 달려 있어 이 계획서만으로 닫을 수 없다.
+**현재 (2026-09-24): V-1~V-6·V-8 통과.** P1~P10 전부 체크됐고 V-4 가 6시드에서 통과한다
+(재현되던 4시드 포함). **남은 것은 V-7(CI 실측)뿐** 이고, 그것은 머지 전 PR 의 CI run 으로
+채운다. run5 이상치 판정도 같은 run 에 걸려 있다.
