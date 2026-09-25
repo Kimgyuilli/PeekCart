@@ -23,6 +23,13 @@
 
 **음성 대조군을 CI 에서 매번 돌린다.** 양성만 보면 "격리돼서 실패" 와 "도구가 없어서 실패" 를 구별하지 못한다 — 실제로 egress 음성 프로브가 앱 이미지에 `python3` 가 없어 통과하던 false-green 을 양성 대조가 잡아냈다. 판정은 종료코드를 특정한다.
 
+**PR 필수 체크 `gate` 는 최종 집계자다 (see ADR-0030).** `lint`·`test`·`guards`·
+`images`(6개 health smoke)·`e2e`(시나리오와 음성 대조군)의 실패·skip 중 하나라도
+있으면 실패한다. 이미지 빌드와 JVM 테스트는 병렬로 진행하고, main push 의 GHCR
+`publish` 는 `gate` 성공 뒤에만 시작한다. e2e 와 publish 는 빌드 artifact 의 checksum 과
+이미지 ID(config digest)를 확인한다. SHA 태그로 push 한 원격 manifest 의 config digest 를
+같은 ID 와 대조한 뒤, 그 manifest digest 그대로 `latest` 를 승격한다.
+
 **스케줄러는 "돈다는 사실" 을 따로 고정한다.** `@InjectMocks` 객체를 직접 호출하는 단위 테스트는 `@Scheduled` 를 지워도 통과한다. 실제 Spring scheduling 발화 후 DB 상태를 기다리는 통합 테스트를 별도로 두고, 운영 주기·lock 기본값은 properties 계약 테스트가 고정한다(한 테스트에 두 관심사를 넣으면 둘 중 하나는 반드시 거짓이 된다).
 
 **자율 writer 는 테스트에서 기본 off 다 (see ADR-0029).** `@Scheduled` 스케줄러와 `@KafkaListener` 리스너는 아무도 요청하지 않았는데 도메인 상태를 고치는 주체라, 컨테이너를 공유하면(ADR-0028) 테스트가 단언하는 상태와 경주한다. `app.scheduling.enabled` · `app.kafka.listener.enabled` 로 게이트하고(프로덕션 기본값은 켜짐), 그 동작을 검증하는 테스트만 `@TestPropertySource` 인라인으로 켜며, 켠 테스트는 `@DirtiesContext(AFTER_CLASS)` 로 수명을 자기 클래스에 가둔다 — context 캐시 때문에 켜진 writer 가 자기 테스트가 끝난 뒤에도 계속 돈다. 리스너 게이트는 Boot 의 `spring.kafka.listener.auto-startup` 이 아니라 container factory 의 `autoStartup` 에 건다(서비스가 factory 를 직접 만들어 Boot 속성이 도달하지 않는다).
