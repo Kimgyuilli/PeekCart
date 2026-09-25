@@ -60,6 +60,9 @@ jobs:
           # 실패해도 초록으로 끝날 수 있어서다.
           bash scripts/ci-release-gate-lint.sh
           bash scripts/ci-release-gate-lint.sh --self-test
+          # D-033: 시나리오와 음성 대조군을 병렬로 돌리되 PR 에서 둘 다 필수로 유지한다.
+          bash scripts/ci-e2e-parallel-lint.sh
+          bash scripts/ci-e2e-parallel-lint.sh --self-test
           # D-032: 통합 테스트가 컨테이너를 직접 선언하지 못하게 한다(ADR-0028).
           # 규약을 코드로 강제하지 않으면 새 테스트가 관행대로 @Container 를 선언하고,
           # 그 클래스만 조용히 컨테이너를 다시 띄운다 — CI 는 초록이고 테스트 시간만 우상향한다.
@@ -427,17 +430,22 @@ jobs:
           if-no-files-found: error
 
   # cross-service saga E2E (계획 P12·P16·P18·P19).
-  # 시나리오 4종 + 음성 대조군을 **실제 스택**에서 돌리고 매트릭스와 대조한다.
+  # 시나리오 4종 + 음성 대조군을 별도 러너에서 병렬로 돌린다.
+  # 두 매트릭스 항목 모두 PR 과 push 에서 필수이며 각자 cold start 스택을 소유한다.
   e2e:
     needs: images
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [scenarios, negative-control]
     # ⑤ 실행 예산 — 전체 상한. 인프라가 매달려도 러너를 오래 잡지 않는다.
     timeout-minutes: 45
     env:
       PEEKCART_IMAGE_TAG: ci
-      E2E_RUN_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}
+      E2E_RUN_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.mode }}
       E2E_COMMIT_SHA: ${{ github.sha }}
 
     steps:
@@ -471,17 +479,15 @@ jobs:
         run: docker compose -f docker-compose.e2e.yml -p e2e-${E2E_RUN_ID} build runner
 
       - name: 시나리오 4종
+        if: matrix.mode == 'scenarios'
         run: bash scripts/saga-e2e-smoke.sh
 
-      # 대조군은 **자기 run_id(=compose project)** 로 돈다. 같은 project 를 쓰면 앞 단계의
-      # teardown 이 완전히 끝나야만 cold-start volume 가드를 통과하는 순서 결합이 생긴다.
-      # (증적 디렉터리 분리는 smoke 스크립트가 별도로 보장한다 — R2 #1)
       - name: 음성 대조군
-        env:
-          E2E_RUN_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}-nc
+        if: matrix.mode == 'negative-control'
         run: bash scripts/saga-e2e-smoke.sh --negative-control
 
       - name: saga contract matrix gate (structure + e2e evidence)
+        if: matrix.mode == 'scenarios'
         run: |
           bash scripts/saga-contract-matrix-lint.sh --structure
           SAGA_COMMIT_SHA="${GITHUB_SHA}" \
@@ -492,7 +498,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-evidence-${{ github.run_id }}
+          name: e2e-evidence-${{ github.run_id }}-${{ matrix.mode }}
           path: .cache/e2e/
           retention-days: 7
 

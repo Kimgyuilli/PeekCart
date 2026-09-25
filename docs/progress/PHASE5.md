@@ -36,6 +36,25 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## e2e 시나리오와 음성 대조군 병렬 실행 (D-033, [#140](https://github.com/Kimgyuilli/PeekCart/pull/140), 2026-09-25)
+
+D-032 CI 실측에서 e2e 16.1분이 단독 병목으로 확인돼 ADR-0028 §후속 ①을 재판정했다.
+PR에서 음성 대조군을 계속 실행하면서 직렬 대기를 없애기 위해 `e2e`를 `scenarios`와
+`negative-control` 매트릭스로 분리했다. 두 실행은 별도 러너와 cold start 스택을 쓰고,
+각자 run ID·증적 artifact 이름을 가진다. 시나리오 증적 게이트는 시나리오 잡에 남겼다.
+
+워크플로 배선 lint는 모드 누락, 이미지 의존·증적 게이트 삭제, 중복 artifact 이름 등을
+변이 7종으로 검출한다. 로컬 `./gradlew test` 전량 통과(27분 54초). 별도 Codex 리뷰는
+호출하지 않았다.
+
+PR CI [run 36075940872](https://github.com/Kimgyuilli/PeekCart/actions/runs/36075940872)은
+전체 성공했다. 두 e2e 잡이 00:08:58 UTC에 동시 시작해 시나리오 5분 13초,
+음성 대조군 10분 54초에 성공했다. 전체 14분 10초로 D-032 PR 실측 20분 49초보다
+6분 39초 짧았다(단일 run 비교). product-service 테스트 13분 44초와 대조군이
+거의 함께 끝나 새 임계경로를 이룬다.
+별도 러너의 이미지 로드와 스택 기동이 중복되므로 러너 사용 시간은 늘 수 있다.
+`publish`가 e2e를 기다리지 않는 기존 계약은 이번 변경에서 유지했다.
+
 ## 통합 테스트 컨테이너 모듈 싱글톤 전환 (D-032, [#138](https://github.com/Kimgyuilli/PeakCart/pull/138), 2026-09-24)
 
 ADR-0028 의 결정을 order-service 에 구현했다. `:order-service:test` 975초 중 844초(87%)가
