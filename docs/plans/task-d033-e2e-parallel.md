@@ -40,11 +40,16 @@ PR에서 시나리오 4종과 음성 대조군 중 하나라도 빠지거나, �
 `ci-release-gate-lint.sh --self-test` 6종, `saga-e2e-smoke.sh --self-test` 9종,
 `ci-test-matrix-lint.sh`, `image-contract-lint.sh`, `saga-contract-matrix-lint.sh --structure`도 통과했다.
 `./gradlew test --no-daemon --console=plain`은 2026-09-25 재실행에서 `BUILD SUCCESSFUL`(27분 54초, 49 tasks)이었다.
-V6은 PR 실행 전이므로 미실측이다.
+V6: PR [#140](https://github.com/Kimgyuilli/PeekCart/pull/140)의 CI
+[run 36075940872](https://github.com/Kimgyuilli/PeekCart/actions/runs/36075940872)이 성공했다.
+두 e2e 잡은 2026-09-25 00:08:58 UTC에 동시에 시작했고, 시나리오는 5분 13초,
+음성 대조군은 10분 54초에 성공했다. 전체 run은 00:05:56~00:20:06 UTC,
+14분 10초였다. D-032 PR의 20분 49초 대비 6분 39초 짧지만 단일 run 비교다.
+product-service 테스트가 13분 44초 걸려 대조군과 거의 동시에 끝났다.
 
 ## 미해결
 
 - `publish`가 e2e를 기다리지 않는 기존 계약은 이번 변경에서 유지한다. 릴리스 게이트 정책은 별도 결정이 필요하다.
-- 로컬 Docker API 접근이 거부되어 실제 스택 e2e는 CI에서 검증한다. V6 전까지 벽시계 단축을 실측 완료로 표시하지 않는다.
+- 로컬 Docker API 접근이 거부되어 실제 스택 e2e는 CI에서 검증했다. 단일 CI run의 벽시계에는 캐시·러너 변동이 섞일 수 있다.
 
 별도 Codex 리뷰 미호출. 위 전제는 현재 워크플로와 실행 스크립트에서 직접 확인했다.
