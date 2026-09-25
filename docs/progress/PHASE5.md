@@ -36,6 +36,17 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## main 필수 체크 복구 (D-037, [#141](https://github.com/Kimgyuilli/PeekCart/pull/141), 2026-09-25)
+
+브랜치 보호가 존재하지 않는 `build` 체크를 요구하던 상태를 확인하고, 실제 CI 의 `gate`
+체크로 교체했다. PR #140 head 에서 `gate` 를 발행한 GitHub Actions 앱 ID `15368` 을 확인한
+뒤 같은 앱으로 고정했다. `strict=true` 와 다른 보호 설정은 유지했다.
+
+GitHub API 재조회, 게이트 실패 전파 lint 자체 검사 6/6, `./gradlew test` 가 통과했다.
+별도 Codex 리뷰는 호출하지 않았다. 실제 실패 PR 의 병합 UI 는 재현하지 않았다.
+관리자 우회(`enforce_admins=false`)와 `gate` 밖의 lint·이미지·e2e 검증 범위는
+D-043 에서 다룬다. 새 ADR 은 필요하지 않다.
+
 ## e2e 시나리오와 음성 대조군 병렬 실행 (D-033, [#140](https://github.com/Kimgyuilli/PeekCart/pull/140), 2026-09-25)
 
 D-032 CI 실측에서 e2e 16.1분이 단독 병목으로 확인돼 ADR-0028 §후속 ①을 재판정했다.
