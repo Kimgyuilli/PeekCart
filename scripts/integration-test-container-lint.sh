@@ -32,7 +32,7 @@ fi
 # 검사 대상 — 서비스 모듈의 test 소스. 픽스처(--self-test)도 이 목록을 순회하므로 대상을 넓힐 때
 # 여기 한 줄만 고친다. 모듈이 사라지거나 이름이 바뀌면 검사가 조용히 증발하므로, 존재하지 않는
 # 모듈은 위반으로 센다(vacuous-green 차단).
-MODULES=(order-service user-service notification-service)
+MODULES=(order-service user-service notification-service payment-service)
 
 LINT_PY="$(mktemp -t integration-test-container-lint.XXXXXX.py)"
 trap 'rm -f "$LINT_PY"' EXIT

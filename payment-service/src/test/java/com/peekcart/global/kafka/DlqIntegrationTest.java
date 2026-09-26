@@ -2,6 +2,7 @@ package com.peekcart.global.kafka;
 
 import com.peekcart.global.port.SlackPort;
 import com.peekcart.support.AbstractIntegrationTest;
+import com.peekcart.support.SharedContainers;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -14,7 +15,6 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
@@ -23,12 +23,8 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.BlockingQueue;
@@ -40,25 +36,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
-@Testcontainers
-@TestPropertySource(properties = {"spring.task.scheduling.pool.size=1", "spring.flyway.enabled=true", "spring.flyway.locations=classpath:db/migration"})
-@Import(DlqIntegrationTest.TestConfig.class)
+// ADR-0029: 리스너는 테스트에서 기본 off 다. 실제 Kafka 왕복으로 재시도 소진 → DLQ 라우팅 → 원장 적재를 확인하는 것이 검증 대상이다.
+@TestPropertySource(properties = {"spring.task.scheduling.pool.size=1", "spring.flyway.enabled=true", "spring.flyway.locations=classpath:db/migration", "app.kafka.listener.enabled=true"})
+@Import({DlqIntegrationTest.TestConfig.class, SharedContainers.class})
+// 켠 자율 writer 의 수명을 자기 클래스에 가둔다 (ADR-0029 D3) — context 가 캐시된 채 남으면
+// 리스너가 이후 클래스의 공유 브로커·DB 를 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("DLQ 통합 테스트")
 class DlqIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired DlqTestListener dlqTestListener;
@@ -130,19 +115,22 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
     void consumerFailure_routesToDlqAndSendsSlack() {
         // given: 파싱 불가능한 잘못된 메시지
         String invalidMessage = "invalid-json-message";
+        // 브로커를 클래스 간에 공유하므로(ADR-0028) 앞 클래스가 *.dlq 에 남긴 레코드가 이 리스너에 늦게 도착할 수
+        // 있다 — @BeforeEach 의 clear() 뒤에도. 고유 key 로 이 테스트가 만든 레코드만 고른다.
+        String uniqueKey = "route-key-" + java.util.UUID.randomUUID();
 
         // when: order.created 토픽에 전송 → 이를 소비하는 각 consumer group 실패
         //   (PaymentEventConsumer 결제 생성 + StockReservationConsumer 재고 예약, ADR-0012 D3)
-        kafkaTemplate.send("order.created", "test-key", invalidMessage);
+        kafkaTemplate.send("order.created", uniqueKey, invalidMessage);
 
         // then: 각 group 재시도 소진 → order.created.dlq 로 라우팅(consumer 당 1건) + Slack 발송
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThat(dlqTestListener.records).isNotEmpty();
+            assertThat(dlqTestListener.records).anySatisfy(r -> assertThat(r.key()).isEqualTo(uniqueKey));
             assertThat(TestConfig.slackCallCount.get()).isGreaterThanOrEqualTo(1);
         });
 
         // DLQ 메시지 검증: 원본 메시지 보존 + 토픽 확인 (consumer 수와 무관하게 모든 DLQ record 가 동일 규약)
-        assertThat(dlqTestListener.records).allSatisfy(record -> {
+        assertThat(dlqTestListener.records).filteredOn(r -> uniqueKey.equals(r.key())).allSatisfy(record -> {
             assertThat(record.topic()).isEqualTo("order.created.dlq");
             assertThat(record.value()).isEqualTo(invalidMessage);
         });
@@ -153,8 +141,10 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
     void dlqPreservesTraceHeaders() {
         // given: ProducerRecord 직접 생성 + KafkaTraceHeaders 부착 (Outbox 발행 경로 모방)
         // MDC.put 만으로는 Kafka 헤더가 자동 생성되지 않으므로 헤더를 명시적으로 부착해야 한다.
+        // 고유 key — 공유 브로커의 앞 클래스 레코드가 섞이지 않게 한다 (위 케이스와 같은 이유).
+        String uniqueKey = "trace-key-" + java.util.UUID.randomUUID();
         ProducerRecord<String, String> record = new ProducerRecord<>(
-                "order.created", null, "test-key", "invalid-json-message");
+                "order.created", null, uniqueKey, "invalid-json-message");
         record.headers().add(KafkaTraceHeaders.TRACE_ID,
                 "trace-dlq-001".getBytes(StandardCharsets.UTF_8));
         record.headers().add(KafkaTraceHeaders.USER_ID,
@@ -166,10 +156,10 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
         // then: DLQ 토픽의 record 가 원본 헤더 보존 (DeadLetterPublishingRecoverer 가 헤더 자동 복사)
         //   order.created 는 다중 consumer group 이 소비하므로 DLQ record 가 1건 이상일 수 있다.
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
-            assertThat(dlqTestListener.records).isNotEmpty();
+            assertThat(dlqTestListener.records).anySatisfy(r -> assertThat(r.key()).isEqualTo(uniqueKey));
         });
 
-        assertThat(dlqTestListener.records).allSatisfy(dlqRecord -> {
+        assertThat(dlqTestListener.records).filteredOn(r -> uniqueKey.equals(r.key())).allSatisfy(dlqRecord -> {
             assertThat(headerValue(dlqRecord, KafkaTraceHeaders.TRACE_ID))
                     .isEqualTo("trace-dlq-001");
             assertThat(headerValue(dlqRecord, KafkaTraceHeaders.USER_ID))

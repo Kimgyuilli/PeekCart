@@ -11,20 +11,16 @@ import com.peekcart.payment.domain.repository.PaymentApprovalRepository;
 import com.peekcart.payment.domain.repository.PaymentRefundRepository;
 import com.peekcart.payment.domain.repository.PaymentRepository;
 import com.peekcart.support.AbstractIntegrationTest;
+import com.peekcart.support.SharedContainers;
 import com.peekcart.support.fixture.PaymentFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -41,29 +37,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 분기 — 계획 C-9 가 환불 원장에서 발견한 함정이다).
  */
 @SpringBootTest
-@Testcontainers
+@Import(SharedContainers.class)
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        // 스케줄러가 테스트 중 원장을 건드리지 않게 한다(경합 판정이 흐려진다).
-        "app.refund.dispatch-interval-ms=3600000",
-        "app.refund.reconcile-interval-ms=3600000",
-        "app.payment.approval.reconcile-interval-ms=3600000"
+        "spring.flyway.locations=classpath:db/migration"
 })
 @DisplayName("승인 원장 fence/claim/nudge 통합 테스트")
 class ApprovalLedgerIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired PaymentApprovalService approvalService;
     @Autowired PaymentApprovalRepository approvalRepository;

@@ -9,19 +9,15 @@ import com.peekcart.payment.domain.model.RefundStatus;
 import com.peekcart.payment.application.RefundOutcome;
 
 import com.peekcart.support.AbstractIntegrationTest;
+import com.peekcart.support.SharedContainers;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,28 +40,13 @@ import static org.mockito.Mockito.mock;
  * 트랜잭션 경계를 증명하지 못한 전례가 있다.
  */
 @SpringBootTest
-@Testcontainers
+@Import(SharedContainers.class)
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        // 스케줄러가 테스트 중 원장을 건드리지 않게 한다(경합 판정이 흐려진다).
-        "app.refund.dispatch-interval-ms=3600000",
-        "app.refund.reconcile-interval-ms=3600000"
+        "spring.flyway.locations=classpath:db/migration"
 })
 @DisplayName("환불 원장 fence/claim 통합 테스트")
 class RefundLedgerIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired PaymentRefundService refundService;
     @Autowired ObjectMapper objectMapper;
