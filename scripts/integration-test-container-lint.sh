@@ -41,7 +41,7 @@ root = sys.argv[1]
 
 # 검사 대상 — 서비스 모듈의 test 소스. 모듈이 사라지거나 이름이 바뀌면 검사가 조용히
 # 증발하므로, 존재하지 않는 모듈은 위반으로 센다(vacuous-green 차단).
-MODULES = ["order-service"]
+MODULES = ["order-service", "user-service"]
 
 # 화이트리스트: 파일명 -> 사유. 사유 없는 항목은 허용하지 않는다.
 ALLOWED = {
@@ -140,12 +140,13 @@ self_test() {
         echo "  ✓ $name (${expect_code})"
     }
 
-    # mode: clean | new-container | testcontainers-revived | no-module | ghost-allow
+    # mode: clean | new-container | user-new-container | testcontainers-revived | no-module | ghost-allow
     _fixture() {
         local dir="$1" mode="$2"
         local t="$dir/order-service/src/test/java/com/peekcart"
         [[ "$mode" == "no-module" ]] && { mkdir -p "$dir/other"; return; }
-        mkdir -p "$t"
+        local u="$dir/user-service/src/test/java/com/peekcart"
+        mkdir -p "$t" "$u"
         cat > "$t/SomethingIntegrationTest.java" <<'JAVA'
 @SpringBootTest
 @Import(SharedContainers.class)
@@ -153,6 +154,15 @@ class SomethingIntegrationTest {
     // @Container 라는 문자열이 주석에 있어도 위반이 아니다
 }
 JAVA
+        # user-service 도 검사 대상인지 — 목록에서 빠지면 이 케이스가 false-green 이 된다
+        if [[ "$mode" == "user-new-container" ]]; then
+            cat > "$u/UserNewIntegrationTest.java" <<'JAVA'
+@SpringBootTest
+@Testcontainers
+class UserNewIntegrationTest {
+}
+JAVA
+        fi
         if [[ "$mode" == "new-container" ]]; then
             cat > "$t/NewlyAddedIntegrationTest.java" <<'JAVA'
 @SpringBootTest
@@ -192,6 +202,8 @@ JAVA
     _case "@Testcontainers 부활" ITC-002 "$tmp/c2"
     _fixture "$tmp/c3" no-module
     _case "검사 대상 모듈 소멸" ITC-001 "$tmp/c3"
+    _fixture "$tmp/c5" user-new-container
+    _case "user-service 테스트가 @Testcontainers 선언" ITC-002 "$tmp/c5"
     _fixture "$tmp/c4" ghost-allow
     _case "화이트리스트가 유령 파일을 가리킴" ITC-004 "$tmp/c4"
 
@@ -200,7 +212,7 @@ JAVA
         echo "self-test 실패 ${failures}건"
         return 1
     fi
-    echo "self-test OK (6/6)"
+    echo "self-test OK (7/7)"
 }
 
 if [[ "${1:-}" == "--self-test" ]]; then

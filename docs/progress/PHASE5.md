@@ -36,6 +36,21 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## user-service 통합 테스트 컨테이너 싱글톤 전환 (D-035 1/4, [#144](https://github.com/Kimgyuilli/PeekCart/pull/144), 2026-09-26)
+
+D-032 가 order-service 에서 검증한 컨테이너 모듈 싱글톤을 user-service 로 넓혔다. 통합
+테스트 4클래스를 `@Import(SharedContainers.class)` 로 전환하고, test 태스크에 스케줄러·리스너
+기본 off(ADR-0029)와 클래스 순서 랜덤·시드 출력을 넣었으며, `integration-test-container-lint.sh`
+검사 대상에 user-service 를 추가했다(self-test 7/7).
+
+`:user-service:test --rerun` 이 176초에서 58초가 됐다. 시드 3개 셔플 통과, cleanup 을 자기
+행만 지우도록 바꾼 뮤테이션에서 해당 클래스가 앞선 시드만 통과해 셔플의 검출력을 확인했다.
+`./gradlew test` 8모듈 1253 테스트 통과. Codex 리뷰는 호출하지 않았다(`.cache/codex-off`).
+
+미충족: user 는 writer 0 이라 ③ opt-in 조사는 0건이고, Kafka 미사용이라 ④ 토픽 누적 확인은
+notification·payment·product PR 로 이월했다. user 에서도 Kafka 컨테이너가 한 번 뜨며 58초에
+포함된다. 새 ADR 은 필요하지 않다.
+
 ## CI 최종 게이트와 이미지 승격 경계 (D-043, [#142](https://github.com/Kimgyuilli/PeekCart/pull/142), 2026-09-26)
 
 ADR-0030 에 따라 `gate` 가 lint/test/guards/images/e2e 의 실패·skip 을 최종 집계하고,

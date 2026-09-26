@@ -1,5 +1,6 @@
 package com.peekcart.user.application;
 
+import com.peekcart.support.SharedContainers;
 import com.peekcart.support.TestRsaKeys;
 import com.peekcart.user.application.dto.TokenResult;
 import com.peekcart.user.domain.exception.UserException;
@@ -8,16 +9,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -34,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 실 MySQL/Redis 로 상태전이·grace 원자성·reuse→family revoke→deny write·마이그레이션 스키마를 검증한다.
  */
 @SpringBootTest
-@Testcontainers
+@Import(SharedContainers.class)
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
@@ -46,14 +43,6 @@ class RefreshTokenReuseIntegrationTest {
     static void jwtKeys(DynamicPropertyRegistry registry) {
         TestRsaKeys.register(registry);
     }
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
 
     @Autowired AuthService authService;
     @Autowired JdbcTemplate jdbcTemplate;
