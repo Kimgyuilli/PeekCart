@@ -7,6 +7,7 @@ import com.peekcart.global.jwt.RsaPublicKeyRegistry;
 import com.peekcart.global.security.InternalGatewayPublicKeyRegistry;
 import com.peekcart.internaltoken.InternalTokenFixtures;
 import com.peekcart.support.InternalKeyFingerprint;
+import com.peekcart.support.SharedContainers;
 import com.peekcart.support.TestRsaKeys;
 import com.peekcart.user.domain.model.User;
 import com.peekcart.user.domain.repository.UserRepository;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -27,10 +28,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Map;
 import java.util.Set;
@@ -47,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ul>
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
+@Import(SharedContainers.class)
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
@@ -67,17 +64,6 @@ class UserSecurityIntegrationTest {
     static void jwtKeys(DynamicPropertyRegistry registry) {
         TestRsaKeys.register(registry);
     }
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    // user-service 는 blacklist/deny write(AuthService)·adapter 빈을 보유하므로 컨텍스트 부팅에 Redis 가 필요하다.
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
 
     @Autowired TestRestTemplate restTemplate;
     @Autowired UserRepository userRepository;

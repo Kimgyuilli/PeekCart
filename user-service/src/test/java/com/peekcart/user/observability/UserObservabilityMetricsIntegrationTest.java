@@ -6,17 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.peekcart.support.SharedContainers;
 import com.peekcart.support.TestRsaKeys;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.peekcart.user.application.AuthService;
 import com.peekcart.user.application.dto.TokenResult;
@@ -33,7 +30,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * user-service 관측성 계약 회귀 (ADR-0009 §45-48 서비스별 복제 · PR2b/U8).
  * application= 태그 값(S2)·histogram bucket(S1)·prometheus 노출(S3)·health permitAll(S4)·exposure 화이트리스트.
- * <p>User 는 Kafka 미사용(UserApplication 이 KafkaAutoConfiguration 제외) → Kafka 컨테이너 없음.
+ * <p>User 는 Kafka 미사용(UserApplication 이 KafkaAutoConfiguration 제외). 공유 Kafka 컨테이너는
+ * 모듈 싱글톤이라 함께 뜨지만 이 context 는 연결하지 않는다.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureObservability
@@ -42,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
-@Testcontainers
+@Import(SharedContainers.class)
 @DisplayName("user-service 관측성 계약 회귀 테스트")
 class UserObservabilityMetricsIntegrationTest {
 
@@ -51,16 +49,6 @@ class UserObservabilityMetricsIntegrationTest {
     static void jwtKeys(DynamicPropertyRegistry registry) {
         TestRsaKeys.register(registry);
     }
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
 
     @Autowired
     TestRestTemplate restTemplate;
