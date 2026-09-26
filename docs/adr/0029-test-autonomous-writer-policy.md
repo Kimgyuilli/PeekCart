@@ -167,6 +167,10 @@ Boot 속성은 도달하지 않는다.
 - [ADR-0028](./0028-integration-test-container-lifecycle.md) — 통합 테스트 컨테이너 수명 = 모듈 싱글톤
 - [ADR-0007](./0007-yaml-profile-merge-principle.md) — YAML 프로파일 병합 원칙 (Alternative D 기각 근거)
 - [ADR-0020](./0020-dlq-replay-contract.md) · [ADR-0022](./0022-replay-entrypoint-rollout-and-drain.md) — `groupId` 가 replay 좌표 계약인 근거 (Alternative C 기각)
-- `docs/plans/task-d032-integration-test-container-singleton.md` §2-3b, §2-3c — 발견 경위와 틀린 가설 기록
+- `docs/plans/done/task-d032-integration-test-container-singleton.md` §2-3b, §2-3c — 발견 경위와 틀린 가설 기록
 - `common/src/main/java/com/peekcart/global/config/SchedulingConfig.java`
 - `order-service/src/main/java/com/peekcart/order/infrastructure/kafka/OrderKafkaConfig.java`
+
+## Update Log
+
+- 2026-09-26 (`7ee797f`): D-032 계획서 아카이브에 따른 References 경로 정정.
