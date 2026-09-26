@@ -36,6 +36,20 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## CI 최종 게이트와 이미지 승격 경계 (D-043, [#142](https://github.com/Kimgyuilli/PeekCart/pull/142), 2026-09-26)
+
+ADR-0030 에 따라 `gate` 가 lint/test/guards/images/e2e 의 실패·skip 을 최종 집계하고,
+main push 의 `publish` 는 성공한 gate 뒤에만 시작하도록 연결했다. 이미지 artifact 는
+checksum·이미지 ID 를 기록하며 e2e 와 publish 가 로드 후 ID 를 확인한다. 게시 단계는
+SHA 태그의 원격 config digest 를 검증하고 같은 manifest digest 로 `latest` 를 승격한 뒤
+원격 태그를 재조회한다. 브랜치 보호의 `enforce_admins=true` 를 적용·재조회했다.
+
+로컬 `./gradlew test --no-daemon` 통과(30분 8초, 49 tasks executed), 게이트 배선
+변형 검사 24/24와 관련 lint 가 통과했다. PR CI [run 36169884411](https://github.com/Kimgyuilli/PeekCart/actions/runs/36169884411)에서
+두 e2e 모드와 모든 선행 job 이 성공했고, 대조군 완료 뒤 gate 가 시작해 성공했다.
+PR 의 publish 는 건너뛰었다. main push 의 publish 순서·GHCR digest 동일성 실측이
+남아 D-043 은 진행 중이다.
+
 ## main 필수 체크 복구 (D-037, [#141](https://github.com/Kimgyuilli/PeekCart/pull/141), 2026-09-25)
 
 브랜치 보호가 존재하지 않는 `build` 체크를 요구하던 상태를 확인하고, 실제 CI 의 `gate`

@@ -53,13 +53,10 @@ jobs:
         # (gateway 가 내부 토큰 서명 개인키를 갖게 됨, ADR-0017 D2). k8s Secret 경유는 여전히 금지다.
         run: |
           bash scripts/kustomize-namespace-lint.sh
-          # D-031: images 가 gate 를 더 이상 물지 않으므로 publish 가 gate 를 직접 문다.
-          # 그 연결은 YAML 을 읽는 사람만 아는 성질이라, 누가 끊어도 CI 는 전부 초록으로
-          # 통과하고 테스트가 빨간 push 에서 GHCR 에 :latest 가 올라간다. 도달성뿐 아니라
-          # gate 의 실패 전파 스텝 존재까지 본다 — gate 는 if: !cancelled() 라 선행이
-          # 실패해도 초록으로 끝날 수 있어서다.
+          # D-043: gate 는 lint/test/guards/images/e2e 전체의 최종 판정자다.
           bash scripts/ci-release-gate-lint.sh
           bash scripts/ci-release-gate-lint.sh --self-test
+          bash scripts/ci-image-identity.sh --self-test
           # D-033: 시나리오와 음성 대조군을 병렬로 돌리되 PR 에서 둘 다 필수로 유지한다.
           bash scripts/ci-e2e-parallel-lint.sh
           bash scripts/ci-e2e-parallel-lint.sh --self-test
@@ -277,10 +274,10 @@ jobs:
           overwrite: true
           if-no-files-found: error
 
-  # ── gate: saga 계약 매트릭스 + 증적 통합 ────────────────────────────────────────
-  # guards 를 needs 에 넣는 이유: 루트 report artifact 를 소비한다(병렬이면 아직 없다).
+  # ── gate: 전체 필수 검증 + saga 계약 증적 통합 ─────────────────────────────────
+  # test/guards 는 JVM 증적 소비, 나머지는 PR 병합·이미지 승격의 필수 판정이다.
   gate:
-    needs: [test, guards]
+    needs: [lint, test, guards, images, e2e]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
@@ -353,20 +350,16 @@ jobs:
           overwrite: true
           if-no-files-found: warn
 
-      # gate 는 !cancelled() 라 선행 실패 뒤에도 진단을 위해 돈다. 그 상태를 결과에 반영하지
-      # 않으면 **테스트가 빨간데 gate 가 초록**이 되고, images(needs: [lint, gate])가 그대로
-      # 실행돼 e2e·publish 까지 간다. 진단·업로드를 마친 뒤 마지막에 전파한다.
+      # !cancelled() 로 실패 후에도 진단을 모으므로 마지막에 모든 선행 결과를 전파한다.
       - name: Propagate upstream failure
-        if: ${{ !cancelled() && (needs.test.result != 'success' || needs.guards.result != 'success') }}
+        if: ${{ !cancelled() && (needs.lint.result != 'success' || needs.test.result != 'success' || needs.guards.result != 'success' || needs.images.result != 'success' || needs.e2e.result != 'success') }}
         run: |
-          echo "::error::선행 job 실패 — test=${{ needs.test.result }} guards=${{ needs.guards.result }}"
+          echo "::error::선행 job 실패 — lint=${{ needs.lint.result }} test=${{ needs.test.result }} guards=${{ needs.guards.result }} images=${{ needs.images.result }} e2e=${{ needs.e2e.result }}"
           exit 1
 
   # D-031: gate 를 needs 에서 뺀다 — 이미지 빌드는 테스트 결과와 무관한 일인데 전 샤드
   # 완료를 기다리고 있었다(실측 run 35731821466 에서 images 가 test 보다 18분 늦게 시작).
-  # 대신 **publish 가 gate 를 직접 문다** — 그러지 않으면 테스트가 빨간 push 에서도
-  # GHCR 에 :latest 가 올라간다(D-016/L-016a image promotion 계약). 이 연결이 끊기지
-  # 않는지는 scripts/ci-release-gate-lint.sh 가 강제한다.
+  # 최종 gate 가 images/e2e 까지 기다리므로 이미지 빌드의 테스트 병렬성은 유지한다.
   images:
     needs: [lint]
     runs-on: ubuntu-latest
@@ -417,14 +410,20 @@ jobs:
       # 두 조건을 한 식으로 합쳐 Save/Upload 가 어긋날 수 없게 한다.
       - name: Save image (publish 또는 e2e 소비용)
         if: github.event_name == 'push' || contains(fromJSON('["order-service","product-service","payment-service","notification-service"]'), matrix.service)
-        run: docker save ${{ matrix.service }}:ci | gzip > image.tar.gz
+        run: |
+          set -euo pipefail
+          docker save ${{ matrix.service }}:ci | gzip > image.tar.gz
+          bash scripts/ci-image-identity.sh record ${{ matrix.service }}:ci .
 
       - name: Upload image artifact
         if: github.event_name == 'push' || contains(fromJSON('["order-service","product-service","payment-service","notification-service"]'), matrix.service)
         uses: actions/upload-artifact@v4
         with:
           name: image-${{ matrix.service }}
-          path: image.tar.gz
+          path: |
+            image.tar.gz
+            image.tar.gz.sha256
+            image-id.txt
           retention-days: 1
           # 조용한 빈 artifact 는 e2e 잡에서 '이미지 없음' 으로 뒤늦게 터진다.
           if-no-files-found: error
@@ -466,7 +465,7 @@ jobs:
           for svc in $expected; do
             f="/tmp/images/image-${svc}/image.tar.gz"
             [[ -f "$f" ]] || { echo "::error::${svc} 이미지 artifact 가 없다"; exit 1; }
-            gunzip -c "$f" | docker load
+            bash scripts/ci-image-identity.sh load "${svc}:ci" "/tmp/images/image-${svc}"
           done
           loaded=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep -c ':ci$' || true)
           echo "loaded ${loaded} images"
@@ -508,13 +507,10 @@ jobs:
           docker compose -f docker-compose.e2e.yml -p "e2e-${E2E_RUN_ID}" \
             down -v --remove-orphans || true
 
-  # GHCR publish — main push 한정. smoke 를 통과한 이미지를 load 후 push 한다.
+  # GHCR publish — main push 한정. 최종 gate 뒤에 검증된 artifact 만 승격한다.
   # packages:write 는 이 job 에만 부여되어 PR build/smoke 경로엔 write 토큰이 닿지 않는다.
-  # D-031: gate 를 직접 문다. images 가 gate 를 물고 있던 동안에는 간접적으로 게이트됐지만,
-  # images 의 needs 완화로 그 경로가 끊겼다. gate 가 test/guards 실패를 exit 1 로 전파하므로
-  # (Propagate upstream failure), 이 연결이 GHCR 푸시의 유일한 테스트 게이트다.
   publish:
-    needs: [images, gate]
+    needs: [gate]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -535,13 +531,18 @@ jobs:
           - gateway
 
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download image artifact
         uses: actions/download-artifact@v4
         with:
           name: image-${{ matrix.service }}
 
       - name: Load image
-        run: docker load < <(gunzip -c image.tar.gz)
+        run: bash scripts/ci-image-identity.sh load ${{ matrix.service }}:ci .
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Resolve image name
         id: img
@@ -557,18 +558,29 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push image
-        # L-016a/D-016: push 후 registry digest 를 산출하고, 비어 있으면 실패시킨다(digest 누락 green 차단).
         run: |
+          set -euo pipefail
           IMG="${{ steps.img.outputs.name }}"
           docker tag ${{ matrix.service }}:ci "$IMG:${{ github.sha }}"
-          docker tag ${{ matrix.service }}:ci "$IMG:latest"
           push_out="$(docker push "$IMG:${{ github.sha }}")"
           echo "$push_out"
-          docker push "$IMG:latest"
-          DIGEST="$(printf '%s\n' "$push_out" | grep -oE 'sha256:[0-9a-f]{64}' | head -1)"
-          if [[ -z "$DIGEST" ]]; then
+          DIGEST="$(printf '%s\n' "$push_out" | sed -nE 's/^.*digest: (sha256:[0-9a-f]{64}).*$/\1/p' | tail -1)"
+          if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
             echo "::error::[L-016a] ${IMG} push digest 산출 실패 — D-016 image promotion 계약 위반" >&2
             exit 1
           fi
+          bash scripts/ci-image-identity.sh verify-remote "$IMG" "$DIGEST" image-id.txt
+          docker buildx imagetools create --prefer-index=false \
+            --tag "$IMG:latest" --metadata-file "$RUNNER_TEMP/promotion.json" "$IMG@$DIGEST"
+          promoted="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("containerimage.descriptor", {}).get("digest", ""))' "$RUNNER_TEMP/promotion.json")"
+          if [[ "$promoted" != "$DIGEST" ]]; then
+            echo "::error::latest digest 불일치: sha=$DIGEST latest=$promoted" >&2
+            exit 1
+          fi
+          latest="$(docker buildx imagetools inspect --format '{{json .Manifest}}' "$IMG:latest" |
+            python3 -c 'import json,sys; print(json.load(sys.stdin).get("digest", ""))')"
+          if [[ "$latest" != "$DIGEST" ]]; then
+            echo "::error::원격 latest digest 불일치: sha=$DIGEST latest=$latest" >&2
+            exit 1
+          fi
           echo "pushed: ${IMG}@${DIGEST} (tags: ${{ github.sha }}, latest)"
-          echo "pushed digest: $(docker inspect --format='{{index .RepoDigests 0}}' "$IMG:latest" 2>/dev/null || echo n/a)"
