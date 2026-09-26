@@ -1,22 +1,17 @@
 package com.peekcart.notification.observability;
 
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,24 +26,9 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
-@Testcontainers
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("notification-service 관측성 계약 회귀 테스트")
 class NotificationObservabilityMetricsIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired
     TestRestTemplate restTemplate;

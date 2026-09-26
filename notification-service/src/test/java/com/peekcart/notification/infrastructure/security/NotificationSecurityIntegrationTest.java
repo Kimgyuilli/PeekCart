@@ -8,12 +8,12 @@ import com.peekcart.internaltoken.InternalTokenFixtures;
 import com.peekcart.support.InternalKeyFingerprint;
 import com.peekcart.support.TestRsaKeys;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -24,11 +24,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.util.Map;
 import java.util.Set;
@@ -41,8 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 3-state 계약과 공통 정책(401·permitAll·actuator)을 고정한다.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
@@ -62,20 +56,6 @@ class NotificationSecurityIntegrationTest {
     static void userTokenVerificationKeys(DynamicPropertyRegistry registry) {
         TestRsaKeys.register(registry);
     }
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired TestRestTemplate restTemplate;
     @Autowired Map<String, SecurityFilterChain> securityFilterChains;

@@ -7,21 +7,17 @@ import com.peekcart.notification.domain.model.NotificationType;
 import com.peekcart.notification.infrastructure.NotificationJpaRepository;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.util.List;
 import java.util.UUID;
@@ -37,28 +33,18 @@ import static org.awaitility.Awaitility.await;
  * 공유 V1~V4(:common classpath:db/migration)를 1회 적용한다(게이트 f).
  */
 @SpringBootTest
-@Testcontainers
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration"
+        "spring.flyway.locations=classpath:db/migration",
+        // ADR-0029: 리스너는 테스트에서 기본 off 다. 실제 Kafka 왕복으로 NotificationConsumer 소비·멱등성을 검증하는 것이 이 클래스의 대상이다.
+        "app.kafka.listener.enabled=true"
 })
+// 켠 자율 writer 의 수명을 자기 클래스에 가둔다 (ADR-0029 D3) — context 가 캐시된 채 남으면
+// 리스너가 이후 클래스의 공유 브로커·DB 를 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("NotificationConsumer 멱등성 통합 테스트")
 class NotificationConsumerIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired NotificationJpaRepository notificationJpaRepository;
