@@ -3,6 +3,7 @@ package com.peekcart.global.outbox;
 import com.peekcart.global.retention.OutboxRetentionProperties;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -13,15 +14,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -45,30 +40,15 @@ import static org.awaitility.Awaitility.await;
  * 발행 경로 자체는 서비스 무관이므로 그것으로 충분하다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration",
-        // 발행 주체를 테스트로 한정한다 — 배경 poller 가 먼저 집어가면 "poller 를 지워도 통과" 하는
-        // 배선 검사로 퇴화한다(이 테스트의 존재 이유가 그것을 막는 것이다).
-        "app.outbox.polling.delay=1h",
-        "app.dead-letter.reconcile.delay=1h"
+        "spring.flyway.locations=classpath:db/migration"
+        // 발행 주체는 테스트다 — 배경 poller 가 먼저 집어가면 "poller 를 지워도 통과" 하는 배선 검사로
+        // 퇴화한다. 스케줄러는 테스트 기본 off 라(ADR-0029) 타이머를 따로 늦추지 않는다.
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("notification-service outbox 신설")
 class NotificationOutboxIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired OutboxPollingService pollingService;
     @Autowired OutboxEventRepository outboxEventRepository;
@@ -145,7 +125,7 @@ class NotificationOutboxIntegrationTest extends AbstractIntegrationTest {
     private void awaitTopicsReady(String... topics) {
         await().atMost(Duration.ofSeconds(60)).until(() -> {
             Properties props = new Properties();
-            props.put("bootstrap.servers", kafka.getBootstrapServers());
+            props.put("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers());
             props.put("group.id", "test-topic-ready-" + UUID.randomUUID());
             props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -166,7 +146,7 @@ class NotificationOutboxIntegrationTest extends AbstractIntegrationTest {
 
     private List<ConsumerRecord<String, String>> drain(String topic) {
         Properties props = new Properties();
-        props.put("bootstrap.servers", kafka.getBootstrapServers());
+        props.put("bootstrap.servers", SharedContainers.KAFKA.getBootstrapServers());
         props.put("group.id", "test-drain-" + UUID.randomUUID());
         props.put("auto.offset.reset", "earliest");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
