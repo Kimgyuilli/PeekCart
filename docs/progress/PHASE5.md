@@ -36,6 +36,23 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## notification-service 통합 테스트 컨테이너 싱글톤 전환 (D-035 2/4, [#145](https://github.com/Kimgyuilli/PeekCart/pull/145), 2026-09-26)
+
+notification-service 통합 테스트 7클래스를 `@Import(SharedContainers.class)` 로 전환했다. 자율
+writer 를 가진 첫 확산 대상이라 진입점의 무조건 `@EnableScheduling` 을 제거해 `SchedulingConfig`
+게이트로 넘겼고, 리스너 소비를 브로커 왕복으로 관측하는 Consumer · DeadLetterLedger 두 클래스만
+리스너를 켜고 `@DirtiesContext(AFTER_CLASS)` 로 가뒀다(ADR-0029). 스케줄러 opt-in 은 0건이다.
+
+`:notification-service:test --rerun` 이 342초에서 69초가 됐다. 시드 3개 셔플 통과. opt-in 을
+끄면 두 클래스가 red 가 되는 것으로 조용한 green 이 아님을 확인했다. D-035 ④ 토픽 누적은 최종
+12개 전부 고정 이름이고 메타데이터 타임아웃 0건이었다. `./gradlew test` 전량 통과. Codex 리뷰는
+호출하지 않았다(`.cache/codex-off`).
+
+lint self-test 픽스처가 `MODULES` 를 순회하도록 바꿔 대상 확대마다 픽스처를 고치던 문제를 없앴다.
+
+미충족: 그 대가로 목록에서 빠진 모듈을 self-test 가 잡지 않는다(product PR 에서 판단). 토픽
+누적은 notification 단독 관측이라 payment · product 에서 다시 본다. 새 ADR 은 필요하지 않다.
+
 ## user-service 통합 테스트 컨테이너 싱글톤 전환 (D-035 1/4, [#144](https://github.com/Kimgyuilli/PeekCart/pull/144), 2026-09-26)
 
 D-032 가 order-service 에서 검증한 컨테이너 모듈 싱글톤을 user-service 로 넓혔다. 통합
