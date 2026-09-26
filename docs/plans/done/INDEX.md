@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 59개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 60개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -45,7 +45,7 @@
 | [task-impl3-pr4-auth-observability](./task-impl3-pr4-auth-observability.md) | 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-09-14 | 있음 |
 | [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#115](https://github.com/Kimgyuilli/PeakCart/pull/115) | 2026-09-15 | 있음 |
 
-## 부채 · 측정 (19)
+## 부채 · 측정 (20)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -66,6 +66,7 @@
 | [task-d033-e2e-parallel](./task-d033-e2e-parallel.md) | D-033 — e2e 시나리오와 음성 대조군 병렬 실행 | [#140](https://github.com/Kimgyuilli/PeakCart/pull/140) | 2026-09-25 | 있음 |
 | [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-09-25 | 있음 |
 | [task-d035-notification-container-singleton](./task-d035-notification-container-singleton.md) | task-d035-notification-container-singleton | [#145](https://github.com/Kimgyuilli/PeakCart/pull/145) | 2026-09-26 | 있음 |
+| [task-d035-payment-container-singleton](./task-d035-payment-container-singleton.md) | task-d035-payment-container-singleton | [#146](https://github.com/Kimgyuilli/PeakCart/pull/146) | 2026-09-26 | 있음 |
 | [task-d035-user-container-singleton](./task-d035-user-container-singleton.md) | task-d035-user-container-singleton | [#144](https://github.com/Kimgyuilli/PeakCart/pull/144) | 2026-09-26 | 있음 |
 | [task-d043-ci-release-gate](./task-d043-ci-release-gate.md) | D-043 — CI 최종 게이트와 이미지 승격 경계 | [#142](https://github.com/Kimgyuilli/PeakCart/pull/142) | 2026-09-26 | 있음 |
 

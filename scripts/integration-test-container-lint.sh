@@ -2,7 +2,7 @@
 # integration-test-container-lint.sh — D-032 컨테이너 싱글톤 규약 가드
 #
 # 목적:
-#   서비스 모듈 테스트가 Testcontainers 컨테이너를 **직접 선언**하지 못하게 한다.
+#   모듈 테스트가 Testcontainers 컨테이너를 **직접 선언**하지 못하게 한다.
 #   공유 선언은 common testFixtures 의 SharedContainers 하나다.
 #
 # 왜:
@@ -29,10 +29,12 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 2
 fi
 
-# 검사 대상 — 서비스 모듈의 test 소스. 픽스처(--self-test)도 이 목록을 순회하므로 대상을 넓힐 때
-# 여기 한 줄만 고친다. 모듈이 사라지거나 이름이 바뀌면 검사가 조용히 증발하므로, 존재하지 않는
-# 모듈은 위반으로 센다(vacuous-green 차단).
-MODULES=(order-service user-service notification-service payment-service)
+# 검사 대상 — settings.gradle 에 include 된 모듈 중 test 소스가 있는 것 전부. 픽스처(--self-test)도
+# 이 목록을 순회하므로 대상을 넓힐 때 여기 한 줄만 고친다. 모듈이 사라지거나 이름이 바뀌면 검사가
+# 조용히 증발하므로, 존재하지 않는 모듈은 위반으로 센다(vacuous-green 차단). 반대로 새 모듈이 생겼는데
+# 여기 없으면 그 모듈이 조용히 검사 밖에 남으므로, settings.gradle 과 대조해 누락도 위반으로 센다.
+# SharedContainers 는 common/src/testFixtures 에 있어 src/test 스캔 대상이 아니다.
+MODULES=(common peekcart-common-auth gateway order-service user-service notification-service payment-service product-service)
 
 LINT_PY="$(mktemp -t integration-test-container-lint.XXXXXX.py)"
 trap 'rm -f "$LINT_PY"' EXIT
@@ -53,6 +55,7 @@ ALLOWED = {
 }
 
 violations = []
+DIRECT = re.compile(r"^\s*@(?:org\.testcontainers\.[\w.]+\.)?(?:Container|Testcontainers)\b", re.M)
 
 
 def bad(code, message):
@@ -74,9 +77,8 @@ for module in MODULES:
             path = os.path.join(dirpath, fn)
             text = open(path, encoding="utf-8").read()
             # 주석/javadoc 안의 언급은 위반이 아니다 — 줄 선두 어노테이션만 본다.
-            has_container = re.search(r"^\s*@Container\b", text, re.M)
-            has_tc = re.search(r"^\s*@Testcontainers\b", text, re.M)
-            if has_container or has_tc:
+            # FQN 표기(@org.testcontainers.junit.jupiter.Testcontainers)도 같은 선언이다.
+            if DIRECT.search(text):
                 found.append(fn)
 
     for fn in sorted(found):
@@ -98,6 +100,17 @@ for fn, reason in ALLOWED.items():
                 hit = True
     if not hit:
         bad("ITC-004", "화이트리스트 항목 '%s' 에 해당하는 파일이 없다 — 유령 예외다" % fn)
+
+# 목록 누락 — include 됐고 test 소스가 있는데 MODULES 에 없는 모듈은 검사 밖에 남는다.
+settings = os.path.join(root, "settings.gradle")
+if not os.path.isfile(settings):
+    bad("ITC-005", "settings.gradle 이 없다 — 검사 대상 누락을 대조할 기준이 없다")
+else:
+    included = re.findall(r"^\s*include\s+['\"]([^'\"]+)['\"]", open(settings, encoding="utf-8").read(), re.M)
+    for module in included:
+        if module not in MODULES and os.path.isdir(os.path.join(root, module, "src", "test")):
+            bad("ITC-005", "모듈 '%s' 는 settings.gradle 에 include 됐고 test 소스가 있는데 검사 대상(MODULES)에 "
+                           "없다 — 이 스크립트의 MODULES 에 추가한다" % module)
 
 if violations:
     print("\n".join(violations))
@@ -142,14 +155,23 @@ self_test() {
         echo "  ✓ $name (${expect_code})"
     }
 
-    # mode: clean | new-container | module-new-container:<모듈> | testcontainers-revived | no-module | ghost-allow
+    # mode: clean | new-container | module-new-container:<모듈> | testcontainers-revived | fqn-testcontainers
+    #       | unlisted-module | no-module | ghost-allow
     _fixture() {
         local dir="$1" mode="$2" m
         local t="$dir/order-service/src/test/java/com/peekcart"
         [[ "$mode" == "no-module" ]] && { mkdir -p "$dir/other"; return; }
         for m in "${MODULES[@]}"; do
             mkdir -p "$dir/$m/src/test/java/com/peekcart"
+            echo "include '$m'" >> "$dir/settings.gradle"
         done
+        # test 소스가 없는 모듈은 목록에 없어도 된다
+        mkdir -p "$dir/no-test-module/src/main"
+        echo "include 'no-test-module'" >> "$dir/settings.gradle"
+        if [[ "$mode" == "unlisted-module" ]]; then
+            mkdir -p "$dir/new-service/src/test/java"
+            echo "include 'new-service'" >> "$dir/settings.gradle"
+        fi
         cat > "$t/SomethingIntegrationTest.java" <<'JAVA'
 @SpringBootTest
 @Import(SharedContainers.class)
@@ -182,6 +204,13 @@ class RevivedTest {
 }
 JAVA
         fi
+        if [[ "$mode" == "fqn-testcontainers" ]]; then
+            cat > "$t/FqnTest.java" <<'JAVA'
+@org.testcontainers.junit.jupiter.Testcontainers
+class FqnTest {
+}
+JAVA
+        fi
         # 화이트리스트 대상 파일 — ghost-allow 모드에서는 만들지 않는다
         if [[ "$mode" != "ghost-allow" ]]; then
             cat > "$t/OrderCursorQueryPlanTest.java" <<'JAVA'
@@ -203,6 +232,10 @@ JAVA
     _case "새 테스트가 @Container 선언" ITC-002 "$tmp/c1"
     _fixture "$tmp/c2" testcontainers-revived
     _case "@Testcontainers 부활" ITC-002 "$tmp/c2"
+    _fixture "$tmp/c5" fqn-testcontainers
+    _case "FQN 으로 @Testcontainers 선언" ITC-002 "$tmp/c5"
+    _fixture "$tmp/c6" unlisted-module
+    _case "test 소스가 있는 모듈이 검사 목록에서 빠짐" ITC-005 "$tmp/c6"
     _fixture "$tmp/c3" no-module
     _case "검사 대상 모듈 소멸" ITC-001 "$tmp/c3"
     local m
@@ -218,7 +251,7 @@ JAVA
         echo "self-test 실패 ${failures}건"
         return 1
     fi
-    echo "self-test OK ($((6 + ${#MODULES[@]}))/$((6 + ${#MODULES[@]})))"
+    echo "self-test OK ($((8 + ${#MODULES[@]}))/$((8 + ${#MODULES[@]})))"
 }
 
 if [[ "${1:-}" == "--self-test" ]]; then

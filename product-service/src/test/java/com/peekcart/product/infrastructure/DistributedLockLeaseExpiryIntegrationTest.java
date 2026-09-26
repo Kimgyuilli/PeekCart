@@ -1,17 +1,13 @@
 package com.peekcart.product.infrastructure;
 
 import com.peekcart.global.lock.DistributedLockManager;
+import com.peekcart.support.SharedContainers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
 import java.util.concurrent.Callable;
@@ -40,30 +36,16 @@ import static org.awaitility.Awaitility.await;
  * testcontainers 가 없고(단위 테스트 전용 소스셋) Redis 컨테이너 패턴은 여기에 있으므로 여기에 둔다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
+@Import(SharedContainers.class)
 @DisplayName("D-025 P4 — 분산 락 lease 만료는 조용히 통과한다")
 class DistributedLockLeaseExpiryIntegrationTest {
 
     private static final String LOCK_KEY = "d025-lease-expiry-probe";
     private static final long LEASE_SECONDS = 1;
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired
     DistributedLockManager lockManager;

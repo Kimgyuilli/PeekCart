@@ -7,6 +7,7 @@ import com.peekcart.product.application.StockReservationService;
 import com.peekcart.product.application.dto.CreateProductCommand;
 import com.peekcart.product.domain.model.Category;
 import com.peekcart.support.AbstractIntegrationTest;
+import com.peekcart.support.SharedContainers;
 import jakarta.persistence.EntityManager;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,14 +15,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
 import java.util.List;
@@ -44,31 +40,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 의 만료 후 단언이 red 가 된다 — 즉 이 테스트는 시간 의존이 실재해야만 통과한다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
         // 운영 기본값은 5s (CacheConfig). 시간 축을 결정적으로 만들기 위해서만 줄인다.
         "peekcart.cache.product-stock-ttl=1s"
 })
+@Import(SharedContainers.class)
 @DisplayName("D-026 재고 캐시 stale 상한 계약")
 class ProductStockCacheStalenessIntegrationTest extends AbstractIntegrationTest {
 
     private static final Duration TTL = Duration.ofSeconds(1);
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired ProductQueryService queryService;
     @Autowired ProductCommandService commandService;

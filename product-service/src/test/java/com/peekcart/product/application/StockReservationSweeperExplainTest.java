@@ -2,19 +2,15 @@ package com.peekcart.product.application;
 
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.util.List;
 
@@ -35,30 +31,26 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ({@code V3__stock_reservation_lease.sql} 주석이 이 전환을 이미 기록). 검증 대상은 현행 인덱스다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("sweeper 조회 실행계획 (부모 P13 증적)")
 class StockReservationSweeperExplainTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired EntityManager entityManager;
 
     private static final String INDEX = "idx_stock_reservations_lease";
+
+    /**
+     * EXPLAIN 은 빈 테이블 전제다. DB 를 공유하므로(ADR-0028) 앞 클래스가 남긴 행이 옵티마이저 판단을
+     * 바꿀 수 있다 — 종전 per-class 컨테이너에서 늘 성립하던 전제를 여기서 되살린다.
+     */
+    @BeforeEach
+    void setUp() {
+        cleanDatabase();
+    }
 
     @Test
     @DisplayName("인덱스가 실제로 생성돼 있고 (status, expires_at) 순서다")

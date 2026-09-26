@@ -3,19 +3,15 @@ package com.peekcart.product.application;
 import com.peekcart.product.domain.model.ReservationStatus;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +32,6 @@ import static org.awaitility.Awaitility.await;
  * {@link StockSchedulerPropertiesTest} 가 따로 고정한다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
@@ -44,23 +39,16 @@ import static org.awaitility.Awaitility.await;
         "app.scheduler.stock.lock-at-least-for=0s",
         "app.scheduler.stock.lock-at-most-for=30s",
         // 회수 대상 판정을 좁혀 seed 가 즉시 대상이 되게 한다(회수 '규칙' 은 단위 테스트 소관)
-        "app.reservation.lease.sweeper-grace=1s"
+        "app.reservation.lease.sweeper-grace=1s",
+        // ADR-0029: 스케줄러는 테스트에서 기본 off 다. 직접 호출 없이 @Scheduled 가 발화하는 것이 검증 대상이다.
+        "app.scheduling.enabled=true"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
+// 켠 자율 writer 의 수명을 자기 클래스에 가둔다 (ADR-0029 D3) — context 가 캐시된 채 남으면
+// 스케줄러가 이후 클래스의 공유 브로커·DB 를 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("Product 스케줄러 배선 계약")
 class StockSchedulerWiringIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     private Long productId;
 

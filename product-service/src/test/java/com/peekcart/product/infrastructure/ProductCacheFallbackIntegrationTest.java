@@ -11,6 +11,7 @@ import com.peekcart.product.domain.model.Product;
 import com.peekcart.product.domain.repository.ProductRepository;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import eu.rekawek.toxiproxy.model.ToxicDirection;
@@ -22,27 +23,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.redis.RedisConnectionDetails;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -81,8 +79,7 @@ import static org.mockito.Mockito.verify;
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
-@Testcontainers
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("Redis 장애 시 상품 조회 fail-open (L-006)")
 class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
 
@@ -97,18 +94,9 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
     /** Redis 와 Toxiproxy 가 같은 네트워크에 있어야 프록시가 upstream 을 alias 로 찾는다. */
     private static final Network NETWORK = Network.newNetwork();
 
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
-
     /**
-     * Redis 는 {@code @ServiceConnection} 을 <b>붙이지 않는다</b>. 붙이면 Spring 이 컨테이너의
-     * mapped port 로 직결돼 프록시를 우회하고, 장애 주입이 전부 무효가 된다.
+     * Redis 는 공유 컨테이너가 아니라 이 클래스가 따로 띄운다. 앱이 이 Redis 앞의 프록시를 거쳐야
+     * 장애 주입이 먹는다 — 연결은 {@link RedisThroughProxy} 가 돌린다. MySQL·Kafka 는 공유한다.
      */
     static final GenericContainer<?> REDIS = new GenericContainer<>("redis:7")
             .withExposedPorts(REDIS_PORT)
@@ -121,7 +109,7 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
     private static Proxy redisProxy;
 
     static {
-        // @Container 가 아니라 static 블록에서 띄운다 — @DynamicPropertySource 가 평가되기 전에
+        // @Container 가 아니라 static 블록에서 띄운다 — 연결 빈이 평가되기 전에
         // 프록시가 존재해야 하고, 그 순서를 JUnit 확장 순서에 맡기지 않기 위해서다.
         REDIS.start();
         TOXIPROXY.start();
@@ -133,10 +121,27 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
         }
     }
 
-    @DynamicPropertySource
-    static void redisThroughProxy(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", TOXIPROXY::getHost);
-        registry.add("spring.data.redis.port", () -> TOXIPROXY.getMappedPort(PROXY_LISTEN_PORT));
+    /**
+     * 앱의 Redis 연결을 프록시로 돌린다.
+     *
+     * <p><b>프로퍼티로는 안 된다</b>: {@link SharedContainers} 가 공유 Redis 의 {@code RedisConnectionDetails}
+     * 빈을 내놓으면 Boot 는 {@code spring.data.redis.*} 로 만드는 기본 빈을 건너뛴다({@code @ConditionalOnMissingBean}).
+     * 그래서 {@code @Primary} 빈으로 덮는다. Lettuce 와 Redisson 이 모두 이 빈 하나를 받는다.
+     */
+    @TestConfiguration(proxyBeanMethods = false)
+    static class RedisThroughProxy {
+
+        @Bean
+        @Primary
+        RedisConnectionDetails redisThroughProxy() {
+            // 람다를 쓸 수 없다 — RedisConnectionDetails 는 메서드가 전부 default 다.
+            return new RedisConnectionDetails() {
+                @Override
+                public Standalone getStandalone() {
+                    return Standalone.of(TOXIPROXY.getHost(), TOXIPROXY.getMappedPort(PROXY_LISTEN_PORT));
+                }
+            };
+        }
     }
 
     @Autowired ProductQueryService queryService;

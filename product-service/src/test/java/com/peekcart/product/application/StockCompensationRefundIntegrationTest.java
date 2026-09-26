@@ -4,30 +4,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peekcart.global.outbox.OutboxEvent;
 import com.peekcart.global.outbox.OutboxEventRepository;
-import com.peekcart.global.outbox.OutboxPollingScheduler;
 import com.peekcart.global.outbox.dto.KafkaEventEnvelope;
 import com.peekcart.product.domain.model.StockReservation;
 import com.peekcart.product.domain.repository.StockReservationRepository;
 import com.peekcart.product.infrastructure.kafka.RefundResultConsumer;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -55,29 +49,21 @@ import static org.mockito.BDDMockito.willThrow;
  * 판정되므로 단위 mock 으로 대체하지 않는다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration"
+        "spring.flyway.locations=classpath:db/migration",
+        // ADR-0029: 리스너는 테스트에서 기본 off 다. 실제 Kafka 왕복으로 payment.refunded listener 배선을 고정하는 케이스가 있다.
+        "app.kafka.listener.enabled=true"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
+// 켠 자율 writer 의 수명을 자기 클래스에 가둔다 (ADR-0029 D3) — context 가 캐시된 채 남으면
+// 리스너가 이후 클래스의 공유 브로커·DB 를 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("Product 환불 보상 계약 통합 테스트")
 class StockCompensationRefundIntegrationTest extends AbstractIntegrationTest {
 
     private static final String REQUEST_EVENT_TYPE = "stock.compensation.requested";
     private static final long ORDER_ID = 7_001L;
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired StockReservationService reservationService;
     @Autowired StockReservationRepository reservationRepository;
@@ -87,20 +73,8 @@ class StockCompensationRefundIntegrationTest extends AbstractIntegrationTest {
 
     @MockitoSpyBean OutboxEventRepository outboxEventRepository;
 
-    /**
-     * Outbox poller 를 무력화한다 — 두 가지를 동시에 막는다.
-     *
-     * <p>① {@code OutboxEventRepository} 를 context-wide spy 로 바꾸면 **5초마다 도는**
-     * {@link OutboxPollingScheduler} 가 그 spy 를 호출한다. Mockito 의
-     * {@code willThrow(...).given(spy)...} 는 두 단계라 그 사이에 다른 스레드가 spy 를 건드리면
-     * {@code UnfinishedStubbingException} 이 난다 — 코드가 아니라 <b>주사위</b>가 결정하는 실패다.
-     *
-     * <p>② 실제 poller 가 돌면 {@code PENDING} 행을 집어 {@code PUBLISHED} 로 바꾼다. 이 클래스의
-     * backfill 검증은 상태 카운트를 단언하므로 그 자체로 경합이다.
-     *
-     * <p>발행 경로가 필요한 검사는 {@code kafkaTemplate.send} 로 직접 넣으므로 poller 는 쓰이지 않는다.
-     */
-    @MockitoBean OutboxPollingScheduler outboxPollingScheduler;
+    // 배경 스케줄러는 테스트 기본 off(ADR-0029) — outbox poller 가 위 spy 와 경합하거나 PENDING 을
+    // PUBLISHED 로 바꾸지 않는다. 발행 경로가 필요한 검사는 kafkaTemplate.send 로 직접 넣는다.
 
     @BeforeEach
     void setUp() {
