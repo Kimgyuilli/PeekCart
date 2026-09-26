@@ -36,7 +36,7 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
-## 로컬 검증 범위 재평가 — 전량 유지 (D-040, 2026-09-27)
+## 로컬 검증 범위 재평가 — 전량 유지 (D-040, [#148](https://github.com/Kimgyuilli/PeekCart/pull/148), 2026-09-27)
 
 ADR-0028 §후속 ④ 를 D-035 이후 실측으로 닫았다. 로컬 `./gradlew test --rerun` 이 706초, 8모듈
 1253 테스트 0 실패다. 싱글톤 전환 전 서비스 5모듈 합계가 약 4510초였으므로 `work.md` §8 의 전량
@@ -47,6 +47,9 @@ ADR-0028 §후속 ④ 를 D-035 이후 실측으로 닫았다. 로컬 `./gradlew
 이고 test 태스크의 `systemProperty` 로 들어가 입력이 매 실행 바뀐다. 건너뛰는 것은 common · gateway ·
 peekcart-common-auth 뿐이다. 시드를 입력에서 빼는 안은 D-035 의 매 실행 셔플 의도와 맞바꾸는 부분이
 있어 D-044 로 등록했다. 새 ADR 은 필요하지 않다.
+
+미충족: 서비스 test 태스크의 UP-TO-DATE 불가는 D-044 로 넘겼다. PHASE1·2 progress 는 엔트리가 `###`
+헤딩이라 다이제스트가 읽지 못한다.
 
 ## product-service 통합 테스트 컨테이너 싱글톤 전환 (D-035 4/4, [#147](https://github.com/Kimgyuilli/PeekCart/pull/147), 2026-09-27)
 
