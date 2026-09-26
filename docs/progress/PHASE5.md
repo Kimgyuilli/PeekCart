@@ -36,6 +36,27 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## payment-service 통합 테스트 컨테이너 싱글톤 전환 (D-035 3/4, [#146](https://github.com/Kimgyuilli/PeekCart/pull/146), 2026-09-26)
+
+payment-service 통합 테스트 13클래스를 `@Import(SharedContainers.class)` 로 전환했다. 진입점의
+무조건 `@EnableScheduling` 을 제거해 `SchedulingConfig` 게이트로 넘겼다. 브로커 왕복으로 리스너
+소비를 관측하는 5클래스와 타이머 발화를 기다리는 ShedLock 만 opt-in 하고 `@DirtiesContext(AFTER_CLASS)`
+로 가뒀다(ADR-0029).
+
+payment 는 테스트 클래스끼리 고정 토픽을 주고받는 첫 모듈이었다. DeadLetterLedger 가 `*.dlq` 에
+보낸 레코드가 Dlq 테스트 리스너(earliest)에 `@BeforeEach` 의 `clear()` 뒤에 도착하는 것을 관측했다.
+리스너는 context 기동 시점부터 읽으므로 `cleanKafkaTopics` 로는 순서를 보장할 수 없다. 그래서 같은
+클래스 세 번째 케이스가 쓰던 고유 key 필터를 앞 두 케이스에 맞췄다. 수정 전 클래스와 메서드 순서를
+강제하면 red, 수정 후 green 이다. 클래스 순서만 강제한 첫 재현은 green 이었다. 메서드 순서까지
+고정해야 누수가 드러난다는 점은 계획서 정정 이력에 남겼다.
+
+`:payment-service:test --rerun` 이 1919초에서 55초가 됐다. 시드 3개 셔플 통과. opt-in 6개를 끄면
+전부 red 가 된다. D-035 ④ 토픽 누적은 최종 20개 전부 고정 이름이고 메타데이터 타임아웃 0건이었다.
+`./gradlew test` 전량 통과. Codex 리뷰는 호출하지 않았다(`.cache/codex-off`).
+
+미충족: lint 가 FQN 표기(`@org.testcontainers.junit.jupiter.Testcontainers`)를 잡지 못하는 기존
+사각지대를 검증 중 발견했다. 목록 누락 가드와 함께 product PR 에서 판단한다. 새 ADR 은 필요하지 않다.
+
 ## notification-service 통합 테스트 컨테이너 싱글톤 전환 (D-035 2/4, [#145](https://github.com/Kimgyuilli/PeekCart/pull/145), 2026-09-26)
 
 notification-service 통합 테스트 7클래스를 `@Import(SharedContainers.class)` 로 전환했다. 자율
