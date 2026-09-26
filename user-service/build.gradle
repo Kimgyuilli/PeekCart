@@ -65,9 +65,26 @@ dependencies {
     testImplementation 'org.testcontainers:mysql'
 }
 
+// D-035: 컨테이너를 모듈 싱글톤으로 공유하므로(ADR-0028) order-service 와 같은 규약을 건다.
+// 자율 writer(스케줄러 · @KafkaListener)는 테스트에서 기본 off 다(ADR-0029). user 에는 지금
+// writer 가 없지만, 생기면 기본 off 에서 출발하도록 모듈 기본값으로 걸어 둔다.
+// 클래스 순서는 매 실행 섞는다 — 공유 DB/Redis 상태 누수는 순서를 바꿔야 드러난다.
+// 재현: ./gradlew :user-service:test -PtestSeed=<시드>
+def userTestSeed = (project.findProperty('testSeed')
+        ?: System.getenv('TEST_SEED')
+        ?: System.currentTimeMillis()).toString()
+
 tasks.named('test') {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
+    systemProperty 'app.scheduling.enabled', 'false'
+    systemProperty 'app.kafka.listener.enabled', 'false'
+    systemProperty 'junit.jupiter.testclass.order.default', 'org.junit.jupiter.api.ClassOrderer$Random'
+    systemProperty 'junit.jupiter.execution.order.random.seed', userTestSeed
+    doFirst {
+        logger.lifecycle("[D-035] test class order seed = ${userTestSeed} " +
+                "(재현: ./gradlew :user-service:test -PtestSeed=${userTestSeed})")
+    }
 }
 
 jacocoTestReport {
