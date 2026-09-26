@@ -106,9 +106,15 @@ if ppath and os.path.exists(ppath):
     heads = re.findall(r'^## (.+)$', prog, re.M)
     if not heads:
         problems.append('%s 에서 "## " 엔트리를 읽지 못했다' % ppath)
+    # 엔트리는 "작업 이력" 뒤의 헤딩만. 앞쪽 개요 헤딩(목표·이월 항목 등)은 엔트리가 아니다
+    if '작업 이력' in heads and heads.index('작업 이력') + 1 < len(heads):
+        heads = heads[heads.index('작업 이력') + 1:]
+    # 파일마다 기록 순서가 다르다(PHASE3·4 는 오래된 것부터, PHASE5 는 최신부터). 날짜로 판별한다
+    dates = [m.group(0) for m in (re.search(r'\d{4}-\d{2}-\d{2}', h) for h in heads) if m]
+    recent = heads[:4] if len(dates) >= 2 and dates[0] > dates[-1] else heads[-4:][::-1]
     out.append('')
     out.append('## progress 최근 (%s, 전체 %d엔트리)' % (os.path.basename(ppath), len(heads)))
-    for h in heads[-4:]:
+    for h in recent:
         out.append('- %s' % h[:100])
 else:
     problems.append('progress 문서를 찾지 못했다: %s' % (ppath or '(Phase 번호 추론 실패)'))
