@@ -23,3 +23,16 @@
 - [run 36169884411](https://github.com/Kimgyuilli/PeekCart/actions/runs/36169884411) 의 lint/test/guards/images 6개/e2e 두 모드/gate 가 모두 성공했다. PR 의 publish 는 skipped 로 보고됐다.
 - e2e 시나리오는 18:02:14 UTC, 음성 대조군은 18:08:35 UTC 에 끝났고 gate 는 18:08:40 UTC 에 시작해 18:08:54 UTC 에 성공했다. 두 모드를 실제로 기다리는 최종 gate 경로를 확인했다.
 - main push 뒤의 GHCR SHA/`latest` digest 와 publish 순서는 아직 실측 전이다.
+
+## 2026-09-26 — main push / GHCR 실측 완료
+
+- PR #142 는 merge commit `c5094fbf0f6d43d4e24ac956a0cbfd62d2b87c80` 으로 머지됐다. [main run 36228604631](https://github.com/Kimgyuilli/PeekCart/actions/runs/36228604631)은 성공했다.
+- e2e 시나리오 08:11:26 UTC·음성 대조군 08:17:28 UTC 완료 → gate 08:17:31~08:17:45 UTC 성공 → publish 6개 모두 08:17:48 UTC 이후 시작·성공. product-service publish 는 러너 대기로 08:22:48 UTC 시작했다.
+- 6개 publish 로그에서 이미지 검증·SHA push·원격 config digest 확인·`latest` 승격 단계가 성공했다. GHCR 원격 manifest 를 별도 재조회해 각 이미지의 커밋 SHA 태그와 `latest` digest 동일성을 확인했다:
+  - user-service `sha256:226460dcb27f29138cc1cc91f5987eb71978742193ae01aadf4decde382b8611`
+  - payment-service `sha256:26ca40f13077c1478be837ce52b4e84c57f65b7768260c9988dada36b0306bae`
+  - notification-service `sha256:5879c8e81dc8915462536e0888914438411c72b293e11db81b74953b056a139a`
+  - gateway `sha256:64f7fc9c0a47dac4984724af425019245b7231e6881aa60fc284a16695d08399`
+  - product-service `sha256:fbf87326f91044a8931d29350cd6444bfacb95bbab0358596b036830a9a45b51`
+  - order-service `sha256:5431ba729549d3806ff7dc4d8f3f799fc46d308c44d4a75311c44ad9fdf54f4b`
+- GitHub API 재조회: 필수 체크 `gate`(GitHub Actions 앱 ID `15368`), `strict=true`, `enforce_admins=true`. P1~P6·V1~V5 와 계획서 완료 조건 충족. 별도 Codex 리뷰 미호출.
