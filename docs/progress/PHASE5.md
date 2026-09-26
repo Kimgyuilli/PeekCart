@@ -47,8 +47,12 @@ SHA 태그의 원격 config digest 를 검증하고 같은 manifest digest 로 `
 로컬 `./gradlew test --no-daemon` 통과(30분 8초, 49 tasks executed), 게이트 배선
 변형 검사 24/24와 관련 lint 가 통과했다. PR CI [run 36169884411](https://github.com/Kimgyuilli/PeekCart/actions/runs/36169884411)에서
 두 e2e 모드와 모든 선행 job 이 성공했고, 대조군 완료 뒤 gate 가 시작해 성공했다.
-PR 의 publish 는 건너뛰었다. main push 의 publish 순서·GHCR digest 동일성 실측이
-남아 D-043 은 진행 중이다.
+PR 의 publish 는 건너뛰었다. 이후 [main push run 36228604631](https://github.com/Kimgyuilli/PeekCart/actions/runs/36228604631)에서
+시나리오 08:11:26 UTC·음성 대조군 08:17:28 UTC 완료 뒤 gate 가 08:17:31 UTC 시작해
+08:17:45 UTC 성공했고, 6개 publish 는 모두 그 뒤에 시작해 성공했다. GHCR 원격에서
+커밋 SHA 태그와 `latest` 의 manifest digest 가 6개 이미지 모두 일치함을 재조회했다.
+브랜치 보호의 필수 체크는 `gate`(GitHub Actions 앱 ID `15368`), `strict=true`,
+`enforce_admins=true` 로 재확인했다. D-043 완료(2026-09-26, see ADR-0030).
 
 ## main 필수 체크 복구 (D-037, [#141](https://github.com/Kimgyuilli/PeekCart/pull/141), 2026-09-25)
 
