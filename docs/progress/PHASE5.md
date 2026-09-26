@@ -36,6 +36,28 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## product-service 통합 테스트 컨테이너 싱글톤 전환 (D-035 4/4, [#147](https://github.com/Kimgyuilli/PeekCart/pull/147), 2026-09-27)
+
+product-service 통합 테스트 20클래스를 `@Import(SharedContainers.class)` 로 전환해 D-035 를 닫았다.
+진입점의 무조건 `@EnableScheduling` 을 제거해 `SchedulingConfig` 게이트로 넘겼다. 브로커 왕복으로
+리스너 소비를 관측하는 StockCompensationRefund · DeadLetterLedger 와 타이머 발화를 기다리는
+StockSchedulerWiring 만 opt-in 하고 `@DirtiesContext(AFTER_CLASS)` 로 가뒀다(ADR-0029).
+
+Redis 를 Toxiproxy 뒤에 두는 ProductCacheFallback 은 그대로 옮기면 깨진다. Boot 의 프로퍼티 기반
+`RedisConnectionDetails` 는 `@ConditionalOnMissingBean` 이라, 공유 Redis 빈이 있으면 `spring.data.redis.*`
+가 무시된다. 예외로 두지 않고 프록시를 가리키는 `@Primary` 빈으로 덮었다. Lettuce 와 Redisson 이
+같은 빈을 받는다. 빼면 7개 중 5개가 red 다. EXPLAIN 테스트는 공유 DB 의 잔여 행 30개에서 풀스캔으로
+뒤집히는 것을 확인하고 매 테스트 전에 DB 를 비우게 했다.
+
+`:product-service:test --rerun` 이 1098초에서 156초가 됐다. 시드 3개 셔플 통과. D-035 ④ 토픽 누적은
+최종 19개 전부 고정 이름, 메타데이터 타임아웃 0건으로 4모듈 모두 악화가 없었다. lint 이월 두 건도
+닫았다. 대상을 test 소스가 있는 8모듈 전부로 넓히고, settings.gradle 과 대조한 누락 가드(ITC-005)와
+FQN 매칭을 넣었다. `./gradlew test` 전량 통과. Codex 리뷰는 호출하지 않았다(`.cache/codex-off`).
+
+미충족: `cleanDatabase` 는 `shedlock` 을 지우지 않으므로, 같은 락 메서드를 두 클래스가 직접 부르게
+되면 뒤 클래스가 조용히 skip 된다. 지금은 호출자가 각 한 곳이다. Redis keyspace 전체 정리 헬퍼는
+만들지 않았다. 새 ADR 은 필요하지 않다.
+
 ## payment-service 통합 테스트 컨테이너 싱글톤 전환 (D-035 3/4, [#146](https://github.com/Kimgyuilli/PeekCart/pull/146), 2026-09-26)
 
 payment-service 통합 테스트 13클래스를 `@Import(SharedContainers.class)` 로 전환했다. 진입점의
