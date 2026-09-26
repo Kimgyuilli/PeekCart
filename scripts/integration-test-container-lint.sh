@@ -29,6 +29,11 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 2
 fi
 
+# 검사 대상 — 서비스 모듈의 test 소스. 픽스처(--self-test)도 이 목록을 순회하므로 대상을 넓힐 때
+# 여기 한 줄만 고친다. 모듈이 사라지거나 이름이 바뀌면 검사가 조용히 증발하므로, 존재하지 않는
+# 모듈은 위반으로 센다(vacuous-green 차단).
+MODULES=(order-service user-service notification-service)
+
 LINT_PY="$(mktemp -t integration-test-container-lint.XXXXXX.py)"
 trap 'rm -f "$LINT_PY"' EXIT
 
@@ -38,10 +43,7 @@ import re
 import sys
 
 root = sys.argv[1]
-
-# 검사 대상 — 서비스 모듈의 test 소스. 모듈이 사라지거나 이름이 바뀌면 검사가 조용히
-# 증발하므로, 존재하지 않는 모듈은 위반으로 센다(vacuous-green 차단).
-MODULES = ["order-service", "user-service"]
+MODULES = sys.argv[2:]
 
 # 화이트리스트: 파일명 -> 사유. 사유 없는 항목은 허용하지 않는다.
 ALLOWED = {
@@ -105,7 +107,7 @@ print("integration-test-container-lint: 직접 선언 0건 (예외 %d건, 사유
 PYEOF
 
 run_lint() {
-    python3 "$LINT_PY" "$1"
+    python3 "$LINT_PY" "$1" "${MODULES[@]}"
 }
 
 self_test() {
@@ -140,13 +142,14 @@ self_test() {
         echo "  ✓ $name (${expect_code})"
     }
 
-    # mode: clean | new-container | user-new-container | testcontainers-revived | no-module | ghost-allow
+    # mode: clean | new-container | module-new-container:<모듈> | testcontainers-revived | no-module | ghost-allow
     _fixture() {
-        local dir="$1" mode="$2"
+        local dir="$1" mode="$2" m
         local t="$dir/order-service/src/test/java/com/peekcart"
         [[ "$mode" == "no-module" ]] && { mkdir -p "$dir/other"; return; }
-        local u="$dir/user-service/src/test/java/com/peekcart"
-        mkdir -p "$t" "$u"
+        for m in "${MODULES[@]}"; do
+            mkdir -p "$dir/$m/src/test/java/com/peekcart"
+        done
         cat > "$t/SomethingIntegrationTest.java" <<'JAVA'
 @SpringBootTest
 @Import(SharedContainers.class)
@@ -154,12 +157,12 @@ class SomethingIntegrationTest {
     // @Container 라는 문자열이 주석에 있어도 위반이 아니다
 }
 JAVA
-        # user-service 도 검사 대상인지 — 목록에서 빠지면 이 케이스가 false-green 이 된다
-        if [[ "$mode" == "user-new-container" ]]; then
-            cat > "$u/UserNewIntegrationTest.java" <<'JAVA'
+        # 각 모듈이 실제로 검사되는지 — 목록에서 빠지면 그 모듈 케이스가 false-green 이 된다
+        if [[ "$mode" == module-new-container:* ]]; then
+            cat > "$dir/${mode#module-new-container:}/src/test/java/com/peekcart/NewIntegrationTest.java" <<'JAVA'
 @SpringBootTest
 @Testcontainers
-class UserNewIntegrationTest {
+class NewIntegrationTest {
 }
 JAVA
         fi
@@ -202,8 +205,11 @@ JAVA
     _case "@Testcontainers 부활" ITC-002 "$tmp/c2"
     _fixture "$tmp/c3" no-module
     _case "검사 대상 모듈 소멸" ITC-001 "$tmp/c3"
-    _fixture "$tmp/c5" user-new-container
-    _case "user-service 테스트가 @Testcontainers 선언" ITC-002 "$tmp/c5"
+    local m
+    for m in "${MODULES[@]}"; do
+        _fixture "$tmp/m-$m" "module-new-container:$m"
+        _case "$m 테스트가 @Testcontainers 선언" ITC-002 "$tmp/m-$m"
+    done
     _fixture "$tmp/c4" ghost-allow
     _case "화이트리스트가 유령 파일을 가리킴" ITC-004 "$tmp/c4"
 
@@ -212,7 +218,7 @@ JAVA
         echo "self-test 실패 ${failures}건"
         return 1
     fi
-    echo "self-test OK (7/7)"
+    echo "self-test OK ($((6 + ${#MODULES[@]}))/$((6 + ${#MODULES[@]})))"
 }
 
 if [[ "${1:-}" == "--self-test" ]]; then
