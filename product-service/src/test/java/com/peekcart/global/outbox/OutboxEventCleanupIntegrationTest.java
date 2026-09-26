@@ -2,20 +2,15 @@ package com.peekcart.global.outbox;
 
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -29,28 +24,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * (미발행/실패 유실 금지). ShedLock 때문에 {@code scheduler.cleanup()} 은 클래스당 1회만 호출한다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
         // 소량 데이터로 다중 batch 를 강제 (outbox 도 배치 계약 공유 — cutoff 1회·batch 반복).
         "app.idempotency.cleanup.batch-size=2"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("outbox_events cleanup 통합 테스트 (PUBLISHED 경과분만 삭제)")
 class OutboxEventCleanupIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired OutboxEventCleanupScheduler scheduler;
     @Autowired OutboxEventJpaRepository repository;

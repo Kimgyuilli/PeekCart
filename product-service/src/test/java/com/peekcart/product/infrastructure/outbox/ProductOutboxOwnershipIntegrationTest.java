@@ -6,19 +6,14 @@ import com.peekcart.global.outbox.OutboxEventStatus;
 import com.peekcart.global.outbox.OutboxPollingService;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.Duration;
 
@@ -32,26 +27,13 @@ import static org.awaitility.Awaitility.await;
  * backlog gauge 집계 메서드도 자기 스키마 전체를 센다(countByStatus).
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
-@Import(IntegrationTestConfig.class)
+@Import({IntegrationTestConfig.class, SharedContainers.class})
 @DisplayName("outbox poller 통합 테스트 (DB-per-service: 자기 스키마 PENDING 전체 발행)")
 class ProductOutboxOwnershipIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired OutboxEventRepository outboxEventRepository;
     @Autowired OutboxPollingService outboxPollingService;

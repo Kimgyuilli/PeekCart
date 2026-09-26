@@ -5,6 +5,7 @@ import com.peekcart.product.application.ProductQueryService;
 import com.peekcart.product.application.dto.CreateProductCommand;
 import com.peekcart.product.domain.model.Category;
 import com.peekcart.support.AbstractIntegrationTest;
+import com.peekcart.support.SharedContainers;
 import jakarta.persistence.EntityManager;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
@@ -13,15 +14,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.cache.CacheManager;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -45,31 +41,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>ADR-0026.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
         // Statistics 는 기본 off 다. 이 테스트의 검증 수단이므로 여기서만 켠다.
         "spring.jpa.properties.hibernate.generate_statistics=true"
 })
+@Import(SharedContainers.class)
 @DisplayName("D-026 상품 조회 DB 왕복 수 계약")
 class ProductDetailQueryCostIntegrationTest extends AbstractIntegrationTest {
 
     private static final PageRequest DEFAULT_PAGE = PageRequest.of(0, 10);
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired ProductQueryService queryService;
     @Autowired ProductCommandService commandService;

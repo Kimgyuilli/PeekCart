@@ -7,13 +7,14 @@ import com.peekcart.global.jwt.RsaPublicKeyRegistry;
 import com.peekcart.global.security.InternalGatewayPublicKeyRegistry;
 import com.peekcart.internaltoken.InternalTokenFixtures;
 import com.peekcart.support.InternalKeyFingerprint;
+import com.peekcart.support.SharedContainers;
 import com.peekcart.support.TestRsaKeys;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -23,11 +24,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +37,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 토큰 부재→401 / 유효 서명→인증 / 위조·만료→401 / 평문 {@code X-User-*}·직접 {@code Authorization} 무시.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
@@ -49,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "app.internal-token.public-keys[0].kid=gw-test-2026",
         "app.internal-token.public-keys[0].location=classpath:internal-token/gateway-test-public.pem"
 })
+@Import(SharedContainers.class)
 @DisplayName("product-service 보안 통합 테스트 (Gateway 서명 내부 토큰)")
 class ProductSecurityIntegrationTest {
 
@@ -63,20 +59,6 @@ class ProductSecurityIntegrationTest {
     static void userTokenVerificationKeys(DynamicPropertyRegistry registry) {
         TestRsaKeys.register(registry);
     }
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired TestRestTemplate restTemplate;
     @Autowired Map<String, SecurityFilterChain> securityFilterChains;

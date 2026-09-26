@@ -10,6 +10,7 @@ import com.peekcart.product.domain.model.StockReservation;
 import com.peekcart.product.domain.repository.StockReservationRepository;
 import com.peekcart.product.infrastructure.kafka.StockReservationConsumer;
 import com.peekcart.support.AbstractIntegrationTest;
+import com.peekcart.support.SharedContainers;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,16 +18,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -64,31 +60,17 @@ import static org.mockito.Mockito.verify;
  * 모든 스레드를 "읽기는 끝났고 커밋은 아직" 지점에 모은다. sleep 을 쓰지 않는다.
  */
 @SpringBootTest
-@Testcontainers
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
 })
+@Import(SharedContainers.class)
 @DisplayName("D-025 — consumer 경계 재고 동시성 계약 (ADR-0025 D1)")
 class StockReservationLockBoundaryIntegrationTest extends AbstractIntegrationTest {
 
     private static final int INITIAL_STOCK = 100;
     private static final int CONCURRENT_ORDERS = 5;
     private static final int BARRIER_TIMEOUT_SECONDS = 30;
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired StockReservationConsumer consumer;
     @Autowired ReleaseRunner releaseRunner;
