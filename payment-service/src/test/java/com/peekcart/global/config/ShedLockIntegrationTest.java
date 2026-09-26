@@ -1,18 +1,15 @@
 package com.peekcart.global.config;
 
 import com.peekcart.support.AbstractIntegrationTest;
+import com.peekcart.support.SharedContainers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -20,29 +17,20 @@ import static org.awaitility.Awaitility.await;
 import java.time.Duration;
 
 @SpringBootTest
-@Testcontainers
+@Import(SharedContainers.class)
 @TestPropertySource(properties = {
         "spring.task.scheduling.pool.size=1",
         "toss.payments.secret-key=test_sk_fake",
         "spring.flyway.enabled=true",
-        "spring.flyway.locations=classpath:db/migration"
+        "spring.flyway.locations=classpath:db/migration",
+        // ADR-0029: 스케줄러는 테스트에서 기본 off 다. 실제 타이머 발화로 ShedLock 락 기록을 확인하는 것이 검증 대상이다.
+        "app.scheduling.enabled=true"
 })
+// 켠 자율 writer 의 수명을 자기 클래스에 가둔다 (ADR-0029 D3) — context 가 캐시된 채 남으면
+// 스케줄러가 이후 클래스의 공유 브로커·DB 를 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("ShedLock 통합 테스트")
 class ShedLockIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired
     JdbcTemplate jdbcTemplate;

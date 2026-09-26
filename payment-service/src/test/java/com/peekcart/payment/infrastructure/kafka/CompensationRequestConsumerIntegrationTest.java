@@ -10,20 +10,17 @@ import com.peekcart.payment.domain.model.Payment;
 import com.peekcart.payment.domain.model.PaymentStatus;
 import com.peekcart.payment.domain.model.RefundStatus;
 import com.peekcart.support.AbstractIntegrationTest;
+import com.peekcart.support.SharedContainers;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -45,28 +42,19 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 책임은 순서 제어가 아니라 {@code payment_refunds.order_id} UNIQUE 에 있다.
  */
 @SpringBootTest
-@Testcontainers
+@Import(SharedContainers.class)
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration",
-        // 스케줄러가 원장을 claim 해 상태 판정을 흐리지 않게 한다.
-        "app.refund.dispatch-interval-ms=3600000",
-        "app.refund.reconcile-interval-ms=3600000"
+        // 배경 스케줄러는 테스트 기본 off 다(ADR-0029). 원장을 claim 해 상태 판정을 흐리지 않는다.
+        // ADR-0029: 리스너도 기본 off 다. 실제 Kafka 왕복으로 두 토픽 소비 배선을 확인하는 케이스가 있어 켠다.
+        "app.kafka.listener.enabled=true"
 })
+// 켠 자율 writer 의 수명을 자기 클래스에 가둔다 (ADR-0029 D3) — context 가 캐시된 채 남으면
+// 리스너가 이후 클래스의 공유 브로커·DB 를 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("환불 요청 토픽 소비 통합 테스트")
 class CompensationRequestConsumerIntegrationTest extends AbstractIntegrationTest {
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7").withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired CompensationRequestConsumer consumer;
     @Autowired PaymentEventConsumer paymentEventConsumer;

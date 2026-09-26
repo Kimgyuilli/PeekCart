@@ -5,6 +5,7 @@ import com.peekcart.payment.domain.model.Payment;
 import com.peekcart.payment.infrastructure.outbox.PaymentOutboxEventPublisher;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
+import com.peekcart.support.SharedContainers;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,16 +15,11 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -44,9 +40,12 @@ import static org.awaitility.Awaitility.await;
  * 도메인 간 소비 플로우는 cross-service(order-service 발행 ↔ root payment 소비)라 각 서비스 consumer 테스트가 담당한다.</p>
  */
 @SpringBootTest
-@Testcontainers
-@TestPropertySource(properties = {"spring.task.scheduling.pool.size=1", "spring.flyway.enabled=true", "spring.flyway.locations=classpath:db/migration"})
-@Import({IntegrationTestConfig.class, OutboxKafkaIntegrationTest.TraceCaptureConfig.class})
+// ADR-0029: 리스너는 테스트에서 기본 off 다. 테스트 소유 @KafkaListener 로 발행 레코드를 수신해 확인하는 것이 검증 대상이다.
+@TestPropertySource(properties = {"spring.task.scheduling.pool.size=1", "spring.flyway.enabled=true", "spring.flyway.locations=classpath:db/migration", "app.kafka.listener.enabled=true"})
+@Import({IntegrationTestConfig.class, OutboxKafkaIntegrationTest.TraceCaptureConfig.class, SharedContainers.class})
+// 켠 자율 writer 의 수명을 자기 클래스에 가둔다 (ADR-0029 D3) — context 가 캐시된 채 남으면
+// 리스너가 이후 클래스의 공유 브로커·DB 를 계속 고친다.
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @DisplayName("Outbox → Kafka E2E 통합 테스트 (Order peel 후 payment-observable)")
 class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
 
@@ -69,20 +68,6 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
 
     private static final Long USER_ID = 42L;
     private static final AtomicLong ORDER_ID_SEQ = new AtomicLong(1);
-
-    @Container
-    @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("peekcart_test");
-
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis = new GenericContainer<>("redis:7")
-            .withExposedPorts(6379);
-
-    @Container
-    @ServiceConnection
-    static KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1");
 
     @Autowired PaymentOutboxEventPublisher paymentOutboxEventPublisher;
     @Autowired OutboxPollingService outboxPollingService;
