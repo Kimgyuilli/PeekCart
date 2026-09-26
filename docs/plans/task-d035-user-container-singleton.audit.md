@@ -10,3 +10,8 @@
 - 상태: 의도적 생략(file: 사용자 지시 (2026-09-22): Codex 리뷰를 호출하지 않는다.)
 - 검증: `./gradlew test` 전량 BUILD SUCCESSFUL (8모듈 1253 테스트 0 실패, 263초) · integration-test-container-lint 0건 · --self-test 7/7
 - 계획 대비 변경: P3 에 lint self-test 픽스처 수정 편입(대상 확대로 ITC-001 오검출) · 셔플 검출력 뮤테이션을 "자기 행만 cleanup" 방식으로 정정(계획서 정정 이력)
+
+## 2026-09-26 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/144
+- precheck: consistency ok · review health ok · writing lint(커밋·본문·제목) 통과
+- 갱신: docs/TASKS.md D-035 행(🔄, user 완료) · docs/progress/PHASE5.md 엔트리. ADR 신규·정정 없음
