@@ -3,6 +3,8 @@ grade: M
 ---
 # task-d044-test-seed-input
 
+PR: [#149](https://github.com/Kimgyuilli/PeekCart/pull/149)
+
 ## 1. 명제
 
 변경 없이 `./gradlew :<svc>-service:test` 를 두 번 돌렸을 때 두 번째가 `UP-TO-DATE` 가 아니면 미완이다.
