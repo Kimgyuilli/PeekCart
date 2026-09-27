@@ -265,7 +265,7 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
     // ---------- V3: 무응답 ----------
 
     @Test
-    @DisplayName("V3 — 무응답 Redis 에서도 조회가 1.5s 이내에 끝나고 get·put fallback 이 모두 발동한다")
+    @DisplayName("V3 — 무응답 Redis 에서도 조회가 3.5s 이내에 끝나고 두 캐시의 get·put fallback 이 모두 발동한다")
     void unresponsiveRedis_isBoundedByCommandTimeout() throws IOException {
         // 정상 경로로 한 번 예열한다 — 첫 호출의 JIT/Hibernate/HTTP 초기화 비용(~600ms)이
         // 타임아웃 상한 측정에 섞이면 무엇을 재는지 알 수 없게 된다.
@@ -285,13 +285,19 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
                             무응답 Redis 에서는 각 캐시가 get 500ms + put 500ms 를 소비하므로
                             타임아웃 예산이 4회 = 2000ms 다 — 재고 캐시 도입 전에는 2회 = 1000ms 였다.
                             이 배가는 D2 가 실제로 치르는 비용이고 ADR-0026 Consequences 에 적혀 있다.
-                            상한이 깨지면 timeout 설정이 지워졌거나 캐시가 하나 더 늘어난 것이다.""")
-                    .isLessThan(Duration.ofMillis(2600));
+                            상한이 깨지면 timeout 설정이 지워졌거나(Lettuce 기본 60s) 커진 것이다.""")
+                    // 여유 1500ms 는 부하 잡음 몫이다. 전체 test 실행에서 타임아웃 4회에 DB 조회 등
+                    // 약 760ms 가 얹힌 2.764s 를 실측했다(D-046). timeout 을 1s 로 올리면 4000ms 라 걸린다.
+                    // 캐시가 늘었는지는 시간으로 가르지 않는다 — 폭이 좁아 flake 가 된다. 아래 증가분이 맡는다.
+                    .isLessThan(Duration.ofMillis(3500));
 
             // 한 요청이 get·put 두 경로 '모두에서' 타임아웃을 맞았음을 증가분으로 고정한다.
             // 누적값 단언이면 put 경로가 아예 안 타도 앞선 테스트 잔여로 통과한다(diff 리뷰 #2).
             assertThat(before.deltaOf(DETAIL_CACHE, "get")).isEqualTo(1.0);
             assertThat(before.deltaOf(DETAIL_CACHE, "put")).isEqualTo(1.0);
+            // 재고 캐시는 '1 이상' 이다 — Lettuce 재연결 상태에 따라 이중 집계를 관측했다(V1 주석 참조).
+            assertThat(before.deltaOf(STOCK_CACHE, "get")).isGreaterThanOrEqualTo(1.0);
+            assertThat(before.deltaOf(STOCK_CACHE, "put")).isGreaterThanOrEqualTo(1.0);
         } finally {
             toxic.remove();
         }
@@ -386,7 +392,7 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
         private final java.util.Map<String, Double> baseline = new java.util.HashMap<>();
 
         private FallbackSnapshot() {
-            for (String cache : List.of(DETAIL_CACHE, LIST_CACHE, "unknown")) {
+            for (String cache : List.of(DETAIL_CACHE, LIST_CACHE, STOCK_CACHE, "unknown")) {
                 for (String operation : List.of("get", "put", "evict", "clear")) {
                     baseline.put(key(cache, operation), fallbackCount(cache, operation));
                 }

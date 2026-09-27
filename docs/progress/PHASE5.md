@@ -53,6 +53,19 @@ FAIL, `--self-test` 14종. 대조군 6종은 유지한다.
 
 미충족: CI 대조군 소요를 D-033 기준선 461초와 대조하는 것(V7)은 PR CI 실행 후 기록한다.
 
+## 무응답 Redis 상한을 부하 잡음과 분리 (D-045·D-046, [#150](https://github.com/Kimgyuilli/PeekCart/pull/150), 2026-09-28)
+
+D-044 의 미충족을 이어받아 product-service 공유 컨테이너 기동 대기 초과(D-045)를 재현하려 했다.
+단독 `--rerun` 4회와 전체 `--rerun` 1회 모두 기동 시간이 정상 범위(MySQL 12~23초, Kafka 5~11초)라
+재현 불가, 호스트 일시 지연 추정으로 닫았다. 코드 조치는 하지 않았다.
+
+그 전체 실행에서 `ProductCacheFallbackIntegrationTest` V3 가 2.764s 로 상한 2.6s 를 넘었다(D-046).
+로그상 타임아웃은 정확히 4회였고 초과분은 DB 조회 구간의 부하 잡음이다. 시간 상한은 timeout 소실·증가만
+보도록 3.5s 로 두고, 캐시 경로 계약은 재고 캐시 get·put 증가분 단언으로 옮겼다. 곁에서 `FallbackSnapshot`
+baseline 에 `productStock` 이 빠져 V1 재고 단언이 누적값이던 것을 고쳤다. 새 ADR 은 필요하지 않다.
+
+미충족: 전체 `./gradlew test` 가 한 번에 통과한 실행이 여전히 없다. 수정 후에는 product-service 만 다시 돌렸다.
+
 ## 서비스 test 태스크의 무작위 시드를 입력에서 제외 (D-044, [#149](https://github.com/Kimgyuilli/PeekCart/pull/149), 2026-09-27)
 
 서비스 5모듈의 클래스 순서 시드를 명시한 경우에만 test 태스크 입력으로 둔다. 무작위 시드는 `doFirst`
