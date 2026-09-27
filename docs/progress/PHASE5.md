@@ -36,6 +36,20 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## 서비스 test 태스크의 무작위 시드를 입력에서 제외 (D-044, [#149](https://github.com/Kimgyuilli/PeekCart/pull/149), 2026-09-27)
+
+서비스 5모듈의 클래스 순서 시드를 명시한 경우에만 test 태스크 입력으로 둔다. 무작위 시드는 `doFirst`
+에서 넣어 입력 스냅샷에 잡히지 않는다. user-service 에서 변경 없는 재실행이 1m5s 에서 `UP-TO-DATE`
+4s 가 됐다. `-PtestSeed`·`TEST_SEED` 재현 실행은 입력이 달라 반드시 돌고, 원 실행과 같은 클래스 순서를
+낸다. 포기한 것은 변경 없는 재실행의 새 순서 1회뿐이고 필요하면 `--rerun` 을 쓴다.
+
+착수 전 범위가 줄었다. CI 는 빌드 캐시를 쓰지 않아 매번 test 를 돌리므로 CI 동작 변화가 없고, TASKS 행이
+요구한 CI 벽시계 측정은 필요 없었다. 새 ADR 은 필요하지 않다. Codex 리뷰는 호출하지 않았다(`.cache/codex-off`).
+
+미충족: 전체 `./gradlew test` 가 한 번에 통과한 실행이 없다. 1회차에서 product-service 공유 컨테이너 하나가
+기동 대기를 넘겨(`ContainerLaunchException`) 89건이 연쇄 실패했고 2회차는 통과했다. 시드와 무관하다고
+판단했으나 재현하지 못했다.
+
 ## 로컬 검증 범위 재평가 — 전량 유지 (D-040, [#148](https://github.com/Kimgyuilli/PeekCart/pull/148), 2026-09-27)
 
 ADR-0028 §후속 ④ 를 D-035 이후 실측으로 닫았다. 로컬 `./gradlew test --rerun` 이 706초, 8모듈
