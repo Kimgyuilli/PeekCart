@@ -6,9 +6,11 @@ import com.peekcart.internaltoken.InternalTokenContract;
 import com.peekcart.global.jwt.RsaPublicKeyRegistry;
 import com.peekcart.global.security.InternalGatewayPublicKeyRegistry;
 import com.peekcart.internaltoken.InternalTokenFixtures;
+import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.InternalKeyFingerprint;
 import com.peekcart.support.SharedContainers;
 import com.peekcart.support.TestRsaKeys;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,9 +48,15 @@ import static org.assertj.core.api.Assertions.assertThat;
         "app.internal-token.public-keys[0].location=classpath:internal-token/gateway-test-public.pem"
 })
 @DisplayName("payment-service 보안 통합 테스트 (Gateway 서명 내부 토큰)")
-class PaymentSecurityIntegrationTest {
+class PaymentSecurityIntegrationTest extends AbstractIntegrationTest {
 
     private static final String PROTECTED_PATH = "/api/v1/payments/1";
+
+    /** 컨테이너를 공유하므로(ADR-0028) 앞 클래스가 남긴 orderId=1 결제가 404 대조를 200 으로 바꾼다. */
+    @BeforeEach
+    void setUp() {
+        cleanDatabase();
+    }
 
     /**
      * 사용자 access token 검증키를 <b>일부러</b> 등록한다 — 서비스가 Bearer 를 다시 인증하기 시작하면
