@@ -3,6 +3,8 @@ grade: S
 ---
 # task-d040-local-test-scope
 
+PR: [#148](https://github.com/Kimgyuilli/PeekCart/pull/148)
+
 `work.md` §8 로컬 검증 범위 재평가 (D-040, ADR-0028 §후속 ④)
 
 ## 명제
