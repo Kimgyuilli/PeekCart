@@ -76,10 +76,36 @@ if m.LINGERING_SCENARIOS != saved:
     print("  FAIL [정본 복원]")
     fails += 1
 
+
+# 음성 대조군 판정 규칙(ADR-0031 D1) — 의도한 지점의 타임아웃만 통과다.
+def check_control(name, fn, want_ok):
+    global fails
+    try:
+        m.expect_timeout_at("reservation", fn)
+        got_ok = True
+    except AssertionError:
+        got_ok = False
+    if got_ok == want_ok:
+        print("  ok   [%s]" % name)
+    else:
+        print("  FAIL [%s] 기대 %s / 실제 %s" % (name, want_ok, got_ok))
+        fails += 1
+
+
+def raise_(e):
+    raise e
+
+
+check_control("대조군: 의도한 지점의 타임아웃", lambda: raise_(m.Timeout("t", "reservation")), True)
+check_control("대조군: 다른 지점의 타임아웃", lambda: raise_(m.Timeout("t", "price-cache")), False)
+check_control("대조군: 지점 없는 타임아웃", lambda: raise_(m.Timeout("t")), False)
+check_control("대조군: 타임아웃 아닌 단언 실패", lambda: raise_(AssertionError("x")), False)
+check_control("대조군: 결함이 검사에 안 닿음(성공)", lambda: None, False)
+
 if fails:
     print("self-test 실패 %d건" % fails)
     sys.exit(1)
-print("self-test 통과 (9종)")
+print("self-test 통과 (14종)")
 PY_ORDER_SELFTEST
 fi
 
@@ -296,26 +322,22 @@ if [[ $NEGATIVE_CONTROL -eq 1 ]]; then
   # 일부러 주입하고 **해당 검사가 실패하는지**를 매 CI 에서 확인한다.
   nc_fails=0
 
-  # $1=이름  $2.. = 실행할 명령. 명령이 **실패해야** 대조군이 통과한다.
-  expect_fail() {
+  # 판정은 runner 의 대조군 함수가 한다(ADR-0031 D1). 함수는 결함이 **의도한 지점에서**
+  # 검사를 실패시켰을 때만 0 을 낸다. 종전의 `expect_fail`(명령이 아무 이유로든 실패하면
+  # 통과)은 ② 가 시나리오 첫 줄에서 죽는 것을 통과로 받았다. 실패 사유는 stderr 에 남긴다.
+  expect_pass() {
     local name="$1"; shift
-    if "$@" >/dev/null 2>&1; then
-      echo "  FAIL [$name] 결함을 주입했는데 검사가 통과했다 — 그 단언은 아무것도 잡지 못한다"
-      nc_fails=$((nc_fails + 1))
-    else
+    local err="$OUT_DIR/negative-control/last-error.txt"
+    if "$@" >/dev/null 2>"$err"; then
       echo "  ok   [$name]"
+    else
+      # compose 가 stderr 에 쓰는 컨테이너 생성 줄을 걸러야 runner 의 실패 사유가 보인다
+      echo "  FAIL [$name] $(grep -v ' Container ' "$err" | grep -v '^[[:space:]]*$' | tail -1)"
+      nc_fails=$((nc_fails + 1))
     fi
   }
 
-  expect_pass() {
-    local name="$1"; shift
-    if "$@" >/dev/null 2>&1; then
-      echo "  ok   [$name]"
-    else
-      echo "  FAIL [$name] 성립해야 하는 대조가 실패했다"
-      nc_fails=$((nc_fails + 1))
-    fi
-  }
+  control() { run_in_runner "python3 /work/e2e/saga_e2e.py negative-control $1"; }
 
   RUNNER_OUT="/work/out/${E2E_RUN_ID}/negative-control"
   mkdir -p "$OUT_DIR/negative-control"
@@ -336,41 +358,49 @@ if [[ $NEGATIVE_CONTROL -eq 1 ]]; then
   NC_WATCHDOG=$!
   echo "== 음성 대조군 (계획 P16) =="
 
-  # ① poller 정지 → 시나리오 A 실패.
+  # ① poller 정지 → 예약 대기에서 실패.
   #    **시작 이벤트가 실제 outbox poller 를 지나는지 검출하는 유일한 대조군**이다.
-  #    운영 kill switch 를 만들지 않는다(P1 에서 폐기한 이유와 같다) — 대신 ShedLock 행을
-  #    미래로 잡아 poller 만 멈춘다. HTTP 진입점은 살아 있으므로 A 는 '주문은 되는데 이벤트가
-  #    안 나가는' 상태가 된다. 그게 정확히 검출하고 싶은 고장이다.
+  #    운영 kill switch 를 만들지 않는다(ADR-0031 D3) — 대신 ShedLock 행을 미래로 잡아
+  #    poller 만 멈춘다. HTTP 진입점은 살아 있으므로 '주문은 되는데 이벤트가 안 나가는'
+  #    상태가 된다. 행을 걷은 뒤 같은 주문의 예약이 도착하는지까지 본다(복원 확인).
   echo "  -- ① outbox poller 정지"
   dc exec -T mysql mysql -uroot -proot -e "
     INSERT INTO peekcart_order.shedlock (name, lock_until, locked_at, locked_by)
     VALUES ('orderOutboxPollingJob', NOW() + INTERVAL 1 HOUR, NOW(), 'e2e-negative-control')
     ON DUPLICATE KEY UPDATE lock_until = NOW() + INTERVAL 1 HOUR, locked_by = 'e2e-negative-control';
   " >/dev/null
-  expect_fail "① poller 정지 → 시나리오 A 실패" \
-    run_in_runner "python3 /work/e2e/saga_e2e.py scenario a"
+  expect_pass "① poller 정지 → 예약 대기에서 실패" control poller-stopped-breaks-a
+  # 해제는 DELETE 가 아니라 lock_until 을 과거로 돌리는 UPDATE 다. ShedLock 은 행을 만든 적이
+  # 있다고 기억하면(WeakHashMap 레지스트리) INSERT 없이 UPDATE 만 한다. 행을 지우면 그 UPDATE 가
+  # 0행이 되어 poller 는 GC 가 기억을 치울 때까지 락을 못 잡는다 — 대조군 나머지 내내 poller 가
+  # 죽어 ③ 이 공허하게 통과했다(①-복원이 잡았다, ADR-0031 Context).
   dc exec -T mysql mysql -uroot -proot -e "
-    DELETE FROM peekcart_order.shedlock WHERE locked_by = 'e2e-negative-control';
+    UPDATE peekcart_order.shedlock SET lock_until = NOW() - INTERVAL 1 DAY
+    WHERE name = 'orderOutboxPollingJob' AND locked_by = 'e2e-negative-control';
   " >/dev/null
+  expect_pass "①-복원 poller 재개 → 같은 주문 예약 도착" control poller-resumed-reserves
 
-  # ② product-service 정지 → A 실패 (예약이 성립하지 않는다)
+  # ② product-service 정지 → 예약 대기에서 실패.
+  #    상품과 단가 캐시는 **정지 전에** 만든다. 종전에는 정지 후 시나리오 A 를 돌려 A 첫 줄의
+  #    상품 생성 API 에서 죽었고, 예약 단계에 닿지 않았다(ADR-0031 Context).
   echo "  -- ② product-service 정지"
+  expect_pass "②-준비 상품·단가 캐시" control product-down-prepare
   dc stop product-service >/dev/null 2>&1
-  expect_fail "② product-service 정지 → 시나리오 A 실패" \
-    run_in_runner "python3 /work/e2e/saga_e2e.py scenario a"
+  expect_pass "② product-service 정지 → 예약 대기에서 실패" control product-down-breaks-reservation
 
-  # ④ 업무 listener 부재 → readiness 실패.
+  # ④ 업무 listener 부재 → readiness 의 group 검사에서 실패.
   #    ②의 정지 상태를 그대로 쓴다 — 별도 기동/정지 사이클을 아끼기 위해서다.
-  expect_pass "④ listener 부재 → readiness 실패를 감지" \
-    run_in_runner "python3 /work/e2e/saga_e2e.py negative-control readiness-detects-missing-listener"
+  expect_pass "④ listener 부재 → readiness group 검사에서 실패" \
+    control readiness-detects-missing-listener
   dc start product-service >/dev/null 2>&1
   dc exec -T product-service true >/dev/null 2>&1 || true
   run_in_runner "python3 /work/e2e/saga_e2e.py readiness" >/dev/null
+  expect_pass "②-복원 product-service 재기동 → 밀린 예약 도착" \
+    control product-down-reservation-resumes
 
   # ③ 재고 충분 → B 실패
   echo "  -- ③ 재고 충분"
-  expect_pass "③ 재고 충분 → 시나리오 B 가 실패함을 감지" \
-    run_in_runner "python3 /work/e2e/saga_e2e.py negative-control sufficient-stock-breaks-b"
+  expect_pass "③ 재고 충분 → 시나리오 B 가 실패함을 감지" control sufficient-stock-breaks-b
 
   # ⑥ egress 격리 **양·음 대조**.
   #

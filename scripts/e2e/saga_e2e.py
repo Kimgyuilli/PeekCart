@@ -13,7 +13,7 @@ usage:
   saga_e2e.py order
   saga_e2e.py validate-order a,b,c,d
   saga_e2e.py scenario <a|b|c|d>
-  saga_e2e.py negative-control <sufficient-stock-breaks-b|readiness-detects-missing-listener>
+  saga_e2e.py negative-control <name>   (이름은 CONTROLS 참조)
 """
 import json
 import os
@@ -141,10 +141,15 @@ def stub_ledger():
 # ----------------------------------------------------------------- 대기 유틸
 
 class Timeout(AssertionError):
-    pass
+    """`stage` 는 어느 대기에서 났는지다. 음성 대조군이 실패 지점을 특정할 때 대조한다
+    (ADR-0031 D1) — 사람이 읽는 메시지 문구를 대조하면 문구를 다듬는 순간 대조군이 깨진다."""
+
+    def __init__(self, message, stage=None):
+        super().__init__(message)
+        self.stage = stage
 
 
-def wait_for(desc, fn, deadline=None):
+def wait_for(desc, fn, deadline=None, stage=None):
     """조건이 참이 될 때까지 기다린다. **상한을 반드시 둔다** — 무한 대기는 CI 를 매달고,
     대기 없는 즉시 단언은 아직 도착하지 않은 것을 실패로 만든다."""
     limit = time.time() + (deadline or DEADLINE)
@@ -154,12 +159,12 @@ def wait_for(desc, fn, deadline=None):
         if last:
             return last
         time.sleep(POLL)
-    raise Timeout("타임아웃(%ds): %s — 마지막 관측 %r" % (deadline or DEADLINE, desc, last))
+    raise Timeout("타임아웃(%ds): %s — 마지막 관측 %r" % (deadline or DEADLINE, desc, last), stage)
 
 
 # ----------------------------------------------------------------- readiness
 
-def check_readiness(skip_health=False):
+def check_readiness(skip_health=False, group_deadline=180):
     from kafka import KafkaAdminClient
     from kafka.errors import KafkaError
 
@@ -250,7 +255,8 @@ def check_readiness(skip_health=False):
         groups_ready.bad = bad
         return not bad
 
-    wait_for("consumer group active member/partition", groups_ready, 180)
+    wait_for("consumer group active member/partition", groups_ready, group_deadline,
+             stage="consumer-group")
     result["consumer_groups"] = len(required_groups)
 
     admin.close()
@@ -311,6 +317,16 @@ def wait_price_cached(product_id):
                            "SELECT product_id FROM product_price_cache WHERE product_id = %s",
                            (product_id,)),
              120)
+
+
+def wait_reserved(order_id, deadline=None):
+    """예약 RESERVED/CONFIRMED 대기. 시나리오 A 와 음성 대조군 ①② 가 **같은 함수**를 쓴다 —
+    대조군이 다른 단언을 검사하면 시나리오의 검출력을 말해주지 못한다(ADR-0031 D1)."""
+    return wait_for("예약 RESERVED/CONFIRMED order=%s" % order_id,
+                    lambda: query("product",
+                                  "SELECT status FROM stock_reservations WHERE order_id = %s "
+                                  "AND status IN ('RESERVED','CONFIRMED')", (order_id,)),
+                    deadline, stage="reservation")
 
 
 def envelope_payload(raw):
@@ -388,10 +404,7 @@ def scenario_a():
     order_id = place_order(sid, user_id, product_id, 2)
 
     # 예약 성공까지 기다린다 — ensureConfirmable 이 예약 확정을 요구한다
-    wait_for("예약 RESERVED/CONFIRMED order=%s" % order_id,
-             lambda: query("product",
-                           "SELECT status FROM stock_reservations WHERE order_id = %s "
-                           "AND status IN ('RESERVED','CONFIRMED')", (order_id,)))
+    wait_reserved(order_id)
     # ready_for_payment 는 payment-service 가 stock.reservation.result 를 소비해야 선다.
     # 그 전에 승인을 부르면 ensureConfirmable 이 PAY-008 로 **가드 거부**하는데, 그건
     # 결제 실패가 아니다 — Toss 를 부르지도 않았으므로 payment.failed 도 발행되지 않는다.
@@ -760,8 +773,125 @@ SCENARIOS = {"a": scenario_a, "b": scenario_b, "c": scenario_c, "d": scenario_d}
 # 상태는 "saga 가 돈다" 와 "단언이 vacuous 하다" 를 구별하지 못한다. 그래서 결함을 일부러
 # 주입하고 **해당 검사가 실패하는지**를 CI 에서 매번 확인한다.
 #
-# 여기 있는 것은 python 으로 주입 가능한 것뿐이다. 컨테이너 정지·네트워크 격리처럼 docker
-# 층위의 주입은 saga-e2e-smoke.sh 가 담당한다.
+# 주입(컨테이너 정지·ShedLock 행·네트워크)은 saga-e2e-smoke.sh 가 하고, **판정은 전부 여기서**
+# 한다. 판정은 실패 지점을 `Timeout.stage` 로 특정한다 — 아무 실패나 통과로 받으면 결함이
+# 의도한 검사에 닿았는지 알 수 없다(ADR-0031 D1).
+#
+# "일어나지 않음" 은 세 가지를 한 묶음으로 증명한다(ADR-0031 D2).
+#   원인 관측 — 주입이 실제로 성립했음을 양성으로 본다
+#   유도한 창 — 결함이 없었다면 결과가 도착했을 시간만 기다린다
+#   복원 확인 — 주입을 거두면 같은 흐름이 되살아난다. 창이 짧아서 못 본 것이 아님을 보장한다
+
+# 예약 부재 창. 정상 경로의 지연은 outbox poller 주기(`app.outbox.polling.delay`, 기본 5s,
+# e2e 가 덮지 않는다)와 한 홉의 소비로 정해진다. 6주기를 준다. poller 주기를 크게 바꾸면
+# 이 값을 다시 유도한다.
+RESERVATION_ABSENCE_WINDOW = 30
+
+# listener 부재 창. 멈춘 consumer 의 group 이탈은 세션 타임아웃(Kafka 기본 45s, 이 레포는
+# 덮지 않는다) 안에 반영된다. 정상 종료는 LeaveGroup 으로 즉시 빠지므로 여유가 크다.
+LISTENER_ABSENCE_WINDOW = 60
+
+
+def expect_timeout_at(stage, fn):
+    """`fn` 이 **정확히 `stage` 의 Timeout** 으로 실패해야 한다. 다른 지점의 실패는 대조군 실패다."""
+    try:
+        fn()
+    except Timeout as e:
+        if e.stage != stage:
+            raise AssertionError("기대한 지점(%s)이 아니라 %s 에서 실패했다 — %s" % (stage, e.stage, e))
+        return
+    raise AssertionError("결함을 주입했는데 %s 대기가 성립했다 — 그 단언은 이 결함을 잡지 못한다" % stage)
+
+
+def control_state_path(name):
+    return os.path.join(OUT_DIR, "control-%s.json" % name)
+
+
+def save_control_state(name, state):
+    """대조군이 스택 조작을 사이에 두고 여러 단계로 나뉠 때 단계 간 상태를 넘긴다."""
+    os.makedirs(OUT_DIR, exist_ok=True)
+    with open(control_state_path(name), "w", encoding="utf-8") as f:
+        json.dump(state, f)
+
+
+def load_control_state(name):
+    with open(control_state_path(name), encoding="utf-8") as f:
+        return json.load(f)
+
+
+def outbox_status(service, event_type, aggregate_id):
+    row = outbox_payload(service, event_type, aggregate_id)
+    return row["status"] if row else None
+
+
+def control_poller_stopped_breaks_a():
+    """① outbox poller 가 멈추면 시나리오 A 의 예약 대기가 **그 지점에서** 실패해야 한다.
+
+    호출자가 ShedLock 행을 미래로 잡아 order-service poller 만 멈춘 뒤 부른다. HTTP 진입점은
+    살아 있으므로 '주문은 되는데 이벤트가 안 나가는' 상태다. 시작 이벤트가 실제 poller 를
+    지나는지 검출하는 유일한 대조군이다 — 우회 발행 경로가 있으면 예약이 창 안에 도착한다.
+    """
+    sid = "nc-poller"
+    product_id = create_product(sid, price=10000, stock=5)
+    wait_price_cached(product_id)
+    order_id = place_order(sid, 260, product_id, 1)
+
+    # 원인 관측: 이벤트가 outbox 에 쌓였고 나가지 않았다
+    wait_for("order.created outbox PENDING order=%s" % order_id,
+             lambda: outbox_status("order", "order.created", order_id) == "PENDING", 30)
+    expect_timeout_at("reservation",
+                      lambda: wait_reserved(order_id, RESERVATION_ABSENCE_WINDOW))
+    status = outbox_status("order", "order.created", order_id)
+    if status != "PENDING":
+        raise AssertionError("창이 끝났을 때 outbox 가 %s 다 — 부재의 원인이 poller 정지가 아니다" % status)
+    save_control_state("poller", {"order_id": order_id})
+
+
+def control_poller_resumed_reserves():
+    """① 복원 확인. ShedLock 행을 걷은 뒤 같은 주문의 예약이 도착해야 한다."""
+    wait_reserved(load_control_state("poller")["order_id"])
+
+
+def control_product_down_prepare():
+    """② 준비. product-service 가 살아 있을 때 상품과 order-service 단가 캐시를 만든다.
+
+    종전 ② 는 product-service 를 먼저 멈추고 시나리오 A 를 돌려, A 첫 줄의 상품 생성 API 에서
+    죽었다. 예약 단계에 닿지 않아 주장한 불변식을 검증하지 않았다(ADR-0031 Context).
+    """
+    sid = "nc-product-down"
+    product_id = create_product(sid, price=10000, stock=5)
+    wait_price_cached(product_id)
+    save_control_state("product-down", {"product_id": product_id})
+
+
+def product_service_up():
+    try:
+        return http("product", "GET", "/actuator/health")[1].get("status") == "UP"
+    except (urllib.error.URLError, OSError):
+        return False
+
+
+def control_product_down_breaks_reservation():
+    """② product-service 가 멈추면 예약이 **그 지점에서** 실패해야 한다.
+
+    호출자가 product-service 를 멈춘 뒤 부른다. 원인 관측은 둘이다 — 이벤트는 나갔고
+    (`PUBLISHED`), 소비자는 응답하지 않는다.
+    """
+    state = load_control_state("product-down")
+    if product_service_up():
+        raise AssertionError("product-service 가 살아 있다 — 주입이 성립하지 않았다")
+    order_id = place_order("nc-product-down", 270, state["product_id"], 1)
+    wait_for("order.created outbox PUBLISHED order=%s" % order_id,
+             lambda: outbox_status("order", "order.created", order_id) == "PUBLISHED", 60)
+    expect_timeout_at("reservation",
+                      lambda: wait_reserved(order_id, RESERVATION_ABSENCE_WINDOW))
+    state["order_id"] = order_id
+    save_control_state("product-down", state)
+
+
+def control_product_down_reservation_resumes():
+    """② 복원 확인. product-service 재기동 뒤 밀린 이벤트가 소비돼 예약이 도착해야 한다."""
+    wait_reserved(load_control_state("product-down")["order_id"])
 
 def control_sufficient_stock_breaks_b():
     """③ 재고가 충분하면 시나리오 B 는 **실패해야 한다**.
@@ -774,6 +904,10 @@ def control_sufficient_stock_breaks_b():
     product_id = create_product(sid, price=10000, stock=100)
     wait_price_cached(product_id)
     order_id = place_order(sid, user_id, product_id, 5)
+
+    # 원인 관측(ADR-0031 D2): 재고가 충분해 예약이 **실제로 성공했음**을 먼저 본다. 이것 없이
+    # 취소 부재만 보면 saga 가 아예 안 돌 때(poller 정지 등)도 통과한다 — 예약도 취소도 없으니까.
+    wait_reserved(order_id)
 
     # 예약이 성공했으므로 주문은 취소되지 않는다. 취소를 기다리면 timeout 이 나야 정상이다.
     try:
@@ -801,18 +935,19 @@ def control_readiness_detects_missing_listener():
     **실패 사유도 특정한다.** 아무 예외나 성공으로 받으면 Kafka 관리 도구 오류나 DB 조회
     실패까지 '감지 성공' 이 된다.
     """
-    try:
-        check_readiness(skip_health=True)
-    except Timeout as e:
-        if "consumer group" not in str(e):
-            raise AssertionError(
-                "readiness 가 실패하긴 했으나 group 검사가 아닌 이유다 — %s" % e)
-        return  # 기대한 실패: group active member 검사가 잡았다
-    raise AssertionError(
-        "listener 가 내려갔는데 group 검사가 통과했다 — active member 판정이 무력하다")
+    if product_service_up():
+        raise AssertionError("product-service 가 살아 있다 — 주입이 성립하지 않았다")
+    expect_timeout_at("consumer-group",
+                      lambda: check_readiness(skip_health=True,
+                                              group_deadline=LISTENER_ABSENCE_WINDOW))
 
 
 CONTROLS = {
+    "poller-stopped-breaks-a": control_poller_stopped_breaks_a,
+    "poller-resumed-reserves": control_poller_resumed_reserves,
+    "product-down-prepare": control_product_down_prepare,
+    "product-down-breaks-reservation": control_product_down_breaks_reservation,
+    "product-down-reservation-resumes": control_product_down_reservation_resumes,
     "sufficient-stock-breaks-b": control_sufficient_stock_breaks_b,
     "readiness-detects-missing-listener": control_readiness_detects_missing_listener,
 }
