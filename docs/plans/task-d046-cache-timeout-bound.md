@@ -3,6 +3,8 @@ grade: S
 ---
 # task-d046-cache-timeout-bound
 
+PR: [#150](https://github.com/Kimgyuilli/PeekCart/pull/150)
+
 `ProductCacheFallbackIntegrationTest` V3 경과시간 상한 flake (D-046)
 
 ## 명제
