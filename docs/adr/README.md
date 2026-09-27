@@ -54,4 +54,5 @@
 | [0029](./0029-test-autonomous-writer-policy.md) | 테스트에서 자율 writer(스케줄러 · Kafka 리스너)는 기본 off + opt-in | Accepted | Phase 5 | 06, CLAUDE.md |
 | [0030](./0030-ci-final-gate-and-image-promotion.md) | CI 최종 게이트와 검증 이미지 승격 계약 | Accepted | Phase 5 | 06 |
 | [0031](./0031-e2e-fault-injection-boundary.md) | e2e 음성 대조군의 결함 주입 경계 (스택 바깥 주입 · 실패 지점 특정 · 유도한 부재 창) | Accepted | Phase 5 | 06 |
+| [0032](./0032-e2e-jvm-verification-responsibility.md) | 실제 스택 e2e 와 JVM 테스트의 검증 책임 경계 (배선은 스택 · 로직은 JVM · 결함 주입으로만 중복 인정) | Accepted | Phase 5 | 06 |
 <!-- INDEX:END -->

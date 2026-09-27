@@ -138,5 +138,5 @@ poller 일시정지 엔드포인트, 테스트 프로파일 전용 빈, `Clock` 
 ## References
 
 - `scripts/saga-e2e-smoke.sh`, `scripts/e2e/saga_e2e.py`
-- 계획서 `docs/plans/task-d041-fault-injection-boundary.md`
+- 계획서 `docs/plans/done/task-d041-fault-injection-boundary.md`
 - ADR-0028 §후속 결정에 미치는 영향 ①, ADR-0029
