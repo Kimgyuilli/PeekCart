@@ -3,6 +3,8 @@ grade: L
 ---
 # task-d041-fault-injection-boundary
 
+PR: [#151](https://github.com/Kimgyuilli/PeekCart/pull/151)
+
 e2e 결함 주입을 결정적으로 제어할 경계 설계 (D-041, ADR-0028 §후속 ① 의 후속)
 
 ## 1. 명제

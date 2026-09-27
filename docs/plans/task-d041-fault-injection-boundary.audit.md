@@ -11,3 +11,9 @@
 - 구현이 계획과 달라진 곳: P3 출력 구조화 대신 `Timeout.stage` 직접 대조(계약 표면 축소), ③ 에 원인 관측 추가(§2-4)
 - 구현 중 발견: ① 의 ShedLock DELETE 해제가 poller 를 GC 전까지 멈춰 ③ 이 공허하게 통과할 수 있었다. `javap`·스레드 덤프로 확인, UPDATE 해제로 수정
 - 검증: e2e 대조군 전량 ok(2회차), 시나리오 4종 ok, V3~V6 대조군 FAIL(기대대로), `--self-test` 14종, `./gradlew test` 1253 테스트 0 실패, ci-release-gate·ci-e2e-parallel·e2e-network-contract lint 통과
+
+## 2026-09-28 — /ship
+- PR: [#151](https://github.com/Kimgyuilli/PeekCart/pull/151)
+- precheck: preflight ok · consistency ok · review health ok · 문체 lint(커밋 4·본문·제목) 통과
+- 갱신: TASKS D-041 ✅, PHASE5 엔트리, 계획서 PR 링크
+- 미충족: V7 CI 대조군 소요 대조
