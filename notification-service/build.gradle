@@ -74,9 +74,9 @@ dependencies {
 // 검증하는 테스트만 @TestPropertySource 로 켠다.
 // 클래스 순서는 매 실행 섞는다 — 공유 DB/브로커 상태 누수는 순서를 바꿔야 드러난다.
 // 재현: ./gradlew :notification-service:test -PtestSeed=<시드>
-def notificationTestSeed = (project.findProperty('testSeed')
-        ?: System.getenv('TEST_SEED')
-        ?: System.currentTimeMillis()).toString()
+// D-044: 명시한 시드만 태스크 입력이다. 무작위 시드는 doFirst 에서 넣어 입력에서 빼므로 변경이
+// 없으면 test 가 UP-TO-DATE 로 건너뛴다. -PtestSeed 재현 실행은 입력이 달라져 반드시 돈다.
+def notificationTestSeed = (project.findProperty('testSeed') ?: System.getenv('TEST_SEED'))?.toString()
 
 tasks.named('test') {
     useJUnitPlatform()
@@ -84,10 +84,14 @@ tasks.named('test') {
     systemProperty 'app.scheduling.enabled', 'false'
     systemProperty 'app.kafka.listener.enabled', 'false'
     systemProperty 'junit.jupiter.testclass.order.default', 'org.junit.jupiter.api.ClassOrderer$Random'
-    systemProperty 'junit.jupiter.execution.order.random.seed', notificationTestSeed
+    if (notificationTestSeed) {
+        systemProperty 'junit.jupiter.execution.order.random.seed', notificationTestSeed
+    }
     doFirst {
-        logger.lifecycle("[D-035] test class order seed = ${notificationTestSeed} " +
-                "(재현: ./gradlew :notification-service:test -PtestSeed=${notificationTestSeed})")
+        def seed = notificationTestSeed ?: System.currentTimeMillis().toString()
+        systemProperty 'junit.jupiter.execution.order.random.seed', seed
+        logger.lifecycle("[D-035] test class order seed = ${seed} " +
+                "(재현: ./gradlew :notification-service:test -PtestSeed=${seed})")
     }
 }
 
