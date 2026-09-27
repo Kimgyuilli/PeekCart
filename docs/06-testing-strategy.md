@@ -23,6 +23,24 @@
 
 **음성 대조군을 CI 에서 매번 돌린다.** 양성만 보면 "격리돼서 실패" 와 "도구가 없어서 실패" 를 구별하지 못한다 — 실제로 egress 음성 프로브가 앱 이미지에 `python3` 가 없어 통과하던 false-green 을 양성 대조가 잡아냈다. 판정은 종료코드를 특정한다.
 
+### 13-1-b. 음성 대조군 목록 (see ADR-0031)
+
+결함은 스택 바깥의 기존 수단으로만 주입한다(서비스에 테스트 제어 표면을 두지 않는다). 판정은 runner
+(`saga_e2e.py negative-control <이름>`)가 **실패 지점**(`Timeout.stage`)까지 특정해서 한다. "일어나지
+않음" 은 원인 관측 + 시스템 주기에서 유도한 창 + 주입 제거 후 복원 확인으로 증명한다.
+
+| # | 주장하는 불변식 | 주입 수단 | 실패 지점 | 부재 창 | 복원 확인 |
+|---|---|---|---|---|---|
+| ① | 시작 이벤트는 실제 outbox poller 를 지나야 예약에 닿는다 | ShedLock 행 선점 (해제는 `lock_until` UPDATE, DELETE 금지) | `reservation` + outbox `PENDING` 유지 | 30초 (poller 5초 × 6) | 행 삭제 후 같은 주문 예약 |
+| ② | 예약은 product-service 의 소비로만 성립한다 | product-service 정지 | `reservation` + outbox `PUBLISHED` | 30초 | 재기동 후 밀린 예약 도착 |
+| ④ | readiness 는 업무 listener 부재를 group 검사로 잡는다 | ② 의 정지 상태 재사용 | `consumer-group` | 60초 (세션 타임아웃 45초 + 여유) | 재기동 후 readiness 통과 |
+| ③ | 시나리오 B 의 단언은 아무 취소가 아니라 예약 실패 취소를 본다 | 재고 100 으로 주문 | 예약 성공 관측 후 취소 부재 | 45초 고정 (유도 근거 없음) | — |
+| ⑥ | internal 전용 앱은 다른 네트워크의 호스트에 닿지 못한다 | canary 컨테이너, 양·음 쌍 | curl rc 7/28 (127 거부) | — | 양성 쌍이 대신한다 |
+| ⑤ | compose project 둘이 동시에 뜬다(호스트 포트·container_name 고정 없음) | 두 번째 project 기동 | 기동 실패 | — | — |
+
+⑤·⑥ 은 compose 토폴로지 자체가 대상이라 스택 밖 경계로 옮길 수 없다. 이 표는 D-042 가 서비스 단위
+계약 테스트로 옮길 수 있는 항목을 판정하는 입력이다.
+
 **PR 필수 체크 `gate` 는 최종 집계자다 (see ADR-0030).** `lint`·`test`·`guards`·
 `images`(6개 health smoke)·`e2e`(시나리오와 음성 대조군)의 실패·skip 중 하나라도
 있으면 실패한다. 이미지 빌드와 JVM 테스트는 병렬로 진행하고, main push 의 GHCR
