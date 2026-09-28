@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 67개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 68개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -45,7 +45,7 @@
 | [task-impl3-pr4-auth-observability](./task-impl3-pr4-auth-observability.md) | 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-09-14 | 있음 |
 | [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#115](https://github.com/Kimgyuilli/PeakCart/pull/115) | 2026-09-15 | 있음 |
 
-## 부채 · 측정 (27)
+## 부채 · 측정 (28)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -73,6 +73,7 @@
 | [task-d040-local-test-scope](./task-d040-local-test-scope.md) | task-d040-local-test-scope | [#148](https://github.com/Kimgyuilli/PeakCart/pull/148) | 2026-09-27 |  |
 | [task-d044-test-seed-input](./task-d044-test-seed-input.md) | task-d044-test-seed-input | [#149](https://github.com/Kimgyuilli/PeakCart/pull/149) | 2026-09-27 | 있음 |
 | [task-d046-cache-timeout-bound](./task-d046-cache-timeout-bound.md) | task-d046-cache-timeout-bound | [#150](https://github.com/Kimgyuilli/PeakCart/pull/150) | 2026-09-27 |  |
+| [task-d030-outbox-dlq-alert-split](./task-d030-outbox-dlq-alert-split.md) | task-d030-outbox-dlq-alert-split | [#155](https://github.com/Kimgyuilli/PeakCart/pull/155) | 2026-09-28 | 있음 |
 | [task-d041-fault-injection-boundary](./task-d041-fault-injection-boundary.md) | task-d041-fault-injection-boundary | [#151](https://github.com/Kimgyuilli/PeakCart/pull/151) | 2026-09-28 | 있음 |
 | [task-d042-verification-responsibility](./task-d042-verification-responsibility.md) | task-d042-verification-responsibility | [#153](https://github.com/Kimgyuilli/PeakCart/pull/153) | 2026-09-28 | 있음 |
 | [task-d047-jvm-gap-coverage](./task-d047-jvm-gap-coverage.md) | D-047 — e2e 만 보는 로직 3건을 JVM 테스트로 채운다 | [#154](https://github.com/Kimgyuilli/PeakCart/pull/154) | 2026-09-28 | 있음 |
