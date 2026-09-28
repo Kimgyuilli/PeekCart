@@ -3,6 +3,8 @@ grade: S
 ---
 # task-d048-e2e-stack-startup
 
+PR: [#156](https://github.com/Kimgyuilli/PeekCart/pull/156) (머지 2026-09-28, 머지 전 PR CI 성공 1회 — P2 판정 기준 2회 미충족)
+
 ## 명제
 e2e 두 잡(scenarios · negative-control)이 스택 기동에 **토픽 사전 생성 65~68초 + 앱 순차 기동 약 88초**를
 쓰고 있고, 그 시간이 결함 검출과 무관한 오버헤드로 남아 있으면 미완이다.
