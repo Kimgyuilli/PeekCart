@@ -292,6 +292,36 @@ yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
 PYEOF
     run_case "reuse alert 삭제" "$ST_TMP/no-reuse.yml"
 
+    # (14-a) outbox FAILED alert 삭제 — 발행 소진의 유일한 운영 신호다 (D-030)
+    python3 - "$ST_SRC" "$ST_TMP/no-outbox.yml" <<'PYEOF'
+import sys, yaml
+src, dst = sys.argv[1], sys.argv[2]
+doc = yaml.safe_load(open(src))
+inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+inner["groups"][0]["rules"] = [r for r in inner["groups"][0]["rules"]
+                               if r["uid"] != "peekcart-outbox-failed"]
+doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
+yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    run_case "outbox FAILED alert 삭제" "$ST_TMP/no-outbox.yml"
+
+    # (14-b) status 를 pending 으로 — 정상 대기까지 세어 상시 발화하는 alert 가 된다
+    python3 - "$ST_SRC" "$ST_TMP/outbox-pending.yml" <<'PYEOF'
+import sys, yaml
+src, dst = sys.argv[1], sys.argv[2]
+doc = yaml.safe_load(open(src))
+inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+for rule in inner["groups"][0]["rules"]:
+    if rule["uid"] == "peekcart-outbox-failed":
+        for d in rule["data"]:
+            expr = (d.get("model") or {}).get("expr")
+            if expr:
+                d["model"]["expr"] = expr.replace('status="failed"', 'status="pending"')
+doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
+yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    run_case "outbox status matcher 변조" "$ST_TMP/outbox-pending.yml"
+
     # (15~17) dashboard 변수 드리프트 — alert 만 고치고 패널을 두면 거기서만 조용히 빠진다.
     #         조작 대상이 dashboard 이므로 alert 는 원본을 쓰고 디렉터리만 갈아끼운다.
     run_dash_case() {
@@ -352,7 +382,7 @@ PYEOF
     if [[ "$ST_FAIL" -ne 0 ]]; then
         exit 1
     fi
-    echo "observability-promql-lint self-test 17종 통과"
+    echo "observability-promql-lint self-test 19종 통과"
     exit 0
 fi
 
@@ -432,6 +462,15 @@ METRIC_ALERT_CONTRACTS = {
         "apps": {"notification-service", "order-service", "payment-service", "product-service"},
         "expr": 'sum by (application)(dlq_backlog'
                 '{application=~"notification-service|order-service|payment-service|product-service"})',
+    },
+    "peekcart-outbox-failed": {
+        # outbox_events 는 발행 4서비스가 소유 (D-030). user-service 는 outbox 가 없다.
+        # status 를 equality 로 고정 — pending 은 정상 대기라 섞이면 상시 발화한다.
+        "metric": "outbox_backlog",
+        "apps": {"notification-service", "order-service", "payment-service", "product-service"},
+        "expr": 'sum by (application)(outbox_backlog'
+                '{application=~"notification-service|order-service|payment-service|product-service",'
+                ' status="failed"})',
     },
 }
 

@@ -119,8 +119,8 @@ jobs:
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh
           # 구현 ④-d-1 P5 + PR4: alert 라벨/식 계약과 dashboard 변수 집합이 조작 입력에서
-          # 실제로 실패하는지 17종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
-          # 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, dashboard 드리프트 3종.
+          # 실제로 실패하는지 19종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
+          # 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, outbox FAILED 삭제/status 변조, dashboard 드리프트 3종.
           bash scripts/observability-promql-lint.sh --self-test
           # PR3c sweep — 단일 'peekcart' 관측성 식별자(application/service) 잔존 0 강제.
           # escaped-quote(JSON/embedded-yaml) + 형제 라벨(service) 양쪽 매치(PLAN-BLINDSPOTS B11).
