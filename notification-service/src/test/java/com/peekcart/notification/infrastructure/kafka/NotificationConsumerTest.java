@@ -23,9 +23,10 @@ import static org.mockito.Mockito.never;
  * {@code order.cancelled} 취소 사유 분기 단위 테스트 (계획 P6·P7).
  * <p>Order 가 결제 실패발 취소까지 {@code order.cancelled} 로 발행하게 되면서 생기는 중복 알림을
  * 사유로 차단하되, 사유 필드가 없는 <b>구 메시지</b>는 기존대로 알림을 만들어야 한다(하위호환).
+ * <p>{@code payment.failed} 알림 타입도 여기서 본다 — 스킵된 취소 알림을 대신하는 쪽이다 (D-047).
  */
 @ServiceTest
-@DisplayName("NotificationConsumer.handleOrderCancelled 취소 사유 분기")
+@DisplayName("NotificationConsumer 취소 사유 분기 · 결제 실패 알림")
 class NotificationConsumerTest {
 
     @InjectMocks NotificationConsumer consumer;
@@ -54,6 +55,34 @@ class NotificationConsumerTest {
 
         then(notificationCommandService).should()
                 .createNotification(eq(42L), eq(NotificationType.ORDER_CANCELLED), any());
+    }
+
+    @Test
+    @DisplayName("reason=RESERVATION_FAILED → 재고 예약 실패 취소는 다른 알림이 없으므로 취소 알림을 생성한다")
+    void reservationFailedReason_createsNotification() {
+        stubMessage("RESERVATION_FAILED");
+
+        consumer.handleOrderCancelled("msg");
+
+        then(notificationCommandService).should()
+                .createNotification(eq(42L), eq(NotificationType.ORDER_CANCELLED), any());
+    }
+
+    @Test
+    @DisplayName("payment.failed → 결제 실패 알림을 생성한다")
+    void paymentFailed_createsPaymentFailedNotification() {
+        ObjectNode root = om.createObjectNode();
+        root.put("eventId", "evt-2");
+        ObjectNode payload = root.putObject("payload");
+        payload.put("orderId", 1L);
+        payload.put("userId", 42L);
+        payload.put("amount", 10000L);
+        stubParsed(root);
+
+        consumer.handlePaymentFailed("msg");
+
+        then(notificationCommandService).should()
+                .createNotification(eq(42L), eq(NotificationType.PAYMENT_FAILED), any());
     }
 
     @Test
@@ -88,6 +117,10 @@ class NotificationConsumerTest {
         if (reason != null) {
             payload.put("reason", reason);
         }
+        stubParsed(root);
+    }
+
+    private void stubParsed(ObjectNode root) {
         given(kafkaMessageParser.parse("msg")).willReturn((JsonNode) root);
         given(idempotencyChecker.executeIfNew(any(), any(), any())).willAnswer(inv -> {
             ((Runnable) inv.getArgument(2)).run();

@@ -36,6 +36,17 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## e2e 만 잡던 결함 3건의 JVM 단언 (D-047, [#154](https://github.com/Kimgyuilli/PeekCart/pull/154), 2026-09-28)
+
+ADR-0032 D3 의 후속이다. D-042 결함 주입에서 모듈 테스트 전체가 통과한 3건에 JVM 단언을 더했다.
+`PaymentControllerTest` 는 FAILED 응답의 코드 `PAY-005` 를 보고, `NotificationConsumerTest` 는
+`payment.failed` 의 `PAYMENT_FAILED` 알림과 `reason=RESERVATION_FAILED` 취소 알림을 본다. `src/main` 변경은 없다.
+
+M12·M13·M14 를 다시 주입하고 모듈 전체를 돌리면 각각 새 테스트 1건만 실패한다(payment 239건, notification
+49건). `./gradlew test` 1255건 실패 0. e2e 단언 A4b·A12·B3 은 배선 때문에 그대로 둔다.
+
+미충족: 없음.
+
 ## 실제 스택 e2e 와 JVM 테스트의 검증 책임 판정 (D-042, [#153](https://github.com/Kimgyuilli/PeekCart/pull/153), 2026-09-28)
 
 ADR-0032 로 경계를 정했다. e2e 단언 하나는 서비스 간 배선과 도착 후 로직을 함께 싣는다. 배선은 실제 스택이,
