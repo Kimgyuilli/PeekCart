@@ -10,3 +10,8 @@
 - lint: observability-promql(본선 exit 0, self-test 19종 통과) · observability-ssot · kustomize-namespace · servicemonitor-selector 전부 exit 0
 - 결함 주입: outbox 규칙 삭제 → `필수 alert rule 부재` exit 1, `status="failed"` 제거 → `alert 식이 계약과 다르다` exit 1. 계약 추가 전에는 새 규칙이 검사 없이 통과했다(lint exit 0) — 계약이 실제로 작동한다는 대조군
 - 계획 외 변경: self-test 건수 문구 17→19 (`observability-promql-lint.sh`, `.github/workflows/ci.yml` 주석). 하드코딩 숫자라 같이 고쳐야 했다
+
+## 2026-09-28 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/155
+- precheck: preflight ok · consistency ok(경고 0) · review_health ok · writing-lint 커밋 4·본문·제목 통과
+- 갱신: TASKS D-030 ✅ + 범위 재정의 기록, PHASE5 작업 이력 엔트리. 부채 신규 등록 없음(이월 4건은 PR 본문 §미충족)
