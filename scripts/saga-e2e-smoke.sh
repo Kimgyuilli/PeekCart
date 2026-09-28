@@ -145,7 +145,7 @@ mkdir -p "$OUT_DIR"
 # 되어 saga 가 결정적으로 동작한다는 주장이 성립하지 않는다 — 재시도로 초록이 되는 검사는
 # 무엇도 증명하지 않는다.
 BUDGET_INFRA="${E2E_BUDGET_INFRA:-600}"        # 인프라 3종 + stub 기동
-BUDGET_APP="${E2E_BUDGET_APP:-420}"            # 앱 1개 기동(순차)
+BUDGET_APP="${E2E_BUDGET_APP:-420}"            # 앱 4개 동시 기동
 BUDGET_READINESS="${E2E_BUDGET_READINESS:-300}"
 BUDGET_SCENARIO="${E2E_BUDGET_SCENARIO:-300}"
 BUDGET_CONTROL="${E2E_BUDGET_CONTROL:-900}"    # 대조군 전체(스택 조작 포함)
@@ -226,10 +226,10 @@ bash scripts/kafka-subscription-contract-lint.sh --emit-groups | sort -u > scrip
 echo "== 스택 기동 (project=$PROJECT, run_id=$E2E_RUN_ID) =="
 dc build runner >/dev/null
 
-# 인프라 먼저, 그 다음 앱을 **하나씩** 띄운다.
-# 4 JVM 을 동시에 올리면 CPU 를 서로 뺏어 각자의 기동이 healthcheck 창을 넘긴다
-# (실측: 동시 기동 시 order-service 가 360s 창 안에 뜨지 못했다). 순차 기동은
-# 전체 시간이 조금 늘지만 각 서비스가 온전한 창을 쓰므로 결정적이다.
+# 인프라 먼저, 그 다음 앱 4개를 **동시에** 띄운다(D-048).
+# 앱끼리는 depends_on 이 없다 — 순차 기동은 의존 순서가 아니라 CPU 경합 회피였다
+# (2026-08-28 실측: 동시 기동 시 order-service 가 360s 창을 넘겼다). 이후 앱 1개 기동이
+# 18~25s 로 줄어 경합이 창을 넘기지 않게 됐고, 순차 4회(약 88s)를 1회로 합친다.
 # 기동 실패는 **인프라 사유**이므로 여기서만 재시도를 허용한다(계획 P19).
 with_budget "$BUDGET_INFRA" "infra-up" \
   dc up -d --wait --wait-timeout 300 mysql redis kafka pg-stub
@@ -253,24 +253,27 @@ topic_create() {
     return 1
   fi
 
-  while IFS=$'\t' read -r topic parts; do
-    [[ -n "$topic" ]] || continue
-    # `docker compose exec -T` 는 **stdin 을 읽는다** — while-read 루프 안에서 그대로 부르면
-    # 남은 목록을 통째로 삼켜 첫 반복 뒤 루프가 끝난다(실측: 20개 중 1개만 생성되고,
-    # 같은 버그로 대조 루프도 1건만 돌아 "대조 실패 0" 이 vacuous 였다). </dev/null 필수.
-    if dc exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 \
-         --create --if-not-exists --topic "$topic" --partitions "$parts" --replication-factor 1 \
-         </dev/null >/dev/null 2>&1; then
-      created=$((created + 1))
-    fi
-  done < "$list"
+  # 생성과 대조를 **exec 각 1회**로 묶는다(D-048). 종전엔 토픽마다 create·describe 를 따로
+  # `dc exec` 해서 exec + JVM 기동이 40회였다(CI 실측 65~68초, exec 1회 ~0.4s · CLI 1회 ~1s).
+  # 목록은 stdin 으로 넘긴다 — `exec -T` 가 stdin 을 읽는 성질을 이번엔 입력 통로로 쓴다.
+  # 생성 성공은 컨테이너가 토픽마다 찍는 `created` 줄의 수로 센다.
+  created=$(dc exec -T kafka sh -c '
+    while IFS="	" read -r topic parts; do
+      [ -n "$topic" ] || continue
+      /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 \
+        --create --if-not-exists --topic "$topic" --partitions "$parts" --replication-factor 1 \
+        >/dev/null 2>&1 && echo created
+    done' < "$list" | grep -c '^created$' || true)
 
   # **대조는 별개 조건이다** — 생성 명령의 성공만 보면 조용한 실패를 못 잡는다.
+  # 전체 describe 1회에서 토픽별 요약 줄(`Topic: X<TAB>TopicId: ...<TAB>PartitionCount: N`)만 뽑는다.
+  local described="$OUT_DIR/topics-described.tsv"
+  dc exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --describe \
+    </dev/null 2>/dev/null \
+    | sed -n 's/^Topic: \([^[:space:]]*\).*PartitionCount: \([0-9]*\).*/\1	\2/p' > "$described"
   while IFS=$'\t' read -r topic parts; do
     [[ -n "$topic" ]] || continue
-    actual="$(dc exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 \
-      --describe --topic "$topic" </dev/null 2>/dev/null \
-      | sed -n 's/.*PartitionCount: \([0-9]*\).*/\1/p' | head -1)"
+    actual="$(awk -F'\t' -v t="$topic" '$1 == t {print $2; exit}' "$described")"
     if [[ "$actual" != "$parts" ]]; then
       echo "::error::[saga-e2e] 토픽 $topic 파티션 '${actual:-없음}' (선언 $parts)" >&2
       bad=$((bad + 1))
@@ -292,10 +295,8 @@ if topic_create; then _tp_rc=ok; else _tp_rc=fail; fi
 printf 'topic-precreate\t%s\t%s\n' "$(( $(date +%s) - _tp_start ))" "$_tp_rc" >> "$DURATIONS"
 [[ "$_tp_rc" == "ok" ]] || exit 1
 
-for svc in product-service order-service payment-service notification-service; do
-  echo "  기동: $svc"
-  with_budget "$BUDGET_APP" "app-up:$svc" dc up -d --wait --wait-timeout 300 "$svc"
-done
+with_budget "$BUDGET_APP" "app-up" dc up -d --wait --wait-timeout 300 \
+  product-service order-service payment-service notification-service
 
 echo "== readiness =="
 readiness() {
