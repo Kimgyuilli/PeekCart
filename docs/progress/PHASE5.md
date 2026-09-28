@@ -36,6 +36,16 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## Gradle 구간 실측과 setup-gradle 미착수 판정 (D-039, [#157](https://github.com/Kimgyuilli/PeekCart/pull/157), 2026-09-29)
+
+ADR-0028 §후속 ③ 의 "컴파일 60초" 는 D-032 이전 추정이라 착수 전에 다시 쟀다. PR run 36422217146(#156)과
+36393965323(#154)에서 test 잡은 임계경로(e2e negative-control)보다 5.7~7.2분 먼저 끝난다. `setup-gradle` 이 닿는
+곳이 여기라 줄여도 PR 시간은 줄지 않는다. 임계경로 위의 Gradle 은 Dockerfile 안 `bootJar` 이고 35.6초 중
+컴파일이 약 8초, `--no-daemon` 기동·설정이 약 28초다. 이 캐시는 docker build 안에 닿지 않는다. 구현하지 않고 닫았다.
+
+재개 조건: test 잡이 임계경로에 올라오거나 러너 시간 비용이 제기될 때.
+미충족: 이미지 빌드의 Gradle 기동·설정 약 28초는 다른 수단(BuildKit cache mount 등)의 문제라 범위 밖이다.
+
 ## e2e 스택 기동의 토픽 생성 통합과 앱 동시 기동 (D-048, [#156](https://github.com/Kimgyuilli/PeekCart/pull/156), 2026-09-28)
 
 D-042 시간 분해의 후속이다. main CI 3회에서 토픽 사전 생성이 65~68초, 앱 순차 기동이 18~25초씩 4회였다.
