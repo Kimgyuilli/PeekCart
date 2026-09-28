@@ -3,6 +3,8 @@ grade: S
 ---
 # task-d039-gradle-setup
 
+PR: [#157](https://github.com/Kimgyuilli/PeekCart/pull/157) (머지 2026-09-29)
+
 ## 명제
 `gradle.properties` 신설 · `setup-gradle` 전환의 PR 시간 이득이 실측 없이 추정(ADR-0028 §후속 ③ "컴파일 60초")으로만
 남아 있으면 미완이다. 착수 여부는 그 실측으로 판정한다.

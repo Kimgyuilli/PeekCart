@@ -6,11 +6,8 @@
 - `/ship --execute` — 실제 commit / push / `gh pr create` / `/done` 수행
 - `/ship <task-id> --execute` — 지정 task 에 대해 execute
 
-> **축소 이력 (2026-08-30)**: 11-step 상태머신(lock · `state.json` · drift detector · resume cursor · gate events · archive)을 제거했다.
-> 사유 — `/plan`·`/work` 는 2026-08-26 축소에서 이미 `state.json` 을 버렸는데 `/ship` 만 그것을 **필수 전제**로 남겨두어, Step 1 이 "state 가 없습니다. /work 를 먼저 완료하세요" 로 **정상 흐름을 차단**했다. 구현 ⑤(#94) 에서 실제로 이 불일치에 부딪혀 Step 1/10 을 건너뛰고 수행했다.
+> 근거 서술(축소 이력, 실측 수치, 사건)은 `docs/conventions/harness-rationale.md` 에 있다. 본문의 `(근거 R-...)` 가 그 절이다.
 > 진행 상태는 `state.json` 이 아니라 **git 과 gh 의 사실**(브랜치·커밋·원격·PR)로 판정한다. 이력은 계획서·audit 파일·git 이력에 남는다.
->
-> 이 축소로 죽은 helper 들은 2026-09-18 정리에서 제거했다. `hpx_ship_pr_body_data`, `hpx_state_*`, `hpx_lock_*`, `hpx_gate_events_*`, `hpx_diff_absorption_status` 등 51개가 대상이었고 `lock.sh`·`state.sh`·`sync.sh` 는 파일째 삭제했다. 이력은 git 에 남는다.
 
 `/ship` 은 Codex 를 호출하지 않는다 (shell precheck / commit / push / gh 만).
 
@@ -110,7 +107,7 @@ bash -c 'source .claude/scripts/shared-logic.sh; hpx_staged_category_check'
 
   `mixed` 면 커밋하지 말고 분류별로 다시 스테이징한다. `empty` 면 `git add` 가 실패한 것이다.
   **이미 `git rm` 으로 스테이징된 경로를 `git add` 에 다시 넘기면 pathspec 오류로 죽으면서
-  나머지 스테이징이 통째로 빠진다.** 실제로 그 상태로 커밋돼 수정분이 누락된 적이 있다
+  나머지 스테이징이 통째로 빠진다.** (근거 R-ship-1)
 
 분할이 필요하면 승인 게이트를 노출한다:
 ```
@@ -149,7 +146,7 @@ p2. test(cache): ...  (+23)
 **조건부 섹션** — 해당하면 반드시 넣는다:
 - **이월** — 리뷰에서 맞다고 인정했으나 이번 범위가 아니라 미룬 항목. **재검토 조건**을 함께
   적는다. 부채로 승격했으면 `D-0NN` 을 단다. 이 섹션이 비어 있는데 리뷰 라운드가 2회 이상이면
-  처분 규율이 무너진 것이다(실측 기각률 0.3%가 그 상태였다)
+  처분 규율이 무너진 것이다 (근거 R-ship-2)
 - **Skipped findings** — 리뷰에서 **기각**한 항목. 사유와 재검토 조건을 함께 적는다.
   이월과 다르다. 이월은 "맞지만 나중", 기각은 "사실과 다름"이다
 - **Skipped consistency checks** — Step 2 에서 `[2]` 를 골랐으면 그 사유
@@ -181,10 +178,8 @@ scripts/writing-lint.sh --file ".cache/pr-body-${TASK_ID}.md"
 scripts/writing-lint.sh --title "<Step 7 에 넘길 PR 제목>"
 ```
 
-**제목도 검사한다.** Step 7 의 `--title` 은 사람이 손으로 넣는 자리이고 lint 경로가
-없었다. PR #131 이 `(D-029)` 를 제목에 달고 나갔다 — 같은 위반을 커밋 제목에서는
-잡아 고쳤는데, 검사가 없는 제목에서 곧바로 재발했다. 제목 모드에서 추적 태그는
-**오류**다(커밋에서는 경고). 태그는 본문 마지막 `Refs:` 줄이 정 위치다.
+**제목도 검사한다.** 제목 모드에서 추적 태그는 **오류**다(커밋에서는 경고).
+태그는 본문 마지막 `Refs:` 줄이 정 위치다. (근거 R-ship-3)
 
 - `오류` 가 나오면 **고치고 다시 돌린다.** 사람에게 보이지 않는다. 커밋 메시지가 걸렸으면
   아직 push 전이므로 `git commit --amend` 또는 `git rebase -i` 로 고친다
