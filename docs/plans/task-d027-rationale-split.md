@@ -3,6 +3,8 @@ grade: S
 ---
 # task-d027-rationale-split
 
+PR: [#158](https://github.com/Kimgyuilli/PeekCart/pull/158)
+
 ## 명제
 `/plan`·`/work`·`/ship` 커맨드 본문에 실측 수치·사건 이력 같은 근거 서술이 남아 매 호출 컨텍스트에 실리면 미완이다.
 규칙 문장, 절 번호, 코드 블록이 하나라도 바뀌거나 옮긴 근거가 원문 그대로 보존되지 않아도 미완이다.
