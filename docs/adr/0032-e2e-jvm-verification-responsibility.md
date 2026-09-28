@@ -11,7 +11,7 @@
 맡는다(`docs/06-testing-strategy.md` §13-1-a·b). 한편 서비스마다 Testcontainers 기반 JVM 통합 테스트가
 같은 사가의 상당 부분을 다시 검증한다. D-042 는 둘의 책임이 겹치는 곳을 찾아, 서비스 단위에서
 결정적으로 증명할 수 있는 것을 JVM 으로 옮기는 방안을 검토했다. 전 항목의 분류와 근거는 계획서
-`docs/plans/task-d042-verification-responsibility.md` §4 에 있다.
+`docs/plans/done/task-d042-verification-responsibility.md` §4 에 있다.
 
 검토 과정에서 드러난 사실은 네 가지다.
 
@@ -99,6 +99,6 @@ e2e 단언은 배선 때문에 그대로 둔다. JVM 에 테스트를 더하면 
 
 ## References
 
-- 계획서 `docs/plans/task-d042-verification-responsibility.md` §4 (분류표 · 결함 주입 · 시간)
+- 계획서 `docs/plans/done/task-d042-verification-responsibility.md` §4 (분류표 · 결함 주입 · 시간)
 - ADR-0028, ADR-0029, ADR-0031
 - `docs/06-testing-strategy.md` §13-1-a·b
