@@ -36,6 +36,21 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## Outbox 발행 소진 alert 신설과 DLQ 신호 분리 (D-030, [#155](https://github.com/Kimgyuilli/PeekCart/pull/155), 2026-09-28)
+
+L-004(Phase 4 운영 관측성) 이월분이다. 착수 전 코드 검증에서 D-030 의 두 전제가 뒤집혀 범위를 다시 정했다.
+DLQ 적재량 메트릭은 이미 있었고, 앱의 Slack 직접 발송은 notification-service 외 3서비스에서 no-op 이라
+"한 채널에 섞인다" 는 notification-service 에만 해당했다. 실제 공백은 Outbox FAILED 에 alert 가 없는 것이었다.
+
+`grafana-alerts.yml` 에 `peekcart-outbox-failed`(4서비스 `outbox_backlog{status="failed"} > 0`, for 5m)를 더하고
+`signal` 라벨(`outbox-publish`/`dlq`)로 두 규칙을 갈랐다. FAILED 는 자동 재시도도 retention 삭제도 없는 종착
+상태라 gauge 가 저절로 0 이 되지 않는다. `observability-promql-lint` 에 식 계약을 등록하고 self-test 를 17종에서
+19종으로 늘렸다. 계약 추가 전에는 새 규칙이 검사 없이 통과했다. ADR-0009 S8 의 "alert 미도입" 서술은
+작성 시점의 사실이라 고치지 않는다.
+
+미충족: contact point / notification policy provisioning(ADR 판단 대상), Outbox FAILED 재발행 runbook,
+notification-service 웹훅의 사용자·운영 알림 혼재, 실제 스택 alert 발화 시험(GKE 세션 필요).
+
 ## e2e 만 잡던 결함 3건의 JVM 단언 (D-047, [#154](https://github.com/Kimgyuilli/PeekCart/pull/154), 2026-09-28)
 
 ADR-0032 D3 의 후속이다. D-042 결함 주입에서 모듈 테스트 전체가 통과한 3건에 JVM 단언을 더했다.

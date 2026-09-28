@@ -178,13 +178,15 @@ Outbox 패턴 (해결):
   DB 저장 + Outbox 테이블 저장 (단일 트랜잭션)
   → Polling 스케줄러가 Outbox를 읽어 Kafka 발행
   → 발행 성공 시 Outbox 레코드 PUBLISHED 상태 업데이트
-  → 실패 시 retry_count 증가, 횟수 초과 시 FAILED 처리 + Slack 알림
+  → 실패 시 retry_count 증가, 횟수 초과 시 FAILED 처리 (운영 신호는 아래 alert)
 
 DLQ 연계:
   Outbox 발행 자체의 FAILED와 Consumer 처리 실패의 DLQ는 별개 메커니즘입니다.
   - Outbox FAILED: Producer 측 발행 실패 (네트워크, Kafka 브로커 장애)
   - DLQ: Consumer 측 처리 실패 (비즈니스 로직 에러, 데이터 정합성 문제)
-  두 경로 모두 Slack 알림으로 운영자에게 통지합니다.
+  운영 신호는 메트릭 alert 입니다 — Outbox FAILED 는 `peekcart-outbox-failed`,
+  DLQ 는 `peekcart-dlq-backlog` 로 규칙과 `signal` 라벨을 분리합니다 (대응이 반대이므로).
+  앱의 Slack 직접 발송은 notification-service 에서만 실제로 나가는 보조 신호입니다.
 ```
 
 Phase 1에서는 `@TransactionalEventListener`만 사용하며 Kafka는 없습니다.
