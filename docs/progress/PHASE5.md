@@ -27,7 +27,7 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 | ID | 영역 | 상태 |
 |---|---|---|
-| D-027 | Harness / Cost | 🔄 ② 완료([#128](https://github.com/Kimgyuilli/PeakCart/pull/128)) · ①③ 재개 조건 미충족 대기 |
+| D-027 | Harness / Cost | 🔄 ② 완료([#128](https://github.com/Kimgyuilli/PeakCart/pull/128)) · ① 완료([#158](https://github.com/Kimgyuilli/PeekCart/pull/158)) · ③ 대기 |
 | D-030 | Observability / Ops | 🔲 Outbox `FAILED` ↔ DLQ Slack 채널 분리 + DLQ 적재량 메트릭 (L-004 승격, [#133](https://github.com/Kimgyuilli/PeakCart/pull/133)) |
 
 ---
@@ -35,6 +35,19 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 ## 작업 이력
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
+
+## 커맨드 근거 서술의 별도 문서 분리 (D-027 ①, [#158](https://github.com/Kimgyuilli/PeekCart/pull/158), 2026-09-29)
+
+`/plan`·`/work`·`/ship` 은 호출마다 본문 전체가 컨텍스트에 실린다. 재개 조건은 H1~H6 규칙의 안정이었고, 커맨드가
+2026-09-22 이후 바뀌지 않은 채 커밋 93개를 거쳐 충족으로 판정했다. 근거 서술 18곳(축소 이력, 실측 수치, 사건 이력)을
+`docs/conventions/harness-rationale.md` 로 줄 단위 원문 그대로 옮기고 원래 자리에는 규칙과 `(근거 R-...)` 포인터만 남겼다.
+절 번호는 `.agents/skills`·`writing.md`·D-040 이 참조하므로 제목 줄을 고정했다. 삭제 줄이 모두 근거 문서에 있는지
+검사했고, 한 줄을 지우는 주입에 실패를 확인했다.
+
+효과는 46,556B→43,219B(7%)로 작다. 남은 크기의 대부분은 `plan.md`·`work.md` 의 §5-0 게이트, §6 결과 처리,
+리뷰 상태 4값이 거의 같은 문장으로 중복된 것이다. 같은 PR 에 D-038(Redpanda 재평가) 폐기 기록을 실었다.
+
+미충족: 중복 규칙 통합은 근거 분리 범위가 아니라 이월했다. 재검토 조건은 커맨드 크기를 더 줄일 필요가 생길 때다.
 
 ## Gradle 구간 실측과 setup-gradle 미착수 판정 (D-039, [#157](https://github.com/Kimgyuilli/PeekCart/pull/157), 2026-09-29)
 
