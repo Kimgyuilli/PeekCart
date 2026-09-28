@@ -64,8 +64,8 @@ class PaymentControllerTest {
 
     @Test
     @WithMockLoginUser
-    @DisplayName("POST /confirm: 결제 승인 실패(FAILED) 시 400을 반환한다")
-    void confirmPayment_failed_returns400() throws Exception {
+    @DisplayName("POST /confirm: 결제 승인 실패(FAILED) 시 PAY-005(400)를 반환한다")
+    void confirmPayment_failed_returnsPay005() throws Exception {
         given(paymentCommandService.confirmPayment(eq(1L), any()))
                 .willReturn(PaymentFixture.failedPaymentDetailDto());
 
@@ -75,7 +75,8 @@ class PaymentControllerTest {
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("PAY-005"));
     }
 
     @Test
