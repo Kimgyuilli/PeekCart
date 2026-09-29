@@ -1,11 +1,13 @@
 # ADR-0011: Phase 4 Gradle 멀티모듈 구조 — common + 관측성 + 5개 서비스 모듈
 
-- **Status**: Partially Superseded by ADR-0014
+- **Status**: Partially Superseded by ADR-0014, ADR-0033
 - **Decided**: 2026-06-14 (Proposed) → 2026-06-14 (Accepted)
 - **Deciders**: 프로젝트 오너
 - **관련 Phase**: Phase 4 (MSA 분리)
 
 > **무효화 범위 (ADR-0014, 게이트웨이 이전 전환기)**: §D1 모듈 레이아웃에 `peekcart-common-auth` 추가 / §D2 `auth`/`jwt`/`security` 중 **검증 소유**만 전용 모듈로 변경(발급·AuthController·refresh·블랙리스트 write 등 User 저장소 소유는 **유효**) / §D3 서비스 허용 의존에 `:peekcart-common-auth` 추가. 그 외 §D1~D4 결정은 유효.
+
+> **무효화 범위 (ADR-0033, 2026-09-29)**: §D2 의 `global.outbox`·`config.ShedLockConfig` "서비스 전속" 과 `global.idempotency` "서비스별 복제" 행 → 4서비스 공유 모듈 `peekcart-common-messaging` 으로 승격(DLQ 원장 `global.deadletter` 의 서비스 무관 부분 포함). §D3 서비스 허용 의존에 `:peekcart-common-messaging` 추가. Flyway 스키마 소유는 서비스에 남는다.
 
 > **ADR-0020 과의 관계 (무효화 아님)**: §D2 의 "`config.KafkaConfig` 토픽/DLQ 빈 = 발행 서비스 전속" 은 `NewTopic` **프로비저닝 소유**를 정한 것이다. ADR-0020 의 DLQ replay 예외는 **발행 권한**(누가 그 토픽에 write 하는가)에만 해당하며 프로비저닝 소유를 건드리지 않는다 → 본 ADR 은 **영향 없음**(ADR-0020 §D8-1).
 
