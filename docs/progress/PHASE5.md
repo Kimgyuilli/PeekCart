@@ -36,6 +36,15 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## 잔존 audit 디렉터리의 done 병합 (D-055, [#165](https://github.com/Kimgyuilli/PeekCart/pull/165), 2026-09-29)
+
+이전 하네스가 쓰던 `docs/plans/.audit/` 의 파일 2개를 `done/` 의 같은 이름 audit 에 병합하고 디렉터리를 없앴다. 두 쪽
+기록은 겹치지 않았다. gateway 는 잔존본이 PR1~PR3b(#73~#76), `done/` 본이 PR3c(#77)였고, pr3d 는 잔존본이 2026-07-24
+계획 리뷰 3라운드, `done/` 본이 구현 이후 기록이었다. 병합 전 두 쪽의 모든 줄이 병합본에 남은 것을 `grep -vxFf` 로
+대조했다. 같은 PR 에서 #164 CI 실패 분석의 부채 D-058(Kafka 통합 테스트 토픽 부재 경합)을 등록했다. 등급 S.
+
+미충족: 없음.
+
 ## Notion 설계 export 원본 삭제 (D-054, [#164](https://github.com/Kimgyuilli/PeekCart/pull/164), 2026-09-29)
 
 `docs/00-lagacy.md` (68KB) 를 삭제했다. 01~07 분리 때 내용이 전부 이관됐고 원본은 git 이력이 보존한다. archive
