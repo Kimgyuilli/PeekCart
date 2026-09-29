@@ -5,7 +5,7 @@ import java.util.stream.Stream;
 /**
  * actuator 보안 허용 경로의 단일 소유처 (ADR-0009 §Decision S4).
  * <p>{@code /actuator/health/**}·{@code /actuator/prometheus} permitAll 목록을 <b>1개소</b>로 고정한다.
- * 각 서비스(및 전환기 root app)는 자기 {@code SecurityFilterChain} 을 만들 때
+ * 각 서비스는 자기 {@code SecurityFilterChain} 을 만들 때
  * {@link #mergedPublicUrls(String...)} 로 자기 비즈니스 PUBLIC_URLS 에 본 경로를 합친다 —
  * 서비스별 PUBLIC_URLS 에 actuator 경로를 직접 재기재하지 않는다(과허용 회귀/드리프트 차단).
  * <p>scrape/Probe 의존: K8s liveness/readiness, Prometheus scrape (no-auth 200).

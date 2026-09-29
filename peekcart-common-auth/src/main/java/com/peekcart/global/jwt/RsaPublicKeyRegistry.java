@@ -11,7 +11,7 @@ import java.util.Map;
  * kid → RSA 공개키 레지스트리 (ADR-0013 D1). 모든 서비스/Gateway 검증기가 토큰 헤더 {@code kid}
  * 로 공개키를 선택하는 단일 소스이며, User 는 이를 JWKS 응답의 원본으로 사용한다.
  * <p>부팅 시 {@link JwtKeyProperties#publicKeys()} 를 로드한다. 공개키가 하나도 없어도
- * (전환기 HS256 전용 서비스) 부팅은 허용하고, RS256 토큰 도착 시 unknown kid 로 거부된다.
+ * 부팅은 허용하고, RS256 토큰 도착 시 unknown kid 로 거부된다.
  */
 @Component
 public class RsaPublicKeyRegistry {

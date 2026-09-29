@@ -81,7 +81,7 @@ public class AuthService {
      * 회원의 리프레시 토큰 family 를 무효화한다(header-trust, ADR-0013 D3).
      * <p>header-trust 전환 후 리소스 서비스는 raw access token 을 보유하지 않으므로 특정 토큰 blacklist 대신
      * <b>family deny + 전체 리프레시 무효화</b>로 재정의한다. familyId 가 있으면 이미 발급된 access token 을
-     * family deny 로 즉시 차단한다. 전환기 레거시 토큰(familyId {@code null})은 family deny 를 기록할 수 없어
+     * family deny 로 즉시 차단한다. family 클레임이 없는 레거시 토큰(familyId {@code null})은 family deny 를 기록할 수 없어
      * 기존 access token 이 access TTL 까지 유효하고(bounded risk), refresh 만 {@code revokeAllByUserId} 로 차단된다.
      */
     public void logout(Long userId, String familyId) {

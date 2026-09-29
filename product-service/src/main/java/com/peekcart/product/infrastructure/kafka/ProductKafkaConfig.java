@@ -54,7 +54,7 @@ public class ProductKafkaConfig {
                 retentionProperties.topicMessageTimestampBeforeMax());
     }
 
-    // --- 발행 토픽(producer-owns-topic) — Payment peel 로 root 소멸 후 자기 토픽 생성 책임 승계 ---
+    // --- 발행 토픽(producer-owns-topic) ---
     @Bean
     public NewTopic productUpdatedTopic() {
         return TopicBuilder.name("product.updated").partitions(3).replicas(1).configs(businessConfigs()).build();

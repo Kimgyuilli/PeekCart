@@ -13,11 +13,10 @@ import java.util.concurrent.TimeUnit;
  * Redis 기반 토큰 블랙리스트 + family deny write 저장소 (write owner — ADR-0014 D1-c · ADR-0013 D4).
  * 로그아웃된 액세스 토큰을 블랙리스트에 등록하고, reuse 감지 시 family 를 deny 목록에 등록한다.
  *
- * <p><b>U5 namespace</b>: 블랙리스트 신키 = {@code auth:blacklist:<sha256hex(token)>}
- * (원문 대신 해시 저장 — ADR-0014 "토큰 원문 금지" 충족). read(common-auth)는 전환기 dual-read 로
- * legacy {@code bl:<token>} 도 TTL 동안 함께 조회한다.
+ * <p><b>namespace</b>: 블랙리스트 신키 = {@code auth:blacklist:<sha256hex(token)>}
+ * (원문 대신 해시 저장 — ADR-0014 "토큰 원문 금지" 충족). read 는 Gateway 가 같은 키로 한다.
  * <p><b>family deny</b>: 키 = {@code auth:deny:family:<familyId>}. value 는 감지 시각(디버깅용,
- * 판정은 키 존재로). read(common-auth/Gateway)가 같은 계약으로 조회한다.
+ * 판정은 키 존재로). read(Gateway)가 같은 계약으로 조회한다.
  */
 @Repository
 @RequiredArgsConstructor

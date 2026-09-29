@@ -28,7 +28,7 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
 
     /**
      * {@code SecurityContext}에서 userId(principal)·role(authority)·familyId(details)를 꺼내
-     * {@link LoginUser}를 생성한다. familyId 는 전환기 레거시 토큰이면 {@code null}일 수 있다.
+     * {@link LoginUser}를 생성한다. familyId 는 family 클레임이 없는 레거시 토큰이면 {@code null}일 수 있다.
      */
     @Override
     public LoginUser resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
