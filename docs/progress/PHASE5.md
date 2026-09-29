@@ -36,6 +36,16 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## Layer 1 문서와 CLAUDE.md 의 코드 불일치 정정 (D-051, [#163](https://github.com/Kimgyuilli/PeekCart/pull/163), 2026-09-29)
+
+`02-architecture.md` Phase 4 트리와 전환표가 적던 `common/event`·`common/outbox` 공유 모듈과 `*EventProducer` 를 실제
+배치로 바꿨다. 착수 전 검증에서 TASKS 원문과 달리 `common` 모듈은 존재하고 이벤트 DTO 는 `global/outbox/dto/` 에서
+공유되며, 서비스별 복제는 Outbox·멱등성·DLQ 원장뿐임을 확인했다. `04-design-deep-dive.md` §8-3 의 "DLQ 에서 Slack 알림"
+은 §9-3 과 같게 원장 적재와 `peekcart-dlq-backlog` alert 를 주 신호로 고쳤다(see ADR-0018 D6). CLAUDE.md 명명 규칙은
+실제 consumer 9개의 패턴인 `{구독 대상}Consumer (infrastructure/kafka)` 로 바꿨다. 등급 S.
+
+미충족: 없음. §8-3 에 남은 계획서 식별자(`④-c-2a` 등)는 D-050 범위라 두었다.
+
 ## 등급 판정 기준의 사후 검증 (D-027 ③, [#159](https://github.com/Kimgyuilli/PeekCart/pull/159), 2026-09-29)
 
 `grade:` 가 적힌 계획서 25개(S 8 · M 11 · L 6)를 head 브랜치명으로 PR 에 매칭하고, `docs/` 를 뺀 diff 에 `/plan` §1 의
