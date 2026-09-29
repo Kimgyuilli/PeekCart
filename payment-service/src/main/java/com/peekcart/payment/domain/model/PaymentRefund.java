@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
  *
  * <p><b>행 생성은 이 엔티티로 하지 않는다</b> — fence 획득은 단일 원자 쿼리(INSERT ... ON DUPLICATE KEY)
  * 여야 하며, JPA {@code save} 의 유니크 위반은 flush 시점에 터져 소비 트랜잭션을 rollback-only 로
- * 만든다(계획 §2.1-m). 이 엔티티는 <b>claim 이후의 상태 전이와 감사 필드</b>를 담당한다.
+ * 만든다. 이 엔티티는 <b>claim 이후의 상태 전이와 감사 필드</b>를 담당한다.
  */
 @Entity
 @Table(name = "payment_refunds")

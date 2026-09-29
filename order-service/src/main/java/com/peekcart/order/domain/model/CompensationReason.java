@@ -1,7 +1,7 @@
 package com.peekcart.order.domain.model;
 
 /**
- * 보상이 필요한 사유 (GW-2 #2).
+ * 보상이 필요한 사유.
  */
 public enum CompensationReason {
 

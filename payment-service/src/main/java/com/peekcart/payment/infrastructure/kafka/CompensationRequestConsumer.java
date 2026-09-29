@@ -65,7 +65,7 @@ public class CompensationRequestConsumer {
             requirePresent(payload, "detectedAt");
             // 결제 미존재는 transient 로 본다 — Payment 의 order.created 소비가 지연되면 잠시 없을 수
             // 있다. bounded 재시도(1s/5s/30s) 후 DLQ 로 가며, 원장이 남지 않으므로 유실이 아니라
-            // 미시작이다(DLQ 원장은 ④-c-2).
+            // 미시작이다(DLQ 원장에는 남는다).
             Payment payment = paymentRepository.findByOrderId(orderId)
                     .orElseThrow(() -> new PaymentException(ErrorCode.PAY_003));
             boolean fenced = paymentRefundService.requestRefund(payment, readReason(payload));

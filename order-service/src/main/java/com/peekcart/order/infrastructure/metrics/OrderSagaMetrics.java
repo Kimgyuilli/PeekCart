@@ -9,7 +9,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 
 /**
- * order-service 의 saga 경로 메트릭 (계획 ④-d-1 P2 · 부모 P11).
+ * order-service 의 saga 경로 메트릭.
  *
  * <p><b>타임아웃 취소 3종을 {@code reason} 으로 가른다.</b> 한 값으로 합치면 어느 잡이 도는지
  * 구분되지 않는다 — 결제 만료·예약 미확정·lease 만료는 원인도 대응도 다르다. 합쳐놓으면
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  *
  * <p><b>보상은 Counter 와 Gauge 를 함께 둔다.</b> 누적 Counter 로는 "지금 몇 건이 미해소인가" 를
  * 알 수 없어 alert 를 만들 데이터가 없다. 잔량은 원장을 직접 세는 Gauge 다
- * ({@code payment.refund.backlog} 가 ④-c-1a 에서 같은 이유로 Gauge 인 것과 같다).
+ * ({@code payment.refund.backlog} 가 같은 이유로 Gauge 인 것과 같다).
  */
 @Component
 public class OrderSagaMetrics {

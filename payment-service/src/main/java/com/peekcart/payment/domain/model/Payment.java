@@ -46,7 +46,7 @@ public class Payment {
     private boolean readyForPayment;
 
     /**
-     * 공유받은 재고 예약 lease 만료 시각 (계획 P4). 이 시각 이후 승인은 거부한다 —
+     * 공유받은 재고 예약 lease 만료 시각. 이 시각 이후 승인은 거부한다 —
      * Product sweeper 가 만료 예약을 회수한 뒤에도 승인이 통과하면 재판매된 재고와 이중 판매가 된다.
      * null = lease 미수신(구 메시지) → 만료 판정하지 않는다(하위 호환).
      */
@@ -172,7 +172,7 @@ public class Payment {
      * 재판매)가 끼어들 수 있다. 그래서 "아직 안 만료"가 아니라 <b>남은 lease 가 승인 소요를 덮을 만큼
      * 넉넉한지</b>를 본다({@code approvalMargin}). 이는 경합 창을 마진 이내로 <b>줄이는</b> 조치이지
      * 제거하는 조치가 아니다 — 진짜 fence(예약을 승인 전용 상태로 CAS 전이) 는 saga 프로토콜 변경이라
-     * 별도 ADR 로 다룬다(계획 §2.6 잔여 위험 R-1).
+     * 별도 ADR 로 다룬다.
      *
      * @param approvalMargin PG 승인에 허용하는 최대 소요 시간. 남은 lease 가 이보다 짧으면 시작하지 않는다
      * @throws PaymentException 취소/종료 상태면 {@code PAY-009}, 예약 미확정이면 {@code PAY-008},
@@ -194,7 +194,7 @@ public class Payment {
     /**
      * 결제 시작 전 주문 취소(order.cancelled)를 반영한다.
      * PENDING 에서만 CANCELLED 로 종료하고, APPROVED/FAILED/CANCELLED 는 no-op 이다
-     * (과금-후-취소는 APPROVED 를 덮지 않고 보상 경로로 수렴 — ADR-0012 §D3 ④).
+     * (과금-후-취소는 APPROVED 를 덮지 않고 보상 경로로 수렴 — ADR-0012 D3 ④).
      *
      * @return APPROVED 인데 취소가 도착한 보상 필요 케이스면 true
      */

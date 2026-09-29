@@ -10,7 +10,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
- * 재고 예약 원장 엔티티 (ADR-0012 D3, strangler-1).
+ * 재고 예약 원장 엔티티 (ADR-0012 D3).
  * orderId 단위 상태머신으로 비동기 예약/복구의 멱등·순서를 보장한다.
  */
 @Entity
@@ -45,7 +45,7 @@ public class StockReservation {
     private LocalDateTime reservedAt;
 
     /**
-     * 예약 lease 만료 시각 (계획 P4). Product 가 부여하고 {@code stock.reservation.result} 로 공유한다.
+     * 예약 lease 만료 시각. Product 가 부여하고 {@code stock.reservation.result} 로 공유한다.
      * sweeper 는 이 시각(+유예) 을 근거로만 회수하며, null 이면 회수 대상이 아니다(기존 행 안전측).
      */
     @Column(name = "expires_at")

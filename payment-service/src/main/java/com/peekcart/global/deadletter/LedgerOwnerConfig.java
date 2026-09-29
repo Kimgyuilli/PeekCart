@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 이 서비스가 소유한 DLQ 원장의 주인을 선언한다 (계획 ④-c-2b-3b P15-f).
+ * 이 서비스가 소유한 DLQ 원장의 주인을 선언한다.
  *
  * <p><b>이 파일은 공유 모듈 {@code peekcart-common-messaging} 에 두지 않는다</b> — 값이 서비스마다
  * 다르다(ADR-0033 D1).

@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * order 원장의 replay 사전조건 (구현 ④-c-2b-4a P19 · 계획 리뷰 2R #3·#4).
+ * order 원장의 replay 사전조건.
  *
  * <p>대상은 {@code stock.reservation.result} 하나다 — 이 토픽만 정책이 {@code preconditionRequired} 다.
  *
@@ -54,7 +54,7 @@ public class OrderReplayPrecondition implements ReplayPreconditionPort {
 
         JsonNode orderIdNode = body.get("orderId");
         JsonNode reservedNode = body.get("reserved");
-        // **isIntegralNumber 가 필요하다** (diff 리뷰 1R #2): `canConvertToLong()` 만 쓰면 `1.5` 같은
+        // **isIntegralNumber 가 필요하다**: `canConvertToLong()` 만 쓰면 `1.5` 같은
         // DecimalNode 도 통과하고 `asLong()` 이 1 로 절삭해 **엉뚱한 aggregate 를 조회**한다.
         if (orderIdNode == null || !orderIdNode.isIntegralNumber() || !orderIdNode.canConvertToLong()
                 || reservedNode == null || !reservedNode.isBoolean()) {

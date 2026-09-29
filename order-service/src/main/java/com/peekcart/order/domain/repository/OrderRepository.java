@@ -42,7 +42,7 @@ public interface OrderRepository {
     List<Order> findUnconfirmedReservationBefore(LocalDateTime cutoff);
 
     /**
-     * 예약 lease 가 만료됐는데 아직 결제를 시작하지 않은 PENDING 주문을 조회한다 (계획 P3/P4).
+     * 예약 lease 가 만료됐는데 아직 결제를 시작하지 않은 PENDING 주문을 조회한다.
      * 기존 두 조회가 비우지 못한 구간 — {@code reservationConfirmedAt} 이 채워졌고(예약 확정 완료)
      * {@code PAYMENT_REQUESTED} 로도 넘어가지 않은 주문 — 의 수명 상한이다. 이 상한이 없으면
      * Product 의 lease sweeper 가 살아있는 주문의 재고를 회수해 oversell 이 된다.

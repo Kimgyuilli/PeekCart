@@ -50,7 +50,7 @@ public class ProductCommandService {
         Inventory inventory = Inventory.create(product, command.stock());
         inventoryRepository.save(inventory);
 
-        // version 은 flush 후에야 채워진다 → product.updated 발행 전 saveAndFlush (strangler-2, 라운드3 #1)
+        // version 은 flush 후에야 채워진다 → product.updated 발행 전 saveAndFlush
         productRepository.saveAndFlush(product);
         outboxEventPublisher.publishProductUpdated(product, inventory.getStock());
 
@@ -81,7 +81,7 @@ public class ProductCommandService {
                 .map(Inventory::getStock)
                 .orElse(0);
 
-        // 변경분 flush 로 version 증가 후 발행 (flush 전 읽으면 seed=0 ↔ event=0 충돌, 라운드3 #1)
+        // 변경분 flush 로 version 증가 후 발행 (flush 전 읽으면 seed=0 ↔ event=0 충돌)
         productRepository.saveAndFlush(product);
         outboxEventPublisher.publishProductUpdated(product, stock);
 
@@ -107,7 +107,7 @@ public class ProductCommandService {
                 .map(Inventory::getStock)
                 .orElse(0);
 
-        // 판매중단도 status 변경이므로 product.updated 발행 (status=INACTIVE, 라운드2 #3)
+        // 판매중단도 status 변경이므로 product.updated 발행 (status=INACTIVE)
         productRepository.saveAndFlush(product);
         outboxEventPublisher.publishProductUpdated(product, stock);
     }

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Redis 장애 시 캐시 경로를 fail-open 으로 흘리는 {@link CacheErrorHandler} (L-006, 구현 ⑤).
+ * Redis 장애 시 캐시 경로를 fail-open 으로 흘리는 {@link CacheErrorHandler} (L-006).
  *
  * <p><b>왜 fail-open 인가</b>: Redis 는 5서비스 공유 인프라다. 기본
  * {@code SimpleCacheErrorHandler} 는 캐시 예외를 그대로 되던지므로, Redis 가 죽으면

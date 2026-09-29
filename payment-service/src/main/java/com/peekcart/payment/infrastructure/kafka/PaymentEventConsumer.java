@@ -93,7 +93,7 @@ public class PaymentEventConsumer {
 
     /**
      * 결제 시작 전 주문 취소를 소비해 취소 게이트를 payment-로컬로 복원한다.
-     * APPROVED 인데 취소가 도착하면(과금-후-취소) 덮어쓰지 않고 보상 경로로 알린다 (ADR-0012 §D3 ④).
+     * APPROVED 인데 취소가 도착하면(과금-후-취소) 덮어쓰지 않고 보상 경로로 알린다 (ADR-0012 D3 ④).
      */
     @KafkaListener(topics = "order.cancelled", groupId = GROUP_ORDER_CANCELLED)
     @Transactional

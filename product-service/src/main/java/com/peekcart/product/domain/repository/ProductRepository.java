@@ -15,7 +15,7 @@ public interface ProductRepository {
 
     /**
      * 저장 후 즉시 flush 하여 {@code @Version} 등 DB 반영 값을 동기화한다.
-     * {@code product.updated} 발행 시 증가된 version 을 읽기 위해 사용한다 (strangler-2).
+     * {@code product.updated} 발행 시 증가된 version 을 읽기 위해 사용한다.
      */
     Product saveAndFlush(Product product);
 

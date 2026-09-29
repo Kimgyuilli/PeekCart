@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * Order 로컬 가격 캐시 read model (CQRS ⑤, strangler-2).
+ * Order 로컬 가격 캐시 read model (ADR-0012 CQRS).
  * <p>
  * {@code product.updated} 이벤트를 구독해 단가를 eventually-consistent 하게 적재한다.
  * 주문 생성 시 Product 동기 호출 없이 이 캐시에서 단가 스냅샷을 읽는다.

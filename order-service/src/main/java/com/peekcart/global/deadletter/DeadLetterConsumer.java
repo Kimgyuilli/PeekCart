@@ -11,7 +11,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
- * order-service 의 DLQ 소비 경로 (계획 ④-c-2a P6).
+ * order-service 의 DLQ 소비 경로.
  *
  * <p><b>자기 group 의 실패분만 적재한다.</b> DLQ 토픽은 공유라 {@code payment.completed.dlq} 에는
  * order·product·notification 세 서비스의 실패가 함께 쌓인다. 소유권을 가르지 않으면 한 사건이

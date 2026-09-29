@@ -14,7 +14,7 @@ public interface PaymentJpaRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByOrderId(Long orderId);
 
     /**
-     * replay 적격성 판정용 <b>비관적 잠금</b> 조회 (④-c-2b-4a P19 · 계획 리뷰 3R #6).
+     * replay 적격성 판정용 <b>비관적 잠금</b> 조회.
      *
      * <p>{@code markReadyForPayment} 는 상태 가드 없이 flag 와 lease 를 덮으므로, 판정과 claim 사이의
      * 상태 변화를 막지 않으면 정책이 막으려던 재적용이 그대로 성립한다.
