@@ -14,6 +14,10 @@
 #   화이트리스트는 **사유와 함께** 이 파일 안에 둔다. 목록만 있으면 왜 예외인지 모르는 채
 #   항목이 늘어난다.
 #
+#   리스너를 켜는 테스트(app.kafka.listener.enabled=true)는 발행 전에 awaitListenerAssignment 로
+#   파티션 할당을 기다려야 한다(D-058). 할당 전에 발행하면 group join 이 await 예산을 먹거나
+#   발행이 조용히 실패해, 원인 없이 timeout 으로만 보이는 간헐 실패가 된다.
+#
 # 사용: bash scripts/integration-test-container-lint.sh [--self-test]
 #
 # 종료:
@@ -56,6 +60,8 @@ ALLOWED = {
 
 violations = []
 DIRECT = re.compile(r"^\s*@(?:org\.testcontainers\.[\w.]+\.)?(?:Container|Testcontainers)\b", re.M)
+# 문자열 리터럴 안의 설정만 본다 — 주석의 언급은 리스너를 켜지 않는다.
+LISTENER_ON = re.compile(r'"[^"\n]*\bapp\.kafka\.listener\.enabled=true\b')
 
 
 def bad(code, message):
@@ -70,6 +76,7 @@ for module in MODULES:
         continue
 
     found = []
+    no_wait = []
     for dirpath, _, filenames in os.walk(test_root):
         for fn in filenames:
             if not fn.endswith(".java"):
@@ -80,6 +87,8 @@ for module in MODULES:
             # FQN 표기(@org.testcontainers.junit.jupiter.Testcontainers)도 같은 선언이다.
             if DIRECT.search(text):
                 found.append(fn)
+            if LISTENER_ON.search(text) and "awaitListenerAssignment(" not in text:
+                no_wait.append(fn)
 
     for fn in sorted(found):
         if fn in ALLOWED:
@@ -88,6 +97,11 @@ for module in MODULES:
             "%s/%s 가 컨테이너를 직접 선언한다. "
             "@Import(SharedContainers.class) 를 쓴다 (ADR-0028). "
             "예외가 필요하면 이 스크립트의 ALLOWED 에 **사유와 함께** 등록한다" % (module, fn))
+
+    for fn in sorted(no_wait):
+        bad("ITC-006",
+            "%s/%s 가 리스너를 켜지만 awaitListenerAssignment 를 호출하지 않는다. "
+            "@BeforeEach 에서 발행 전에 파티션 할당을 기다린다 (D-058)" % (module, fn))
 
 # 화이트리스트가 실제 파일을 가리키는지 — 이름이 바뀌면 예외가 유령이 된다.
 for fn, reason in ALLOWED.items():
@@ -116,7 +130,7 @@ if violations:
     print("\n".join(violations))
     sys.exit(1)
 
-print("integration-test-container-lint: 직접 선언 0건 (예외 %d건, 사유 명시)" % len(ALLOWED))
+print("integration-test-container-lint: 직접 선언 0건 (예외 %d건, 사유 명시) · 리스너 할당 대기 누락 0건" % len(ALLOWED))
 PYEOF
 
 run_lint() {
@@ -156,7 +170,7 @@ self_test() {
     }
 
     # mode: clean | new-container | module-new-container:<모듈> | testcontainers-revived | fqn-testcontainers
-    #       | unlisted-module | no-module | ghost-allow
+    #       | unlisted-module | no-module | ghost-allow | listener-no-wait
     _fixture() {
         local dir="$1" mode="$2" m
         local t="$dir/order-service/src/test/java/com/peekcart"
@@ -179,6 +193,26 @@ class SomethingIntegrationTest {
     // @Container 라는 문자열이 주석에 있어도 위반이 아니다
 }
 JAVA
+        # 리스너를 켜고 할당을 기다리는 정상 형태 — clean 을 포함해 모든 픽스처에 있다
+        cat > "$t/ListenerIntegrationTest.java" <<'JAVA'
+@SpringBootTest
+@TestPropertySource(properties = {"app.kafka.listener.enabled=true"})
+class ListenerIntegrationTest {
+    @BeforeEach
+    void setUp() {
+        awaitListenerAssignment(listenerRegistry);
+    }
+}
+JAVA
+        if [[ "$mode" == "listener-no-wait" ]]; then
+            cat > "$t/ListenerNoWaitIntegrationTest.java" <<'JAVA'
+@SpringBootTest
+// 주석 속 "app.kafka.listener.enabled=false" 는 판정에 쓰이지 않는다
+@TestPropertySource(properties = {"spring.flyway.enabled=true", "app.kafka.listener.enabled=true"})
+class ListenerNoWaitIntegrationTest {
+}
+JAVA
+        fi
         # 각 모듈이 실제로 검사되는지 — 목록에서 빠지면 그 모듈 케이스가 false-green 이 된다
         if [[ "$mode" == module-new-container:* ]]; then
             cat > "$dir/${mode#module-new-container:}/src/test/java/com/peekcart/NewIntegrationTest.java" <<'JAVA'
@@ -243,6 +277,8 @@ JAVA
         _fixture "$tmp/m-$m" "module-new-container:$m"
         _case "$m 테스트가 @Testcontainers 선언" ITC-002 "$tmp/m-$m"
     done
+    _fixture "$tmp/c7" listener-no-wait
+    _case "리스너를 켜고 할당 대기 없음" ITC-006 "$tmp/c7"
     _fixture "$tmp/c4" ghost-allow
     _case "화이트리스트가 유령 파일을 가리킴" ITC-004 "$tmp/c4"
 
@@ -251,7 +287,7 @@ JAVA
         echo "self-test 실패 ${failures}건"
         return 1
     fi
-    echo "self-test OK ($((8 + ${#MODULES[@]}))/$((8 + ${#MODULES[@]})))"
+    echo "self-test OK ($((9 + ${#MODULES[@]}))/$((9 + ${#MODULES[@]})))"
 }
 
 if [[ "${1:-}" == "--self-test" ]]; then
