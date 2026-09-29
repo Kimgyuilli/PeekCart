@@ -10,17 +10,17 @@ import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.stereotype.Component;
 
 /**
- * DLQ listener 의 <b>최종 실패 처분</b> (계획 ④-c-2a §2.6-C · P8).
+ * DLQ listener 의 <b>최종 실패 처분</b>.
  *
  * <p>"DB 장애에서 offset 미커밋" 과 "poison record 가 파티션을 무기한 막지 않음" 은
  * durable 대체 저장소 없이 <b>동시에 만족할 수 없다</b>. 본 구현은 <b>무유실</b>을 택한다:
  * 재시도가 소진되면 offset 을 커밋하지 않은 채 컨테이너를 <b>정지</b>하고 사람을 부른다.
  *
  * <p>정지가 없으면 같은 레코드를 무한 재시도하며 로그만 쌓이고, 커밋하면 원장에 못 쓴 DLQ 레코드가
- * 영구 유실된다. 둘 다 §1 부정형 3번에 걸린다.
+ * 영구 유실된다.
  *
  * <p>DB 가 죽었다면 이 서비스의 DLQ 적재는 전부 불가능하므로 <b>DLQ 계열 컨테이너 전체</b>를 세운다.
- * 재기동 절차는 runbook §DLQ listener 정지 복구.
+ * 재기동 절차는 {@code docs/runbooks/dlq-recovery.md} 의 "DLQ listener 정지 복구".
  */
 @Slf4j
 @Component

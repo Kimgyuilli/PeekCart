@@ -15,10 +15,10 @@ import java.util.Optional;
 public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterRecord, Long> {
 
     /**
-     * 원장 적재 (계획 ④-c-2a P6). <b>단일 원자 INSERT</b> — 유니크 충돌을 예외가 아니라
+     * 원장 적재. <b>단일 원자 INSERT</b> — 유니크 충돌을 예외가 아니라
      * 영향 행 수 0 으로 돌려받아야 소비 트랜잭션이 rollback-only 로 오염되지 않는다.
      *
-     * <p>{@code ON DUPLICATE KEY UPDATE id = id} 를 쓰지 않는 이유(④-c-1a 실측): MySQL Connector/J 는
+     * <p>{@code ON DUPLICATE KEY UPDATE id = id} 를 쓰지 않는 이유(실측): MySQL Connector/J 는
      * 기본이 <b>found-rows</b> 시맨틱이라 값이 바뀌지 않은 중복도 <b>1</b> 로 보고한다 — 그러면
      * 중복 유입에도 "신규 적재" 로 판단해 알림이 중복 발송된다. {@code INSERT IGNORE} 는 건너뛴 행을
      * 0 으로 보고한다.
@@ -83,8 +83,8 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
      * 행 단위로 세면 backlog 가 사건 수보다 계속 부풀고, "재실패해도 미결은 1건" 이 거짓이 된다.
      *
      * <p><b>{@code root_record_id IS NULL} 을 함께 받는 것이 전환 구간 계약이다</b> — 이 컬럼은 additive 라
-     * ④-c-2a 가 적재한 기존 행이 전부 NULL 이다. 조건을 {@code = id} 로만 걸면 <b>기존 미결이 전부 탈락해
-     * backlog 가 0 으로 보인다</b>. backfill(④-c-2b-4 P23) 이후에도 이 분기는 남는다.
+     * 컬럼 추가 전에 적재된 행이 전부 NULL 이다. 조건을 {@code = id} 로만 걸면 <b>기존 미결이 전부 탈락해
+     * backlog 가 0 으로 보인다</b>. backfill 이후에도 이 분기는 남는다.
      */
     @Query("SELECT COUNT(r) FROM DeadLetterRecord r "
             + "WHERE (r.rootRecordId IS NULL OR r.rootRecordId = r.id) AND r.status IN ('OPEN', 'ACKED')")
@@ -137,10 +137,10 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
 
     /**
      * replay attempt-id 로 그 시도를 개시한 <b>canonical root 의 id</b>. 없으면 empty
-     * (계획 ④-c-2b-3b P15 단계 1 — 로케이터).
+     * ({@link DeadLetterRecorder} 상관 단계 1 — 로케이터).
      *
      * <p><b>대조가 아니라 탐색이다.</b> 여기서 못 찾으면 상관 자체를 시도하지 않고 독립 root 로 적재한다.
-     * attempt 값의 <b>대조</b>는 잠금 후 단 한 곳(P15 단계 3)에서만 한다 — 관측점을 늘리면
+     * attempt 값의 <b>대조</b>는 잠금 후 단 한 곳(상관 단계 3)에서만 한다 — 관측점을 늘리면
      * "predicate 하나를 지우면 정확히 그 행만 red" 가 attempt 축에서 성립하지 않는다.
      *
      * <p><b>{@link #findRootIdOf} 와 같은 이유로 id 만 돌려준다</b> — 엔티티로 읽으면 그 인스턴스가
@@ -175,7 +175,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
     /**
      * 종결 전이·purge 를 위해 root 를 잠근다.
      *
-     * <p>종결 전파(P5)·재개방(④-c-2b-3 P15)·purge(P4)가 <b>전부 이 잠금을 먼저 잡는다</b> —
+     * <p>종결 전파·재개방·purge 가 <b>전부 이 잠금을 먼저 잡는다</b> —
      * 진입 순서가 같아야 순환이 생기지 않는다.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -184,7 +184,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
 
     /**
      * 종결 incident 의 정리 대상 <b>root</b>. {@code OPEN}/{@code ACKED} 는 대상이 아니다 —
-     * 장기 미결은 용량 문제가 아니라 운영 SLA 문제이고, 지우면 그 사실이 사라진다(§2.6-E).
+     * 장기 미결은 용량 문제가 아니라 운영 SLA 문제이고, 지우면 그 사실이 사라진다.
      *
      * <p><b>{@code COALESCE(discarded_at, resolved_at)} 를 쓰지 않는다</b>: {@code DISCARDED} → 재개방 →
      * {@code RESOLVED} 를 거친 root 는 <b>두 시각을 모두</b> 갖고, {@code COALESCE} 는 항상 과거의
@@ -199,19 +199,19 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
     List<Long> findPurgeableRootIds(@Param("threshold") LocalDateTime threshold, Pageable pageable);
 
     /**
-     * 발행 축이 {@code REQUESTED} 인 행을 오래된 순으로 읽는다 (ADR-0020 §D6-4 · 구현 ④-c-2b-2 P12).
+     * 발행 축이 {@code REQUESTED} 인 행을 오래된 순으로 읽는다 (ADR-0020 §D6-4).
      *
      * <p>reconciler 전용이다. <b>root 로 한정하지 않는다</b> — 발행은 행 단위 사실이고, 자식도 자기
      * replay 요청을 가질 수 있다. incident 집계(사건 축)만 root 로 정규화한다.
      *
-     * <p>인덱스를 따로 두지 않았다(계획 §10 R8). 이 테이블은 DLQ 유입량에 유계이고, 같은 컬럼을 스캔하는
+     * <p>인덱스를 따로 두지 않았다. 이 테이블은 DLQ 유입량에 유계이고, 같은 컬럼을 스캔하는
      * {@link #countUnresolvedByPublicationStatus} 가 이미 무인덱스로 돈다.
      */
     @Query("SELECT r FROM DeadLetterRecord r WHERE r.publicationStatus = 'REQUESTED' ORDER BY r.id ASC")
     List<DeadLetterRecord> findRequestedPublications(Pageable pageable);
 
     /**
-     * reconciler <b>스캔용</b> — 엔티티가 아니라 id 만 돌려준다 (④-c-2b-4a P21, 계획 리뷰 2R #5).
+     * reconciler <b>스캔용</b> — 엔티티가 아니라 id 만 돌려준다.
      *
      * <p><b>{@link #findRequestedPublications} 를 스캔에 쓰면 안 된다.</b> 그 조회는 엔티티를 영속성
      * 컨텍스트에 올리는데, 뒤이은 {@code FOR UPDATE} 는 <b>잠금만 얻고 이미 관리 중인 인스턴스를
@@ -225,7 +225,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
     List<Long> findRequestedPublicationIds(Pageable pageable);
 
     /**
-     * incident 의 <b>가장 최근 활성 자식</b>. replay 재요청의 target row 다 (④-c-2b-4a P21).
+     * incident 의 <b>가장 최근 활성 자식</b>. replay 재요청의 target row 다.
      *
      * <p>{@link #findChildrenForUpdate} 로는 이 질문에 답할 수 없다 — 그 조회에는 {@code ORDER BY} 가 없어
      * "가장 최근" 이 정의되지 않는다. 결과가 비면 <b>root 자신이 target</b> 이다.
@@ -238,7 +238,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
     List<DeadLetterRecord> findLatestActiveChildForUpdate(@Param("rootId") Long rootId, Pageable pageable);
 
     /**
-     * drain ⓓ 앵커를 <b>DB 시각으로</b> 찍는다 (④-c-2b-4a P23 · 계획 §10.1 #6).
+     * drain ⓓ 앵커를 <b>DB 시각으로</b> 찍는다 (ADR-0022 §D2).
      *
      * <p>앱 시각(`LocalDateTime.now()`)으로 쓰면 preflight 의 비교 기준인 {@code NOW()} 와 갈라진다 —
      * 애플리케이션 시계가 뒤진 만큼 drain 이 <b>조기 통과</b>한다. 그래서 엔티티 dirty-check 가 아니라
@@ -254,7 +254,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
 
     /**
      * 교착한 {@code REQUESTED} 를 {@code PUBLISH_UNKNOWN} 으로 <b>단방향 해제</b>한다
-     * (④-c-2b-4b P24 · ADR-0022 §D4).
+     * (ADR-0022 §D4).
      *
      * <p><b>조건부 UPDATE 여야 한다.</b> 읽고-검사하고-쓰면 그 사이에 reconciler 가 종착시킨 결과를
      * 덮어쓴다 — 실제로 발행에 성공한 건이 "발행 여부 모름" 으로 후퇴하고, 그 상태는 되돌릴 수 없다.
@@ -271,7 +271,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
                                    @Param("reason") String reason);
 
     /**
-     * replay <b>claim</b> — 발행 축을 {@code REQUESTED} 로 선점한다 (ADR-0020 §D6-4 · 구현 ④-c-2b-4a P21).
+     * replay <b>claim</b> — 발행 축을 {@code REQUESTED} 로 선점한다 (ADR-0020 §D6-4).
      *
      * <p><b>조건부 UPDATE 여야 한다.</b> 읽고-검사하고-쓰면 동시 요청 둘이 모두 통과해 <b>같은 메시지가
      * 두 번 발행</b>된다. 영향 행 0 이면 호출자는 거부하고 즉시 반환한다 — 이 시점엔 outbox 를 아직
@@ -297,12 +297,12 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
     int linkOutboxEvent(@Param("targetId") Long targetId, @Param("outboxEventId") Long outboxEventId);
 
     /**
-     * 상관 앵커를 <b>canonical root</b> 에 기록한다 (ADR-0021 §D1 · 구현 ④-c-2b-4a P21).
+     * 상관 앵커를 <b>canonical root</b> 에 기록한다 (ADR-0021 §D1).
      *
-     * <p>앵커가 root 하나여야 재실패 상관(④-c-2b-3b P15)이 찾을 수 있다. target 이 자식이어도 앵커는 root 다.
+     * <p>앵커가 root 하나여야 재실패 상관이 찾을 수 있다. target 이 자식이어도 앵커는 root 다.
      *
      * <p><b>{@code replay_deadline} 은 {@code COALESCE} 다</b> — 첫 claim 이 값을 박고 이후 요청은
-     * 덮어쓰지 않는다(ADR §D5-3: root 에서 1회 계산하고 자식·재시도가 상속한다). 재계산하면 실패할
+     * 덮어쓰지 않는다(ADR-0020 §D5-3: root 에서 1회 계산하고 자식·재시도가 상속한다). 재계산하면 실패할
      * 때마다 안전창이 연장된다.
      */
     @Modifying(flushAutomatically = true)
@@ -320,7 +320,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
                           @Param("deadline") LocalDateTime deadline);
 
     /**
-     * 적격성 <b>감사</b> 기록 — allow 든 deny 든 남긴다 (구현 ④-c-2b-4a P19).
+     * 적격성 <b>감사</b> 기록 — allow 든 deny 든 남긴다.
      *
      * <p>deny 는 claim 에 도달하지 않으므로 {@link #stampReplayAnchor} 에만 기록하면 <b>거부 이력이
      * 아예 남지 않는다</b>. 호출자가 <b>root 잠금 안에서</b> 부르므로 allow claim 의 앵커 기록과

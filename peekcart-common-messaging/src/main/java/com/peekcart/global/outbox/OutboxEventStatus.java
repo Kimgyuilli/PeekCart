@@ -6,7 +6,7 @@ public enum OutboxEventStatus {
     FAILED,
 
     /**
-     * backfill 마이그레이션이 조립 중인 행 (구현 ④-c-1b).
+     * backfill 마이그레이션이 조립 중인 행.
      *
      * <p>backfill 은 payload 안의 {@code eventId} 를 {@code event_id} 컬럼과 같은 값으로 넣어야 해서
      * INSERT 와 envelope UPDATE 를 두 문장으로 나눈다. 그 사이의 행이 {@code PENDING} 이면

@@ -18,10 +18,10 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * DLQ 원장 조회·종결 표면 (계획 ④-c-2a P10·P12).
+ * DLQ 원장 조회·종결 표면.
  *
  * <p><b>왜 조회가 필요한가</b>: Slack 알림은 best-effort 라 놓칠 수 있고 일부 서비스에서는 no-op 이다.
- * 메트릭 계약(④-d 부모 P11)이 서기 전까지 "지금 미결이 몇 건이고 가장 오래된 건 얼마나 됐나" 를
+ * 메트릭과 별도로 "지금 미결이 몇 건이고 가장 오래된 건 얼마나 됐나" 를
  * 물어볼 수단이 있어야 한다 — 없으면 원장이 있어도 <b>운영이 관측 불능</b>이다.
  *
  * <p><b>왜 종결까지 여기서 하는가</b>: runbook 이 {@code UPDATE dead_letter_records SET status=...} 를
@@ -32,11 +32,11 @@ import java.util.Optional;
  * <p>노출은 {@code management.endpoints.web.exposure.include} 의 {@code deadletter} 로 켜지며,
  * {@code ActuatorSecurityConfig} 의 permitAll 목록에 <b>없으므로</b> 인증 뒤에 있다.
  *
- * <p><b>종결은 incident 단위다</b>(④-c-2b-1 P5) — 자식 id 로 들어와도 canonical root 로 정규화하고
+ * <p><b>종결은 incident 단위다</b> — 자식 id 로 들어와도 canonical root 로 정규화하고
  * root 와 활성 자식을 함께 전이한다. 자식만 닫으면 미결을 종결로 위장한다.
  *
- * <p><b>재발행 개시({@code action=replay})도 여기 하나뿐이다</b>(④-c-2b-4a P21 · N14). 진입점이 둘이 되면
- * 적격성·fence·claim 을 우회하는 경로가 생긴다 — P25 의 진입점 단일성 lint 가 그것을 정적으로 막는다.
+ * <p><b>재발행 개시({@code action=replay})도 여기 하나뿐이다</b>. 진입점이 둘이 되면
+ * 적격성·fence·claim 을 우회하는 경로가 생긴다 — {@code scripts/replay-entrypoint-lint.sh} 가 그것을 정적으로 막는다.
  * kill-switch {@code app.dead-letter.replay.enabled} 의 <b>기본값은 false</b> 다.
  *
  * <p><b>{@code replay} 만 ADMIN 을 요구한다</b> — 나머지 전이는 원장 상태만 바꾸지만 replay 는
@@ -58,7 +58,7 @@ public class DeadLetterEndpoint {
      * <p>{@code unresolved} 는 <b>incident(root) 수</b>다 — 재발행 재실패로 늘어난 자식은 세지 않는다.
      * {@code publication} 은 그 미결 incident 의 <b>발행 축 분포</b>이며 <b>모든 값의 합</b>은
      * {@code unresolved} 와 같다({@code NOT_REQUESTED} = 아직 replay 를 요청하지 않은 건. 키는
-     * {@link PublicationStatus} 를 따라가므로 ④-c-2b-4b 의 {@code PUBLISH_UNKNOWN} 추가로 <b>5개</b>가 됐다)
+     * {@link PublicationStatus} 를 따라간다)
      * — 집계 조회 전부를
      * <b>하나의 read-only 트랜잭션</b>에서 수행해 그 합 불변식을 지킨다. 조회마다 커밋 경계가 갈리면
      * 그 사이의 전이가 같은 행을 두 번 세거나 한 번도 세지 않아 합이 어긋난다. <b>{@code PUBLISHED} 도 미결에
@@ -153,17 +153,17 @@ public class DeadLetterEndpoint {
     }
 
     /**
-     * 재발행을 개시한다 (④-c-2b-4a P21).
+     * 재발행을 개시한다.
      *
      * <p>거부는 예외가 아니라 <b>사유 전량</b>으로 응답한다 — 6 금지축은 서로 독립이므로 첫 번째에서
      * 멈추면 운영자가 한 번에 한 축만 보고 고치기를 반복한다.
      */
     private Map<String, Object> replay(Long id, String actor) {
-        // **replay 는 ADMIN 전용이다** (diff 리뷰 1R #3). 다른 전이와 달리 이 요청은 **업무 토픽에 실제
+        // **replay 는 ADMIN 전용이다**. 다른 전이와 달리 이 요청은 **업무 토픽에 실제
         // 메시지를 다시 싣는다** — 공통 체인의 `authenticated()` 만으로는 ROLE_USER 도 통과한다.
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (!hasAdminRole(authentication)) {
-            // **본문이 아니라 예외로 거부한다** (diff 리뷰 2R #7). 200 + error 문자열로 돌려주면 운영
+            // **본문이 아니라 예외로 거부한다**. 200 + error 문자열로 돌려주면 운영
             // 자동화가 성공으로 오판하고 권한 실패가 Security 의 감사·메트릭에도 잡히지 않는다.
             // ExceptionTranslationFilter 가 이것을 인증 주체는 403, 미인증은 401 로 바꾼다.
             throw new AccessDeniedException("replay 는 ADMIN 권한이 필요합니다");
@@ -190,7 +190,7 @@ public class DeadLetterEndpoint {
     }
 
     /**
-     * 교착한 {@code REQUESTED} 를 해제한다 (④-c-2b-4b P24 · ADR-0022 §D4).
+     * 교착한 {@code REQUESTED} 를 해제한다 (ADR-0022 §D4).
      *
      * <p><b>ADMIN 전용이다</b> — 이 전이는 사건을 종결 가능한 상태로 바꾸고 drain 게이트를 통과시킨다.
      * 그 판단은 broker 좌표와 소비 결과를 직접 확인한 사람만 할 수 있다.

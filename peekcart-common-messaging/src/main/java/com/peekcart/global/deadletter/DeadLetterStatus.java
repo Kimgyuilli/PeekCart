@@ -1,7 +1,7 @@
 package com.peekcart.global.deadletter;
 
 /**
- * DLQ 원장의 <b>사건(resolution) 축</b> 상태 (④-c-2a §2.6-A · ADR-0020 §D6-1).
+ * DLQ 원장의 <b>사건(resolution) 축</b> 상태 (ADR-0020 §D6-1).
  *
  * <p><b>발행 축은 여기 없다.</b> 재발행의 진행 상태는 {@link PublicationStatus} 가 별도 컬럼으로 갖는다 —
  * 단일 컬럼에 담으면 <i>발행 실패</i>와 <i>소비 재실패</i>가 같은 값이 되어 상반된 사실을 가리킨다.

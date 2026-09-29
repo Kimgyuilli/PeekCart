@@ -10,13 +10,13 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
- * DLQ 원장 잔량 메트릭 (계획 ④-d-1 P3 · 부모 P11).
+ * DLQ 원장 잔량 메트릭.
  *
  * <p><b>{@link DeadLetterEndpoint} 와 같은 쿼리를 쓴다.</b> 두 표면이 서로 다른 방식으로 세면
  * 값이 갈라졌을 때 어느 쪽이 맞는지 알 수 없다 — 그러면 둘 다 신뢰할 수 없게 된다.
  *
  * <p>actuator 조회 표면은 유지한다. 메트릭은 시계열·alert 용이고, actuator 는 운영자가 지금
- * 바로 물어보는 용도다(④-c-2a §2.6-E).
+ * 바로 물어보는 용도다.
  *
  * <p><b>집계 단위는 행이 아니라 incident(root) 다</b>(ADR-0020 §D6-3). 재발행이 실패할 때마다 자식 행이
  * 늘어나므로 행으로 세면 backlog·oldest-age 가 사건 수보다 계속 부풀고 alert 임계값이 의미를 잃는다.
@@ -72,13 +72,13 @@ public class DeadLetterMetrics {
     }
 
     /**
-     * 상관 판정 1건 (계획 ④-c-2b-3b P15-h).
+     * 상관 판정 1건.
      *
      * <p><b>증가 기준은 "신규 INSERT 가 확정된 상관 결과"</b> 다. 대조는 INSERT 보다 <b>먼저</b> 돌므로
-     * (P15 단계 3 → 4) 중복 유입에도 대조 자체는 계산된다 — 그것까지 세면 broker 재전달이 통계를 부풀린다.
+     * ({@link DeadLetterRecorder} 상관 단계 3 → 4) 중복 유입에도 대조 자체는 계산된다 — 그것까지 세면 broker 재전달이 통계를 부풀린다.
      *
      * <p>{@code CommitAwareMetrics} 를 쓰는 이유: 트랜잭션 안에서 올리면 <b>rollback 된 상관까지 세도
-     * green</b> 이다(④-d-1 3R #1 이 정확히 그 결함이었다). callback 예외도 그쪽에서 격리한다.
+     * green</b> 이다. callback 예외도 그쪽에서 격리한다.
      */
     public void recordCorrelation(boolean correlated, CorrelationReason reason) {
         Counter counter = Counter.builder("dlq.correlation")

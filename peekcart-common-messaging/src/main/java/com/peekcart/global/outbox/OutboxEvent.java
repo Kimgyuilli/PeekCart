@@ -16,7 +16,7 @@ import java.util.function.Function;
 public class OutboxEvent {
 
     /**
-     * replay 레코드의 {@code event_type} 자리에 들어가는 sentinel (ADR-0020 D3 · 구현 ④-c-2b-2 P10).
+     * replay 레코드의 {@code event_type} 자리에 들어가는 sentinel (ADR-0020 D3).
      *
      * <p>여기에 목적지 토픽을 넣지 않는다. 구버전 poller 는 {@code event_type} 을 <b>그대로 목적지 토픽으로</b>
      * 쓰므로(kind 분기가 없던 판본), 롤백 시 실제 업무 토픽 이름이 이 자리에 있으면 <b>원장 id 를 key 로
@@ -68,7 +68,7 @@ public class OutboxEvent {
     @Column(name = "user_id", length = 64)
     private String userId;
 
-    // --- replay 발행 축 (ADR-0020 D3 · 구현 ④-c-2b-2 P10) ---
+    // --- replay 발행 축 (ADR-0020 D3) ---
 
     /**
      * 레코드 종류 판별자. {@code null} 은 <b>구버전 writer 가 쓴 행</b>이라는 뜻이며 도메인으로 해석한다.
@@ -123,9 +123,9 @@ public class OutboxEvent {
     }
 
     /**
-     * DLQ replay 레코드를 만든다 (ADR-0020 D3 · D8-3 · 구현 ④-c-2b-2 P10).
+     * DLQ replay 레코드를 만든다 (ADR-0020 D3 · D8-3).
      *
-     * <p>발행 자격 검사(fence 6종)는 <b>이 팩토리의 책임이 아니다</b> — 호출자(진입점, 구현 ④-c-2b-4)가
+     * <p>발행 자격 검사(fence 6종)는 <b>이 팩토리의 책임이 아니다</b> — 호출자(진입점)가
      * 원장 행과 원본 레코드를 대조한 뒤에만 부른다. 여기서는 좌표를 그대로 싣는 일만 한다.
      *
      * @param ledgerRecordId  원장 행 id. {@code aggregate_id}(NOT NULL) 를 채운다

@@ -13,14 +13,14 @@ import java.util.Optional;
 
 public interface OutboxEventJpaRepository extends JpaRepository<OutboxEvent, Long> {
 
-    // DB-per-service(구현 ② PR2): 자기 스키마의 outbox_events 만 보이므로 allowlist 없이 자기 PENDING 전체 조회.
+    // DB-per-service: 자기 스키마의 outbox_events 만 보이므로 allowlist 없이 자기 PENDING 전체 조회.
     @Query("SELECT o FROM OutboxEvent o WHERE o.status = 'PENDING' ORDER BY o.createdAt ASC")
     List<OutboxEvent> findPendingEvents(Pageable pageable);
 
     long countByStatus(OutboxEventStatus status);
 
     /**
-     * retention cleanup 배치 삭제 (ADR-0012 D5 · 구현 ② PR3 · 구현 ④-c-2b-2 P12 로 제외 조건 추가).
+     * retention cleanup 배치 삭제 (ADR-0012 D5).
      * <b>PUBLISHED 상태 + {@code published_at < cutoff}</b> 인 행만 최대 {@code limit} 건 삭제한다.
      * PENDING·FAILED 는 status 조건으로, {@code published_at IS NULL} 은 {@code < cutoff} 비교(NULL 미매치)로
      * 자연히 보존된다(미발행/실패 유실 금지). 자기 트랜잭션으로 각 batch 가 독립 커밋된다.
@@ -51,11 +51,11 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEvent, Lon
     int deletePublishedBatchOlderThan(@Param("cutoff") LocalDateTime cutoff, @Param("limit") int limit);
 
     /**
-     * reconciler 가 원장의 발행 축을 전이시킬 때 읽는 outbox 상태 (ADR-0020 D6-4 · 구현 ④-c-2b-2 P12).
+     * reconciler 가 원장의 발행 축을 전이시킬 때 읽는 outbox 상태 (ADR-0020 D6-4).
      *
      * <p>엔티티가 아니라 <b>상태만</b> 반환한다 — reconciler 는 payload 를 볼 이유가 없고,
      * 엔티티를 영속성 컨텍스트에 올리면 의도치 않은 dirty checking 대상이 된다.
-     * 행이 없으면 {@code Optional.empty()} 이며, <b>그것을 실패로 해석하지 않는다</b>(§D6-4 · 계획 §10 R7).
+     * 행이 없으면 {@code Optional.empty()} 이며, <b>그것을 실패로 해석하지 않는다</b>(ADR-0020 §D6-4).
      */
     @Query("SELECT o.status FROM OutboxEvent o WHERE o.id = :id")
     Optional<OutboxEventStatus> findStatusById(@Param("id") Long id);

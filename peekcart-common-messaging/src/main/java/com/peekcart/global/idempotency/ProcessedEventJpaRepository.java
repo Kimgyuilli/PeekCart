@@ -16,7 +16,7 @@ public interface ProcessedEventJpaRepository extends JpaRepository<ProcessedEven
     boolean existsByEventIdAndConsumerGroup(String eventId, String consumerGroup);
 
     /**
-     * retention cleanup 배치 삭제 (ADR-0012 D5 · 구현 ② PR3).
+     * retention cleanup 배치 삭제 (ADR-0012 D5).
      * {@code processed_at} 이 {@code cutoff} 이전인 행을 최대 {@code limit} 건 삭제한다.
      * 자기 트랜잭션으로 실행돼(스케줄러 메서드는 비-트랜잭션) 각 batch 가 독립 커밋된다.
      *

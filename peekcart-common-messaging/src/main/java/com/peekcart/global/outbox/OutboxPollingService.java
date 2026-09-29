@@ -123,7 +123,7 @@ public class OutboxPollingService {
         outboxEventRepository.save(event);
     }
 
-    // kind 분기 (ADR-0020 D3 · 구현 ④-c-2b-2 P11). record_kind 가 REPLAY 인 행만 replay 경로로 간다 —
+    // kind 분기 (ADR-0020 D3). record_kind 가 REPLAY 인 행만 replay 경로로 간다 —
     // null(구버전 writer)·DOMAIN 은 전부 기존 도메인 경로다(OutboxEvent#isReplay).
     private ProducerRecord<String, String> buildRecord(OutboxEvent event) {
         return event.isReplay() ? buildReplayRecord(event) : buildDomainRecord(event);
@@ -138,7 +138,7 @@ public class OutboxPollingService {
     }
 
     /**
-     * DLQ replay 재발행 레코드를 조립한다 (ADR-0020 D3·D8-3 · 구현 ④-c-2b-2 P11).
+     * DLQ replay 재발행 레코드를 조립한다 (ADR-0020 D3·D8-3).
      *
      * <p>도메인 경로와 다른 점 셋:
      * <ul>
@@ -148,11 +148,11 @@ public class OutboxPollingService {
      *       재실패 시 DLT_ORIGINAL_TIMESTAMP 가 원본을 가리키지 않아 멱등 안전창 계산이 오염된다(D5-3).</li>
      *   <li><b>헤더는 allowlist JSON 에서만 만든다</b> — trace/user 헤더도 붙이지 않는다. 표준 DLT_* 를
      *       실으면 재실패 시 원본 좌표가 덮여 상관 대조의 정본이 사라진다(D3).
-     *       <b>키 집합 정확 일치와 4값 유효성을 발행 전에 강제한다</b>(④-c-2b-3a P14-b).</li>
+     *       <b>키 집합 정확 일치와 4값 유효성을 발행 전에 강제한다</b>.</li>
      * </ul>
      *
      * <p>좌표 유효성(destination == origin)은 <b>여기서 검사하지 않는다</b> — 행을 만드는 진입점이
-     * 원본 레코드와 대조한 뒤에만 생성한다(구현 ④-c-2b-4). poller 는 이미 승인된 행을 그대로 싣는다.
+     * 원본 레코드와 대조한 뒤에만 생성한다. poller 는 이미 승인된 행을 그대로 싣는다.
      */
     private ProducerRecord<String, String> buildReplayRecord(OutboxEvent event) {
         ProducerRecord<String, String> record = new ProducerRecord<>(
@@ -174,7 +174,7 @@ public class OutboxPollingService {
      * 헤더가 없거나 모자란 채로 발행하면 재실패분이 원래 사건에 상관되지 못하고 독립 incident 로
      * 갈라진다(ADR-0020 D5-4). 실패시키면 재시도/{@code PUBLISH_FAILED} 로 드러난다.
      *
-     * <p><b>키 집합은 정확히 일치해야 한다</b>(④-c-2b-3a P14-b). "부분집합이면 허용" 으로 두면
+     * <p><b>키 집합은 정확히 일치해야 한다</b>. "부분집합이면 허용" 으로 두면
      * JSON 이 비었을 때의 빈 Map 과 blank 값 생략이 겹쳐 <b>헤더 0~3개짜리 replay 가 그대로 발행</b>된다 —
      * 발행 측에서 상관 계약을 깨는 경로이므로 판독 측 관대함과 대칭이 아니다.
      */

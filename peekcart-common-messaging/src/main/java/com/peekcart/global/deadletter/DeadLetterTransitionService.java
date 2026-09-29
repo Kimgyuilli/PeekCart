@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * DLQ 원장 종결 전이 (구현 ④-c-2b-1 P5 · ADR-0020 §D5-4).
+ * DLQ 원장 종결 전이 (ADR-0020 §D5-4).
  *
  * <p><b>종결의 단위는 행이 아니라 incident 다.</b> 재발행이 실패할 때마다 자식 행이 생기므로,
  * root 만 닫으면 자식이 미결로 남고 자식만 닫으면 <b>미결을 종결로 위장</b>한다. 그래서:
@@ -20,9 +20,9 @@ import java.util.function.Function;
  *   <li>{@code acknowledge}/{@code resolve}/{@code discard} 셋 다 이 경로를 쓴다 — 하나라도 빠지면 축이 갈라진다</li>
  * </ul>
  *
- * <p><b>잠금은 항상 root 부터</b> 잡는다. 재개방(④-c-2b-3)·purge 도 같은 순서로 진입하므로 순환이 없다.
+ * <p><b>잠금은 항상 root 부터</b> 잡는다. 재개방·purge 도 같은 순서로 진입하므로 순환이 없다.
  *
- * <p>발행 축({@code publication_status})은 여기서 건드리지 않는다 — 전이 주체는 reconciler 1종이다(§D6-4).
+ * <p>발행 축({@code publication_status})은 여기서 건드리지 않는다 — 전이 주체는 reconciler 1종이다(ADR-0020 §D6-4).
  */
 @Slf4j
 @Service
@@ -34,8 +34,7 @@ public class DeadLetterTransitionService {
     /**
      * 전이 결과. {@code changed} 는 root 또는 자식 중 하나라도 실제로 전이했는지다.
      *
-     * <p><b>{@code changed=false} 의 두 경우를 {@code rejectedReason} 으로 구분한다</b>
-     * (구현 ④-c-2b-4a P21 · 계획 리뷰 3R #7):
+     * <p><b>{@code changed=false} 의 두 경우를 {@code rejectedReason} 으로 구분한다</b>:
      * <ul>
      *   <li>이미 terminal 이라 no-op — 멱등이며 {@code rejectedReason} 은 {@code null}</li>
      *   <li>I-1 이 거부 — {@code rejectedReason} 이 사유를 담는다</li>
@@ -49,8 +48,8 @@ public class DeadLetterTransitionService {
     @Transactional
     public Optional<Result> acknowledge(Long id, String actor) {
         // acknowledge 는 I-1 가드에서 면제된다 — ADR-0020 I-1 이 금지하는 것은 **terminal resolution**
-        // 이고 OPEN → ACKED 는 terminal 이 아니다(§D6-2b). 세 전이가 같은 경로를 공유하므로
-        // 공통 precheck 에 가드를 넣으면 확인까지 막혀 기존 멱등 계약이 깨진다(계획 리뷰 3R #7).
+        // 이고 OPEN → ACKED 는 terminal 이 아니다(ADR-0020 §D6-2b). 세 전이가 같은 경로를 공유하므로
+        // 공통 precheck 에 가드를 넣으면 확인까지 막혀 기존 멱등 계약이 깨진다.
         return transition(id, record -> record.acknowledge(actor), false);
     }
 
@@ -91,7 +90,7 @@ public class DeadLetterTransitionService {
         // 조회가 이미 활성 자식만 돌려준다(terminal 은 잠그지도 않는다).
         List<DeadLetterRecord> children = repository.findChildrenForUpdate(rootId);
 
-        // **2단계다: 전부 잠그고 → 전부 검사하고 → 그 다음에만 적용한다** (계획 리뷰 1R #4).
+        // **2단계다: 전부 잠그고 → 전부 검사하고 → 그 다음에만 적용한다**.
         // 검사를 행별 적용 안에 넣으면 root 를 전이한 뒤 자식의 REQUESTED 를 발견해 **부분 전이**가 남는다.
         if (guardPublication) {
             String blocking = blockingPublication(root, children);
@@ -121,8 +120,8 @@ public class DeadLetterTransitionService {
      * <p>발행 결과가 미확정인 사건을 닫으면 그 뒤 도착한 결과가 종결된 원장에 반영되지 못한다.
      *
      * <p><b>잠금이 원자성의 근거다</b> — 이 읽기는 root·자식을 전부 {@code FOR UPDATE} 로 잡은 뒤에
-     * 일어나고, replay claim(P21)도 같은 순서로 root 를 먼저 잡는다. 그래서 조건부 UPDATE 없이도
-     * "읽고 검사하고 쓰기" 가 직렬화된다. {@code NULL}(요청 없음)에서의 종결은 허용된다(§D6-2b 표).
+     * 일어나고, replay claim 도 같은 순서로 root 를 먼저 잡는다. 그래서 조건부 UPDATE 없이도
+     * "읽고 검사하고 쓰기" 가 직렬화된다. {@code NULL}(요청 없음)에서의 종결은 허용된다(ADR-0020 §D6-2b 표).
      */
     private String blockingPublication(DeadLetterRecord root, List<DeadLetterRecord> children) {
         if (root.getPublicationStatus() == PublicationStatus.REQUESTED) {

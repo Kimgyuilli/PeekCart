@@ -10,17 +10,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 /**
- * DLQ 원장 발행 축의 <b>건별 종착 처리</b> (ADR-0020 §D6-4 · 구현 ④-c-2b-4a P21).
+ * DLQ 원장 발행 축의 <b>건별 종착 처리</b> (ADR-0020 §D6-4).
  *
- * <p><b>왜 스캐너에서 분리했는가</b>(계획 리뷰 2R #5 · 3R #8): 종착은 원장 행을 잠그고 바꾼다.
+ * <p><b>왜 스캐너에서 분리했는가</b>: 종착은 원장 행을 잠그고 바꾼다.
  * 스캔 배치 전체를 한 트랜잭션에 두면 <b>root 잠금이 배치 끝까지 누적</b>돼 그동안 종결·replay 가 막힌다.
  * 그렇다고 같은 빈의 private 메서드에 {@code @Transactional} 을 붙이면 <b>self-invocation 이라 프록시가
  * 적용되지 않아</b> 경계가 아예 생기지 않는다 — 그래서 <b>별도 빈의 public 메서드</b>여야 한다.
  *
- * <p><b>잠금 순서는 root → target 으로 고정한다.</b> 종결 전파(P5)·재개방(④-c-2b-3 P15)·purge·replay
- * 진입점이 전부 root 를 먼저 잡으므로 순환이 없다. 이전 판본은 <b>잠금 없이</b> 자식 행을 바꿨고,
- * 그 경우 JPA dirty-check 가 행 전체를 쓰므로 동시 종결이 커밋한 {@code RESOLVED} 를 {@code OPEN} 으로
- * 되돌리는 lost update 가 성립했다.
+ * <p><b>잠금 순서는 root → target 으로 고정한다.</b> 종결 전파·재개방·purge·replay
+ * 진입점이 전부 root 를 먼저 잡으므로 순환이 없다. <b>잠금 없이</b> 자식 행을 바꾸면
+ * JPA dirty-check 가 행 전체를 쓰므로 동시 종결이 커밋한 {@code RESOLVED} 를 {@code OPEN} 으로
+ * 되돌리는 lost update 가 성립한다.
  */
 @Slf4j
 @Component
@@ -71,7 +71,7 @@ public class DeadLetterPublicationWorker {
         Optional<OutboxEventStatus> status = outboxEventJpaRepository.findStatusById(outboxEventId);
         if (status.isEmpty()) {
             // fail-closed: 강등하지 않고 그대로 둔다. 다음 사이클에 다시 잡히므로 경보가 계속 울린다.
-            // 이 상태는 스스로 해소되지 않으므로 운영자가 publication-unknown 으로 해제한다(④-c-2b-4b).
+            // 이 상태는 스스로 해소되지 않으므로 운영자가 publication-unknown 으로 해제한다.
             log.error("[DLQ-RECONCILE] outbox 행이 없다 — 계약 위반 신호이므로 PUBLISH_FAILED 로 강등하지 않는다. "
                     + "recordId={}, outboxEventId={}", targetId, outboxEventId);
             return false;
@@ -91,7 +91,7 @@ public class DeadLetterPublicationWorker {
             return false;
         }
 
-        // drain ⓓ 앵커. PUBLISH_FAILED 에도 찍는다 — poller 는 broker ack 뒤 상태 저장을 따로 하므로
+        // drain ⓓ(ADR-0022 §D2) 앵커. PUBLISH_FAILED 에도 찍는다 — poller 는 broker ack 뒤 상태 저장을 따로 하므로
         // 저장 실패로 재시도가 소진되면 **이미 전달된 행이 최종 FAILED** 가 된다(ADR-0020 §D1 crash window).
         // 즉 PUBLISH_FAILED 는 "발행되지 않았다" 가 아니라 "발행 여부를 모른다" 이므로 보수적으로 기록한다.
         repository.stampReplaySettledAt(rootId);
