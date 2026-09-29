@@ -38,7 +38,7 @@ fi
 # 조용히 증발하므로, 존재하지 않는 모듈은 위반으로 센다(vacuous-green 차단). 반대로 새 모듈이 생겼는데
 # 여기 없으면 그 모듈이 조용히 검사 밖에 남으므로, settings.gradle 과 대조해 누락도 위반으로 센다.
 # SharedContainers 는 common/src/testFixtures 에 있어 src/test 스캔 대상이 아니다.
-MODULES=(common peekcart-common-auth gateway order-service user-service notification-service payment-service product-service)
+MODULES=(common peekcart-common-auth peekcart-common-messaging gateway order-service user-service notification-service payment-service product-service)
 
 LINT_PY="$(mktemp -t integration-test-container-lint.XXXXXX.py)"
 trap 'rm -f "$LINT_PY"' EXIT
