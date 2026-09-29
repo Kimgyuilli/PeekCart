@@ -36,6 +36,14 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## Notion 설계 export 원본 삭제 (D-054, [#164](https://github.com/Kimgyuilli/PeekCart/pull/164), 2026-09-29)
+
+`docs/00-lagacy.md` (68KB) 를 삭제했다. 01~07 분리 때 내용이 전부 이관됐고 원본은 git 이력이 보존한다. archive
+이동도 후보였으나 파일이 남으면 grep 중복이 계속돼 삭제를 택했다. PHASE1·PHASE4·TASKS-archive·done 계획서의 언급은
+당시 사실이라 고치지 않았다. 등급 S.
+
+미충족: 없음.
+
 ## Layer 1 문서와 CLAUDE.md 의 코드 불일치 정정 (D-051, [#163](https://github.com/Kimgyuilli/PeekCart/pull/163), 2026-09-29)
 
 `02-architecture.md` Phase 4 트리와 전환표가 적던 `common/event`·`common/outbox` 공유 모듈과 `*EventProducer` 를 실제
