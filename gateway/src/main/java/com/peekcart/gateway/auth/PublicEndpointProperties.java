@@ -9,7 +9,7 @@ import org.springframework.web.util.pattern.PathPatternParser;
 import java.util.List;
 
 /**
- * 공개 경로 allowlist — <b>method + path</b> SSOT (계획 §"공개 경로 SSOT" · loop2 #5).
+ * 공개 경로 allowlist — <b>method + path</b> SSOT.
  *
  * <p>여기 매칭되는 요청은 JWT 를 요구하지 않는다. 단 외부 유입 {@code X-User-*} 는
  * <b>공개 경로에서도 항상 제거</b>된다(spoofing 방지 — 필터가 담당).

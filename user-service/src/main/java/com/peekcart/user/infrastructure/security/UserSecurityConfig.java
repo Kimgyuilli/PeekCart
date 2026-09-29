@@ -45,7 +45,7 @@ public class UserSecurityConfig {
         return http.build();
     }
 
-    /** BCrypt 기반 패스워드 인코더 (User 발급 전속 — U4/GP-2 P0 #1, root 에서 이관). */
+    /** BCrypt 기반 패스워드 인코더 (User 발급 전속). */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

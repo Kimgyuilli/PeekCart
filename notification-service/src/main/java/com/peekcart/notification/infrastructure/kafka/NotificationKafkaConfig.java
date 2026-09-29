@@ -72,7 +72,7 @@ public class NotificationKafkaConfig {
     }
 
     /**
-     * DLQ replay 좌표 reader (구현 ④-c-2b-4a P18).
+     * DLQ replay 좌표 reader.
      *
      * <p><b>공통 모듈에서 자동 등록하지 않는다</b> — {@code @Component} 로 두면 Kafka 가 없는 서비스
      * (user-service)의 컨텍스트가 {@code KafkaAdmin} 부재로 깨진다. 원장을 가진 서비스만 등록한다.

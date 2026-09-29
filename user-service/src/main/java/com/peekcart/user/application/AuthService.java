@@ -78,7 +78,7 @@ public class AuthService {
     }
 
     /**
-     * 회원의 리프레시 토큰 family 를 무효화한다(header-trust, ADR-0013 D3 · PR3c).
+     * 회원의 리프레시 토큰 family 를 무효화한다(header-trust, ADR-0013 D3).
      * <p>header-trust 전환 후 리소스 서비스는 raw access token 을 보유하지 않으므로 특정 토큰 blacklist 대신
      * <b>family deny + 전체 리프레시 무효화</b>로 재정의한다. familyId 가 있으면 이미 발급된 access token 을
      * family deny 로 즉시 차단한다. 전환기 레거시 토큰(familyId {@code null})은 family deny 를 기록할 수 없어
@@ -109,7 +109,7 @@ public class AuthService {
             case ACTIVE -> rotateActive(token);
             case ROTATED -> handleRotatedPresentation(token);
             // 이미 무효화된 family 재제시(로그아웃/재로그인 또는 reuse 여파) 도 reuse 로 판정한다
-            // (plan P8 정의). revoke 는 idempotent, deny 는 재기록되어 family access token 차단을 보장한다.
+            // revoke 는 idempotent, deny 는 재기록되어 family access token 차단을 보장한다.
             case REVOKED -> throw detectReuse(token.getFamilyId());
         };
     }

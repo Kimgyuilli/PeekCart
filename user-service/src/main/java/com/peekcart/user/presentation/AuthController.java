@@ -50,7 +50,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.of(TokenResponse.from(authService.refresh(request.refreshToken()))));
     }
 
-    @Operation(summary = "로그아웃", description = "회원의 리프레시 토큰 family 를 무효화한다(header-trust, PR3c).")
+    @Operation(summary = "로그아웃", description = "회원의 리프레시 토큰 family 를 무효화한다(header-trust).")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@CurrentUser LoginUser loginUser) {
         authService.logout(loginUser.userId(), loginUser.familyId());

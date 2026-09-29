@@ -88,7 +88,7 @@ public class NotificationConsumer {
      * 주문 취소 알림을 발송한다.
      *
      * <p>결제 실패발 취소({@code reason=PAYMENT_FAILED})는 같은 사건을 {@code payment.failed} 로 이미
-     * 알렸으므로 스킵한다 — Order 가 모든 취소를 {@code order.cancelled} 로 발행하게 되면서(계획 P7)
+     * 알렸으므로 스킵한다 — Order 가 모든 취소를 {@code order.cancelled} 로 발행하므로
      * 생기는 중복 알림을 사유 필드로 차단한다.
      */
     @KafkaListener(topics = "order.cancelled", groupId = GROUP_ORDER_CANCELLED)

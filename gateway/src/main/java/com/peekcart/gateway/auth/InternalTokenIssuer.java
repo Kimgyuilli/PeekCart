@@ -17,7 +17,7 @@ import java.util.Base64;
 import java.util.Date;
 
 /**
- * Gateway 서명 내부 토큰 발행기 (ADR-0017 D1 · 구현 ③ PR3d).
+ * Gateway 서명 내부 토큰 발행기 (ADR-0017 D1).
  *
  * <p>사용자 토큰 검증이 끝난 {@link GatewayClaims} 를 짧은 수명 RS256 JWT 로 재서명한다. 리소스 서비스는
  * 이 토큰만 신뢰하므로, 평문 헤더 위조로는 신원을 만들 수 없다(NetworkPolicy AND 서명).
@@ -39,7 +39,7 @@ public class InternalTokenIssuer {
         this(properties, Clock.systemUTC());
     }
 
-    /** 테스트가 고정 시각을 주입하기 위한 생성자(계획 P9 교차모듈 conformance). */
+    /** 테스트가 고정 시각을 주입하기 위한 생성자(교차모듈 conformance 테스트용). */
     InternalTokenIssuer(InternalTokenProperties properties, Clock clock) {
         properties.validate();
         this.activeKid = properties.activeKid();

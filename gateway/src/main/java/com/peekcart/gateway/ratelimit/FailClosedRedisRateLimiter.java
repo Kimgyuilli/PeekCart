@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * <b>fail-closed</b> Redis rate limiter (ADR-0013 D3 · 계획 P13 · GW-2 c2:3/c3:1).
+ * <b>fail-closed</b> Redis rate limiter (ADR-0013 D3).
  *
  * <p><b>왜 기본 {@code RedisRateLimiter} 를 쓰지 않는가</b>: Spring Cloud Gateway 의 기본 구현은
  * Redis/Lua 오류를 내부에서 잡아 {@code allowed=true} 로 변환한다(fail-<b>open</b>). 즉 Redis 가 죽으면
@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@code deny-empty-key} 는 KeyResolver 가 빈 키를 줄 때만 동작하므로 이 문제를 덮지 못한다.
  *
  * <p><b>알고리즘</b>: 고정 윈도우 카운터(INCR + 최초 1회 EXPIRE). 기본 구현의 token bucket 보다 단순하고
- * 경계에서 최대 2배 버스트를 허용하지만, 본 PR 의 목적은 정밀한 셰이핑이 아니라 <b>남용 차단 + 장애 시
+ * 경계에서 최대 2배 버스트를 허용하지만, 이 limiter 의 목적은 정밀한 셰이핑이 아니라 <b>남용 차단 + 장애 시
  * 안전한 거부</b>다. 정밀 셰이핑이 필요해지면 Lua 기반 token bucket 으로 교체한다.
  *
  * <p>Redis 오류는 삼키지 않고 {@link RateLimiterUnavailableException} 으로 전파하며, 인증 필터가 이를
@@ -84,7 +84,7 @@ public class FailClosedRedisRateLimiter extends AbstractRateLimiter<FailClosedRe
                     return new Response(allowed, headers);
                 })
                 // fail-closed: Redis 장애를 통과로 바꾸지 않는다. 429 가 아니라 503 으로 분류되도록
-                // 전용 예외로 전파한다(계획 P12 응답 행렬).
+                // 전용 예외로 전파한다.
                 .onErrorMap(e -> !(e instanceof RateLimiterUnavailableException),
                         e -> new RateLimiterUnavailableException(
                                 "rate limiter Redis 조회 실패 (route=" + routeId + ")", e));

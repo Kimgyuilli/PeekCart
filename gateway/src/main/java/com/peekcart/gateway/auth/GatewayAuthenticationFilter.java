@@ -19,25 +19,25 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 /**
- * Gateway 인증 필터 (ADR-0013 D3 · 구현 ③ PR3a) — 검증 3단계.
+ * Gateway 인증 필터 (ADR-0013 D3) — 검증 3단계.
  *
  * <ol>
  *   <li><b>헤더 strip</b>: 외부에서 유입된 {@code X-Internal-Auth}/{@code X-User-*} 를 <b>항상</b> 제거한다(공개 경로 포함).</li>
- *   <li><b>서명/만료 검증</b>(RS256 via JWKS — PR4 로 HMAC fallback 제거) → <b>blacklist/family deny</b>(Redis)</li>
+ *   <li><b>서명/만료 검증</b>(RS256 via JWKS, HMAC fallback 없음) → <b>blacklist/family deny</b>(Redis)</li>
  *   <li><b>내부 토큰 주입</b>(Gateway 서명, ADR-0017) + 검증된 userId 를 exchange attribute 로 노출(RateLimiter 용)</li>
  * </ol>
  *
- * <p><b>실행 순서</b>(GW-2 c2:1/c3:2): 반드시 라우트 필터(`RequestRateLimiter`)보다 <b>먼저</b> 실행돼야
+ * <p><b>실행 순서</b>: 반드시 라우트 필터(`RequestRateLimiter`)보다 <b>먼저</b> 실행돼야
  * 한다. 라우트 정의 필터는 order 1..n 을 받으므로 본 필터는 그보다 앞선 {@link #AUTH_FILTER_ORDER} 를
  * 쓴다. 뒤에 실행되면 RateLimiter 가 <b>검증 전 외부 {@code X-User-Id}</b> 를 키로 삼아, 헤더만 바꿔
  * 사용자별 제한을 무한 회피할 수 있다.
  *
- * <p><b>응답 계약</b>(계획 P12 행렬): 서명오류·만료·exp 부재·unknown kid·deny hit → <b>401</b> /
+ * <p><b>응답 계약</b>: 서명오류·만료·exp 부재·unknown kid·deny hit → <b>401</b> /
  * JWKS·Redis 의존성 장애 → <b>503</b> / rate limit 초과 → 429(RateLimiter 소관).
  *
- * <p><b>PR3d</b>: 다운스트림에 평문 신원을 넘기지 않는다 — Gateway 개인키로 서명한 짧은 수명 내부 토큰
- * ({@link InternalTokenContract#HEADER})만 주입하고, {@code Authorization} 전달도 중단한다
- * (ADR-0017 D1/D5 · ADR-0014 D2-c exit). 서비스는 사용자 토큰을 더 이상 검증하지 않으므로
+ * <p><b>내부 토큰</b>: 다운스트림에 평문 신원을 넘기지 않는다 — Gateway 개인키로 서명한 짧은 수명 내부 토큰
+ * ({@link InternalTokenContract#HEADER})만 주입하고, {@code Authorization} 은 전달하지 않는다
+ * (ADR-0017 D1/D5 · ADR-0014 D2-c exit). 서비스는 사용자 토큰을 검증하지 않으므로
  * Authorization 을 계속 넘기면 쓰이지 않는 자격증명을 불필요하게 전파하는 셈이 된다.
  */
 @Component
@@ -100,11 +100,11 @@ public class GatewayAuthenticationFilter implements GlobalFilter, Ordered {
                     : reject(exchange, HttpStatus.UNAUTHORIZED, AuthFailureReason.MISSING_TOKEN);
         }
 
-        // 토큰이 제시됐다면 공개 경로여도 반드시 검증한다(GW-2 c2:4): 만료·위조·deny 토큰을 익명으로
+        // 토큰이 제시됐다면 공개 경로여도 반드시 검증한다: 만료·위조·deny 토큰을 익명으로
         // 강등해 통과시키면 로그아웃/reuse 무효화가 공개 경로에서 우회된다.
         return authenticate(exchange, token)
                 // 인증 단계 오류만 여기서 처리한다. chain.filter 는 아래에서 별도로 호출하므로
-                // 업스트림/라우팅 오류가 401 로 오분류되지 않는다(GW-2 c2:2).
+                // 업스트림/라우팅 오류가 401 로 오분류되지 않는다.
                 .flatMap(authenticated -> proceed(chain, authenticated))
                 .onErrorResume(e -> isAuthFailure(e)
                         ? rejectByCause(exchange, e)
@@ -191,7 +191,7 @@ public class GatewayAuthenticationFilter implements GlobalFilter, Ordered {
      * 않으므로(ADR-0014 D2-c exit) 계속 전달하면 쓰이지도 않는 Bearer 토큰이 내부망 전 구간에 퍼진다.
      *
      * <p>서명은 이벤트 루프에서 동기 실행된다(RSA 2048 sign ≈ 수백 µs). 예산 초과가 관측되면 서명 전용
-     * bounded scheduler 로 분리한다(계획 P2 (b)).
+     * bounded scheduler 로 분리한다.
      */
     private ServerWebExchange withInternalToken(ServerWebExchange exchange, GatewayClaims claims) {
         String internalToken = internalTokenIssuer.issue(claims);

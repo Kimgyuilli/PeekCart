@@ -5,13 +5,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.time.Duration;
 
 /**
- * Gateway JWT 검증 설정 (ADR-0013 D1/D3 · 구현 ③ PR3a).
+ * Gateway JWT 검증 설정 (ADR-0013 D1/D3).
  *
  * <p>ADR-0007: 동작 규약(알고리즘 allow-list·TTL)은 base `application.yml` 에 두고,
  * 환경마다 달라지는 값은 {@code jwksUri} 뿐이라 환경변수 placeholder 로 주입한다.
  *
- * <p><b>PR4</b>: 전환기 HMAC(HS512) fallback 스위치·시크릿을 제거했다 — 발급측(`JwtTokenSigner`)이
- * RS256 단독이 된 시점부터 HS 토큰은 새로 만들어지지 않으므로, 스위치를 남기면 "아직 대칭키를
+ * <p>HMAC(HS512) fallback 스위치·시크릿은 두지 않는다 — 발급측(`JwtTokenSigner`)이
+ * RS256 단독이라 HS 토큰은 만들어지지 않으므로, 스위치를 두면 "아직 대칭키를
  * 쓴다"는 거짓 신호이자 alg 혼동 공격의 재활성 스위치로만 남는다(ADR-0013 D1 완료).
  *
  * @param jwksUri              User JWKS 정본 URI. 공개키 소스는 여기 하나뿐(로컬 미러 금지, ADR-0013 D1)
