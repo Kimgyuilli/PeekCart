@@ -3,6 +3,8 @@ grade: M
 ---
 # D-027 ③ — 등급 사후 검증
 
+PR: [#159](https://github.com/Kimgyuilli/PeekCart/pull/159)
+
 ## 1. 명제
 
 `grade:` 가 적힌 계획서 각각에 대해 실제 PR diff 로 `/plan` §1 의 세 기준을 다시 적용한 판정이
