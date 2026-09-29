@@ -27,8 +27,8 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 | ID | 영역 | 상태 |
 |---|---|---|
-| D-027 | Harness / Cost | 🔄 ② 완료([#128](https://github.com/Kimgyuilli/PeakCart/pull/128)) · ① 완료([#158](https://github.com/Kimgyuilli/PeekCart/pull/158)) · ③ 대기 |
-| D-030 | Observability / Ops | 🔲 Outbox `FAILED` ↔ DLQ Slack 채널 분리 + DLQ 적재량 메트릭 (L-004 승격, [#133](https://github.com/Kimgyuilli/PeakCart/pull/133)) |
+| D-027 | Harness / Cost | ✅ ② 완료([#128](https://github.com/Kimgyuilli/PeakCart/pull/128)) · ① 완료([#158](https://github.com/Kimgyuilli/PeekCart/pull/158)) · ③ 완료([#159](https://github.com/Kimgyuilli/PeekCart/pull/159)) |
+| D-030 | Observability / Ops | ✅ 완료([#155](https://github.com/Kimgyuilli/PeekCart/pull/155)) — Outbox `FAILED` ↔ DLQ Slack 채널 분리 + DLQ 적재량 메트릭 (L-004 승격, [#133](https://github.com/Kimgyuilli/PeakCart/pull/133)) |
 
 ---
 
