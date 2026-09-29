@@ -24,13 +24,13 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
-    // (Redis 의존 없음) blacklist read-only adapter 는 PR3d 에서 삭제됐다 — deny 판정은 Gateway 소유(ADR-0017 D5).
+    // Redis 의존 없음 — deny 판정은 Gateway 소유(ADR-0017 D5).
 
     // OpenApiConfig(LoginUser ignore + OpenAPI 빈) 내부 전용
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
 
     // 검증 단위 회귀
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    // 발행측(gateway)과 공유하는 키/계약 토큰 fixture — 교차모듈 conformance(계획 P9)
+    // 발행측(gateway)과 공유하는 키/계약 토큰 fixture — 교차모듈 conformance
     testImplementation testFixtures(project(':internal-token-contract'))
 }

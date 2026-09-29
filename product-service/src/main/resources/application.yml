@@ -22,7 +22,7 @@ spring:
       ddl-auto: validate
     open-in-view: false
   flyway:
-    # DB-per-service (구현 ② PR2): 자기 스키마(peekcart_product)에 자기 모듈 마이그레이션만 적용.
+    # DB-per-service: 자기 스키마(peekcart_product)에 자기 모듈 마이그레이션만 적용.
     enabled: true
     locations: classpath:db/migration
   kafka:
@@ -44,7 +44,7 @@ spring:
   data:
     # Redis 타임아웃은 '동작 규약'이므로 base 소유 (ADR-0007). host/port 는 프로파일 소유.
     # 유계 타임아웃이 없으면 fail-open 이 무의미하다 — Redis 가 죽지 않고 '매달리면'
-    # Lettuce 기본 60s 를 다 기다린 뒤에야 CacheErrorHandler 가 불린다 (L-006, 구현 ⑤).
+    # Lettuce 기본 60s 를 다 기다린 뒤에야 CacheErrorHandler 가 불린다 (L-006).
     # 500ms 인 이유: @Cacheable 한 요청이 get 실패 → DB → put 실패로 timeout 을 2회 소비한다.
     # 1s 로 두면 무응답 시 요청당 최소 2s 다.
     redis:
@@ -59,7 +59,7 @@ management:
   endpoints:
     web:
       exposure:
-        # deadletter: DLQ 원장 backlog 조회 (구현 ④-c-2a P10). 메트릭 계약(④-d) 전까지 유일한 조회 표면.
+        # deadletter: DLQ 원장 조회·운영 표면(메트릭과 별도로 즉시 조회용).
         include: health,prometheus,deadletter
   metrics:
     tags:
@@ -72,8 +72,8 @@ springdoc:
     path: /api-docs
 
 app:
-  # Gateway 서명 내부 토큰 검증 (ADR-0017 D3 · 구현 ③ PR3d).
-  # 공개키는 비밀이 아니므로 이미지에 베이크한다(운영 kid 교체는 k8s ConfigMap — PR3d-b).
+  # Gateway 서명 내부 토큰 검증 (ADR-0017 D3).
+  # 공개키는 비밀이 아니므로 이미지에 베이크한다(운영 kid 교체는 k8s ConfigMap).
   # [중요] gateway kid 를 app.jwt.rs256.public-keys 에 넣지 않는다 — User JWKS 가 레지스트리를 전량
   # 게시하므로 내부 신뢰 앵커가 외부에 노출된다(ADR-0017 D3, internal-key-ownership-lint 로 강제).
   internal-token:
@@ -81,9 +81,9 @@ app:
     public-keys:
       - kid: peekcart-gateway-dev-2026
         location: classpath:keys/dev-gateway-internal-public.pem
-  # 재고 예약 lease (계획 ④-a P4 · ADR-0012 D3) — 동작 정책이므로 base 소유(ADR-0007).
+  # 재고 예약 lease (ADR-0012 D3) — 동작 정책이므로 base 소유(ADR-0007).
   # 회수 순서 불변식: Order 취소(ttl 시점) → Product sweeper(ttl + sweeper-grace). 역전되면 oversell.
-  # 예약 lease sweeper 의 주기·lock 정책 (계획 P17 · ADR-0007 — 동작 정책이므로 base 소유).
+  # 예약 lease sweeper 의 주기·lock 정책 (ADR-0007 — 동작 정책이므로 base 소유).
   # 회수 '대상' 판정은 app.reservation.lease 소관이고 여기는 '언제 도는가' 만 다룬다.
   scheduler:
     stock:
@@ -95,7 +95,7 @@ app:
       ttl: 30m
       sweeper-grace: 5m      # 결제 승인 수락 ~ 예약 확정 반영의 in-flight 구간보다 커야 한다
       sweeper-batch-size: 200
-  # processed_events 멱등성 보존 정책 (ADR-0012 D5 · 구현 ② PR3) — 동작 정책이므로 base 소유(ADR-0007).
+  # processed_events 멱등성 보존 정책 (ADR-0012 D5) — 동작 정책이므로 base 소유(ADR-0007).
   idempotency:
     retention: 9d          # floor 4창 max(7d) 이상 + ADR-0020 D4-3 replay 안전여유(dlq-replay-window 7d + clock-skew 5m + cleanup-safety 1d = 8d 5m) 이상 — 미만이면 부팅 실패
     # ADR-0020 D4-3 — 등호 허용(7d==7d)은 창 끝을 보장하지 못한다. 여유를 설정으로 강제한다.
@@ -110,8 +110,8 @@ app:
       batch-size: 500
       max-batches-per-run: 20
   outbox:
-    retention: 7d          # PUBLISHED outbox_events 보존기간 (구현 ② PR3)
-    # 공유 DB 전환기 poller 소유권 분리 (Product peel): product 는 PRODUCT 이벤트만 발행.
+    retention: 7d          # PUBLISHED outbox_events 보존기간
+    # 서비스별 poller 락 이름 — 다른 서비스와 겹치지 않아야 한다.
     lock-name: productOutboxPollingJob
     polling:
       batch-size: 100
@@ -120,13 +120,12 @@ app:
       cycle-timeout: 4m
 
 # Slack: product 는 DLQ·에러 알림에 SlackPort 를 생성자 주입하나 발송은 비핵심.
-# webhook 미설정 + no-op fallback 으로 부팅 보장 (PR3b GP-2 loop3 — presence-based
-# @ConditionalOnProperty(slack.webhook.url) 가 placeholder 기본값에 항상 매치되던 문제 제거).
-  # DLQ 원장 운영 계약 (구현 ④-c-2a P5) — 동작 정책이므로 base 소유(ADR-0007).
+# webhook 미설정 + no-op fallback 으로 부팅 보장.
+  # DLQ 원장 운영 계약 — 동작 정책이므로 base 소유(ADR-0007).
   dead-letter:
     cluster-id: peekcart-local
     # 토픽별 프로비저닝 세대. 토픽을 삭제·재생성하면 배포 전에 값을 올린다.
-    # 미등록 토픽을 참조하면 부팅이 아니라 적재 시점에 예외 — 기본값 암묵 허용 금지(§2.5).
+    # 미등록 토픽을 참조하면 부팅이 아니라 적재 시점에 예외 — 기본값 암묵 허용 금지.
     # 키는 원본 토픽 이름이다. origin 헤더 판독 실패 행(DLQ_ORIGIN)은 좌표로 '<topic>.dlq' 를 싣지만,
     # .dlq 는 원본과 함께 선언·재생성되므로 원본의 세대를 따른다(정확 일치 우선 → 없으면 .dlq 제거 후 재조회).
     topic-generations:
@@ -145,9 +144,9 @@ app:
       scan-limit: 100
     payload:
       max-length: 8000     # 초과분은 잘리고 payload_truncated 로 표시
-    # replay 개시 kill-switch (④-c-2b-4a P21). **기본값 false 가 계약이다** — 배포 순간 진입점이
+    # replay 개시 kill-switch. **기본값 false 가 계약이다** — 배포 순간 진입점이
     # 열리면 backfill·증적·리허설 이전에 replay 가 가능해지고, 닫는 데 롤링 재기동이 또 든다.
-    # drain·롤백 계약(④-c-2b-4b)이 서기 전까지 운영에서 열지 않는다. 동작 정책이므로 base 소유(ADR-0007).
+    # 운영에서 여는 절차는 drain·롤백 계약(ADR-0022)을 따른다. 동작 정책이므로 base 소유(ADR-0007).
     replay:
       enabled: false
     purge:

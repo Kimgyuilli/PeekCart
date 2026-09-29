@@ -12,8 +12,7 @@ spring:
 app:
   jwt:
     rs256:
-      # 사용자 access token 서명 개인키의 **위치** (ADR-0013 D2 · 구현 ③ PR3d-b).
-      # PR3c GKE 증적에서 ad-hoc k8s Secret 마운트였던 것을 Secret Manager CSI 로 정본화했다
+      # 사용자 access token 서명 개인키의 **위치** (ADR-0013 D2). Secret Manager CSI 로 마운트한다
       # (k8s/base/services/user-service/secretproviderclass.yml). 값이 아니라 경로만 설정에 둔다.
       # env override seam 유지 — 하드코딩하면 base 의 ${JWT_PRIVATE_KEY_LOCATION:...} 치환이
       # 프로파일에 덮여 컨테이너 스모크(CSI 없음)가 부팅 단계에서 죽는다.

@@ -8,7 +8,7 @@ spring:
       ddl-auto: validate
     open-in-view: false
   flyway:
-    # DB-per-service (구현 ② PR2): 자기 스키마(peekcart_user)에 자기 모듈 마이그레이션만 적용.
+    # DB-per-service: 자기 스키마(peekcart_user)에 자기 모듈 마이그레이션만 적용.
     enabled: true
     locations: classpath:db/migration
   data:
@@ -37,17 +37,17 @@ app:
     access-token-expiry: 1800000    # 30분 (ms)
     refresh-token-expiry: 604800000 # 7일 (ms)
     # RS256 비대칭키 (ADR-0013 D1) — User 는 발급(개인키) owner. 로컬 dev 키는 classpath 기본,
-    # k8s 는 Secret Manager 파일 마운트로 오버라이드(구현 ③ PR3). active-kid 는 동작 정책(ADR-0007 base).
-    # PR4: 전환기 HMAC(HS256/HS512) fallback 은 발급·검증 양쪽에서 제거됐다 — RS256 단독.
+    # k8s 는 Secret Manager 파일 마운트로 오버라이드. active-kid 는 동작 정책(ADR-0007 base).
+    # HMAC(HS256/HS512) fallback 은 없다 — 발급·검증 모두 RS256 단독.
     rs256:
       active-kid: peekcart-dev-2026
-      # 개인키는 산출물에 포함하지 않는다(ADR-0013 D2) — 로컬 dev 는 gitignored 파일 마운트, k8s 는 Secret Manager CSI(구현 ③ PR3).
+      # 개인키는 산출물에 포함하지 않는다(ADR-0013 D2) — 로컬 dev 는 gitignored 파일 마운트, k8s 는 Secret Manager CSI.
       private-key-location: ${JWT_PRIVATE_KEY_LOCATION:file:./local-keys/dev-jwt-private.pem}
       public-keys:
         - kid: peekcart-dev-2026
           location: classpath:keys/dev-jwt-public.pem
-  # Gateway 서명 내부 토큰 검증 (ADR-0017 D3 · 구현 ③ PR3d).
-  # 공개키는 비밀이 아니므로 이미지에 베이크한다(운영 kid 교체는 k8s ConfigMap — PR3d-b).
+  # Gateway 서명 내부 토큰 검증 (ADR-0017 D3).
+  # 공개키는 비밀이 아니므로 이미지에 베이크한다(운영 kid 교체는 k8s ConfigMap).
   # [중요] gateway kid 를 app.jwt.rs256.public-keys 에 넣지 않는다 — User JWKS 가 레지스트리를 전량
   # 게시하므로 내부 신뢰 앵커가 외부에 노출된다(ADR-0017 D3, internal-key-ownership-lint 로 강제).
   internal-token:
@@ -56,4 +56,4 @@ app:
       - kid: peekcart-gateway-dev-2026
         location: classpath:keys/dev-gateway-internal-public.pem
 # Slack: User 는 미사용. :common SlackNotificationClient 는 @ConditionalOnProperty(slack.webhook.url) 라
-# 키 미선언 시 로드되지 않는다 (GW-2 P2 #1) — 더미 webhook 불필요.
+# 키 미선언 시 로드되지 않는다 — 더미 webhook 불필요.
