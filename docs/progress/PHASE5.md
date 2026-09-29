@@ -36,6 +36,20 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## 코드 주석의 계획서 내부 식별자 제거 (D-050, [#169](https://github.com/Kimgyuilli/PeekCart/pull/169), 2026-09-30)
+
+main 코드 주석 약 500줄에서 계획서 안에서만 통하는 식별자(`§2.5`·`P15`·`④-c-2b-4a`·`PR3d`·`계획 리뷰 2R #5`, 게이트 라벨
+`GW-2 c2:1`, 출처 없는 `B6`, `strangler-N`)를 지우고, 근거 역할을 하던 곳은 근거를 풀어 썼다. 번호 없는 ADR 절은
+`ADR-0020 §D6-3`·`ADR-0022 §D2` 처럼 한정했고, 줄번호 참조 `ADR-0012:48` 은 절(`D2`)로 바꿨다. `D-0xx`·`L-0xx`·ADR
+정의 번호는 유지했다. 작업 중 지금 코드와 사실이 다른 서술이 드러나 함께 고쳤다(서비스 `build.gradle` 의 "Flyway 런타임
+disabled", gateway 의 "HS512 fallback", "전환기 root 가 토픽 소유", 삭제된 `JwtTokenVerifier` 참조). Flyway 마이그레이션
+SQL 은 체크섬이 주석 줄까지 포함해 제외했다(flyway-core 12.4.0 `ChecksumCalculator` 확인). 검증은 식별자 검사와 "주석 외
+변경 = 문자열 4건" diff 검사를 각각 실패 주입으로 확인한 뒤 적중 0, `./gradlew build` 1255 테스트 0 실패. 등급 M, diff
+리뷰는 `.cache/codex-off` 로 의도적 생략.
+
+미충족: `src/test` 주석은 범위 밖이라 그대로다. 검사 스크립트는 로컬에만 있어 재발 방지 장치가 없다. 새 계획 식별자가
+주석에 다시 쌓이면 CI lint 로 상시화한다.
+
 ## outbox·멱등성·DLQ 원장 실행 세트의 공유 모듈 승격 (D-049, ADR-0033, [#168](https://github.com/Kimgyuilli/PeekCart/pull/168), 2026-09-29)
 
 4서비스에 byte 동일하게 복제된 `global.{outbox,idempotency,deadletter}` 와 `ShedLockConfig` 32개를 새 모듈
