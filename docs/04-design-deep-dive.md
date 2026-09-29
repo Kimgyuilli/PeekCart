@@ -75,7 +75,8 @@ Consumer 재시도 흐름:
   1. 메시지 처리 실패 시 최대 3회 재시도 (fixed sequence backoff: 1s, 5s, 30s)
   2. 3회 초과 실패 → {원본 토픽}.dlq 토픽으로 이동
      예: order.created 실패 → order.created.dlq
-  3. DLQ 메시지 모니터링 → Slack 알림 발송
+  3. DLQ 도달 → 서비스별 DLQ 원장(`dead_letter_records`) 적재 → `peekcart-dlq-backlog` alert 가 운영 신호
+     (Slack 은 best-effort 보조 신호 — notification-service 외에는 no-op 이므로 판정에 쓰지 않음, see ADR-0018 D6)
   4. 수동 재처리: DLQ 메시지를 확인 후 원인 해결 → 원본 토픽으로 재발행
      (재발행의 보장 수준·발행 권한 예외·좌표 유효성·종결 축은 ADR-0020 이 계약으로 확정.
       원장 적재는 구현 ④-c-2a, replay 경로 구현은 ④-c-2b — see ADR-0020)
@@ -503,8 +504,8 @@ Outbox 패턴으로 이벤트 발행 실패는 방지할 수 있지만, Consumer
   → 재고가 복구되지 않은 상태로 지속
 
 현재 대응:
-  - DLQ 도달 시 Slack 알림 발송 (섹션 8-3)
-  - 운영자가 알림 수신 → 원인 해결 → 원본 토픽으로 수동 재발행
+  - DLQ 도달 시 원장 적재 + `peekcart-dlq-backlog` alert (섹션 8-3)
+  - 운영자가 alert 수신 → 원인 해결 → 원본 토픽으로 수동 재발행
 
 한계:
   - 수동 재처리 전까지 재고 수치와 주문 상태 간 불일치가 존재함
