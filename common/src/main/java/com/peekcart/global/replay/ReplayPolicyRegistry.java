@@ -9,20 +9,20 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * replay 정책 레지스트리 — <b>default-deny</b> (ADR-0020 §D5-2 축 5 · 구현 ④-c-2b-4a P19).
+ * replay 정책 레지스트리 — <b>default-deny</b> (ADR-0020 §D5-2 축 5).
  *
- * <h2>왜 토픽이 아니라 {@code (소유 서비스, 토픽)} 인가 (계획 리뷰 2R #3)</h2>
+ * <h2>왜 토픽이 아니라 {@code (소유 서비스, 토픽)} 인가</h2>
  * {@code stock.reservation.result} 는 <b>order 와 payment 두 group 이 소비</b>하고 각자 다른 로컬 상태를
  * 만진다. DB-per-service 라 payment 의 원장 replay 는 Order 상태를 조회할 수 없다 — 토픽 단일 키로 두면
  * payment replay 를 통째로 거부하거나 <b>원격 DB 결합</b>을 들여야 한다.
  *
- * <h2>완전성의 정본은 {@link DlqTopology} 다 (계획 리뷰 3R #5)</h2>
+ * <h2>완전성의 정본은 {@link DlqTopology} 다</h2>
  * 엔트리는 토픽 10종이 아니라 <b>소비쌍 21개</b>다. 토픽만 채우면 공유 토픽의 소유자별 누락이 검사되지
  * 않는다. {@code ReplayPolicyRegistryTest} 가 topology 의 모든 소비쌍에 정책이 <b>정확히 하나</b> 있고
  * <b>여분 정책이 없음</b>을 대조한다 — 한쪽만 보면 오래된 엔트리가 남아도 통과한다.
  *
  * <h2>eventType 축은 이 코드베이스에서 토픽과 같은 값이다</h2>
- * ADR §D5-2 축 5 는 "토픽/eventType 별 정책" 을 요구하지만, 발행 측이 {@code KafkaEventEnvelope.eventType}
+ * ADR-0020 §D5-2 축 5 는 "토픽/eventType 별 정책" 을 요구하지만, 발행 측이 {@code KafkaEventEnvelope.eventType}
  * 에 <b>토픽 이름을 그대로</b> 싣는다({@code saveOutboxEvent(eventType=토픽)} → {@code buildDomainRecord}
  * 가 {@code event_type} 을 토픽으로 쓴다). 따라서 별도 축으로 분기할 값이 없다 — 대신
  * {@link #eventTypeMatchesTopic} 로 <b>봉투의 eventType 이 목적지 토픽과 일치하는지</b>를 강제한다.

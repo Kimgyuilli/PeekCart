@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.Set;
 
 /**
- * Gateway 서명 내부 토큰 검증기 (ADR-0017 D3 · 구현 ③ PR3d).
+ * Gateway 서명 내부 토큰 검증기 (ADR-0017 D3).
  *
  * <p>사용자 access token 을 그대로 제시하는 우회를 막기 위해 <b>iss·kid·alg 를 모두 핀</b>한다 —
  * 서명이 유효해도 발행자가 Gateway 가 아니거나 kid 가 승인 집합 밖이면 거부한다.
@@ -39,7 +39,7 @@ public class InternalTokenVerifier {
         this(keyRegistry, properties, Clock.systemUTC());
     }
 
-    /** 테스트가 고정 시각을 주입하기 위한 생성자(계획 P9 교차모듈 conformance). */
+    /** 테스트가 고정 시각을 주입하기 위한 생성자(교차모듈 conformance 테스트용). */
     InternalTokenVerifier(InternalGatewayPublicKeyRegistry keyRegistry,
                           InternalTokenProperties properties,
                           Clock clock) {

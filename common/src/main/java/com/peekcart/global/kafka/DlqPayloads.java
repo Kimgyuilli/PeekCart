@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * DLQ payload 를 <b>관대하게</b> 읽는다 (계획 ④-c-2a P1).
+ * DLQ payload 를 <b>관대하게</b> 읽는다.
  *
  * <p>{@link KafkaMessageParser} 는 {@code eventId}/{@code payload} 부재를 예외로 던진다 —
  * 그건 소비 경로의 계약이라 옳다. 하지만 <b>그 예외 때문에 DLQ 로 온 메시지</b>를 원장에 적재할 때

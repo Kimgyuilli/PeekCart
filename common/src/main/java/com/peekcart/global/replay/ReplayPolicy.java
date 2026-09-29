@@ -1,7 +1,7 @@
 package com.peekcart.global.replay;
 
 /**
- * 한 {@code (원장 소유 서비스, 업무 토픽)} 쌍의 replay 정책 (ADR-0020 §D5-2 축 5 · 구현 ④-c-2b-4a P19).
+ * 한 {@code (원장 소유 서비스, 업무 토픽)} 쌍의 replay 정책 (ADR-0020 §D5-2 축 5).
  *
  * @param id                   감사 기록용 식별자. 원장 {@code replay_policy} 에 {@code id:버전:판정} 으로 남는다
  * @param decision             기본 판정

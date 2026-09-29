@@ -1,7 +1,7 @@
 package com.peekcart.global.kafka;
 
 /**
- * DLQ 소유권 매핑에 등장하는 서비스 (계획 ④-c-2a P2).
+ * DLQ 소유권 매핑에 등장하는 서비스.
  *
  * <p>ADR-0015 per-service 규약의 {@code <svc>-service} 명명과 맞춘다.
  */

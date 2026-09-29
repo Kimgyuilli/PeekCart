@@ -1,7 +1,7 @@
 package com.peekcart.global.outbox.dto;
 
 /**
- * {@code order.cancelled} 취소 사유 (계획 P6, ADR-0012 D2 하위호환 필드 추가).
+ * {@code order.cancelled} 취소 사유 (ADR-0012 D2 하위호환 필드 추가).
  *
  * <p>취소 진입점마다 사유를 명시적으로 전달해, 소비자가 "왜 취소됐는지"를 추론하지 않고 분기할 수 있게 한다.
  * 값 추가는 허용하되 기존 값의 의미 변경·삭제는 금지한다(ADR-0012 §46).

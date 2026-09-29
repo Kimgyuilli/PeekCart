@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 기록된 좌표에서 <b>원본 레코드</b>를 읽는다 (ADR-0020 §D5-1 · 구현 ④-c-2b-4a P18).
+ * 기록된 좌표에서 <b>원본 레코드</b>를 읽는다 (ADR-0020 §D5-1).
  *
  * <p>replay 의 원본은 원장의 진단 사본({@code payload} 컬럼, 잘려 있다)이 아니라 <b>브로커에 남아 있는
  * 그 레코드</b>다. 사본으로 재발행하면 절단·변형분이 원본 토픽에 주입된다.
@@ -43,9 +43,9 @@ import java.util.Map;
  * {@code subscribe} 가 아니라 {@code assign} 만 쓰고 offset 을 커밋하지 않는다 — 진단 목적의 읽기가
  * 업무 group 의 offset 을 움직이면 그 group 이 메시지를 건너뛴다.
  *
- * <h2>원본 <b>바이트</b>로 읽는다 (diff 리뷰 1R #1)</h2>
+ * <h2>원본 <b>바이트</b>로 읽는다</h2>
  * 공용 {@code ConsumerFactory<String, String>} 로 읽으면 {@code StringDeserializer} 가 유효하지 않은
- * UTF-8 을 <b>대체 문자로 손실 변환</b>한다. 그러면 fence 의 "key·payload byte-for-byte 동일"(§D8-3)과
+ * UTF-8 을 <b>대체 문자로 손실 변환</b>한다. 그러면 fence 의 "key·payload byte-for-byte 동일"(ADR-0020 §D8-3)과
  * digest 가 <b>원본이 아니라 변환된 문자열</b> 기준이 되어, 변조된 재발행을 승인할 수 있다.
  * 그래서 {@code byte[]} 로 읽고 <b>strict decode → 재인코딩 일치</b>를 확인한 뒤에만 문자열로 넘긴다.
  * 왕복이 깨지면 <b>거부</b>한다(outbox {@code payload} 가 TEXT 라 바이트를 그대로 실을 수 없으므로,
@@ -78,7 +78,7 @@ public class OriginalRecordReader {
 
     /**
      * @param record    읽어온 원본. {@code rejection} 이 있으면 {@code null}
-     * @param rejection 거부 사유(ADR §D5-2 축 4 — 좌표 무효). 통과면 {@code null}
+     * @param rejection 거부 사유(ADR-0020 §D5-2 축 4 — 좌표 무효). 통과면 {@code null}
      */
     public record Result(Original record, String rejection) {
 
@@ -132,8 +132,8 @@ public class OriginalRecordReader {
             Thread.currentThread().interrupt();
             return new Result(null, "원본 읽기가 중단됐다 — " + topic + "-" + partition);
         } catch (Exception e) {
-            // **좌표 문제를 500 으로 전파하지 않는다** (diff 리뷰 2R #4). 존재하지 않는 파티션·권한 차이·
-            // consumer 설정 오류는 전부 "이 좌표는 읽을 수 없다" 이며, P18 의 Result 가 표현하는 계약이다.
+            // **좌표 문제를 500 으로 전파하지 않는다**. 존재하지 않는 파티션·권한 차이·
+            // consumer 설정 오류는 전부 "이 좌표는 읽을 수 없다" 이며, Result 가 표현하는 계약이다.
             log.error("[DLQ-REPLAY] 원본 읽기 실패 — {}-{} offset={}", topic, partition, offset, e);
             return new Result(null, String.format("원본을 읽지 못했다 — %s-%d offset=%d: %s",
                     topic, partition, offset, e.getMessage()));
@@ -169,7 +169,7 @@ public class OriginalRecordReader {
                     + e.getMessage());
         }
         if (value == null) {
-            // tombstone(payload null)은 outbox payload NOT NULL 로 표현할 수 없다(계획 §10 R3).
+            // tombstone(payload null)은 outbox payload NOT NULL 로 표현할 수 없다.
             return new Result(null, "원본 payload 가 null(tombstone)이라 재발행할 수 없다");
         }
         return new Result(new Original(key, value, record.timestamp(), record.partition(), record.offset()), null);
@@ -190,7 +190,7 @@ public class OriginalRecordReader {
     }
 
     /**
-     * 토픽 설정을 <b>실측</b>해 좌표 읽기의 전제를 확인한다 (ADR-0020 §D5-1 · diff 리뷰 1R #7).
+     * 토픽 설정을 <b>실측</b>해 좌표 읽기의 전제를 확인한다 (ADR-0020 §D5-1).
      *
      * <ul>
      *   <li><b>compact</b> 정책이면 같은 key 의 옛 레코드가 조용히 사라지고 offset 만 남는다</li>
