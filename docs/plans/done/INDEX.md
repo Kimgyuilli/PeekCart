@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 72개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 77개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,18 +82,23 @@
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-09-29 |  |
 | [task-d048-e2e-stack-startup](./task-d048-e2e-stack-startup.md) | task-d048-e2e-stack-startup | [#156](https://github.com/Kimgyuilli/PeakCart/pull/156) | 2026-09-29 |  |
 
-## 기타 (10)
+## 기타 (15)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
+| [D-051](./D-051.md) | D-051 | [#163](https://github.com/Kimgyuilli/PeakCart/pull/163) |  |  |
+| [D-054](./D-054.md) | D-054 | [#164](https://github.com/Kimgyuilli/PeakCart/pull/164) |  |  |
 | [task-phase5-baseline](./task-phase5-baseline.md) | task-phase5-baseline | [#134](https://github.com/Kimgyuilli/PeakCart/pull/134) |  |  |
 | [task-hpa-manifest](./task-hpa-manifest.md) | HPA 매니페스트 작성 |  | 2026-04-21 | 있음 |
 | [task-jmeter-to-k6](./task-jmeter-to-k6.md) | 부하 테스트 도구 JMeter → k6 전환 | [#26](https://github.com/Kimgyuilli/PeakCart/pull/26) | 2026-04-24 | 있음 |
 | [task-loadtest-session-c](./task-loadtest-session-c.md) | Phase 3 세션 C 실행 + Task 3-4 / 3-5 마무리 |  | 2026-04-30 | 있음 |
 | [task-adr-observability-ssot](./task-adr-observability-ssot.md) | 관측성 계약 SSOT ADR-0009 작성 | [#30](https://github.com/Kimgyuilli/PeakCart/pull/30) | 2026-05-04 | 있음 |
+| [D-055](./D-055.md) | D-055 | [#165](https://github.com/Kimgyuilli/PeakCart/pull/165) | 2026-08-12 |  |
 | [task-ci-test-matrix](./task-ci-test-matrix.md) | CI `build` job 분해 — lint / test 매트릭스 / guards / gate | [#97](https://github.com/Kimgyuilli/PeakCart/pull/97) | 2026-09-01 | 있음 |
 | [task-user-key-rotation-local-drill](./task-user-key-rotation-local-drill.md) | User 도메인 키 회전 실증 (로컬 드릴) | [#116](https://github.com/Kimgyuilli/PeakCart/pull/116) | 2026-09-15 |  |
 | [task-ops-hardening-d022-d023-d024](./task-ops-hardening-d022-d023-d024.md) | 운영 표면 하드닝 (D-024 · D-022 · D-023) | [#121](https://github.com/Kimgyuilli/PeakCart/pull/121) | 2026-09-18 |  |
 | [task-codex-review-render](./task-codex-review-render.md) | task-codex-review-render | [#128](https://github.com/Kimgyuilli/PeakCart/pull/128) | 2026-09-20 | 있음 |
 | [task-phase4-closure](./task-phase4-closure.md) | task-phase4-closure | [#133](https://github.com/Kimgyuilli/PeakCart/pull/133) | 2026-09-22 |  |
+| [D-056](./D-056.md) | D-056 | [#166](https://github.com/Kimgyuilli/PeakCart/pull/166) | 2026-09-29 | 있음 |
+| [D-058](./D-058.md) | D-058 | [#167](https://github.com/Kimgyuilli/PeakCart/pull/167) | 2026-09-29 | 있음 |
 

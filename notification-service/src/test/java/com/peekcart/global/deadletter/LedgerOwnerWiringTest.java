@@ -14,8 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 이 서비스의 원장 소유자 <b>배선</b> (계획 ④-c-2b-3b P15-f).
  *
  * <p><b>이 테스트가 없으면 아무도 이 값을 보지 않는다.</b> {@code LedgerOwnerConfig} 는 서비스마다
- * 값이 달라 {@code DLQ-PARITY-014}(4벌 byte 동일 검사) 대상이 아니다. parity lint 를 벗어난다는 말은
- * 곧 오배선이 조용히 통과한다는 뜻이다.
+ * 값이 달라 공유 모듈에 두지 않고 서비스마다 선언한다(ADR-0033 D1). 컴파일러도 lint 도 그 값을 보지
+ * 않으므로 오배선이 조용히 통과한다.
  *
  * <p><b>오배선의 증상은 "실패" 가 아니라 "침묵" 이다</b> — 한 서비스만 틀리면 그 서비스의 정상 replay 가
  * 전부 {@code owner_mismatch} 로 독립 incident 가 되고, "재발행이 N번 실패해도 미결 1건" 계약이

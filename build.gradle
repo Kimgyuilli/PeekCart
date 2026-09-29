@@ -69,12 +69,12 @@ jar {
 }
 
 // ===== [PR2a-2b/N7] 서비스 모듈 의존 위반 검출 (ADR-0011 §D3 · ADR-0014) =====
-// 각 *-service 모듈은 allowlist(:common/:peekcart-common-observability/:peekcart-common-auth/:internal-token-contract) 외
+// 각 *-service 모듈은 allowlist(:common/:peekcart-common-observability/:peekcart-common-auth/:peekcart-common-messaging/:internal-token-contract) 외
 // 프로젝트(특히 서비스↔서비스)를 의존하면 빌드 실패시킨다. testFixtures(project(':common')) 는 path=:common 으로 허용.
 tasks.register('assertNoServiceProjectDeps') {
 	group = 'verification'
 	description = '서비스 모듈의 allowlist 외 project() 의존을 빌드 실패로 검출한다 (ADR-0011 §D3).'
-	def allowed = [':common', ':peekcart-common-observability', ':peekcart-common-auth', ':internal-token-contract'] as Set
+	def allowed = [':common', ':peekcart-common-observability', ':peekcart-common-auth', ':peekcart-common-messaging', ':internal-token-contract'] as Set
 	// 실행 시점(doLast)에 수집한다 — task 구성 단계에서는 서브프로젝트가 아직 평가되지 않아
 	// 의존이 비어 위반을 놓칠 수 있다(전 프로젝트 구성 완료 후 평가해야 정확).
 	doLast {
@@ -105,7 +105,7 @@ tasks.register('assertNoDuplicateGlobalFqcn') {
 	group = 'verification'
 	description = '앱 classpath 내 com/peekcart/global/** 중복 FQCN + JwtProvider 잔존 검출 (게이트 i).'
 	// 동적 구성 — *-service 모듈을 자동 포함해 이후 peel(order/payment) 때 누락되지 않게 한다(Product peel: 가드 apps 맵 하드코딩 회귀 방지).
-	def commonDeps = [':common', ':peekcart-common-auth', ':peekcart-common-observability']
+	def commonDeps = [':common', ':peekcart-common-auth', ':peekcart-common-observability', ':peekcart-common-messaging']
 	dependsOn(([':classes'] + commonDeps.collect { "${it}:classes" }))
 	dependsOn { subprojects.findAll { it.name.endsWith('-service') }.collect { "${it.path}:classes" } }
 	doLast {

@@ -36,6 +36,19 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## outbox·멱등성·DLQ 원장 실행 세트의 공유 모듈 승격 (D-049, ADR-0033, [#168](https://github.com/Kimgyuilli/PeekCart/pull/168), 2026-09-29)
+
+4서비스에 byte 동일하게 복제된 `global.{outbox,idempotency,deadletter}` 와 `ShedLockConfig` 32개를 새 모듈
+`peekcart-common-messaging` 으로 옮기고 사본 96개를 지웠다. 서비스마다 다른 `DeadLetterConsumer`·
+`DeadLetterQuarantineConsumer`·`LedgerOwnerConfig` 와 Flyway 스키마는 서비스에 남겼다. `:common` 편입은 user-service 가
+엔티티·스케줄러를 스캔하게 돼 기각했다(ADR-0033 Alt A). `OutboxEventStatus` 는 `BACKFILL` 을 포함한 한 벌로 합쳤다.
+재복제 방지는 parity lint 의 java byte 검사에서 `assertNoDuplicateGlobalFqcn` 으로 옮겼다. 코드 검증에서 CI test 매트릭스와
+`integration-test-container-lint` 모듈 목록도 갱신 대상으로 드러나 범위에 넣었다. 같은 PR 에 머지된 계획서 5건의
+아카이브가 함께 들어 있다. 등급 L, 계획·diff 리뷰는 `.cache/codex-off` 로 의도적 생략.
+
+미충족: 서비스별 `global.*` 통합 테스트(`DeadLetterLedger`·`DeadLetterMetrics`·`LedgerOwnerWiring`)는 4벌 그대로다.
+공유 로직을 바꿀 때 4벌을 함께 고치는 일이 반복되면 다시 본다.
+
 ## Kafka 리스너 통합 테스트의 할당 대기와 발행 동기화 (D-058, [#167](https://github.com/Kimgyuilli/PeekCart/pull/167), 2026-09-29)
 
 #164 CI 에서 payment `DlqIntegrationTest` 가 20초 동안 DLT 레코드 0건으로 실패한 건의 후속이다. 같은 구조(리스너를

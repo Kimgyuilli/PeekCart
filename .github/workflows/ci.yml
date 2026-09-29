@@ -161,7 +161,7 @@ jobs:
           # payment 36 / product 48 / order 55). platform 은 light 모듈을 묶어 러너 기동과
           # 공통 의존 컴파일 중복을 줄인다.
           - shard: platform
-            modules: common peekcart-common-auth peekcart-common-observability internal-token-contract gateway
+            modules: common peekcart-common-auth peekcart-common-observability peekcart-common-messaging internal-token-contract gateway
           - shard: user-service
             modules: user-service
           - shard: notification-service

@@ -24,6 +24,7 @@ COPY common/build.gradle common/build.gradle
 COPY internal-token-contract/build.gradle internal-token-contract/build.gradle
 COPY peekcart-common-observability/build.gradle peekcart-common-observability/build.gradle
 COPY peekcart-common-auth/build.gradle peekcart-common-auth/build.gradle
+COPY peekcart-common-messaging/build.gradle peekcart-common-messaging/build.gradle
 COPY notification-service/build.gradle notification-service/build.gradle
 COPY user-service/build.gradle user-service/build.gradle
 COPY product-service/build.gradle product-service/build.gradle
@@ -37,6 +38,7 @@ COPY common/ common/
 COPY internal-token-contract/ internal-token-contract/
 COPY peekcart-common-observability/ peekcart-common-observability/
 COPY peekcart-common-auth/ peekcart-common-auth/
+COPY peekcart-common-messaging/ peekcart-common-messaging/
 COPY notification-service/ notification-service/
 COPY user-service/ user-service/
 COPY product-service/ product-service/

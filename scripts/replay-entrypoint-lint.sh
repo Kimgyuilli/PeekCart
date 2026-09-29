@@ -22,6 +22,7 @@ while IFS= read -r file; do
     [[ "$base" == "DeadLetterReplayService.java" ]] && continue
     violations+=("[REPLAY-ENTRY-001] replay 개시 코드가 진입점 밖에 있다: $file")
 done < <(grep -rl "OutboxEvent\.replay(" --include="*.java" \
+            peekcart-common-messaging/src/main \
             order-service/src/main product-service/src/main payment-service/src/main notification-service/src/main \
             2>/dev/null || true)
 
@@ -35,16 +36,15 @@ while IFS= read -r file; do
     [[ "$base" == "DeadLetterEndpoint.java" ]] && continue
     violations+=("[REPLAY-ENTRY-005] replay 개시 호출자가 Endpoint 밖에 있다: $file")
 done < <(grep -rlE "replayService\.replay\(|DeadLetterReplayService[[:space:]]+[a-zA-Z]+" --include="*.java" \
+            peekcart-common-messaging/src/main \
             order-service/src/main product-service/src/main payment-service/src/main notification-service/src/main \
             2>/dev/null || true)
 
-# --- (2) 진입점은 4서비스 전부에 있어야 한다 (한 서비스만 빠지면 그 원장은 replay 불가) ---
-for svc in order product payment notification; do
-    path="${svc}-service/src/main/java/com/peekcart/global/deadletter/DeadLetterReplayService.java"
-    if [[ ! -f "$path" ]]; then
-        violations+=("[REPLAY-ENTRY-002] ${svc}-service 에 replay 진입점이 없다")
-    fi
-done
+# --- (2) 진입점이 공유 모듈에 있어야 한다 (없으면 4서비스 원장 전부 replay 불가) ---
+# 4서비스가 이 모듈을 소비하는지는 컴파일러가 강제한다(ADR-0033).
+if [[ ! -f "peekcart-common-messaging/src/main/java/com/peekcart/global/deadletter/DeadLetterReplayService.java" ]]; then
+    violations+=("[REPLAY-ENTRY-002] peekcart-common-messaging 에 replay 진입점이 없다")
+fi
 
 # --- (3) 문서·스크립트의 직접 상태 변경 SQL 0건 ---
 # 계획서(docs/plans)는 설계 논의 중 금지 사례를 인용하므로 제외한다 — 실행 절차가 아니다.
@@ -98,25 +98,26 @@ if declared_backoff is None or declared_skew is None:
     problems.append("[REPLAY-ENTRY-006] preflight 에서 상한 상수를 읽지 못했다 "
                     "(BACKOFF_TOTAL_SECONDS / CLOCK_SKEW_SECONDS)")
 
-for service in services:
-    config = os.path.join(root, "%s-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java" % service)
-    try:
-        with open(config, encoding="utf-8") as f:
-            body = f.read()
-    except OSError:
-        problems.append("[REPLAY-ENTRY-006] %s: DeadLetterKafkaConfig.java 가 없다" % service)
-        continue
-    m = re.search(r"FixedSequenceBackOff\(([^)]*)\)", body)
-    if not m:
-        problems.append("[REPLAY-ENTRY-006] %s: FixedSequenceBackOff 리터럴을 찾지 못했다" % service)
-        continue
+# backoff 는 4서비스 공유 DeadLetterKafkaConfig 한 벌이다 (ADR-0033).
+config = os.path.join(root, "peekcart-common-messaging/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java")
+try:
+    with open(config, encoding="utf-8") as f:
+        body = f.read()
+except OSError:
+    body = None
+    problems.append("[REPLAY-ENTRY-006] peekcart-common-messaging: DeadLetterKafkaConfig.java 가 없다")
+m = re.search(r"FixedSequenceBackOff\(([^)]*)\)", body) if body is not None else None
+if body is not None and not m:
+    problems.append("[REPLAY-ENTRY-006] peekcart-common-messaging: FixedSequenceBackOff 리터럴을 찾지 못했다")
+if m:
     millis = [int(v.strip().replace("_", "")) for v in m.group(1).split(",") if v.strip()]
     total = sum(millis) // 1000
     if declared_backoff is not None and total != declared_backoff:
         problems.append(
-            "[REPLAY-ENTRY-006] %s: backoff 합 %ds 가 preflight 의 BACKOFF_TOTAL_SECONDS=%ds 와 다르다 "
-            "— drain 이 조기 통과한다" % (service, total, declared_backoff))
+            "[REPLAY-ENTRY-006] peekcart-common-messaging: backoff 합 %ds 가 preflight 의 "
+            "BACKOFF_TOTAL_SECONDS=%ds 와 다르다 — drain 이 조기 통과한다" % (total, declared_backoff))
 
+for service in services:
     yml = os.path.join(root, "%s-service/src/main/resources/application.yml" % service)
     try:
         with open(yml, encoding="utf-8") as f:
@@ -147,11 +148,11 @@ if [[ "${1:-}" == "--self-test" ]]; then
     trap 'rm -rf "$tmp"' EXIT
     mkdir -p "$tmp/scripts"
     cp scripts/replay-drain-preflight.sh "$tmp/scripts/"
+    cfg_dir="peekcart-common-messaging/src/main/java/com/peekcart/global/deadletter"
+    mkdir -p "$tmp/$cfg_dir"
+    cp "$cfg_dir/DeadLetterKafkaConfig.java" "$tmp/$cfg_dir/"
     for svc in order product payment notification; do
-        mkdir -p "$tmp/${svc}-service/src/main/java/com/peekcart/global/deadletter" \
-                 "$tmp/${svc}-service/src/main/resources"
-        cp "${svc}-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java" \
-           "$tmp/${svc}-service/src/main/java/com/peekcart/global/deadletter/"
+        mkdir -p "$tmp/${svc}-service/src/main/resources"
         cp "${svc}-service/src/main/resources/application.yml" "$tmp/${svc}-service/src/main/resources/"
     done
 
@@ -173,10 +174,9 @@ if [[ "${1:-}" == "--self-test" ]]; then
 
     expect "무변조 baseline 은 green" 0 ""
     sed -i.bak 's/FixedSequenceBackOff(1_000, 5_000, 30_000)/FixedSequenceBackOff(1_000, 5_000, 60_000)/' \
-        "$tmp/order-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java"
-    expect "backoff 를 한 벌만 늘리면 red" 1 "backoff 합"
-    cp "$tmp/order-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java.bak" \
-       "$tmp/order-service/src/main/java/com/peekcart/global/deadletter/DeadLetterKafkaConfig.java"
+        "$tmp/$cfg_dir/DeadLetterKafkaConfig.java"
+    expect "backoff 를 늘리면 red" 1 "backoff 합"
+    cp "$tmp/$cfg_dir/DeadLetterKafkaConfig.java.bak" "$tmp/$cfg_dir/DeadLetterKafkaConfig.java"
 
     sed -i.bak 's/clock-skew-budget: 5m/clock-skew-budget: 9m/' \
         "$tmp/payment-service/src/main/resources/application.yml"
@@ -209,4 +209,4 @@ if ((${#violations[@]} > 0)); then
     exit 1
 fi
 
-echo "replay-entrypoint-lint OK — 진입점 4서비스 1개씩, 우회 호출 0, 문서 직접 SQL 0, drain 상한 드리프트 0"
+echo "replay-entrypoint-lint OK — 진입점 공유 모듈 1개, 우회 호출 0, 문서 직접 SQL 0, drain 상한 드리프트 0"

@@ -39,7 +39,7 @@
 ### 4-4. 레포 전략: 모노레포 (Gradle 멀티모듈) (Phase 4 모듈 구조는 see ADR-0011, ADR-0014)
 
 - 단일 GitHub 레포에서 전체 서비스 구조를 한눈에 파악 가능
-- `common` 모듈로 이벤트 DTO, 공통 예외, 응답 포맷 공유 + `peekcart-common-observability` 모듈(ADR-0009 선결정) + `peekcart-common-auth` 모듈(내부 토큰 검증 — 사용자 JWT 검증은 ADR-0014 D2-c 로 종료, ADR-0017) + `internal-token-contract` 모듈(내부 토큰 이름 계약, 프레임워크 의존 0 — 발행 `gateway`/검증 `peekcart-common-auth` 가 서로 의존 불가) + 5개 서비스 모듈 (경계·의존 규칙은 ADR-0011/ADR-0014)
+- `common` 모듈로 이벤트 DTO, 공통 예외, 응답 포맷 공유 + `peekcart-common-observability` 모듈(ADR-0009 선결정) + `peekcart-common-auth` 모듈(내부 토큰 검증 — 사용자 JWT 검증은 ADR-0014 D2-c 로 종료, ADR-0017) + `peekcart-common-messaging` 모듈(outbox·멱등성·DLQ 원장 실행 세트, ADR-0033) + `internal-token-contract` 모듈(내부 토큰 이름 계약, 프레임워크 의존 0 — 발행 `gateway`/검증 `peekcart-common-auth` 가 서로 의존 불가) + 5개 서비스 모듈 (경계·의존 규칙은 ADR-0011/ADR-0014/ADR-0033)
 - 실무 기준에서는 서비스별 독립 배포와 권한 분리를 위해 멀티레포가 적합하나, 포트폴리오 가시성과 개발 효율을 위해 모노레포 채택
 
 ### 4-5. MSA 분리 대상 서비스 (see ADR-0010)
@@ -461,12 +461,19 @@ peekcart/
 │       ├── port/                          # SlackPort
 │       ├── slack/                         # SlackNotificationClient + no-op fallback
 │       ├── cache/ · config/ · entity/ · exception/ · filter/ · lock/
-│       ├── deadletter/ · replay/ · retention/   # 설정·공통 타입 (원장·스케줄러 본체는 서비스별)
+│       ├── deadletter/ · replay/ · retention/   # 설정·공통 타입 (원장·스케줄러 본체는 peekcart-common-messaging)
 │       └── response/
 │
 ├── internal-token-contract/               # 내부 토큰 이름 계약 (순수 Java, ADR-0017)
 │   └── src/main/java/com/peekcart/internaltoken/
 │       └── InternalTokenContract.java     # issuer / claim / 헤더 이름 단일 출처
+│
+├── peekcart-common-messaging/             # outbox·멱등성·DLQ 원장 실행 세트 (order/payment/product/notification 공유, ADR-0033)
+│   └── src/main/java/com/peekcart/global/
+│       ├── outbox/                        # outbox 테이블·polling 발행
+│       ├── idempotency/                   # processed_events
+│       ├── deadletter/                    # DLQ 원장 (서비스별 구독·소유자 선언 3개는 서비스에 남는다)
+│       └── config/ShedLockConfig.java
 │
 ├── peekcart-common-auth/                  # 내부 토큰 검증 공유 모듈 (ADR-0014, ADR-0017)
 │   └── src/main/java/com/peekcart/global/
@@ -509,10 +516,10 @@ peekcart/
 │       │   └── kafka/
 │       │       ├── OrderEventConsumer.java
 │       │       └── ProductPriceCacheConsumer.java
-│       └── (com/peekcart/global/)
-│           ├── outbox/                    # outbox 테이블·polling 발행 (서비스별 복제)
-│           ├── idempotency/               # processed_events (서비스별 복제)
-│           └── deadletter/                # DLQ 원장 (서비스별 복제)
+│       └── (com/peekcart/global/deadletter/)
+│           ├── DeadLetterConsumer.java    # 이 서비스가 소유한 .dlq 구독
+│           ├── DeadLetterQuarantineConsumer.java  # 원본 토픽 발행 서비스만 (notification 없음)
+│           └── LedgerOwnerConfig.java     # 원장 소유자 선언
 │
 ├── payment-service/
 │   └── src/main/java/com/peekcart/payment/
@@ -531,8 +538,8 @@ peekcart/
                 └── NotificationConsumer.java      # Slack 발송은 common 의 SlackPort 경유
 ```
 
-> product-service 는 order/payment 와 같은 모양이다(`infrastructure/{outbox,kafka}` + `global/{outbox,idempotency,deadletter}`).
-> 서비스별 `global/` 의 Outbox·멱등성·DLQ 원장 클래스는 4개 서비스에 거의 동일하게 복제돼 있다(see D-049).
+> product-service 는 order/payment 와 같은 모양이다(`infrastructure/{outbox,kafka}` + `global/deadletter/` 서비스별 3개).
+> Outbox·멱등성·DLQ 원장 실행 세트는 `peekcart-common-messaging` 한 벌이고, 테이블 스키마(Flyway)는 서비스가 소유한다(see ADR-0033).
 
 ### Phase 1 → Phase 4 전환 시 주요 변경점
 
@@ -542,7 +549,7 @@ peekcart/
 | API Gateway | 없음 | Spring Cloud Gateway |
 | 결제 실패 보상 | `@TransactionalEventListener` | Choreography Saga |
 | 이벤트 DTO | 도메인 내부 `infrastructure/event/` | `common` 모듈 `global/outbox/dto/` 공유 |
-| Outbox | 도메인별 개별 구현 | 서비스별 `global/outbox/` 복제 (발행 어댑터는 `infrastructure/outbox/`) |
+| Outbox | 도메인별 개별 구현 | `peekcart-common-messaging` 모듈 `global/outbox/` 공유 (발행 어댑터는 서비스 `infrastructure/outbox/`, see ADR-0033) |
 | 인증 처리 | `global/jwt/` (서비스 내 JWT 필터) | `gateway` 가 사용자 JWT 검증 → 서명 내부 토큰(`X-Internal-Auth`) 주입, 서비스는 내부 토큰만 검증 (see ADR-0017) |
 | 인프라 | `docker-compose.yml` + (Phase 3) `k8s/` Kustomize 단일 서비스 | `k8s/` Kustomize 서비스별 디렉토리 + Helm (kube-prometheus-stack) |
 | DB 구성 | 단일 DB (모든 도메인) | DB-per-service — 5 스키마(`peekcart_<svc>`) + 계정/권한 격리, 1 인스턴스 (see ADR-0012 §D1·ADR-0016) |
