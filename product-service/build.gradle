@@ -1,7 +1,7 @@
 // product-service — Product peel (ADR-0011 §D1 · ADR-0014 · ADR-0010 F2 · ADR-0012)
-// bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth 에서만 가져온다.
+// bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth / :peekcart-common-messaging 에서만 가져온다.
 // 서비스↔서비스 project() 의존 금지 (assertNoServiceProjectDeps 로 강제).
-// Product = 첫 *발행* 서비스 peel — outbox 실행 세트 + idempotency + ShedLockConfig 를 자체 복제(notification 은 consume-only 라 idempotency 만 복제).
+// Product = 첫 *발행* 서비스 peel — outbox 실행 세트 + idempotency + ShedLockConfig 는 :peekcart-common-messaging 공유(ADR-0033).
 // 공유 DB 전환기: root·product 두 poller 가 같은 outbox_events 를 보므로 aggregateType allowlist + ShedLock 이름으로 소유권 분리(app yml).
 
 plugins {
@@ -22,6 +22,7 @@ dependencies {
     implementation project(':common')                        // web/jpa/kafka(api) + entity/response/exception/SlackPort/DistributedLockManager
     implementation project(':peekcart-common-observability') // actuator/micrometer-core(api) + MetricsConfig(S1)/ActuatorSecurityConfig(S4)
     implementation project(':peekcart-common-auth')          // security(api) + JWT 검증 primitives(JwtFilter/verify/LoginUser)
+    implementation project(':peekcart-common-messaging')     // outbox·idempotency·DLQ 원장 실행 세트 + ShedLockConfig (ADR-0033)
 
     // Bean Validation — @Valid 요청 검증 (web starter 는 Boot 3 에서 validation 미포함, B6 선례)
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -32,7 +33,7 @@ dependencies {
     // Redis — @Cacheable RedisCacheManager + blacklist read adapter(common-auth) 런타임
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-    // ShedLock — 자체 outbox poller(@SchedulerLock) + ShedLockConfig 복제 (첫 발행 서비스 peel)
+    // ShedLock — StockReservationLeaseSweeper 의 @SchedulerLock (outbox poller·ShedLockConfig 는 :peekcart-common-messaging)
     implementation 'net.javacrumbs.shedlock:shedlock-spring:6.3.1'
     implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.3.1'
 

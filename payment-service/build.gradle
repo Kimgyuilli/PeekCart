@@ -1,7 +1,7 @@
 // payment-service — Payment peel (PR-b, ADR-0011 §D1 · ADR-0014 · ADR-0010 · ADR-0012)
-// bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth 에서만 가져온다.
+// bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth / :peekcart-common-messaging 에서만 가져온다.
 // 서비스↔서비스 project() 의존 금지 (assertNoServiceProjectDeps 로 강제).
-// Payment = publisher+consumer 양방향 서비스 — outbox 실행 세트 + idempotency + ShedLockConfig 자체 복제(order/product peel 선례).
+// Payment = publisher+consumer 양방향 서비스 — outbox 실행 세트 + idempotency + ShedLockConfig 는 :peekcart-common-messaging 공유(ADR-0033).
 // 공유 DB 전환기: order/payment/product 세 poller 가 같은 outbox_events 를 보므로 aggregateType allowlist + ShedLock 이름으로 소유권 분리(app yml).
 // data-redis 는 :common RedisConfig(RedisTemplate 빈) 배선에 필요하다. cache starter 는 불요(@Cacheable 없음).
 // (PR3d: common-auth blacklist read 어댑터가 삭제돼 ADR-0014 fail-closed 근거는 소멸 — deny 는 Gateway 소유, ADR-0017 D5)
@@ -24,6 +24,7 @@ dependencies {
     implementation project(':common')                        // web/jpa/kafka(api) + entity/response/exception/SlackPort/DistributedLockManager
     implementation project(':peekcart-common-observability') // actuator/micrometer-core(api) + MetricsConfig(S1)/ActuatorSecurityConfig(S4)
     implementation project(':peekcart-common-auth')          // security(api) + JWT 검증 primitives(JwtFilter/verify/LoginUser)
+    implementation project(':peekcart-common-messaging')     // outbox·idempotency·DLQ 원장 실행 세트 + ShedLockConfig (ADR-0033)
 
     // Bean Validation — @Valid 요청 검증 (web starter 는 Boot 3 에서 validation 미포함, B6 선례)
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -31,7 +32,7 @@ dependencies {
     // Redis — common-auth blacklist read adapter(RedisTokenBlacklistLookupAdapter) 가 RedisTemplate 필수 (ADR-0014 fail-closed, 무조건)
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-    // ShedLock — 자체 outbox poller(@SchedulerLock) + ShedLockConfig 복제
+    // ShedLock — 결제 스케줄러(승인·환불 reconciliation, RefundDispatcher)의 @SchedulerLock (outbox poller·ShedLockConfig 는 :peekcart-common-messaging)
     implementation 'net.javacrumbs.shedlock:shedlock-spring:6.3.1'
     implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.3.1'
 

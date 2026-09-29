@@ -1,5 +1,5 @@
 // notification-service — 첫 서비스 peel (ADR-0011 §D1 · ADR-0014 · PR2a-2b)
-// bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth 에서만 가져온다.
+// bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth / :peekcart-common-messaging 에서만 가져온다.
 // 서비스↔서비스 project() 의존 금지 (assertNoServiceProjectDeps 로 강제).
 
 plugins {
@@ -20,6 +20,7 @@ dependencies {
     implementation project(':common')                       // web/jpa/kafka(api) + entity/response/exception/SlackPort
     implementation project(':peekcart-common-observability') // actuator/micrometer-core(api) + MetricsConfig(S1)/ActuatorSecurityConfig(S4)
     implementation project(':peekcart-common-auth')          // security(api) + JWT 검증 primitives(JwtFilter/verify/LoginUser)
+    implementation project(':peekcart-common-messaging')     // outbox·idempotency·DLQ 원장 실행 세트 + ShedLockConfig/ShedLock(api) (ADR-0033)
 
     // Redis — blacklist read adapter(common-auth) 런타임 + 서비스 자체 사용
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
@@ -27,11 +28,6 @@ dependencies {
     // Bean Validation 런타임 — retention floor fail-fast(@Validated @ConfigurationProperties, 구현 ② PR3).
     // web validation 미사용이라 미보유였음 → 추가. 구현 ④-c-2b-2 P9 이후 outbox retention 도 같은 경로로 검증된다.
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-
-    // ShedLock — retention cleanup·DLQ 유지보수·outbox poller 의 @SchedulerLock + ShedLockConfig.
-    // 구현 ② PR3(cleanup) 로 도입했고, 구현 ④-c-2b-2 P9 의 outbox poller/reconciler 가 같은 배선을 쓴다.
-    implementation 'net.javacrumbs.shedlock:shedlock-spring:6.3.1'
-    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.3.1'
 
     // Micrometer Prometheus registry (observability 는 micrometer-core 만 api 노출)
     implementation 'io.micrometer:micrometer-registry-prometheus'

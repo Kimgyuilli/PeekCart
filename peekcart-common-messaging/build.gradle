@@ -1,0 +1,25 @@
+// peekcart-common-messaging — outbox · 멱등성 · DLQ 원장 실행 세트 공유 모듈 (ADR-0033)
+// bootJar 없음. order/payment/product/notification 4서비스가 implementation 으로 의존한다.
+// user-service 는 의존하지 않는다 — 진입점이 com.peekcart.* 를 스캔하므로 :common 에 두면
+// 엔티티·스케줄러·DLQ 인프라를 떠안는다(ADR-0033 Alt A).
+// 스키마(Flyway)는 DB-per-service 라 각 서비스가 소유한다.
+
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // 공개 시그니처에 노출되는 타입 — SlackPort/LedgerOwner/DlqTopology/retention properties(:common), CommitAwareMetrics(observability)
+    api project(':common')
+    api project(':peekcart-common-observability')
+
+    // ShedLockConfig 의 LockProvider 빈 + 서비스 자체 @SchedulerLock
+    api 'net.javacrumbs.shedlock:shedlock-spring:6.3.1'
+    api 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:6.3.1'
+
+    // DeadLetterEndpoint 의 replay 권한 검사(SecurityContextHolder/AccessDeniedException)
+    implementation 'org.springframework.security:spring-security-core'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation testFixtures(project(':common'))
+}
