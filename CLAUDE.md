@@ -113,7 +113,7 @@ com.peekcart.global.{config|exception|jwt|response}
 - Repository 인터페이스: `{Domain}Repository` (domain 패키지)
 - JPA Repository: `{Domain}JpaRepository` (infrastructure 패키지)
 - Repository 구현체: `{Domain}RepositoryImpl` (infrastructure 패키지)
-- Event Listener: `{Domain}EventListener` (infrastructure/event 패키지)
+- Kafka Consumer: `{구독 대상}Consumer` (infrastructure/kafka 패키지, 예: `OrderEventConsumer`, `StockReservationConsumer`)
 
 **API URL 규칙**: `/api/v1/{도메인}/...`
 

@@ -454,20 +454,14 @@ peekcart/
 │       ├── shared/{kustomization.yml,grafana-alerts.yml,*.json}
 │       └── {minikube,gke}/{values-prometheus.yml,install.sh}
 │
-├── common/
-│   └── src/main/java/com/peekcart/common/
-│       ├── event/
-│       │   ├── OrderCreatedEvent.java
-│       │   ├── PaymentCompletedEvent.java
-│       │   ├── PaymentFailedEvent.java
-│       │   └── OrderCancelledEvent.java
-│       ├── outbox/
-│       │   ├── OutboxEvent.java
-│       │   └── OutboxEventPublisher.java  # 공통 Outbox 발행 로직
-│       ├── idempotency/
-│       │   ├── ProcessedEvent.java
-│       │   └── IdempotentConsumer.java    # 중복 소비 방지 공통 로직
-│       ├── exception/
+├── common/                                # 공유 라이브러리 (bootJar 없음, ADR-0011)
+│   └── src/main/java/com/peekcart/global/
+│       ├── outbox/dto/                    # 이벤트 페이로드 DTO + KafkaEventEnvelope (서비스 간 공유)
+│       ├── kafka/                         # DLQ 토폴로지·헤더, MDC 전파, backoff
+│       ├── port/                          # SlackPort
+│       ├── slack/                         # SlackNotificationClient + no-op fallback
+│       ├── cache/ · config/ · entity/ · exception/ · filter/ · lock/
+│       ├── deadletter/ · replay/ · retention/   # 설정·공통 타입 (원장·스케줄러 본체는 서비스별)
 │       └── response/
 │
 ├── internal-token-contract/               # 내부 토큰 이름 계약 (순수 Java, ADR-0017)
@@ -509,28 +503,36 @@ peekcart/
 │       ├── presentation/
 │       ├── application/
 │       ├── domain/
-│       └── infrastructure/
-│           ├── outbox/
-│           └── kafka/
-│               └── OrderEventProducer.java
+│       ├── infrastructure/
+│       │   ├── outbox/
+│       │   │   └── OrderOutboxEventPublisher.java  # 도메인 이벤트 → outbox 행 적재
+│       │   └── kafka/
+│       │       ├── OrderEventConsumer.java
+│       │       └── ProductPriceCacheConsumer.java
+│       └── (com/peekcart/global/)
+│           ├── outbox/                    # outbox 테이블·polling 발행 (서비스별 복제)
+│           ├── idempotency/               # processed_events (서비스별 복제)
+│           └── deadletter/                # DLQ 원장 (서비스별 복제)
 │
 ├── payment-service/
 │   └── src/main/java/com/peekcart/payment/
 │       └── infrastructure/
 │           ├── toss/
 │           ├── outbox/
+│           │   └── PaymentOutboxEventPublisher.java
 │           └── kafka/
-│               ├── PaymentEventProducer.java
-│               └── PaymentEventConsumer.java  # order.created 소비
+│               ├── PaymentEventConsumer.java       # order.created 소비
+│               └── CompensationRequestConsumer.java
 │
 └── notification-service/
     └── src/main/java/com/peekcart/notification/
         └── infrastructure/
-            ├── kafka/
-            │   └── NotificationConsumer.java
-            └── slack/
-                └── SlackNotificationClient.java
+            └── kafka/
+                └── NotificationConsumer.java      # Slack 발송은 common 의 SlackPort 경유
 ```
+
+> product-service 는 order/payment 와 같은 모양이다(`infrastructure/{outbox,kafka}` + `global/{outbox,idempotency,deadletter}`).
+> 서비스별 `global/` 의 Outbox·멱등성·DLQ 원장 클래스는 4개 서비스에 거의 동일하게 복제돼 있다(see D-049).
 
 ### Phase 1 → Phase 4 전환 시 주요 변경점
 
@@ -539,8 +541,8 @@ peekcart/
 | 프로젝트 구조 | 단일 모듈 | Gradle 멀티모듈 |
 | API Gateway | 없음 | Spring Cloud Gateway |
 | 결제 실패 보상 | `@TransactionalEventListener` | Choreography Saga |
-| 이벤트 DTO | 도메인 내부 `infrastructure/event/` | `common/event/` 공유 모듈 |
-| Outbox | 도메인별 개별 구현 | `common/outbox/` 공유 모듈 |
+| 이벤트 DTO | 도메인 내부 `infrastructure/event/` | `common` 모듈 `global/outbox/dto/` 공유 |
+| Outbox | 도메인별 개별 구현 | 서비스별 `global/outbox/` 복제 (발행 어댑터는 `infrastructure/outbox/`) |
 | 인증 처리 | `global/jwt/` (서비스 내 JWT 필터) | `gateway` 가 사용자 JWT 검증 → 서명 내부 토큰(`X-Internal-Auth`) 주입, 서비스는 내부 토큰만 검증 (see ADR-0017) |
 | 인프라 | `docker-compose.yml` + (Phase 3) `k8s/` Kustomize 단일 서비스 | `k8s/` Kustomize 서비스별 디렉토리 + Helm (kube-prometheus-stack) |
 | DB 구성 | 단일 DB (모든 도메인) | DB-per-service — 5 스키마(`peekcart_<svc>`) + 계정/권한 격리, 1 인스턴스 (see ADR-0012 §D1·ADR-0016) |
