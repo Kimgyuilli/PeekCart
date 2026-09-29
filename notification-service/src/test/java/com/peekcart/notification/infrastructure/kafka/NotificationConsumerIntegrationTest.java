@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
@@ -46,6 +47,7 @@ import static org.awaitility.Awaitility.await;
 @DisplayName("NotificationConsumer 멱등성 통합 테스트")
 class NotificationConsumerIntegrationTest extends AbstractIntegrationTest {
 
+    @Autowired KafkaListenerEndpointRegistry listenerRegistry;
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired NotificationJpaRepository notificationJpaRepository;
     @Autowired ProcessedEventJpaRepository processedEventJpaRepository;
@@ -57,6 +59,7 @@ class NotificationConsumerIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        awaitListenerAssignment(listenerRegistry);
         cleanDatabase();
     }
 
@@ -64,7 +67,7 @@ class NotificationConsumerIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("order.created 이벤트 소비 시 알림을 1건 생성한다")
     void orderCreated_createsNotification() {
         String eventId = UUID.randomUUID().toString();
-        kafkaTemplate.send("order.created", userId.toString(), orderCreatedMessage(eventId));
+        kafkaTemplate.send("order.created", userId.toString(), orderCreatedMessage(eventId)).orTimeout(10, TimeUnit.SECONDS).join();
 
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
             List<Notification> notifications = notificationJpaRepository
@@ -103,7 +106,7 @@ class NotificationConsumerIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("[SAGA-REFUND-RESULT-NOTIFICATION-SUCCEEDED] payment.refunded(SUCCEEDED) 소비 시 환불 완료 알림을 1건 생성한다 (ADR-0018 D6)")
     void paymentRefundedSucceeded_createsNotification() {
         String eventId = UUID.randomUUID().toString();
-        kafkaTemplate.send("payment.refunded", "9001", refundedMessage(eventId, 9001L, "SUCCEEDED"));
+        kafkaTemplate.send("payment.refunded", "9001", refundedMessage(eventId, 9001L, "SUCCEEDED")).orTimeout(10, TimeUnit.SECONDS).join();
 
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() ->
                 assertThat(refundNotifications()).hasSize(1));

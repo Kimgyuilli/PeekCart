@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
@@ -44,6 +45,7 @@ import static org.awaitility.Awaitility.await;
 @DisplayName("Consumer 멱등성 통합 테스트")
 class IdempotencyIntegrationTest extends AbstractIntegrationTest {
 
+    @Autowired KafkaListenerEndpointRegistry listenerRegistry;
     @Autowired PaymentRepository paymentRepository;
     @Autowired ProcessedEventJpaRepository processedEventJpaRepository;
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
@@ -56,6 +58,7 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        awaitListenerAssignment(listenerRegistry);
         cleanDatabase();
     }
 
@@ -66,7 +69,7 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
         Long orderId = seedOrder();
         String eventId = UUID.randomUUID().toString();
         String payload = orderCreatedEnvelope(eventId, orderId);
-        kafkaTemplate.send("order.created", orderId.toString(), payload);
+        kafkaTemplate.send("order.created", orderId.toString(), payload).orTimeout(10, TimeUnit.SECONDS).join();
 
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
                 assertThat(paymentRepository.findByOrderId(orderId)).isPresent());
@@ -74,7 +77,7 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
         long paymentCountBefore = countPaymentsByOrderId(orderId);
 
         // when: 동일 eventId 메시지를 직접 재전송
-        kafkaTemplate.send("order.created", orderId.toString(), payload);
+        kafkaTemplate.send("order.created", orderId.toString(), payload).orTimeout(10, TimeUnit.SECONDS).join();
 
         // then: 충분히 대기 후에도 Payment 수 변화 없음 (consumer 멱등성)
         await().during(3, TimeUnit.SECONDS).atMost(5, TimeUnit.SECONDS).untilAsserted(() ->
@@ -87,7 +90,7 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
         // given: order.created → 루트 PaymentEventConsumer 소비 (NotificationConsumer 는 notification-service 로 peel)
         Long orderId = seedOrder();
         String eventId = UUID.randomUUID().toString();
-        kafkaTemplate.send("order.created", orderId.toString(), orderCreatedEnvelope(eventId, orderId));
+        kafkaTemplate.send("order.created", orderId.toString(), orderCreatedEnvelope(eventId, orderId)).orTimeout(10, TimeUnit.SECONDS).join();
 
         // then: payment consumer group 처리 완료
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->

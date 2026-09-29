@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
@@ -56,6 +57,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("환불 요청 토픽 소비 통합 테스트")
 class CompensationRequestConsumerIntegrationTest extends AbstractIntegrationTest {
 
+    @Autowired KafkaListenerEndpointRegistry listenerRegistry;
     @Autowired CompensationRequestConsumer consumer;
     @Autowired PaymentEventConsumer paymentEventConsumer;
     @Autowired PaymentRefundService refundService;
@@ -64,6 +66,7 @@ class CompensationRequestConsumerIntegrationTest extends AbstractIntegrationTest
 
     @BeforeEach
     void setUp() {
+        awaitListenerAssignment(listenerRegistry);
         cleanDatabase();
     }
 
@@ -287,9 +290,9 @@ class CompensationRequestConsumerIntegrationTest extends AbstractIntegrationTest
         seedApprovedPayment(2102L);
 
         kafkaTemplate.send("stock.compensation.requested", "2101",
-                request("stock.compensation.requested", 2101L, "PAID_BUT_UNRESERVED"));
+                request("stock.compensation.requested", 2101L, "PAID_BUT_UNRESERVED")).orTimeout(10, TimeUnit.SECONDS).join();
         kafkaTemplate.send("order.compensation.requested", "2102",
-                request("order.compensation.requested", 2102L, "PAID_BUT_CANCELLED"));
+                request("order.compensation.requested", 2102L, "PAID_BUT_CANCELLED")).orTimeout(10, TimeUnit.SECONDS).join();
 
         await().atMost(20, TimeUnit.SECONDS).untilAsserted(() -> {
             assertThat(refundService.find(2101L)).isPresent();

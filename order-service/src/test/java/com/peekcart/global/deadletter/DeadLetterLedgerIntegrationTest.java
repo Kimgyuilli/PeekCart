@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.test.annotation.DirtiesContext;
@@ -21,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -49,6 +51,7 @@ import static org.awaitility.Awaitility.await;
 @DisplayName("DLQ 원장 적재 통합 테스트")
 class DeadLetterLedgerIntegrationTest extends AbstractIntegrationTest {
 
+    @Autowired KafkaListenerEndpointRegistry listenerRegistry;
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired DeadLetterRecordJpaRepository repository;
     @Autowired DeadLetterRecorder recorder;
@@ -58,6 +61,7 @@ class DeadLetterLedgerIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        awaitListenerAssignment(listenerRegistry);
         cleanDatabase();
         repository.deleteAll();
     }
@@ -239,12 +243,12 @@ class DeadLetterLedgerIntegrationTest extends AbstractIntegrationTest {
                       String group, String payload) {
         ProducerRecord<String, String> record = baseRecord(dlqTopic, originTopic, partition, offset, payload);
         record.headers().add(KafkaHeaders.DLT_ORIGINAL_CONSUMER_GROUP, group.getBytes(StandardCharsets.UTF_8));
-        kafkaTemplate.send(record);
+        kafkaTemplate.send(record).orTimeout(10, TimeUnit.SECONDS).join();
     }
 
     private void sendWithoutGroup(String dlqTopic, String originTopic, int partition, long offset,
                                   String payload) {
-        kafkaTemplate.send(baseRecord(dlqTopic, originTopic, partition, offset, payload));
+        kafkaTemplate.send(baseRecord(dlqTopic, originTopic, partition, offset, payload)).orTimeout(10, TimeUnit.SECONDS).join();
     }
 
     private ProducerRecord<String, String> baseRecord(String dlqTopic, String originTopic,

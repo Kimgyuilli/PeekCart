@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
@@ -76,6 +77,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
 
     private static final String REQUEST_EVENT_TYPE = "order.compensation.requested";
 
+    @Autowired KafkaListenerEndpointRegistry listenerRegistry;
     @Autowired OrderEventConsumer consumer;
     @Autowired OrderCompensationRepository compensationRepository;
     @Autowired ObjectMapper objectMapper;
@@ -100,6 +102,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        awaitListenerAssignment(listenerRegistry);
         cleanDatabase();
     }
 
@@ -265,7 +268,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         Long orderId = seedOpenCompensation();
 
         kafkaTemplate.send("payment.refunded", orderId.toString(),
-                refunded(orderId, "SUCCEEDED", null, LocalDateTime.now().withNano(0)));
+                refunded(orderId, "SUCCEEDED", null, LocalDateTime.now().withNano(0))).orTimeout(10, TimeUnit.SECONDS).join();
 
         await().atMost(20, TimeUnit.SECONDS).untilAsserted(() ->
                 assertThat(reload(orderId).getStatus()).isEqualTo(CompensationStatus.RESOLVED));
