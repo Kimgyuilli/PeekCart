@@ -21,7 +21,7 @@
 > 시점에 항목을 추가하고 그때 착수한다.
 >
 > **추적 축은 아래 §개발 부채 / 작업 표 하나다.** 기존 D- 번호를 그대로 이어 쓴다
-> (다음 번호 = **D-044**). "부채 해소"와 "새로 하고 싶은 것"을 표에서 구분하지 않는 것은
+> (다음 번호 = **D-058**). "부채 해소"와 "새로 하고 싶은 것"을 표에서 구분하지 않는 것은
 > 의도다 — 수요 기반에서는 둘 다 *지금 필요하다고 판단한 작업* 이라는 같은 성격이고,
 > 표를 나누면 어느 쪽에 적을지부터 정해야 해서 추가 비용이 생긴다.
 >
@@ -31,7 +31,8 @@
 >
 > **단계 종결 조건 없음.** Phase 4 처럼 순서표 소진으로 닫히지 않는다. 열린 표가 곧 현황이다.
 >
-> 지금 열린 것: 없음. D-027 은 ③ 판정으로 완료([#159](https://github.com/Kimgyuilli/PeekCart/pull/159)),
+> 지금 열린 것: D-049 ~ D-057(불필요한 복잡성·문서·주석 전수조사, 2026-09-29). 제안 순서는 D-051·D-054·D-055·D-056 묶음, D-049(ADR 선행), D-050, D-052·D-053, D-057.
+> D-027 은 ③ 판정으로 완료([#159](https://github.com/Kimgyuilli/PeekCart/pull/159)),
 > D-030 은 완료([#155](https://github.com/Kimgyuilli/PeekCart/pull/155)), D-038 은 폐기.
 > D-039 는 판정으로 완료, D-048 은 채택 판정으로 완료([#157](https://github.com/Kimgyuilli/PeekCart/pull/157)).
 > D-035 · D-040 · D-041 · D-042 · D-044 · D-045 · D-046 · D-047 은 완료(각 행의 PR 링크).
@@ -95,6 +96,15 @@ Phase 1~3 은 `docs/progress/TASKS-archive-phase1-3.md`.
 | D-046 | Testing | **`ProductCacheFallbackIntegrationTest` V3 경과시간 상한 flake** — D-045 검증의 전체 `./gradlew test --rerun` 에서 무응답 Redis 조회가 2.764s 로 상한 2.6s 를 넘었다. 로그상 타임아웃은 정확히 4회(product·productStock 의 get·put)이고 초과분은 DB 조회 구간의 부하 잡음이다. 동반 결함: `FallbackSnapshot` baseline 에 `productStock` 이 없어 재고 캐시 단언이 증가분이 아니라 누적값이었다. **결과**: baseline 에 `productStock` 추가, V3 에 재고 get·put 증가분 단언 추가, 시간 상한 3.5s(timeout 소실·증가만 본다). timeout 1s 주입 시 4.14s 로 실패 확인. 계획서 `docs/plans/done/task-d046-cache-timeout-bound.md` · [#150](https://github.com/Kimgyuilli/PeekCart/pull/150). **미충족**: 전체 `./gradlew test` 1회 통과 실행 없음(수정 후 product-service 만 재실행) | D-045 검증 (2026-09-27) | ✅ 완료 |
 | D-047 | Testing | **e2e 만 보는 로직 3건을 JVM 테스트로 채운다** — D-042 결함 주입(ADR-0032 D3)에서 주입해도 모듈 테스트 전체가 통과한 3건이다. ① `PaymentController` 가 승인 실패를 PAY-005 로 돌려주는지 (`PaymentControllerTest` 는 400 만 본다) ② `NotificationConsumer.handlePaymentFailed` 가 PAYMENT_FAILED 알림을 만드는지(테스트 없음) ③ `order.cancelled` reason=RESERVATION_FAILED 가 알림을 만드는지(reason 분기 테스트에 이 값이 없다). e2e 단언 A4b·A12·B3 은 배선 때문에 그대로 둔다. 완료 기준은 계획서 `task-d042-verification-responsibility.md` §4-2 의 M12·M13·M14 주입을 다시 넣었을 때 새 테스트가 실패하는 것 | D-042 결함 주입 (ADR-0032) | ✅ 완료 ([#154](https://github.com/Kimgyuilli/PeekCart/pull/154)) |
 | D-048 | CI / Build | **e2e 스택 기동 시간** — D-042 에서 PR 검증 시간이 단언이 아니라 스택 기동에 있다는 것이 드러났다. run 36338959413 의 scenarios 잡에서 시나리오 4종은 82초, 기동은 157초(infra-up 36 · 토픽 사전 생성 49 · 앱 4개 **순차** 기동 72)다. negative-control 잡도 기동이 177초다. 두 잡이 같은 기동을 따로 한다. 순차 기동이 의존 순서 때문인지, 토픽 사전 생성이 왜 49~67초인지부터 실측한다. **측정 없이 착수하면 효과를 주장할 수 없다** (D-039 와 같은 제약) **구현(2026-09-28)**: 토픽 생성은 exec 40회를 각 1회로 묶었고(가드 유지, 결함 주입 3건 rc=1), 앱 4개는 서로 의존이 없어 동시 기동으로 바꿨다. 로컬 실측 토픽 50→23초 · 앱 74→51초. 두 잡의 기동 중복은 D-043 병렬 계약 때문에 범위 밖. **채택 판정(2026-09-29)**: 동시 기동 PR CI 2회(#156 · #157) 녹색, 창 초과 0. 기동 합계는 순차 기준선 156/178초에서 131~133/121~132초(scenarios/negative-control)로 줄었다. 앱 동시 기동 이득은 run 간 편차와 겹칠 만큼 작지만 감소 방향이다. #156 은 판정 전에 머지돼 두 번째 run 을 #157 에서 얻었다(계획서 `docs/plans/done/task-d048-e2e-stack-startup.md`) | D-042 시간 분해 (ADR-0032 §후속) | ✅ 완료 ([#156](https://github.com/Kimgyuilli/PeekCart/pull/156) · 판정 [#157](https://github.com/Kimgyuilli/PeekCart/pull/157)) |
+| D-049 | Code / Architecture | **Outbox/DLQ 인프라가 4서비스에 복제돼 있다** — order/payment/product/notification 의 `global/{deadletter,outbox,...}` 에 동명 클래스 35개가 4벌씩, 합계 약 14,300줄 중 약 10,700줄이 사본이다. 35개 중 32개는 서비스명만 다르고 동일하며, 서비스별로 실제 다른 것은 `DeadLetterConsumer`·`DeadLetterQuarantineConsumer`·`OutboxEventStatus` 3개다. 사본이 갈라지지 않게 `dead-letter-schema-parity-lint.sh` (3)·(4) 가 byte 동일성을 강제하고 있어, 한 곳을 고치려면 4벌을 같이 고쳐야 한다. 근거인 ADR-0011 D2 는 outbox 를 Order/Payment 전속, 멱등성을 서비스별 복제로 정했으나 이후 4서비스로 퍼졌다. 처방 후보: 공유 모듈로 승격하고 Flyway 만 서비스별 유지. **ADR-0011 D2 부분 대체 ADR 선행**. D-050 의 선행 조건 | 전수조사 세션(2026-09-29) | 🔲 대기 |
+| D-050 | Code / Comments | **main 코드 주석이 계획서 내부 식별자를 참조한다** — 주석 속 `§` 387개 · `P<n>` 약 190개 · `④-c-*`/`구현 ④` 약 160개 · `D-0xx` 70개 · `PR` 56개. 계획서 안에서만 뜻이 통해 코드만 읽는 사람은 어느 문서인지 복원할 수 없다(예: `DeadLetterRecord` 의 "(계획 ④-c-2a P3)", "(§2.5)"). "기존에는 ~였다" 류 이력 서술도 섞여 있다. ADR 참조(428개)는 불변 문서라 유지. 주석 밀도가 가장 높은 파일이 D-049 복제 클래스라(`DeadLetterRecord` 주석 176줄, `DeadLetterRecordJpaRepository` 주석이 코드보다 많음) D-049 이후 착수하면 작업량이 1/4 이 된다 | 전수조사 세션(2026-09-29) | 🔲 대기 |
+| D-051 | Docs | **Layer 1 문서와 CLAUDE.md 가 코드와 어긋난다** — ① `02-architecture.md:542-543` 이 이벤트 DTO·Outbox 위치를 존재하지 않는 `common/event`·`common/outbox` 공유 모듈로 적는다(실제는 서비스별 복제) ② `04-design-deep-dive.md` §8-3 은 "DLQ → Slack 알림", §9-3 은 "운영 신호는 메트릭 alert, Slack 은 notification 만" 으로 같은 문서 안에서 모순 ③ `CLAUDE.md` 명명 규칙 `{Domain}EventListener (infrastructure/event)` 에 해당하는 클래스가 0개(실제는 `infrastructure/kafka` 의 `*Consumer`). 에이전트가 CLAUDE.md 를 규칙으로 읽으므로 ③ 은 새 코드의 오배치로 이어진다 | 전수조사 세션(2026-09-29) | 🔲 대기 |
+| D-052 | Docs / Harness | **TASKS.md 가 완료 항목으로 비대하다** — 144KB 중 열린 항목 0개. 완료된 Phase 4 섹션 약 80KB, 완료 D- 행 36개 약 58KB 이고 행 하나가 문단 길이다. `/sync` 다이제스트가 우회하고 있지만 `/done` 은 이 파일을 직접 편집한다. `TASKS-archive-phase1-3.md` 선례대로 아카이브. `harness-context.sh`·`/done` 이 이 파일을 파싱하므로 이동 후 파서 검증 필수 | 전수조사 세션(2026-09-29) | 🔲 대기 |
+| D-053 | Docs | **Layer 1 문서에 과거 단계 설계가 남아 있다** — `02-architecture.md` §5 Phase 1 모놀리식 다이어그램 · §12 Phase 1·2 패키지 구조(약 170줄), `05-data-design.md` Phase 1 ERD(약 170줄)·Phase 1 vs 4 비교. 문서 레이어 원칙상 Layer 1 은 현재 상태(What)이므로 이력은 progress/archive 로 옮기거나 줄인다. 현재 상태를 찾는 독자가 과거 구조를 먼저 읽게 된다 | 전수조사 세션(2026-09-29) | 🔲 대기 |
+| D-054 | Docs | **`docs/00-lagacy.md` (68KB) 정리** — Notion 설계 통합 문서의 export 이고 파일명에 오타가 있다. 참조처는 이력 문서(PHASE1·PHASE4·TASKS-archive·done 계획서 1개)뿐이다. 삭제 또는 archive 이동. 현재 문서와 내용이 겹쳐 어느 쪽이 정본인지 혼동을 준다 | 전수조사 세션(2026-09-29) | 🔲 대기 |
+| D-055 | Docs / Harness | **`docs/plans/.audit/` 잔존 파일 2개** — 현재 하네스(`.claude/scripts/lib/audit.sh`)는 이 경로에 쓰지 않는다. 단 `done/` 의 동명 audit 과 내용이 다르고 `done/` 쪽에 없는 리뷰 라운드 기록을 담고 있어 삭제가 아니라 병합 대상이다. 병합 후 디렉터리 제거 | 전수조사 세션(2026-09-29) | 🔲 대기 |
+| D-056 | CI / Scripts | **CI 에 배선되지 않은 스크립트 2개** — `scripts/scheduler-lock-contract-lint.sh` 는 D-024(`8bfb119`) 에서 만들어진 뒤 CI 에 한 번도 들어가지 않아, 막으려는 불변식(모든 `@Scheduled` 에 `@SchedulerLock` 등)이 강제되지 않는다. `scripts/codex-review-render-selftest.sh` 도 호출처가 없다. 둘 다 로컬 실행은 통과(2026-09-29). CI 배선 또는 삭제 판정 | 전수조사 세션(2026-09-29) | 🔲 대기 |
+| D-057 | Harness / Cost | **`plan.md`·`work.md` 사이 중복 규칙** — 두 커맨드가 17KB·13KB 이고 같은 규칙이 겹친다. D-027 ① 에서 남은 크기의 주원인으로 지목됐으나 범위 밖으로 남겼다. 매 호출 컨텍스트에 실리고, 한쪽만 고치면 규칙이 갈라진다 | 전수조사 세션(2026-09-29) | 🔲 대기 |
 ### 해결 완료 (아카이브 참조)
 
 D-001(✅), D-005(✅), D-006(✅), D-007(✅), D-008(✅), D-009(✅), D-010(✅), D-011(✅), D-012(✅) · D-003(Won't Fix) · D-004(운영지식) — 상세: `docs/progress/TASKS-archive-phase1-3.md §개발 부채`.
