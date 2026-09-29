@@ -66,6 +66,12 @@ jobs:
           # 실측으로 그 비용이 클래스당 약 31초였다.
           bash scripts/integration-test-container-lint.sh
           bash scripts/integration-test-container-lint.sh --self-test
+          # D-056: 스케줄러 풀이 4라 cron/fixedRate 잡이 자기 자신과 겹칠 수 있다(D-024).
+          # 모든 @Scheduled 에 @SchedulerLock 이나 exempt 표기가 있고 fixedRate 가 0건인지 강제한다.
+          bash scripts/scheduler-lock-contract-lint.sh
+          # D-056: /plan·/work 의 리뷰 렌더러가 빈 응답·items:null·빈 배열을 서로 다른 결과로 내는지.
+          # V9(실제 리뷰 이력 회귀)는 .cache 가 없는 CI 에서 skip 되고 실패로 세지 않는다.
+          bash scripts/codex-review-render-selftest.sh
           bash scripts/image-contract-lint.sh
           bash scripts/gateway-exposure-lint.sh
           # 조작 입력 29종에서 실제로 실패하는지 — lint 자체가 vacuous-green 으로 썩는 것을 막는다.
