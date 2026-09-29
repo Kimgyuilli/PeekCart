@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
@@ -69,6 +70,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
     private static final Long USER_ID = 42L;
     private static final AtomicLong ORDER_ID_SEQ = new AtomicLong(1);
 
+    @Autowired KafkaListenerEndpointRegistry listenerRegistry;
     @Autowired PaymentOutboxEventPublisher paymentOutboxEventPublisher;
     @Autowired OutboxPollingService outboxPollingService;
     @Autowired OutboxEventRepository outboxEventRepository;
@@ -76,6 +78,7 @@ class OutboxKafkaIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        awaitListenerAssignment(listenerRegistry);
         MDC.clear();
         headerCapture.records.clear();
         cleanDatabase();

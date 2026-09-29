@@ -36,6 +36,18 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## Kafka 리스너 통합 테스트의 할당 대기와 발행 동기화 (D-058, [#167](https://github.com/Kimgyuilli/PeekCart/pull/167), 2026-09-29)
+
+#164 CI 에서 payment `DlqIntegrationTest` 가 20초 동안 DLT 레코드 0건으로 실패한 건의 후속이다. 같은 구조(리스너를
+켜고 곧바로 발행)가 4모듈 12개 클래스에 있어 범위를 넓혔다. `AbstractIntegrationTest#awaitListenerAssignment` 로 발행 전
+파티션 할당을 기다리고, future 를 버리던 send 22곳을 `orTimeout(10초).join()` 으로 동기화했다. 누락은
+`integration-test-container-lint.sh` ITC-006 이 막는다. 계측해 보니 로컬에서는 테스트 시작 시점에 할당이 이미 거의 끝나
+있어(대기 약 0.1초) 초안 전제인 "할당 지연이 첫 테스트를 느리게 한다" 가 반증됐다. 등급 L, 계획·diff 리뷰는
+`.cache/codex-off` 로 의도적 생략.
+
+미충족: CI 실패의 근본 원인은 미확정이다. 재발하면 할당 대기 timeout 이나 발행 지점 예외로 좁혀진다. 그래도 await
+timeout 으로 실패하면 CI 에 앱 로그를 보존하는 task 를 연다.
+
 ## 미배선 스크립트 2개의 CI 편입 (D-056, [#166](https://github.com/Kimgyuilli/PeekCart/pull/166), 2026-09-29)
 
 `scheduler-lock-contract-lint.sh` 와 `codex-review-render-selftest.sh` 를 lint 잡의 policy lints 단계에 넣었다. 삭제도

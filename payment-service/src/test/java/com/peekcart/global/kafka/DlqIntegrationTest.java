@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.CommonErrorHandler;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
@@ -45,6 +46,7 @@ import static org.awaitility.Awaitility.await;
 @DisplayName("DLQ 통합 테스트")
 class DlqIntegrationTest extends AbstractIntegrationTest {
 
+    @Autowired KafkaListenerEndpointRegistry listenerRegistry;
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired DlqTestListener dlqTestListener;
     @Autowired com.peekcart.global.deadletter.DeadLetterRecordJpaRepository deadLetterRepository;
@@ -98,6 +100,7 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        awaitListenerAssignment(listenerRegistry);
         MDC.clear();
         dlqTestListener.records.clear();
         TestConfig.slackCallCount.set(0);
@@ -121,7 +124,7 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
 
         // when: order.created 토픽에 전송 → 이를 소비하는 각 consumer group 실패
         //   (PaymentEventConsumer 결제 생성 + StockReservationConsumer 재고 예약, ADR-0012 D3)
-        kafkaTemplate.send("order.created", uniqueKey, invalidMessage);
+        kafkaTemplate.send("order.created", uniqueKey, invalidMessage).orTimeout(10, TimeUnit.SECONDS).join();
 
         // then: 각 group 재시도 소진 → order.created.dlq 로 라우팅(consumer 당 1건) + Slack 발송
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -151,7 +154,7 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
                 "77".getBytes(StandardCharsets.UTF_8));
 
         // when
-        kafkaTemplate.send(record);
+        kafkaTemplate.send(record).orTimeout(10, TimeUnit.SECONDS).join();
 
         // then: DLQ 토픽의 record 가 원본 헤더 보존 (DeadLetterPublishingRecoverer 가 헤더 자동 복사)
         //   order.created 는 다중 consumer group 이 소비하므로 DLQ record 가 1건 이상일 수 있다.
@@ -181,7 +184,7 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
         ProducerRecord<String, String> record = new ProducerRecord<>(
                 "order.created", null, fixedTimestamp, uniqueKey, "invalid-json-message");
 
-        kafkaTemplate.send(record);
+        kafkaTemplate.send(record).orTimeout(10, TimeUnit.SECONDS).join();
 
         // **DLT 헤더와 원장 양쪽을 본다.** 원장만 보면 "그 값이 DLT 에서 온 것" 이 증명되지 않는다 —
         // 재발행 시각을 넣어도, 다른 경로로 같은 값이 들어와도 통과한다.

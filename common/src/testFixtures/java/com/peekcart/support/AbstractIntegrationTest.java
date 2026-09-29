@@ -9,10 +9,17 @@ import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
+import org.springframework.kafka.listener.MessageListenerContainer;
 
+import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.awaitility.Awaitility.await;
+import static org.hamcrest.Matchers.empty;
 
 /**
  * 통합 테스트 공통 베이스 클래스.
@@ -30,6 +37,9 @@ import java.util.Map;
  *   <li>애플리케이션 토픽({@code order.created} 등 <b>고정 이름</b>)을 읽는 테스트는
  *       {@link #cleanKafkaTopics(String, String...)} 도 호출한다. 브로커를 공유하므로 앞 클래스가
  *       발행한 레코드가 {@code seekToBeginning} 에 그대로 읽힌다.</li>
+ *   <li>리스너를 켜는 테스트({@code app.kafka.listener.enabled=true})는 {@code @BeforeEach}에서
+ *       {@link #awaitListenerAssignment(KafkaListenerEndpointRegistry)}를 호출한다 — 할당 전에 발행하면
+ *       첫 group join 이 await 예산을 먹는다(D-058). {@code scripts/integration-test-container-lint.sh} 가 강제한다.</li>
  *   <li>cleanup이 불필요한 테스트(빈 배선 검증, 메트릭 노출 검증 등)는 호출하지 않는다.</li>
  *   <li>캐시 동작을 검증하는 테스트는 {@code @BeforeEach}에서 {@link #cleanCaches(CacheManager)}를 호출한다.</li>
  *   <li><b>배경 스케줄링은 기본 off</b> 다({@code app.scheduling.enabled}). 타이머 발화 자체를
@@ -132,6 +142,36 @@ public abstract class AbstractIntegrationTest {
         } catch (Exception e) {
             throw new IllegalStateException("Kafka 토픽 cleanup 실패", e);
         }
+    }
+
+    /**
+     * 자기 context 의 모든 리스너 컨테이너가 파티션을 할당받을 때까지 기다린다 (D-058).
+     *
+     * <p><b>왜 필요한가</b>: 리스너를 켠 클래스는 {@code @DirtiesContext(AFTER_CLASS)} 라 클래스마다
+     * 같은 groupId 로 브로커에 다시 가입한다. 할당 전에 발행하면 group join · 토픽 자동 생성 ·
+     * (JVM 첫 Kafka 클래스라면) {@code __consumer_offsets} 생성까지 테스트의 await 예산에서 빠진다.
+     * CI 에서 이 때문에 20초 동안 레코드 0건으로 실패한 적이 있다. await 를 늘리는 대신 원인인
+     * 순서를 고친다 — 할당이 끝났다면 토픽이 있고 group 이 가입을 마쳤다.
+     *
+     * <p>시간 초과 시 미할당 컨테이너 id 를 메시지에 남긴다. 테스트 await 의 timeout 으로 보이면
+     * 원인이 할당인지 로직인지 구분되지 않는다.
+     */
+    protected void awaitListenerAssignment(KafkaListenerEndpointRegistry registry) {
+        await().atMost(Duration.ofSeconds(30))
+                .alias("리스너 파티션 할당")
+                .until(() -> unassignedListenerIds(registry), empty());
+    }
+
+    private static List<String> unassignedListenerIds(KafkaListenerEndpointRegistry registry) {
+        return registry.getListenerContainers().stream()
+                .filter(container -> !isAssigned(container))
+                .map(MessageListenerContainer::getListenerId)
+                .toList();
+    }
+
+    private static boolean isAssigned(MessageListenerContainer container) {
+        Collection<?> assigned = container.getAssignedPartitions();
+        return container.isRunning() && assigned != null && !assigned.isEmpty();
     }
 
     /**

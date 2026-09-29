@@ -21,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.context.annotation.Import;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.time.LocalDateTime;
@@ -50,6 +51,7 @@ import static org.awaitility.Awaitility.await;
 @DisplayName("가격 캐시 CQRS 소비자 통합 테스트")
 class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
 
+    @Autowired KafkaListenerEndpointRegistry listenerRegistry;
     @Autowired ProductPriceCacheConsumer consumer;
     @Autowired ProductPriceCacheRepository priceCacheRepository;
     @Autowired CartCommandService cartCommandService;
@@ -66,6 +68,7 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        awaitListenerAssignment(listenerRegistry);
         cleanDatabase();
     }
 
@@ -128,7 +131,7 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("e2e: Kafka product.updated→리스너→캐시→createOrder 가 OrderItem 에 캐시 단가 스냅샷")
     void endToEnd_realKafka_orderSnapshotsCachedPrice() throws Exception {
         // 실제 리스너 경로: KafkaTemplate → product.updated 토픽 → ProductPriceCacheConsumer @KafkaListener
-        kafkaTemplate.send("product.updated", productId.toString(), buildMessage("e2e-evt", productId, 50_000L, 0));
+        kafkaTemplate.send("product.updated", productId.toString(), buildMessage("e2e-evt", productId, 50_000L, 0)).orTimeout(10, TimeUnit.SECONDS).join();
         await().atMost(15, TimeUnit.SECONDS).untilAsserted(() ->
                 assertThat(priceCacheRepository.findUnitPrice(productId)).contains(50_000L));
 

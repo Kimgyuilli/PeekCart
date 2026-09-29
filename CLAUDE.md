@@ -163,6 +163,10 @@ com.peekcart.global.{config|exception|jwt|response}
   writer 가 계속 돌며 **공유 DB·브로커** 를 고친다. 테스트가 자기 context 의 리스너를 `stop()`
   하는 것으로는 못 막는다: `groupId` 가 상수라 캐시된 다른 context 의 consumer 가 파티션을
   넘겨받는다
+- 리스너를 켠 테스트는 `@BeforeEach` 에서 `awaitListenerAssignment(registry)` 로 **파티션 할당을 기다린 뒤**
+  발행하고, `kafkaTemplate.send` 의 future 를 버리지 않는다(`.orTimeout(10, SECONDS).join()`) (D-058).
+  할당 전 발행이나 버려진 발행 실패는 원인 없는 await timeout 으로만 보인다. 대기 누락은
+  `integration-test-container-lint.sh` 가 막는다
 - 클래스 실행 순서는 매 실행 섞인다. 실패 시 로그의 시드로 재현한다
   (`./gradlew :order-service:test -PtestSeed=<시드>`)
 
