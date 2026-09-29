@@ -36,6 +36,17 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## 미배선 스크립트 2개의 CI 편입 (D-056, [#166](https://github.com/Kimgyuilli/PeekCart/pull/166), 2026-09-29)
+
+`scheduler-lock-contract-lint.sh` 와 `codex-review-render-selftest.sh` 를 lint 잡의 policy lints 단계에 넣었다. 삭제도
+후보였으나 scheduler lint 는 D-024 풀 확대 뒤 cron 잡 자기 중첩을 막는 유일한 강제 수단이고, render selftest 는 리뷰
+렌더러의 false-green 방지 장치라 배선을 택했다. 각각 실패를 주입해(`@SchedulerLock` 제거, 빈 응답 판정 exit 0) exit 1
+을 확인했다. render selftest 의 V9 는 `.cache` 를 읽으므로 CI 에서는 skip 된다. 등급 M, diff 리뷰는 `.cache/codex-off` 로
+의도적 생략.
+
+미충족: scheduler lint 에는 `--self-test` 가 없다. 위반 탐지는 이번 실패 주입으로만 확인했고, lint 자체를 무력화하는
+수정은 CI 가 잡지 못한다. 재검토 조건은 이 lint 의 검사 분기를 고치는 PR 이 생길 때다.
+
 ## 잔존 audit 디렉터리의 done 병합 (D-055, [#165](https://github.com/Kimgyuilli/PeekCart/pull/165), 2026-09-29)
 
 이전 하네스가 쓰던 `docs/plans/.audit/` 의 파일 2개를 `done/` 의 같은 이름 audit 에 병합하고 디렉터리를 없앴다. 두 쪽
