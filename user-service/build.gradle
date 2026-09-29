@@ -1,4 +1,4 @@
-// user-service — independent 서비스 peel (ADR-0011 §D1 · ADR-0014 · PR2b)
+// user-service — independent 서비스 (ADR-0011 §D1 · ADR-0014)
 // bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth 에서만 가져온다.
 // 서비스↔서비스 project() 의존 금지 (assertNoServiceProjectDeps 로 강제).
 // User = 발급(sign/TokenIssuer)·블랙리스트 write owner (검증은 common-auth, ADR-0014).
@@ -40,7 +40,7 @@ dependencies {
     // MySQL
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // Flyway — 런타임 disabled(서비스), 공유 V1~V4 는 root flywayMigrateShared / 테스트 fixture 에서 적용
+    // Flyway — 자기 모듈 마이그레이션을 런타임 적용한다(DB-per-service, flyway.enabled=true)
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
 

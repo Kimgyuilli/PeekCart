@@ -23,7 +23,7 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
 /**
  * Notification 서비스의 Kafka 소비 배선 (ADR-0011 §D2 — producer/consumer factory 는 :common/auto-config,
  * 서비스는 listener container factory·error-handler 등 자기 소비 경로만 소유).
- * <p>원본 토픽(order/payment 계열)과 DLQ 토픽 생성은 전환기 root(Order/Payment) 가 소유한다.
+ * <p>원본 토픽과 DLQ 토픽 생성은 각 발행 서비스가 소유한다.
  * 본 서비스는 소비 실패 시 {@code topic.dlq} 로 발행 + {@link SlackPort}(:common) 알림만 수행한다.
  */
 @Slf4j
@@ -72,7 +72,7 @@ public class NotificationKafkaConfig {
     }
 
     /**
-     * DLQ replay 좌표 reader (구현 ④-c-2b-4a P18).
+     * DLQ replay 좌표 reader.
      *
      * <p><b>공통 모듈에서 자동 등록하지 않는다</b> — {@code @Component} 로 두면 Kafka 가 없는 서비스
      * (user-service)의 컨텍스트가 {@code KafkaAdmin} 부재로 깨진다. 원장을 가진 서비스만 등록한다.

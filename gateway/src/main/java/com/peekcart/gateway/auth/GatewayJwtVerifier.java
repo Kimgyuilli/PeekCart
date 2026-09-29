@@ -14,13 +14,13 @@ import java.time.Instant;
 import java.util.Base64;
 
 /**
- * Gateway 전용 JWT 검증기 (reactive) — ADR-0013 D1/D3 · 구현 ③ PR3a.
+ * Gateway 전용 JWT 검증기 (reactive) — ADR-0013 D1/D3.
  *
- * <p>servlet 측 {@code JwtTokenVerifier} 와 <b>동일 계약</b>을 재구현한다(B6: common-auth 는 servlet MVC
- * 스택이라 재사용 불가). 동등성은 conformance golden vector 로 고정한다(계획 P19 · loop2 #6).
+ * <p>JWT 검증을 reactive 로 구현한다(common-auth 는 servlet MVC 스택이라 재사용 불가).
+ * 검증 계약은 conformance golden vector 로 고정한다.
  *
  * <p><b>alg allow-list</b>: <b>RS256 단독</b>(JWKS kid 선택). HS 계열·none 은 전부 거부한다 —
- * 전환기 HS512 fallback 은 PR4 에서 제거했다(발급측이 RS256 단독이라 수용할 레거시 토큰이 없다).
+ * HS512 fallback 은 두지 않는다(발급측이 RS256 단독이라 수용할 레거시 토큰이 없다).
  *
  * <p>키 해석이 비동기(JWKS fetch)라 jjwt {@code keyLocator}(동기) 대신
  * <b>헤더 선파싱 → 키 해석(Mono) → 서명 검증</b> 순서로 처리한다. 선파싱한 헤더는 키 <i>선택</i>에만
@@ -75,7 +75,7 @@ public class GatewayJwtVerifier {
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
-            // exp 필수(GW-2 c1:1): jjwt 는 exp 가 *있을 때만* 만료를 검사한다. null 을 허용하면
+            // exp 필수: jjwt 는 exp 가 *있을 때만* 만료를 검사한다. null 을 허용하면
             // 서명만 유효한 무기한 토큰이 통과해 만료·로그아웃·회전이 무력화된다.
             if (claims.getExpiration() == null) {
                 return Mono.error(new InvalidTokenException(AuthFailureReason.MISSING_EXP, "exp 클레임 부재 — 무기한 토큰 거부"));

@@ -3,7 +3,7 @@ package com.peekcart.order.domain.repository;
 import java.util.Optional;
 
 /**
- * Order 로컬 가격 캐시 리포지터리 인터페이스 (CQRS ⑤, strangler-2).
+ * Order 로컬 가격 캐시 리포지터리 인터페이스 (ADR-0012 CQRS).
  */
 public interface ProductPriceCacheRepository {
 
@@ -11,7 +11,7 @@ public interface ProductPriceCacheRepository {
     Optional<Long> findUnitPrice(Long productId);
 
     /**
-     * 상품이 로컬 캐시에 존재하는지 검증한다 (장바구니 추가 검증용, strangler-4).
+     * 상품이 로컬 캐시에 존재하는지 검증한다 (장바구니 추가 검증용).
      * 캐시 존재 = product.updated 수신/seed 완료된 주문 가능 상품. 미수신이면 false.
      */
     boolean existsByProductId(Long productId);

@@ -11,7 +11,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
- * order-service 의 DLQ quarantine 경로 (계획 ④-c-2a P7).
+ * order-service 의 DLQ quarantine 경로.
  *
  * <p><b>왜 별도 listener 인가</b>: consumer group 헤더를 판독하지 못한 레코드는 소유자를 group 으로
  * 가릴 수 없다. 4서비스가 전부 저장하면 중복이고 전부 skip 하면 유실이라, 소유자를 하나로 못박아야 한다.

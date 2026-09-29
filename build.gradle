@@ -54,11 +54,10 @@ subprojects {
 	}
 }
 
-// ===== 루트 = 빌드/가드 aggregator (Payment peel PR-b — root app 해체, src 소멸) =====
-// 5개 서비스 풀 분해(ADR-0010 §5) 완료로 root 는 더 이상 Spring Boot app 이 아니다.
+// ===== 루트 = 빌드/가드 aggregator =====
+// root 는 Spring Boot app 이 아니다(ADR-0010 §5 서비스 분해).
 // root 는 (a) subprojects 공통 설정 (b) 가드 태스크만 호스팅한다.
-// 공유 Flyway 단일 실행 지점(flywayMigrateShared)은 DB-per-service(구현 ② PR2)로 소멸 —
-// 각 서비스가 자기 모듈 마이그레이션을 런타임 적용(flyway.enabled=true)한다.
+// DB-per-service: 각 서비스가 자기 모듈 마이그레이션을 런타임 적용(flyway.enabled=true)한다.
 // java 플러그인은 유지하되 src 가 없어 컴파일/테스트는 no-op, bootJar 는 비활성한다.
 bootJar {
 	enabled = false
@@ -68,7 +67,7 @@ jar {
 	enabled = false
 }
 
-// ===== [PR2a-2b/N7] 서비스 모듈 의존 위반 검출 (ADR-0011 §D3 · ADR-0014) =====
+// ===== 서비스 모듈 의존 위반 검출 (ADR-0011 §D3 · ADR-0014) =====
 // 각 *-service 모듈은 allowlist(:common/:peekcart-common-observability/:peekcart-common-auth/:peekcart-common-messaging/:internal-token-contract) 외
 // 프로젝트(특히 서비스↔서비스)를 의존하면 빌드 실패시킨다. testFixtures(project(':common')) 는 path=:common 으로 허용.
 tasks.register('assertNoServiceProjectDeps') {
@@ -97,14 +96,14 @@ tasks.register('assertNoServiceProjectDeps') {
 	}
 }
 
-// ===== [PR2a-2b/N8] 중복 FQCN / JwtProvider 잔존 검출 (게이트 i · ADR-0014) =====
+// ===== 중복 FQCN / JwtProvider 잔존 검출 (ADR-0014) =====
 // 부팅 가능한 앱(root, notification-service)의 classpath 구성 모듈에서 com/peekcart/global/** 동일 FQCN 이
 // 두 모듈에 중복 존재하면(classpath 우선순위로 sign/verify 오로딩 위험) 빌드 실패. JwtProvider 잔존도 금지.
 // (idempotency 복제는 root↔notification 이 서로 다른 앱이라 같은 classpath 에 공존하지 않음 → 위반 아님)
 tasks.register('assertNoDuplicateGlobalFqcn') {
 	group = 'verification'
 	description = '앱 classpath 내 com/peekcart/global/** 중복 FQCN + JwtProvider 잔존 검출 (게이트 i).'
-	// 동적 구성 — *-service 모듈을 자동 포함해 이후 peel(order/payment) 때 누락되지 않게 한다(Product peel: 가드 apps 맵 하드코딩 회귀 방지).
+	// 동적 구성 — *-service 모듈을 자동 포함해 새 서비스 모듈이 가드에서 누락되지 않게 한다.
 	def commonDeps = [':common', ':peekcart-common-auth', ':peekcart-common-observability', ':peekcart-common-messaging']
 	dependsOn(([':classes'] + commonDeps.collect { "${it}:classes" }))
 	dependsOn { subprojects.findAll { it.name.endsWith('-service') }.collect { "${it.path}:classes" } }
@@ -148,15 +147,14 @@ tasks.register('assertNoDuplicateGlobalFqcn') {
 	}
 }
 
-// ===== [strangler-4] Order↔Product production 동기 결합 금지 (ADR-0010 F2 · ADR-0012 ⑤) =====
+// ===== Order↔Product production 동기 결합 금지 (ADR-0010 F2 · ADR-0012 CQRS) =====
 // ProductPort 동기 seam 제거 후, Order 와 Product 도메인은 production 코드에서 서로의 패키지를 참조하면
 // 안 된다(이벤트/로컬 캐시로만 통신). src/main 만 스캔한다 — src/test 의 Order 통합테스트는 Product 타입을
 // 합법적으로 시드하므로(ProductPriceCacheSagaIntegrationTest 등) 가드 대상에서 제외한다. ArchUnit 등 새
 // 의존성 도입 없이 기존 source-scan 가드 패턴을 따른다.
 tasks.register('assertNoOrderProductSourceCoupling') {
 	group = 'verification'
-	description = 'src/main 의 order↔product 도메인 패키지 상호 참조를 빌드 실패로 검출한다 (strangler-4).'
-	// Product peel: product 도메인이 product-service 모듈로 이동 → product 스캔 경로를 모듈로 갱신.
+	description = 'src/main 의 order↔product 도메인 패키지 상호 참조를 빌드 실패로 검출한다.'
 	def checks = [
 			[dir: file('order-service/src/main/java/com/peekcart/order'),                   forbidden: 'com.peekcart.product', from: 'order'],
 			[dir: file('product-service/src/main/java/com/peekcart/product'), forbidden: 'com.peekcart.order',   from: 'product']
@@ -180,7 +178,7 @@ tasks.register('assertNoOrderProductSourceCoupling') {
 	}
 }
 
-// ===== [구현 ③ PR3a] gateway 의 servlet/:common 유입 금지 (ADR-0013 D3 · 계획 B6/보강 e) =====
+// ===== gateway 의 servlet/:common 유입 금지 (ADR-0013 D3 · PLAN-BLINDSPOTS B6) =====
 // gateway 는 WebFlux(reactive) 다. :common 이 spring-boot-starter-web(servlet MVC)·JPA·Kafka 를 `api` 로
 // 전이 노출하므로, gateway 가 :common 을 의존하면 servlet 스택이 유입돼 Boot 가 MVC 로 부팅한다.
 // project 의존(정적)과 실제 런타임 classpath(전이) 양쪽을 검사한다.
@@ -262,7 +260,7 @@ tasks.register('assertGatewayHasNoServletDeps') {
 		}
 		if (!violations.isEmpty()) {
 			throw new GradleException(
-					"gateway servlet 유입 위반 (WebFlux 전용이어야 함, 계획 B6):\n  " + violations.join('\n  '))
+					"gateway servlet 유입 위반 (WebFlux 전용이어야 함):\n  " + violations.join('\n  '))
 		}
 		println "assertGatewayHasNoServletDeps: OK (project 의존 allowlist=${allowedProjectDeps} 외 0 · 계약 모듈 무오염 · servlet 아티팩트 유입 없음)"
 	}
@@ -270,7 +268,7 @@ tasks.register('assertGatewayHasNoServletDeps') {
 
 tasks.register('assertNoOrderPaymentSourceCoupling') {
 	group = 'verification'
-	description = 'src/main 의 order↔payment 도메인 패키지 상호 참조를 빌드 실패로 검출한다 (Order/Payment peel 선행 strangler).'
+	description = 'src/main 의 order↔payment 도메인 패키지 상호 참조를 빌드 실패로 검출한다.'
 	def checks = [
 			[dir: file('order-service/src/main/java/com/peekcart/order'),   forbidden: 'com.peekcart.payment', from: 'order'],
 			[dir: file('payment-service/src/main/java/com/peekcart/payment'), forbidden: 'com.peekcart.order',   from: 'payment']

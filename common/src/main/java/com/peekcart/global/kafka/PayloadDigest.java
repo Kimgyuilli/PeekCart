@@ -6,7 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 /**
- * replay 대조 축 9 의 payload digest (ADR-0021 §D2, 계획 ④-c-2b-3b P15-b).
+ * replay 대조 축 9 의 payload digest (ADR-0021 §D2).
  *
  * <p><b>절단 전 전문</b>의 SHA-256 hex 다. 원장의 {@code payload} 컬럼은 {@code maxLength} 로 잘려
  * 저장되므로 그 값으로 대조하면 <b>상한 밖 변조를 통과</b>시킨다 — "byte-for-byte 동일"(ADR-0020 §D8-3)을

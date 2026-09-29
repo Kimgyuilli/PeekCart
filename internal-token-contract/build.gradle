@@ -1,7 +1,7 @@
-// internal-token-contract — Gateway 서명 내부 토큰의 이름 계약 (ADR-0017 D1/D3 · 구현 ③ PR3d-a)
+// internal-token-contract — Gateway 서명 내부 토큰의 이름 계약 (ADR-0017 D1/D3)
 //
-// 발행(gateway, WebFlux)과 검증(peekcart-common-auth, servlet MVC)이 서로를 의존할 수 없다(B6).
-// 양쪽에 리터럴을 따로 두면 그 자체가 drift 원천이므로(계획 loop3 #7), issuer 이름·claim 이름·헤더 이름을
+// 발행(gateway, WebFlux)과 검증(peekcart-common-auth, servlet MVC)이 서로를 의존할 수 없다.
+// 양쪽에 리터럴을 따로 두면 그 자체가 drift 원천이므로, issuer 이름·claim 이름·헤더 이름을
 // **이 모듈에서 한 번만** 정의하고 양쪽이 컴파일 의존으로 참조한다.
 //
 // 제약: Spring/servlet/reactor 를 일절 의존하지 않는다(순수 Java). gateway 가 이 모듈을 의존해도

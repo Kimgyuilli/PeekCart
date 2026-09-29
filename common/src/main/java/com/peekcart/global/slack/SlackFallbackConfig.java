@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Slack no-op fallback (ADR-0014 전환기 · PR3b GP-2 loop2/loop3).
+ * Slack no-op fallback (ADR-0014 전환기).
  *
  * <p>{@link SlackNotificationClient} 는 {@code @ConditionalOnProperty(slack.webhook.url)} 라
  * webhook 미설정 서비스에서는 빈이 없다. 그런데 product/order/payment 는 {@code SlackPort} 를
@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
  * 비핵심이라 {@code slack.noop-fallback.enabled=true} 로 본 no-op 빈을 켜 부팅을 보장한다.
  *
  * <p><b>notification 은 fallback 을 켜지 않는다</b> — webhook 누락 시 빈 부재로 부팅 실패(fail-fast)
- * 해야 알림이 조용히 유실되지 않는다(loop2 #2). real({@code slack.webhook.url}) 과
+ * 해야 알림이 조용히 유실되지 않는다. real({@code slack.webhook.url}) 과
  * no-op({@code slack.noop-fallback.enabled}) 은 두 property gate 로 상호배타이며,
  * {@code @ConditionalOnMissingBean} 으로 실 빈(또는 테스트 제공 빈)이 있으면 등록되지 않는다.
  */

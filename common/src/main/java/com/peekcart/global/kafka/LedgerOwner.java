@@ -3,7 +3,7 @@ package com.peekcart.global.kafka;
 import java.util.Objects;
 
 /**
- * 이 프로세스가 소유한 DLQ 원장의 주인 (계획 ④-c-2b-3b P15-f, ADR-0021 §D1 축 2).
+ * 이 프로세스가 소유한 DLQ 원장의 주인 (ADR-0021 §D1 축 2).
  *
  * <p><b>왜 빈 주입인가.</b> {@code DeadLetterRecorder} 는 4서비스가 <b>byte 동일한 복제본</b>이라
  * {@link PeekcartService} 를 하드코딩할 수 없다. 그렇다고 {@code record(DlqOrigin, PeekcartService)} 로
@@ -17,7 +17,7 @@ import java.util.Objects;
  *
  * <p>서비스별 {@code LedgerOwnerConfig} 가 빈으로 제공한다. 그 config 는 서비스마다 값이 달라
  * {@code DLQ-PARITY-014}(4벌 byte 동일 검사)에 걸리지 않으므로, <b>배선 자체는 서비스별 context
- * 테스트가 대조한다</b>(P15-f 주석).
+ * 테스트가 대조한다</b>.
  *
  * @param service 이 프로세스가 원장을 소유하는 서비스
  */
@@ -30,7 +30,7 @@ public record LedgerOwner(PeekcartService service) {
     /**
      * replay 헤더 {@code pc-replay-ledger-owner} 와 대조할 값.
      *
-     * <p>헤더에는 {@link PeekcartService#prefix()} 가 실린다(④-c-2b-3a P14-c).
+     * <p>헤더에는 {@link PeekcartService#prefix()} 가 실린다.
      */
     public String prefix() {
         return service.prefix();

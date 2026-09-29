@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * {@code payment.completed} 를 소비하여 예약을 확정(commit)하는 Consumer (ADR-0012 ④, strangler-3).
+ * {@code payment.completed} 를 소비하여 예약을 확정(commit)하는 Consumer (ADR-0012 D3 ④).
  * 확정 권한은 예약 원장의 {@code RESERVED → CONFIRMED} 원자 CAS 로 부여되며, commit-실패(결제됐으나
  * 재고 미확정) 는 보상 경로로 수렴한다. release(복구) 와 의미를 분리하기 위해 별도 consumer 로 둔다.
  */

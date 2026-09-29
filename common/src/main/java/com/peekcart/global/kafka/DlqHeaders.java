@@ -9,23 +9,23 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 /**
- * DLQ 레코드에서 {@link DlqOrigin} 을 뽑는다 (계획 ④-c-2a P1).
+ * DLQ 레코드에서 {@link DlqOrigin} 을 뽑는다.
  *
- * <p><b>커스텀 헤더를 만들지 않는다.</b> 계획 초안은 "consumer group 헤더가 없으니 직접 주입해야 한다"고
- * 판단했으나 틀렸다 — {@code spring-kafka-3.3.14} 의 {@code DeadLetterPublishingRecoverer} 는
+ * <p><b>커스텀 헤더를 만들지 않는다.</b> consumer group 헤더도 직접 주입할 필요가
+ * 없다 — {@code spring-kafka-3.3.14} 의 {@code DeadLetterPublishingRecoverer} 는
  * {@code whichHeaders = EnumSet.allOf(HeadersToAdd.class)} 가 기본값이라 {@code GROUP} 을 포함해
- * 전 헤더를 붙이며, 값은 {@code ListenerExecutionFailedException#getGroupId()} 에서 온다(§2.3).
+ * 전 헤더를 붙이며, 값은 {@code ListenerExecutionFailedException#getGroupId()} 에서 온다.
  *
  * <p><b>입력이 {@link Headers} 가 아니라 {@link ConsumerRecord} 인 이유</b>: 원본 key 를 담는
  * {@code DLT_ORIGINAL_KEY} 헤더는 <b>존재하지 않는다</b>({@code DLT_*} 13개 중 없음.
  * {@code DLT_KEY_EXCEPTION_*} 는 key 역직렬화 예외 정보다). 원본 key 는 recoverer 가 만든
- * DLQ 레코드 자신의 key 로 보존되므로 {@code record.key()} 에서 읽어야 한다(§2.4).
+ * DLQ 레코드 자신의 key 로 보존되므로 {@code record.key()} 에서 읽어야 한다.
  *
  * <p>헤더 인코딩은 recoverer 구현과 맞춘다 — topic·group 은 UTF-8, partition 은 4바이트 int,
  * offset·timestamp 는 8바이트 long (big-endian).
  *
  * <p><b>표준 {@code DLT_*} 와 {@link ReplayHeaders} allowlist 4종만 판독하고, 그 밖의 application 헤더는
- * 제외한다</b>(④-c-2b-3a P14-c). 제외 목록을 관리하지 않아도 되도록 <b>읽을 키를 명시</b>하는 구조다 —
+ * 제외한다</b>. 제외 목록을 관리하지 않아도 되도록 <b>읽을 키를 명시</b>하는 구조다 —
  * {@code X-User-Id} 같은 헤더는 애초에 {@link DlqOrigin} 에 들어오지 않는다.
  *
  * <p><b>replay 헤더가 재실패 시에도 살아남는 근거</b>: {@code spring-kafka-3.3.14} 의
@@ -43,7 +43,7 @@ public final class DlqHeaders {
      *
      * <p>origin 헤더 3종(topic·partition·offset)을 전부 판독하면 {@link DlqOriginKind#RESOLVED_ORIGIN},
      * 하나라도 없거나 깨졌으면 DLQ 레코드 자신의 좌표를 쓰는 {@link DlqOriginKind#DLQ_ORIGIN} 이 된다.
-     * <b>예외를 던지지 않는다</b> — 판독 실패는 적재 대상이지 유실 사유가 아니다(§2.6-C).
+     * <b>예외를 던지지 않는다</b> — 판독 실패는 적재 대상이지 유실 사유가 아니다.
      */
     public static DlqOrigin parse(ConsumerRecord<String, String> record) {
         Headers headers = record.headers();
@@ -83,7 +83,7 @@ public final class DlqHeaders {
      *
      * <p>이 값은 <b>조작 가능한 외부 입력</b>이다. 숫자가 아닌 값에 예외를 던지면 <b>DLQ 적재 자체가 막혀
      * 실패 사실이 유실</b>된다 — 누구든 헤더 하나로 원장 적재를 무력화할 수 있게 된다.
-     * 판독 실패는 "상관하지 않음" 이지 "적재하지 않음" 이 아니다(§2.6-C).
+     * 판독 실패는 "상관하지 않음" 이지 "적재하지 않음" 이 아니다.
      *
      * <p>UTF-8 문자열로 읽는 이유는 발행 측이 그렇게 싣기 때문이다 —
      * {@code OutboxPollingService} 는 {@code replay_headers} JSON 의 값을 UTF-8 로만 인코딩한다.

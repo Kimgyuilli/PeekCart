@@ -11,7 +11,7 @@ import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 
 /**
- * DLQ 전용 Kafka 배선 (계획 ④-c-2a P6·P8).
+ * DLQ 전용 Kafka 배선.
  *
  * <p><b>기본 factory 를 쓰면 안 되는 이유</b>: 기본 {@code kafkaListenerContainerFactory} 는
  * {@code kafkaErrorHandler} 를 물고 있어 DLQ listener 가 실패하면 {@code topic.dlq.dlq} 로
@@ -31,7 +31,7 @@ public class DeadLetterKafkaConfig {
      * DLQ listener 전용 error handler.
      *
      * <p>재시도는 유한하다(1s → 5s → 30s). 소진되면 컨테이너를 정지하고 사람을 부른다 —
-     * DB 장애를 무한 재시도로 덮으면 로그만 쌓이고, 커밋하면 유실된다(§2.6-C).
+     * DB 장애를 무한 재시도로 덮으면 로그만 쌓이고, 커밋하면 유실된다.
      */
     @Bean
     public CommonErrorHandler deadLetterErrorHandler() {

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * {@code product.updated} 를 소비하여 Order 로컬 가격 캐시를 갱신하는 Consumer (CQRS ⑤, strangler-2).
+ * {@code product.updated} 를 소비하여 Order 로컬 가격 캐시를 갱신하는 Consumer (ADR-0012 CQRS).
  * <p>
  * 멱등: {@code processed_events} 로 중복 이벤트를 1회만 적용한다.
  * 순서: 파티션 키=productId 로 정상 경로는 per-partition in-order 이며, replay/재정렬은
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Order 는 payload 중 {@code price}/{@code version} 만 소비한다(나머지 필드 무시).
  * <p>
  * {@code processed_events} retention 은 {@code product.updated} topic retention·DLQ replay 창
- * 이상이어야 한다(ADR-0012 D5/§80-84) — 공유 retention 정책을 따른다.
+ * 이상이어야 한다(ADR-0012 D5) — 공유 retention 정책을 따른다.
  */
 @Slf4j
 @Component

@@ -11,21 +11,20 @@ import reactor.core.publisher.Mono;
 import java.net.InetSocketAddress;
 
 /**
- * RequestRateLimiter 의 route-class 별 키 해석기 (ADR-0013 D3 · 계획 P13).
+ * RequestRateLimiter 의 route-class 별 키 해석기 (ADR-0013 D3).
  *
  * <ul>
  *   <li><b>인증 후</b> — {@link #userKeyResolver()}: 인증 필터가 검증 후 exchange attribute 에 넣은
  *       userId <b>만</b> 사용한다. 요청 헤더의 {@code X-User-Id} 를 직접 읽으면 위조 값으로 버킷을
- *       무한 생성할 수 있다(GW-2 c2:1/c3:2).</li>
+ *       무한 생성할 수 있다.</li>
  *   <li><b>인증 전</b>(signup/login/refresh) — {@link #preAuthKeyResolver()}: <b>IP</b> 기준.</li>
  *   <li><b>공개 조회</b> — {@link #ipKeyResolver()}: IP 기준.</li>
  * </ul>
  *
- * <p><b>계정 차원 제한은 후속</b>(GW-2 c3:3 축소 반영): 계획 P13 의 "IP+계정" 중 계정 성분은 login/signup
+ * <p><b>계정 차원 제한은 없다</b>: 계정 성분은 login/signup
  * 이 email 을 JSON 본문으로 받기 때문에 gateway 가 body-caching decorator 를 도입해야 얻을 수 있다.
- * 이전 구현은 {@code ?email} 쿼리를 읽었는데, 실제 인증 대상과 무관해 공격자가 쿼리만 바꿔 버킷을
- * 회피할 수 있었다(있으나 마나 한 성분이라 제거). 지금은 <b>IP 단독</b>으로 좁히고, 계정 차원 제한은
- * 계획서에 후속 항목으로 남긴다.
+ * {@code ?email} 쿼리는 실제 인증 대상과 무관해 공격자가 쿼리만 바꿔 버킷을 회피할 수 있으므로
+ * 쓰지 않는다. 키는 <b>IP 단독</b>이다.
  */
 @Configuration
 public class RateLimiterConfig {

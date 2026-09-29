@@ -39,7 +39,7 @@ public class Product extends BaseTimeEntity {
     @Column(nullable = false)
     private ProductStatus status;
 
-    /** 변경 순서 판정용 낙관락 버전 (strangler-2: product.updated 캐시 stale-skip 기준). */
+    /** 변경 순서 판정용 낙관락 버전 (product.updated 캐시 stale-skip 기준). */
     @Version
     private Long version;
 

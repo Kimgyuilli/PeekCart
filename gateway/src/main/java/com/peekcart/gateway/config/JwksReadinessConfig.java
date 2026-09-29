@@ -17,13 +17,13 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 
 /**
- * JWKS readiness 게이팅 + 주기 갱신 (계획 P12 · P18 PR3a 진입 조건).
+ * JWKS readiness 게이팅 + 주기 갱신.
  *
  * <p><b>cold start 계약</b>: usable key 가 0 이면 트래픽을 받지 않는다. {@link ReadinessState} 로
  * 표현해 {@code /actuator/health/readiness} 에만 반영한다 — {@code HealthIndicator} 로 DOWN 을 내면
  * 루트 {@code /actuator/health} 까지 503 이 되어, 프로세스는 살아 있는데 이미지 기동 검증이 실패한다.
  *
- * <p><b>초기화 순서</b>(GW-2 c1:2): Spring Boot 는 {@link ApplicationReadyEvent} 에서 스스로
+ * <p><b>초기화 순서</b>: Spring Boot 는 {@link ApplicationReadyEvent} 에서 스스로
  * {@code ACCEPTING_TRAFFIC} 을 게시한다. 따라서 그 <b>이후에</b> 판정해야 한다 — 먼저 게시하면
  * Boot 의 ACCEPTING 이 우리 REFUSING 을 덮어써, 키가 0개인데 최대 한 갱신 주기 동안 ready 로 남는다.
  * 이 리스너는 {@link Ordered#LOWEST_PRECEDENCE} 로 가장 마지막에 실행되며, 최초 JWKS 적재를 한 번
@@ -60,10 +60,10 @@ public class JwksReadinessConfig {
 
         /**
          * 주기 갱신 + readiness 재평가. 갱신에 실패해도 last-known-good 을 유지하므로,
-         * 한 번이라도 키를 확보했다면 계속 ACCEPTING_TRAFFIC 이다(P12 LKG).
+         * 한 번이라도 키를 확보했다면 계속 ACCEPTING_TRAFFIC 이다(LKG).
          */
         // [SCHED-LOCK exempt] 인스턴스별 스냅샷 갱신이라 ShedLock 을 걸면 안 된다 — 한 파드만 갱신하고
-        // 나머지는 낡은 JWKS 를 서빙하게 되며, 그것이 회전 중 부분 401 장애의 형태다(runbook §1.1).
+        // 나머지는 낡은 JWKS 를 서빙하게 되며, 그것이 회전 중 부분 401 장애의 형태다(docs/runbooks/user-jwt-key-rotation.md 1.1).
         @Scheduled(
                 initialDelayString = "${app.gateway.jwt.jwks-refresh-interval:PT5M}",
                 fixedDelayString = "${app.gateway.jwt.jwks-refresh-interval:PT5M}")

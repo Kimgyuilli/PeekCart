@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * DLQ 원장 운영 계약 (계획 ④-c-2a P5·P10).
+ * DLQ 원장 운영 계약.
  *
  * <p><b>왜 {@code clusterId} 와 {@code topicGeneration} 이 설정값인가</b>: 원장의 물리 식별자
  * {@code (topic, partition, offset, group)} 은 토픽 재생성 시 유일하지 않다 — 동명 재생성이면
@@ -43,7 +43,7 @@ public class DeadLetterProperties {
     private String clusterId;
 
     /**
-     * 토픽별 프로비저닝 세대. 토픽을 삭제·재생성하면 <b>배포 전에</b> 값을 올린다(runbook §generation bump).
+     * 토픽별 프로비저닝 세대. 토픽을 삭제·재생성하면 <b>배포 전에</b> 값을 올린다({@code docs/runbooks/dlq-recovery.md} 의 "generation bump").
      * 키는 {@code .dlq} 가 아니라 <b>원본 토픽</b> 이름이다.
      */
     @NotNull
@@ -122,7 +122,7 @@ public class DeadLetterProperties {
     }
 
     /**
-     * 발행 축 reconciler (ADR-0020 §D6-4 · 구현 ④-c-2b-2 P12).
+     * 발행 축 reconciler (ADR-0020 §D6-4).
      * {@code publication_status} 를 전이시키는 <b>유일한 주체</b>이며, 관리 API 는 {@code REQUESTED} 까지만 만든다.
      */
     @Getter
@@ -133,14 +133,14 @@ public class DeadLetterProperties {
     }
 
     /**
-     * replay 개시 (ADR-0020 §D5 · 구현 ④-c-2b-4a P21·P24).
+     * replay 개시 (ADR-0020 §D5).
      *
-     * <p><b>기본값이 {@code false} 인 것이 계약이다</b>(계획 리뷰 1R #6). 기본 {@code true} 면 새 Pod 가
+     * <p><b>기본값이 {@code false} 인 것이 계약이다</b>. 기본 {@code true} 면 새 Pod 가
      * Ready 가 되는 순간 backfill·증적·리허설 이전에 replay API 가 열리고, 그것을 다시 닫는 데
      * <b>롤링 재기동이 또 든다</b>(Spring 정적 설정이라 ConfigMap 갱신만으로는 반영되지 않는다).
      * 닫힌 채로 배포하고 준비가 끝난 뒤 <b>의도적으로 여는</b> 방향이 되돌리기 비용이 낮다.
      *
-     * <p>drain·롤백 계약(④-c-2b-4b)이 서기 전까지는 운영에서 열지 않는다.
+     * <p>운영에서 여는 절차는 drain·롤백 계약(ADR-0022)을 따른다.
      */
     @Getter
     @Setter

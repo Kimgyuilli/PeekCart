@@ -12,7 +12,7 @@ import java.util.List;
  * @param items                예약 대상 품목
  * @param reason               실패 사유 (예: {@code OUT_OF_STOCK}, {@code CANCELLED}). 성공 시 null
  * @param decidedAt            결정 시각
- * @param reservationExpiresAt 예약 lease 만료 시각 (계획 P4). Product 가 부여하는 단일 출처로, Order 는 이 시각에
+ * @param reservationExpiresAt 예약 lease 만료 시각. Product 가 부여하는 단일 출처로, Order 는 이 시각에
  *                             자기 주문을 취소하고 Payment 는 이후 승인을 거부한다. 실패 시 null.
  *                             하위호환 필드 추가(ADR-0012 D2) — 구 메시지에는 부재하며 소비자는 null 로 취급한다
  */

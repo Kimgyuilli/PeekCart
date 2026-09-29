@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 /**
- * payment 원장의 replay 사전조건 (구현 ④-c-2b-4a P19 · 계획 리뷰 2R #3 · 3R #4).
+ * payment 원장의 replay 사전조건.
  *
  * <p><b>order 판정을 재사용할 수 없다</b> — DB-per-service 라 payment 는 Order 상태를 볼 수 없고,
  * 소비 경로도 다르다({@code Payment#markReadyForPayment}). 그래서 정책 키가
@@ -46,7 +46,7 @@ public class PaymentReplayPrecondition implements ReplayPreconditionPort {
 
         JsonNode orderIdNode = body.get("orderId");
         JsonNode reservedNode = body.get("reserved");
-        // **isIntegralNumber 가 필요하다** (diff 리뷰 1R #2): `canConvertToLong()` 만 쓰면 `1.5` 같은
+        // **isIntegralNumber 가 필요하다**: `canConvertToLong()` 만 쓰면 `1.5` 같은
         // DecimalNode 도 통과하고 `asLong()` 이 1 로 절삭해 **엉뚱한 aggregate 를 조회**한다.
         if (orderIdNode == null || !orderIdNode.isIntegralNumber() || !orderIdNode.canConvertToLong()
                 || reservedNode == null || !reservedNode.isBoolean()) {

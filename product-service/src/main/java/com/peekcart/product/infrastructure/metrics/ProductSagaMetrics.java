@@ -7,7 +7,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 
 /**
- * product-service 의 saga 경로 메트릭 (계획 ④-d-1 P1 · 부모 P11).
+ * product-service 의 saga 경로 메트릭.
  *
  * <p><b>실제 전이가 일어났을 때만 올린다.</b> 예약·복구·확정·보상은 전부 멱등 경로를 갖는다 —
  * CAS 패자, 중복 marker, double-release 는 정상 no-op 이다. 그때도 올리면 메트릭이 실제 사건 수를

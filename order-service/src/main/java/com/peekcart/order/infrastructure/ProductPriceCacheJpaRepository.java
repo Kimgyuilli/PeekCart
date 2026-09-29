@@ -20,7 +20,7 @@ public interface ProductPriceCacheJpaRepository extends JpaRepository<ProductPri
     /**
      * 원자 upsert (stale-skip). 신규면 INSERT, 기존이면 더 높은 {@code version} 일 때만 갱신한다.
      * 단일 DB 문장이라 동시 삽입/갱신 경합에서도 PK 행 락으로 "더 높은 version 만 적용" 을 보장한다
-     * (two-step update→insert 의 catch-밖 commit 위반 문제 회피, GW-2 #1).
+     * (two-step update→insert 는 catch 밖 commit 위반이 생겨 쓰지 않는다).
      */
     @Modifying(clearAutomatically = true)
     @Query(value = "INSERT INTO product_price_cache (product_id, unit_price, source_version, updated_at) "

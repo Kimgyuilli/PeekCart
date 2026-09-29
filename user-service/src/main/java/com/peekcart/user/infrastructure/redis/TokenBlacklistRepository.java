@@ -13,11 +13,10 @@ import java.util.concurrent.TimeUnit;
  * Redis 기반 토큰 블랙리스트 + family deny write 저장소 (write owner — ADR-0014 D1-c · ADR-0013 D4).
  * 로그아웃된 액세스 토큰을 블랙리스트에 등록하고, reuse 감지 시 family 를 deny 목록에 등록한다.
  *
- * <p><b>U5 namespace</b>: 블랙리스트 신키 = {@code auth:blacklist:<sha256hex(token)>}
- * (원문 대신 해시 저장 — ADR-0014 "토큰 원문 금지" 충족). read(common-auth)는 전환기 dual-read 로
- * legacy {@code bl:<token>} 도 TTL 동안 함께 조회한다.
+ * <p><b>namespace</b>: 블랙리스트 신키 = {@code auth:blacklist:<sha256hex(token)>}
+ * (원문 대신 해시 저장 — ADR-0014 "토큰 원문 금지" 충족). read 는 Gateway 가 같은 키로 한다.
  * <p><b>family deny</b>: 키 = {@code auth:deny:family:<familyId>}. value 는 감지 시각(디버깅용,
- * 판정은 키 존재로). read(common-auth/Gateway)가 같은 계약으로 조회한다.
+ * 판정은 키 존재로). read(Gateway)가 같은 계약으로 조회한다.
  */
 @Repository
 @RequiredArgsConstructor
@@ -31,7 +30,7 @@ public class TokenBlacklistRepository implements TokenBlacklistPort {
     /**
      * 액세스 토큰을 블랙리스트에 등록한다. 신키(해시)로만 기록한다. TTL은 토큰 잔여 유효 기간으로 설정한다.
      *
-     * <p><b>현재 호출자 없음</b>(PR4 확인): header-trust 전환(ADR-0013 D3) 이후 로그아웃은 개별 토큰이
+     * <p><b>현재 호출자 없음</b>: header-trust 전환(ADR-0013 D3) 이후 로그아웃은 개별 토큰이
      * 아니라 family deny 로 차단한다 — 리소스 서비스가 raw access token 을 보유하지 않기 때문이다.
      * 그래도 남겨두는 이유는 <b>읽는 쪽이 살아 있기</b> 때문이다: Gateway 의 {@code TokenDenyLookup} 이
      * 같은 키({@code auth:blacklist:<sha256hex>})를 조회한다(ADR-0014 D1-c). write 만 지우면 계약의

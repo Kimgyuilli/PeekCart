@@ -1,4 +1,4 @@
-// notification-service — 첫 서비스 peel (ADR-0011 §D1 · ADR-0014 · PR2a-2b)
+// notification-service (ADR-0011 §D1 · ADR-0014)
 // bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth / :peekcart-common-messaging 에서만 가져온다.
 // 서비스↔서비스 project() 의존 금지 (assertNoServiceProjectDeps 로 강제).
 
@@ -25,8 +25,8 @@ dependencies {
     // Redis — blacklist read adapter(common-auth) 런타임 + 서비스 자체 사용
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
-    // Bean Validation 런타임 — retention floor fail-fast(@Validated @ConfigurationProperties, 구현 ② PR3).
-    // web validation 미사용이라 미보유였음 → 추가. 구현 ④-c-2b-2 P9 이후 outbox retention 도 같은 경로로 검증된다.
+    // Bean Validation 런타임 — retention floor fail-fast(@Validated @ConfigurationProperties).
+    // web validation 은 쓰지 않지만 idempotency·outbox retention 설정 검증에 필요하다.
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     // Micrometer Prometheus registry (observability 는 micrometer-core 만 api 노출)
@@ -38,7 +38,7 @@ dependencies {
     // MySQL
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // Flyway — 런타임 disabled(서비스), 공유 V1~V4 는 root flywayMigrateShared / 테스트 fixture 에서 적용
+    // Flyway — 자기 모듈 마이그레이션을 런타임 적용한다(DB-per-service, flyway.enabled=true)
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
 

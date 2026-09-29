@@ -16,7 +16,7 @@ public interface OrderJpaRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByIdAndUserId(Long id, Long userId);
 
     /**
-     * replay 적격성 판정용 <b>비관적 잠금</b> 조회 (④-c-2b-4a P19 · 계획 리뷰 3R #6).
+     * replay 적격성 판정용 <b>비관적 잠금</b> 조회.
      *
      * <p>잠그지 않으면 판정과 claim 사이에 주문 상태가 바뀐다 — {@code PENDING} 이라 allow 된 직후
      * 취소가 커밋되면 정책이 막으려던 재적용이 그대로 일어난다.

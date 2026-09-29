@@ -1,8 +1,7 @@
-// product-service — Product peel (ADR-0011 §D1 · ADR-0014 · ADR-0010 F2 · ADR-0012)
+// product-service (ADR-0011 §D1 · ADR-0014 · ADR-0010 F2 · ADR-0012)
 // bootJar 산출 + 독립 부팅. 공통은 :common / :peekcart-common-observability / :peekcart-common-auth / :peekcart-common-messaging 에서만 가져온다.
 // 서비스↔서비스 project() 의존 금지 (assertNoServiceProjectDeps 로 강제).
-// Product = 첫 *발행* 서비스 peel — outbox 실행 세트 + idempotency + ShedLockConfig 는 :peekcart-common-messaging 공유(ADR-0033).
-// 공유 DB 전환기: root·product 두 poller 가 같은 outbox_events 를 보므로 aggregateType allowlist + ShedLock 이름으로 소유권 분리(app yml).
+// Product = 발행 서비스 — outbox 실행 세트 + idempotency + ShedLockConfig 는 :peekcart-common-messaging 공유(ADR-0033).
 
 plugins {
     id 'java'
@@ -24,10 +23,10 @@ dependencies {
     implementation project(':peekcart-common-auth')          // security(api) + JWT 검증 primitives(JwtFilter/verify/LoginUser)
     implementation project(':peekcart-common-messaging')     // outbox·idempotency·DLQ 원장 실행 세트 + ShedLockConfig (ADR-0033)
 
-    // Bean Validation — @Valid 요청 검증 (web starter 는 Boot 3 에서 validation 미포함, B6 선례)
+    // Bean Validation — @Valid 요청 검증 (web starter 는 Boot 3 에서 validation 미포함)
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-    // Cache — @EnableCaching/@Cacheable(product/products) RedisCacheManager (CacheConfig 이관)
+    // Cache — @EnableCaching/@Cacheable(product/products) RedisCacheManager (CacheConfig)
     implementation 'org.springframework.boot:spring-boot-starter-cache'
 
     // Redis — @Cacheable RedisCacheManager + blacklist read adapter(common-auth) 런타임
@@ -46,7 +45,7 @@ dependencies {
     // MySQL
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // Flyway — 런타임 disabled(서비스), 공유 V1~V9 는 root flywayMigrateShared / 테스트 fixture 에서 적용
+    // Flyway — 자기 모듈 마이그레이션을 런타임 적용한다(DB-per-service, flyway.enabled=true)
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
 

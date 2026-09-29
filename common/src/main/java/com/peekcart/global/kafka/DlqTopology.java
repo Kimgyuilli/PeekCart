@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * DLQ 소유권의 <b>단일 출처</b> (계획 ④-c-2a P2 · §4 매트릭스의 코드 표현).
+ * DLQ 소유권의 <b>단일 출처</b>.
  *
  * <p>DLQ 토픽은 <b>공유</b>다 — 한 원본 토픽을 여러 서비스가 각자의 group 으로 소비하고,
  * 실패는 전부 같은 {@code <topic>.dlq} 로 간다. 예를 들어 {@code payment.completed} 는
@@ -32,7 +32,7 @@ public final class DlqTopology {
     public static final String DLQ_SUFFIX = ".dlq";
 
     // ------------------------------------------------------------------
-    // DLQ listener 자신의 group (계획 P5).
+    // DLQ listener 자신의 group.
     //
     // 위 CONSUMPTION 의 group 은 **실패한 업무 consumer** 의 group 이지 DLQ listener 의 group 이
     // 아니다. 둘을 섞으면 readiness 가 order-svc-dlq-group 계열을 통째로 놓친다.
@@ -126,7 +126,7 @@ public final class DlqTopology {
     }
 
     /**
-     * 이 서비스가 <b>업무 토픽</b>을 소비하는 (originTopic, group) 집합 (계획 P5 readiness).
+     * 이 서비스가 <b>업무 토픽</b>을 소비하는 (originTopic, group) 집합 (readiness 판정용).
      *
      * <p>{@link #consumptionSubscriptions} 에서 <b>유도</b>한다 — 같은 21쌍을 별도 상수로 복제하면
      * 정본이 둘이 되고, 양쪽을 함께 잘못 고치면 각자의 자기대조가 모두 통과한다.

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 재고 예약/복구 choreography 오케스트레이션 (ADR-0012 D3, strangler-1).
+ * 재고 예약/복구 choreography 오케스트레이션 (ADR-0012 D3).
  * 호출자(consumer)의 {@code @Transactional} + 멱등 컨텍스트 안에서 실행되어
  * 차감/원장/발행의 원자성을 보장한다.
  */
@@ -90,14 +90,14 @@ public class StockReservationService {
                 StockReservation.reserved(orderId, toJson(items), sourceEventId, leaseProperties.getTtl());
         reservationRepository.save(reservation);
         // lease 만료 시각을 결과와 함께 공유한다 — Order 는 이 시각으로 자기 주문을 먼저 취소하고,
-        // Payment 는 만료 후 승인을 거부한다(계획 P4).
+        // Payment 는 만료 후 승인을 거부한다.
         publisher.publishStockReservationResult(orderId, true, items, null, reservation.getExpiresAt());
         sagaMetrics.reservationSucceeded();
         log.debug("재고 예약 성공 — orderId={}, lease 만료={}", orderId, reservation.getExpiresAt());
     }
 
     /**
-     * lease 가 만료된 예약을 회수한다 (계획 P4 sweeper — <b>안전망</b>).
+     * lease 가 만료된 예약을 회수한다 (sweeper — <b>안전망</b>).
      *
      * <p>정상 경로에서 재고를 되돌리는 주체는 Order 의 취소({@code order.cancelled} → release) 이므로
      * 이 잡의 회수 건수는 <b>0 이어야 정상</b>이다. 0 이 아니라는 것은 취소 이벤트 경로가 유실됐다는 뜻이라
@@ -129,8 +129,8 @@ public class StockReservationService {
 
     /**
      * order.cancelled / payment.failed 수신 시 예약 재고를 복구한다.
-     * 복구 권한은 {@code RESERVED → RELEASED} 원자 CAS 1건 성공일 때만 (double-release 방지, P1#2).
-     * 예약(order.created) 도착 전이면 {@code CANCEL_REQUESTED} tombstone 을 남겨 이후 예약이 차감하지 않게 한다(P0#1).
+     * 복구 권한은 {@code RESERVED → RELEASED} 원자 CAS 1건 성공일 때만 (double-release 방지).
+     * 예약(order.created) 도착 전이면 {@code CANCEL_REQUESTED} tombstone 을 남겨 이후 예약이 차감하지 않게 한다.
      */
     public void release(Long orderId) {
         if (tryReleaseReserved(orderId)) {
@@ -153,7 +153,7 @@ public class StockReservationService {
     }
 
     /**
-     * payment.completed 수신 시 예약을 확정(commit)한다 (ADR-0012 ④, strangler-3).
+     * payment.completed 수신 시 예약을 확정(commit)한다 (ADR-0012 D3 ④).
      * <ul>
      *   <li>{@code RESERVED → CONFIRMED} 원자 CAS 1건 성공 → 확정. 이후 release 는 CONFIRMED 라 자연 no-op(판매분 보호)</li>
      *   <li>CAS 0건 + 원장 CONFIRMED → 중복 payment.completed 멱등 no-op</li>
@@ -195,11 +195,11 @@ public class StockReservationService {
     }
 
     /**
-     * commit-실패(PAID_BUT_UNRESERVED) 보상 (ADR-0012 ④ → ADR-0018 D1). {@code orderId} 기준
+     * commit-실패(PAID_BUT_UNRESERVED) 보상 (ADR-0012 D3 ④ → ADR-0018 D1). {@code orderId} 기준
      * 1회성 marker 로 멱등을 보장해 <b>상류 재발행(새 eventId)</b> 으로 confirm 이 재실행돼도 요청이
      * 중복 발행되지 않는다.
      *
-     * <p><b>"DLQ 재발행" 이 아니다</b>(④-c-2b-4b 정정): DLQ replay 는 원본 payload 를 <b>byte 그대로</b>
+     * <p><b>"DLQ 재발행" 이 아니다</b>: DLQ replay 는 원본 payload 를 <b>byte 그대로</b>
      * 다시 싣는다(ADR-0020 §D8-3) — {@code eventId} 가 보존되므로 {@code processed_events} 멱등에 그대로
      * 걸린다. 새 {@code eventId} 가 부여되는 것은 <b>ADR-0012 D5 가 허용한 상류 재발행 우회 경로</b>이고,
      * 이 marker 가 막는 것은 그쪽이다.

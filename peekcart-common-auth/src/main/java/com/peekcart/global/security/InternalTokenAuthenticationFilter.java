@@ -24,9 +24,9 @@ import java.util.Set;
 
 /**
  * Gateway 서명 내부 토큰({@link InternalTokenContract#HEADER})으로 인증을 세우는 필터
- * (ADR-0017 D3 · 구현 ③ PR3d). {@code HeaderAuthenticationFilter}(평문 header-trust)를 대체한다.
+ * (ADR-0017 D3).
  *
- * <p><b>3-state 계약(PR3c 에서 승계)</b>:
+ * <p><b>3-state 계약</b>:
  * <ol>
  *   <li><b>토큰 부재</b> → anonymous 로 체인 계속(공개 경로 보존, 보호 경로는 authorizeHttpRequests 가 401)</li>
  *   <li><b>유효 서명</b> → {@link LoginUser} 인증 세팅(principal=userId, authority={@code ROLE_<role>}, details=familyId)</li>
@@ -36,7 +36,7 @@ import java.util.Set;
  * <p><b>평문 {@code X-User-*} 처리</b>: {@link InternalTokenProperties.Mode#SIGNED_ONLY} 에서는 평문 헤더를
  * <b>무시</b>한다(401 아님) — 위조 헤더를 401 로 만들면 공개 경로가 헤더 하나로 막히고, 무시하면 신원이
  * 서지 않아 보호 경로가 정상적으로 401 이 된다. {@link InternalTokenProperties.Mode#DUAL_ACCEPT} 는
- * 롤아웃 전환기(계획 §7 ②)에서만 평문을 수용하며, PR3d-b 최종 단계에서 이 분기는 제거된다.
+ * 롤아웃 전환기에서만 평문을 수용하며, signed-only 전환이 끝나면 이 분기는 제거 대상이다.
  */
 @RequiredArgsConstructor
 public class InternalTokenAuthenticationFilter extends OncePerRequestFilter {
@@ -88,9 +88,9 @@ public class InternalTokenAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 전환기 평문 경로(계획 §7 ②) — PR3c 의 3-state 계약을 그대로 유지한다.
-     * PR3d-b 롤아웃 ④(signed-only 전환) 이후 이 메서드와 {@link InternalTokenProperties.Mode#DUAL_ACCEPT}
-     * 는 함께 제거된다.
+     * 전환기 평문 경로 — 위 3-state 계약을 그대로 유지한다.
+     * signed-only 전환이 끝나면 이 메서드와 {@link InternalTokenProperties.Mode#DUAL_ACCEPT}
+     * 는 함께 제거 대상이다.
      */
     private void authenticateWithPlaintextHeaders(HttpServletRequest request, HttpServletResponse response,
                                                   FilterChain filterChain) throws ServletException, IOException {

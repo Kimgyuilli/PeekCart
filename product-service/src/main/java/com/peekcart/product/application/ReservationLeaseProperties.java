@@ -11,7 +11,7 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Duration;
 
 /**
- * 재고 예약 lease 정책 (계획 P4, ADR-0012 D3). 동작 정책이므로 base {@code application.yml} 소유(ADR-0007).
+ * 재고 예약 lease 정책 (ADR-0012 D3). 동작 정책이므로 base {@code application.yml} 소유(ADR-0007).
  *
  * <p>lease 는 Product 가 부여해 {@code stock.reservation.result} 로 Order/Payment 에 공유한다. 회수 순서는
  * <b>Order 취소(만료 시각) → Product sweeper(만료 + 유예)</b> 여야 한다. 정상 경로에서 재고를 되돌리는 주체는

@@ -10,12 +10,12 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * 만료된 재고 예약 lease 를 회수하는 스케줄러 (계획 P4, ADR-0012 D3 실패경로 ③).
+ * 만료된 재고 예약 lease 를 회수하는 스케줄러 (ADR-0012 D3 ③).
  *
  * <p><b>안전망이지 정상 경로가 아니다.</b> 정상 흐름에서 예약을 되돌리는 주체는 Order 의 취소
  * ({@code order.cancelled} → release) 이고, 이 잡은 그 경로가 유실됐을 때만 동작한다. 그래서 lease
  * 만료 시각에 곧바로 회수하지 않고 {@code sweeperGrace} 만큼 기다린다 — Order 에게 우선권을 주지 않으면
- * 살아있는 주문의 재고를 뺏어 oversell 이 된다(계획 §2.3-A).
+ * 살아있는 주문의 재고를 뺏어 oversell 이 된다.
  *
  * <p>다중 replica 에서 중복 회수되지 않도록 {@link SchedulerLock} 으로 단일 실행을 보장한다.
  */

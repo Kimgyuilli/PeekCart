@@ -18,10 +18,10 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * DLQ 원장 적재 (계획 ④-c-2a P6·P7·P9).
+ * DLQ 원장 적재.
  *
  * <p><b>적재는 멱등하다.</b> {@code INSERT IGNORE} 가 신규 1 / 중복 0 을 돌려주며, 중복이면
- * 시도 횟수만 올린다. 유니크 위반을 catch 하지 않는 이유는 ④-c-1a 선례 — JPA 에서는 flush 시점과
+ * 시도 횟수만 올린다. 유니크 위반을 catch 하지 않는다 — JPA 에서는 flush 시점과
  * rollback-only 때문에 "충돌 잡아서 no-op" 이 성립하지 않는다.
  *
  * <p><b>알림은 best-effort 다.</b> DB commit 과 Slack 호출은 한 트랜잭션이 아니므로 commit 후
@@ -29,17 +29,16 @@ import java.util.Optional;
  * 원장 행 자체</b>이고, 그게 이 기능의 존재 이유다(ADR-0018 D6 도 Slack 을 보조 신호로 규정).
  * 그래서 Slack 실패가 적재를 실패시키지 않는다.
  *
- * <p><b>민감정보 정책</b>(P11):
+ * <p><b>민감정보 정책</b>:
  * <ul>
  *   <li><b>임의 헤더는 저장하지 않는다.</b> {@code DlqOrigin} 은 표준 {@code DLT_*} 와
  *       {@link com.peekcart.global.kafka.ReplayHeaders} allowlist 4종<b>만</b> 담으므로
  *       {@code X-User-Id} 등 그 밖의 application 헤더는 애초에 원장에 들어오지 않는다 —
  *       제외 목록을 관리할 필요가 없도록 <b>읽을 키를 명시</b>하는 구조로 막았다.
- *       <p>replay 상관 4종은 ④-c-2b-3a 가 더했다. <b>application 헤더지만 저장 대상이다</b> —
- *       원장 앵커와 대조해 재실패를 원래 사건에 잇는 데 쓴다(ADR-0021 §D1). 대조는 ④-c-2b-3b 소관이고,
- *       이 단계에서는 판독만 한다.</li>
+ *       <p>replay 상관 4종은 <b>application 헤더지만 저장 대상이다</b> —
+ *       원장 앵커와 대조해 재실패를 원래 사건에 잇는 데 쓴다(ADR-0021 §D1).</li>
  *   <li><b>payload 는 상한까지만</b> 저장하고 초과분은 잘라 {@code payloadTruncated} 로 표시한다.
- *       진단용이며 replay 원본이 아니다 — replay 는 원본 토픽 좌표에서 읽는다(④-c-2b).</li>
+ *       진단용이며 replay 원본이 아니다 — replay 는 원본 토픽 좌표에서 읽는다.</li>
  *   <li><b>Slack 에는 식별자와 runbook 링크만</b> 보낸다. 채널은 원장보다 접근 범위가 넓고
  *       본문에는 주문/사용자 정보가 섞일 수 있다.</li>
  * </ul>
@@ -58,9 +57,9 @@ public class DeadLetterRecorder {
     private final DeadLetterMetrics metrics;
 
     /**
-     * DLQ 레코드 1건을 원장에 적재하고, replay 재실패면 원래 incident 에 잇는다 (④-c-2b-3b P15).
+     * DLQ 레코드 1건을 원장에 적재하고, replay 재실패면 원래 incident 에 잇는다.
      *
-     * <p><b>반환값은 "신규 행이 생겼는가" 이지 "알림을 보냈는가" 가 아니다</b>(P15-g-2).
+     * <p><b>반환값은 "신규 행이 생겼는가" 이지 "알림을 보냈는가" 가 아니다</b>.
      * 상관에 성공한 자식은 신규 적재({@code true})지만 backlog 가 늘지 않았으므로
      * <b>신규 미결 알림을 보내지 않는다</b>.
      *
@@ -76,7 +75,7 @@ public class DeadLetterRecorder {
         DeadLetterRecord candidate = DeadLetterRecord.open(
                 properties.getClusterId(), generation, origin, eventId, payload.value(), payload.truncated());
 
-        // --- 단계 1~3: 로케이터 → root 잠금 → 유일 대조 (P15-a). INSERT 보다 **먼저** 한다 ---
+        // --- 단계 1~3: 로케이터 → root 잠금 → 유일 대조. INSERT 보다 **먼저** 한다 ---
         Correlation correlation = correlate(origin, candidate, eventId);
 
         int inserted = repository.insertIfAbsent(
@@ -89,7 +88,7 @@ public class DeadLetterRecorder {
                 candidate.getOccurredAt());
 
         if (inserted == 0) {
-            // 중복 유입: 대조는 이미 계산됐지만 **계측·알림·재개방을 전부 생략**한다 (P15-e).
+            // 중복 유입: 대조는 이미 계산됐지만 **계측·알림·재개방을 전부 생략**한다.
             // 첫 적재 때 상관 판정이 끝났고, 재전달마다 재개방하면 운영자가 닫은 root 를
             // broker 재전달만으로 다시 여는 경로가 생긴다.
             repository.incrementAttempt(
@@ -103,7 +102,7 @@ public class DeadLetterRecorder {
         }
 
         // 방금 넣은 행. INSERT IGNORE 가 건너뛴 경우 LAST_INSERT_ID() 가 **직전 성공 INSERT 의 값**을
-        // 돌려줘 남의 행을 지목하므로 좌표로 다시 찾는다 (④-c-2b-1 P3).
+        // 돌려줘 남의 행을 지목하므로 좌표로 다시 찾는다.
         DeadLetterRecord child = repository
                 .findByClusterIdAndTopicGenerationAndOriginTopicAndOriginPartitionAndOriginOffsetAndFailedConsumerGroup(
                         candidate.getClusterId(), candidate.getTopicGeneration(),
@@ -124,7 +123,7 @@ public class DeadLetterRecorder {
             return true;
         }
 
-        // --- 단계 5~6: root 를 **current read** 로 다시 읽고 잇는다 (P15-a, 5R #3) ---
+        // --- 단계 5~6: root 를 **current read** 로 다시 읽고 잇는다 ---
         // 단계 4 의 insertIfAbsent 가 clearAutomatically 로 컨텍스트를 비웠다. 일반 findById 면
         // 단계 1 이 연 REPEATABLE READ 스냅샷을 다시 읽어, 그 사이 닫힌 root 를 OPEN 으로 보고
         // 재개방을 건너뛴다. 행 잠금은 이미 우리 것이라 이 재조회는 대기하지 않는다.
@@ -152,9 +151,9 @@ public class DeadLetterRecorder {
     }
 
     /**
-     * 잠근 root 와 9축을 대조한다 (P15-b). 하나라도 어긋나면 상관하지 않고 독립 root 로 간다.
+     * 잠근 root 와 9축을 대조한다. 하나라도 어긋나면 상관하지 않고 독립 root 로 간다.
      *
-     * <p><b>잠금 순서 규약</b>: root 를 가장 먼저 잠근다 — 종결 전파(P5)·purge(P4)와 같은 진입
+     * <p><b>잠금 순서 규약</b>: root 를 가장 먼저 잠근다 — 종결 전파·purge 와 같은 진입
      * 순서라야 순환이 없다.
      */
     private Correlation correlate(DlqOrigin origin, DeadLetterRecord candidate, String eventId) {
@@ -188,7 +187,7 @@ public class DeadLetterRecorder {
     private DeadLetterMetrics.CorrelationReason mismatchAxis(
             DlqOrigin origin, DeadLetterRecord candidate, String eventId, DeadLetterRecord root) {
 
-        // 축 1 — attempt. 잠금 후 여기서만 대조한다 (TOCTOU 창을 닫는 지점, P15-c).
+        // 축 1 — attempt. 잠금 후 여기서만 대조한다 (TOCTOU 창을 닫는 지점).
         if (!origin.replayAttemptId().equals(root.getLastReplayAttemptId())) {
             return DeadLetterMetrics.CorrelationReason.ATTEMPT_CHANGED;
         }
@@ -237,13 +236,13 @@ public class DeadLetterRecorder {
     }
 
     /**
-     * commit 후에 실행한다 (P15-g).
+     * commit 후에 실행한다.
      *
      * <p>기존 코드는 {@code @Transactional} 안에서 Slack 을 호출해 <b>commit 실패 전에 알림이 먼저
      * 나갈 수 있었다</b> — javadoc 이 서술하는 "commit 후" 와 달랐다.
      *
-     * <p><b>callback 예외는 격리한다</b> — ④-d-1 3R #2 에서 {@code afterCommit} 예외가 호출자에게
-     * 전파돼 이미 커밋된 이벤트를 listener 가 재처리한 전례가 있다.
+     * <p><b>callback 예외는 격리한다</b> — {@code afterCommit} 예외가 호출자에게
+     * 전파되면 이미 커밋된 이벤트를 listener 가 재처리한다.
      */
     private void afterCommit(Runnable action) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -269,10 +268,10 @@ public class DeadLetterRecorder {
 
     /**
      * 식별자와 runbook 링크만 보낸다. <b>payload·exception 원문은 넣지 않는다</b> —
-     * Slack 채널은 원장보다 접근 범위가 넓고, 그 본문에는 개인정보가 섞일 수 있다(P9).
+     * Slack 채널은 원장보다 접근 범위가 넓고, 그 본문에는 개인정보가 섞일 수 있다.
      *
      * <p><b>독립 root 로 적재된 경우에만</b> 보낸다 — 상관된 자식은 backlog 를 늘리지 않으므로
-     * "신규 미결 1건" 이 거짓이 된다(P15-g-2).
+     * "신규 미결 1건" 이 거짓이 된다.
      */
     private void notifyNewIncident(DlqOrigin origin, int generation) {
         slackPort.send(String.format(
@@ -283,7 +282,7 @@ public class DeadLetterRecorder {
     }
 
     /**
-     * 재개방 전용 문구 (P15-h, ADR-0020 §D6-2b I-2).
+     * 재개방 전용 문구 (ADR-0020 §D6-2b I-2).
      *
      * <p><b>사람이 닫은 것을 시스템이 되돌리는 유일한 경로</b>라 신규 적재와 구분되어야 한다 —
      * 문구가 하나뿐이면 운영자가 그 차이를 볼 수 없다. 직전 상태를 함께 실어 무엇이 되돌려졌는지 남긴다.

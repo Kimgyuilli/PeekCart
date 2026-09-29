@@ -1,7 +1,7 @@
 package com.peekcart.global.kafka;
 
 /**
- * DLQ 원장 행이 어떤 좌표를 물리 식별자로 쓰는지 구분한다 (계획 ④-c-2a §2.5).
+ * DLQ 원장 행이 어떤 좌표를 물리 식별자로 쓰는지 구분한다.
  *
  * <p>DLQ 레코드는 {@code kafka_dlt-original-*} 헤더로 원본 좌표를 싣지만,
  * 그 헤더 자체가 없거나 깨진 레코드가 존재할 수 있다. 그때 좌표 컬럼을 NULL 로 두면

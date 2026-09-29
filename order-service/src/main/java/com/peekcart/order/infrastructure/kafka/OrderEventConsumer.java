@@ -83,8 +83,8 @@ public class OrderEventConsumer {
      * 결제 성공 시 주문 상태를 {@code PAYMENT_COMPLETED}로 전이한다.
      * <p>이미 취소된 주문에 결제 완료가 도착하면(취소가 낙관 락 경쟁에서 이긴 경우 등) {@code ORD-003}
      * 으로 던져 DLQ 로 보내지 않는다 — 재시도해도 상태는 되돌아오지 않아 영구 실패이며, 실제로 필요한 건
-     * <b>환불 보상</b>이다(계획 P2, ADR-0012 D3 ④). 환불 요청 경로 자체는 계획 P8 소관이라 본 PR 은
-     * 보상 필요를 관측 가능한 신호로 남기는 seam 까지만 만든다.
+     * <b>환불 보상</b>이다(ADR-0012 D3 ④). 여기서는 보상 필요를 원장에 남기고,
+     * 환불 요청은 그 원장을 입력으로 삼는 경로가 한다.
      */
     @KafkaListener(topics = "payment.completed", groupId = GROUP_PAYMENT_COMPLETED)
     @Transactional
@@ -109,12 +109,12 @@ public class OrderEventConsumer {
     /**
      * 결제 실패 시 주문을 취소하고 {@code order.cancelled}(reason={@code PAYMENT_FAILED})를 발행한다.
      *
-     * <p>발행 결정(계획 P7): {@code order.cancelled} 를 <b>모든 취소의 단일 lifecycle 이벤트</b>로 두고
+     * <p>발행 결정: {@code order.cancelled} 를 <b>모든 취소의 단일 lifecycle 이벤트</b>로 두고
      * ADR-0010 D3-4 의 명문 경로를 복원한다. 재고 복구 자체는 Product 가 {@code payment.failed} 를 직접
      * 소비해 이미 수행하므로(ADR-0012 D3 refine) 이 발행은 중복 트리거지만, 소비자별로 무해하다 —
      * Product 는 예약 원장 {@code RESERVED→RELEASED} CAS 라 두 번째 release 가 no-op 이고, Payment 는
      * 이미 {@code FAILED} 라 {@code cancelBeforePayment()} 가 no-op 이며, Notification 은 중복 알림을
-     * 피하려고 {@code reason=PAYMENT_FAILED} 를 스킵한다(사유 필드가 있어야 성립하는 분기라 P6 선행).
+     * 피하려고 {@code reason=PAYMENT_FAILED} 를 스킵한다(사유 필드가 있어야 성립하는 분기다).
      */
     @KafkaListener(topics = "payment.failed", groupId = GROUP_PAYMENT_FAILED)
     @Transactional
@@ -174,8 +174,8 @@ public class OrderEventConsumer {
     }
 
     /**
-     * 환불 결과 회신을 소비해 보상 원장을 <b>종결</b>한다 (ADR-0018 D4). ④-a 가 남긴 R-2 —
-     * {@code order_compensations} 가 {@code OPEN} 으로 쌓이기만 하던 문제 — 가 여기서 닫힌다.
+     * 환불 결과 회신을 소비해 보상 원장을 <b>종결</b>한다 (ADR-0018 D4). 이 경로가 없으면
+     * {@code order_compensations} 가 {@code OPEN} 으로 쌓이기만 한다.
      *
      * <p>결과별 종착이 다르다: {@code SUCCEEDED} 는 {@code RESOLVED}("환불 완료"),
      * {@code FAILED} 는 {@code REFUND_FAILED}("닫혔지만 해결되지 않음"), {@code UNRESOLVED} 는
@@ -218,11 +218,11 @@ public class OrderEventConsumer {
     }
 
     /**
-     * 취소된 주문에 도착한 결제 완료를 <b>영속</b> 보상 원장으로 남긴다 (GW-2 #2).
+     * 취소된 주문에 도착한 결제 완료를 <b>영속</b> 보상 원장으로 남긴다.
      *
      * <p>소비와 같은 트랜잭션이라 {@code processed_events} 커밋과 원장 기록이 함께 성립하거나 함께
      * 롤백된다 — 알림만 남기면 order-service 의 no-op {@code SlackPort} 때문에 신호가 사라지고,
-     * 이벤트는 이미 처리 완료로 봉인돼 환불 구현(P8)이 재소비할 수 없다. 원장은
+     * 이벤트는 이미 처리 완료로 봉인돼 환불 경로가 재소비할 수 없다. 원장은
      * {@code (orderId, reason)} 유니크로 멱등이므로 DLQ 재발행에도 1행이다.
      */
     private void recordPaidButCancelled(Long orderId) {

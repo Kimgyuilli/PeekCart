@@ -21,12 +21,12 @@ app:
     jwt:
       # 공개키 정본 = User JWKS (ADR-0013 D1).
       jwks-uri: http://user-service:8080/.well-known/jwks.json
-    # 내부 토큰 서명 개인키의 **위치** (ADR-0017 D2 · 구현 ③ PR3d-b).
+    # 내부 토큰 서명 개인키의 **위치** (ADR-0017 D2).
     # 값이 아니라 경로만 설정에 둔다 — 키 자체는 Secret Manager 에서 CSI 로 투영되며
     # k8s Secret·env 를 경유하지 않는다(k8s/base/services/gateway/secretproviderclass.yml).
     # 마운트 경로/파일명은 SPC 의 `path:` 와 Deployment 의 `mountPath` 가 함께 결정한다 —
     # 셋 중 하나만 바뀌면 부팅 시 fail-fast 로 드러난다(InternalTokenIssuer 개인키 로딩).
-    # env override seam 을 유지한다(PR3d-a 선례): 기본값은 k8s 의 CSI 마운트 경로이되,
+    # env override seam 을 유지한다: 기본값은 k8s 의 CSI 마운트 경로이되,
     # 컨테이너 스모크처럼 CSI 가 없는 환경은 GATEWAY_INTERNAL_PRIVATE_KEY_LOCATION 으로 갈아끼운다.
     # 하드코딩하면 프로파일이 base 의 ${...} 치환을 덮어써서 주입이 무시되고 부팅이 fail-fast 한다.
     internal-token:

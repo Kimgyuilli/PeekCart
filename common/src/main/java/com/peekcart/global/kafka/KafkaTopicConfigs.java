@@ -31,7 +31,7 @@ import java.util.Map;
  * 억제할 뿐이고, retention 검사 주기·{@code file.delete.delay.ms}·index/timeindex·대형 batch 가
  * 계산에 없다. {@code __consumer_offsets}(기본 50파티션)와 KRaft metadata 는 아예 bound 밖이다.
  * 따라서 "7일 안의 좌표는 반드시 읽을 수 있다"는 <b>보장하지 않으며</b>, replay 는 발행 직전
- * 좌표 검증(§D5-1)을 반드시 거친다.
+ * 좌표 검증(ADR-0020 §D5-1)을 반드시 거친다.
  */
 public final class KafkaTopicConfigs {
 
@@ -55,7 +55,7 @@ public final class KafkaTopicConfigs {
      * @param retention          {@code app.idempotency.floor.kafka-topic-retention} 에서 온 값.
      *                           멱등 창 계산의 입력과 <b>같은 출처</b>여야 한다 — 두 곳에 따로 적으면 갈라진다.
      * @param timestampBeforeMax {@code app.idempotency.retention} 에서 온 값. replay 는 <b>원본 timestamp</b> 를
-     *                           실어 발행하므로(§D3), 이 값이 replay 대상의 나이보다 짧으면 적격 replay 가
+     *                           실어 발행하므로(ADR-0020 §D3), 이 값이 replay 대상의 나이보다 짧으면 적격 replay 가
      *                           broker 에게 거부된다. 하한({@code dlqReplayWindow + clockSkewBudget})은
      *                           {@code IdempotencyRetentionProperties} 의 fail-fast 가 이미 강제한다.
      */
@@ -78,7 +78,7 @@ public final class KafkaTopicConfigs {
         }
         Map<String, String> configs = new LinkedHashMap<>();
         configs.put("retention.ms", String.valueOf(retention.toMillis()));
-        // compact 는 좌표 hole 을 만든다 — replay 가 요청 offset 이 아닌 다음 레코드를 읽게 된다(§D5-1).
+        // compact 는 좌표 hole 을 만든다 — replay 가 요청 offset 이 아닌 다음 레코드를 읽게 된다(ADR-0020 §D5-1).
         configs.put("cleanup.policy", "delete");
         configs.put("retention.bytes", String.valueOf(retentionBytes));
         configs.put("segment.bytes", String.valueOf(segmentBytes));

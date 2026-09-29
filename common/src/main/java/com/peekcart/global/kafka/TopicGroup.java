@@ -1,7 +1,7 @@
 package com.peekcart.global.kafka;
 
 /**
- * "이 listener 가 이 토픽을 이 group 으로 구독한다" 는 한 줄 (계획 P5 readiness).
+ * "이 listener 가 이 토픽을 이 group 으로 구독한다" 는 한 줄 (readiness 판정용).
  *
  * <p>{@link DlqSubscription} 과 의도적으로 다른 타입이다 — 그쪽의 {@code consumerGroup} 은
  * <b>실패한 원본</b> group 이고 토픽은 {@code .dlq} 다. 여기는 <b>구독 중인 listener</b> 의

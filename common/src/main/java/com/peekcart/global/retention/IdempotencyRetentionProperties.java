@@ -14,7 +14,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * processed_events 멱등성 보존 정책 (ADR-0012 D5 · 구현 ② PR3).
+ * processed_events 멱등성 보존 정책 (ADR-0012 D5).
  *
  * <p>보존기간({@code retention})은 D5 의 4개 창(floor)의 {@code max} 이상이어야 한다 — 교차필드 불변식.
  * 미만이면 {@link AssertTrue} 위반으로 <b>부팅 실패(fail-fast)</b>. 단순 필드 제약이 아니라 필드 간 비교이므로
@@ -139,7 +139,7 @@ public class IdempotencyRetentionProperties {
         }
     }
 
-    /** 배치 삭제 계약 — outbox cleanup 도 동일 계약을 공유한다(구현 ② PR3). */
+    /** 배치 삭제 계약 — outbox cleanup 도 동일 계약을 공유한다. */
     @Getter
     @Setter
     public static class Cleanup {

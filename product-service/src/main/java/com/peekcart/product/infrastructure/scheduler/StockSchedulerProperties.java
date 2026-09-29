@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Duration;
 
 /**
- * Product 예약 lease sweeper 의 주기·lock 정책 (계획 P17, ADR-0007).
+ * Product 예약 lease sweeper 의 주기·lock 정책 (ADR-0007).
  *
  * <p><b>동작 정책이므로 base {@code application.yml} 이 소유한다.</b> 회수 대상 판정(만료 + 유예)은
  * {@code app.reservation.lease} 소관이고, 여기는 <b>언제 얼마나 자주 도는가</b>만 다룬다.

@@ -20,9 +20,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Product 도메인의 Outbox 이벤트 발행자 (ADR-0012 D3/D4 · CQRS ⑤).
+ * Product 도메인의 Outbox 이벤트 발행자 (ADR-0012 D3/D4 · CQRS).
  * 공유 {@link OutboxEventRepository} 를 재사용한다. 파티션 키(aggregateId)는 토픽별로 다르다 —
- * {@code stock.reservation.result} 는 {@code orderId}, {@code product.updated} 는 {@code productId}(ADR-0012:47).
+ * {@code stock.reservation.result} 는 {@code orderId}, {@code product.updated} 는 {@code productId}(ADR-0012 D2).
  */
 @Component
 @RequiredArgsConstructor
@@ -40,7 +40,7 @@ public class ProductOutboxEventPublisher {
      * 재고 예약 결과를 발행한다.
      *
      * @param reason               실패 사유 (성공 시 null)
-     * @param reservationExpiresAt 예약 lease 만료 시각 (실패 시 null, 계획 P4)
+     * @param reservationExpiresAt 예약 lease 만료 시각 (실패 시 null)
      */
     public void publishStockReservationResult(Long orderId, boolean reserved,
                                               List<ReservedItemPayload> items, String reason,
@@ -57,7 +57,7 @@ public class ProductOutboxEventPublisher {
     }
 
     /**
-     * 상품 변경(생성/수정/판매중단)을 발행한다 (CQRS ⑤, ADR-0012:48).
+     * 상품 변경(생성/수정/판매중단)을 발행한다 (ADR-0012 D2 · CQRS).
      * <p>
      * 파티션 키=productId 로 동일 상품 이벤트의 per-partition 순서를 보장한다.
      * {@code version} 은 호출 전 flush 로 증가된 {@link Product#getVersion()} 이어야 한다(순서 키).
@@ -103,7 +103,7 @@ public class ProductOutboxEventPublisher {
         outboxEventRepository.save(outboxEvent);
     }
 
-    /** ProductStatus → ADR-0012:48 계약 값 매핑. */
+    /** ProductStatus → ADR-0012 D2 계약 값 매핑. */
     private static String mapStatus(ProductStatus status) {
         return switch (status) {
             case ON_SALE -> "ACTIVE";

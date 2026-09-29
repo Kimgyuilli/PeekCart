@@ -1,6 +1,6 @@
 // peekcart-common-observability — 관측성 공유 모듈 (ADR-0009 선결정 · ADR-0011 §D1)
 // 본 모듈 경계/소유는 ADR-0009 결정을 인용·반영만 한다 (재결정 금지).
-// PR1 소유: S1 MetricsConfig. (S3 exposure base yml / S4 actuator 허용부는 PR2 이연)
+// 소유: ADR-0009 S1 MetricsConfig.
 
 plugins {
     id 'java-library'
@@ -9,7 +9,7 @@ plugins {
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-actuator'
     api 'io.micrometer:micrometer-core'
-    // CommitAwareMetrics — 트랜잭션 커밋 이후 계측 (구현 ④-d-1 diff 리뷰 #1).
+    // CommitAwareMetrics — 트랜잭션 커밋 이후 계측.
     // 계측 지점이 전부 @Transactional 안이라, 본문에서 바로 올리면 커밋 실패 시 카운터만 남는다.
     implementation 'org.springframework:spring-tx'
 }

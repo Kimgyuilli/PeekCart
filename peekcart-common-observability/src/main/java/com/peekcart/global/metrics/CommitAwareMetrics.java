@@ -7,7 +7,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * 트랜잭션이 <b>커밋된 뒤에만</b> 카운터를 올린다 (구현 ④-d-1 diff 리뷰 #1).
+ * 트랜잭션이 <b>커밋된 뒤에만</b> 카운터를 올린다.
  *
  * <p><b>왜 필요한가</b>: saga 계측은 전부 {@code @Transactional} 메서드 안에서 일어난다.
  * 메서드 본문에서 바로 증가시키면 이후 flush/commit 이 실패했을 때 <b>DB·Outbox 는 롤백되는데

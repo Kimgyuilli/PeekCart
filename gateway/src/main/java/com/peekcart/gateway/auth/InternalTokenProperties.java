@@ -4,12 +4,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.Resource;
 
 /**
- * Gateway 내부 토큰 <b>발행</b> 설정 (ADR-0017 D1/D2 · 구현 ③ PR3d).
+ * Gateway 내부 토큰 <b>발행</b> 설정 (ADR-0017 D1/D2).
  *
  * <p>개인키는 산출물에 포함하지 않는다 — 파일 마운트(운영: Secret Manager CSI, 로컬: gitignored 파일)로
  * 주입한다(ADR-0013 D2). 환경변수 직접 주입은 금지한다.
  *
- * <p><b>skew 를 두지 않는 이유</b>: 계획 P1 은 {@code skewSeconds} 를 발행측에도 열거하지만, 발행은
+ * <p><b>skew 를 두지 않는 이유</b>: 발행은
  * 자기 시계로 {@code iat=now} 를 찍을 뿐이라 skew 를 쓸 곳이 없다. clock skew 흡수는 검증측
  * ({@code app.internal-token.skew-seconds}) 단독 책임이며, 발행측에 미사용 설정을 두면 "조정했는데
  * 아무 효과가 없는 손잡이" 가 된다.
@@ -38,7 +38,7 @@ public record InternalTokenProperties(
     }
 
     /**
-     * 부팅 시 설정 자체의 정합성을 강제한다(계획 P1 fail-fast). 키 로딩 실패는
+     * 부팅 시 설정 자체의 정합성을 강제한다(fail-fast). 키 로딩 실패는
      * {@link InternalTokenIssuer} 생성자가 별도로 잡는다.
      */
     public void validate() {

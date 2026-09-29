@@ -22,7 +22,6 @@ dependencies {
     implementation 'org.springframework.security:spring-security-core'        // MdcFilter(SecurityContextHolder)
 
     // :common 자체 단위 테스트(src/test) — global.kafka/outbox/cache SUT 의 단위 테스트가 SUT 모듈(:common)에 동거
-    // (Payment peel PR-b: root 에서 이관 — MdcSnapshot/MdcRecordInterceptor/FixedSequenceBackOff/KafkaEventEnvelope/HarnessSmokeTtl).
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
     // 공용 test support(java-test-fixtures) 용 — AbstractIntegrationTest/ServiceTest/WithMockLoginUser*/TestSecurityConfig
@@ -36,7 +35,7 @@ dependencies {
     testFixturesApi 'org.springframework.kafka:spring-kafka-test'
     testFixturesApi 'org.awaitility:awaitility'
     // 사용자 access token fixture(TestRsaKeys.mintUserAccessToken) — 서비스가 Bearer 를 더 이상
-    // 인증하지 않음을 *유효한* 토큰으로 증명하는 음성 대조군용 (ADR-0017 · PR3d P9)
+    // 인증하지 않음을 *유효한* 토큰으로 증명하는 음성 대조군용 (ADR-0017)
     testFixturesImplementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     testFixturesRuntimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     testFixturesRuntimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'

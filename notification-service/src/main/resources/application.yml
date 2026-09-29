@@ -22,7 +22,7 @@ spring:
       ddl-auto: validate
     open-in-view: false
   flyway:
-    # DB-per-service (구현 ② PR2): 자기 스키마(peekcart_notification)에 자기 모듈 마이그레이션만 적용.
+    # DB-per-service: 자기 스키마(peekcart_notification)에 자기 모듈 마이그레이션만 적용.
     enabled: true
     locations: classpath:db/migration
   kafka:
@@ -47,7 +47,7 @@ management:
   endpoints:
     web:
       exposure:
-        # deadletter: DLQ 원장 backlog 조회 (구현 ④-c-2a P10). 메트릭 계약(④-d) 전까지 유일한 조회 표면.
+        # deadletter: DLQ 원장 조회·운영 표면(메트릭과 별도로 즉시 조회용).
         include: health,prometheus,deadletter
   metrics:
     tags:
@@ -60,8 +60,8 @@ springdoc:
     path: /api-docs
 
 app:
-  # Gateway 서명 내부 토큰 검증 (ADR-0017 D3 · 구현 ③ PR3d).
-  # 공개키는 비밀이 아니므로 이미지에 베이크한다(운영 kid 교체는 k8s ConfigMap — PR3d-b).
+  # Gateway 서명 내부 토큰 검증 (ADR-0017 D3).
+  # 공개키는 비밀이 아니므로 이미지에 베이크한다(운영 kid 교체는 k8s ConfigMap).
   # [중요] gateway kid 를 app.jwt.rs256.public-keys 에 넣지 않는다 — User JWKS 가 레지스트리를 전량
   # 게시하므로 내부 신뢰 앵커가 외부에 노출된다(ADR-0017 D3, internal-key-ownership-lint 로 강제).
   internal-token:
@@ -69,7 +69,7 @@ app:
     public-keys:
       - kid: peekcart-gateway-dev-2026
         location: classpath:keys/dev-gateway-internal-public.pem
-  # processed_events 멱등성 보존 정책 (ADR-0012 D5 · 구현 ② PR3) — 동작 정책이므로 base 소유(ADR-0007).
+  # processed_events 멱등성 보존 정책 (ADR-0012 D5) — 동작 정책이므로 base 소유(ADR-0007).
   idempotency:
     retention: 9d          # floor 4창 max(7d) 이상 + ADR-0020 D4-3 replay 안전여유(dlq-replay-window 7d + clock-skew 5m + cleanup-safety 1d = 8d 5m) 이상 — 미만이면 부팅 실패
     # ADR-0020 D4-3 — 등호 허용(7d==7d)은 창 끝을 보장하지 못한다. 여유를 설정으로 강제한다.
@@ -84,11 +84,11 @@ app:
       batch-size: 500
       max-batches-per-run: 20
 
-  # outbox 발행 정책 (ADR-0020 D2 · 구현 ④-c-2b-2 P9) — 동작 정책이므로 base 소유(ADR-0007).
-  # notification 은 도메인 이벤트를 발행하지 않지만 자기 DLQ 원장의 replay 재발행 주체다(D8 예외).
+  # outbox 발행 정책 (ADR-0020 D2) — 동작 정책이므로 base 소유(ADR-0007).
+  # notification 은 도메인 이벤트를 발행하지 않지만 자기 DLQ 원장의 replay 재발행 주체다(ADR-0020 D8 예외).
   # cleanup.cron 은 선언하지 않는다 — 3서비스도 @Scheduled 인라인 기본값을 쓴다(키를 여기만 두면 4벌이 갈라진다).
   outbox:
-    retention: 7d          # PUBLISHED outbox_events 보존기간 (구현 ② PR3 과 동일 계약)
+    retention: 7d          # PUBLISHED outbox_events 보존기간 (다른 서비스와 동일 계약)
     # 서비스별 poller 소유권 분리 — order/product/payment 와 겹치지 않는 이름이어야 한다.
     lock-name: notificationOutboxPollingJob
     polling:
@@ -97,11 +97,11 @@ app:
       publish-timeout: 6s
       cycle-timeout: 4m
 
-  # DLQ 원장 운영 계약 (구현 ④-c-2a P5) — 동작 정책이므로 base 소유(ADR-0007).
+  # DLQ 원장 운영 계약 — 동작 정책이므로 base 소유(ADR-0007).
   dead-letter:
     cluster-id: peekcart-local
     # 토픽별 프로비저닝 세대. 토픽을 삭제·재생성하면 배포 전에 값을 올린다.
-    # 미등록 토픽을 참조하면 부팅이 아니라 적재 시점에 예외 — 기본값 암묵 허용 금지(§2.5).
+    # 미등록 토픽을 참조하면 부팅이 아니라 적재 시점에 예외 — 기본값 암묵 허용 금지.
     # 키는 원본 토픽 이름이다. origin 헤더 판독 실패 행(DLQ_ORIGIN)은 좌표로 '<topic>.dlq' 를 싣지만,
     # .dlq 는 원본과 함께 선언·재생성되므로 원본의 세대를 따른다(정확 일치 우선 → 없으면 .dlq 제거 후 재조회).
     topic-generations:
@@ -117,9 +117,9 @@ app:
       scan-limit: 100
     payload:
       max-length: 8000     # 초과분은 잘리고 payload_truncated 로 표시
-    # replay 개시 kill-switch (④-c-2b-4a P21). **기본값 false 가 계약이다** — 배포 순간 진입점이
+    # replay 개시 kill-switch. **기본값 false 가 계약이다** — 배포 순간 진입점이
     # 열리면 backfill·증적·리허설 이전에 replay 가 가능해지고, 닫는 데 롤링 재기동이 또 든다.
-    # drain·롤백 계약(④-c-2b-4b)이 서기 전까지 운영에서 열지 않는다. 동작 정책이므로 base 소유(ADR-0007).
+    # 운영에서 여는 절차는 drain·롤백 계약(ADR-0022)을 따른다. 동작 정책이므로 base 소유(ADR-0007).
     replay:
       enabled: false
     purge:

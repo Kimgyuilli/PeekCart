@@ -21,14 +21,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * User JWKS(`/.well-known/jwks.json`)를 공개키 <b>정본</b>으로 삼는 kid→RSA 공개키 레지스트리
- * (ADR-0013 D1 · 구현 ③ PR3a).
+ * (ADR-0013 D1).
  *
- * <p><b>snapshot 교체 계약</b>(GW-2 c3:4): 성공적으로 받은 <b>비어 있지 않은</b> JWKS 는 기존 캐시에
+ * <p><b>snapshot 교체 계약</b>: 성공적으로 받은 <b>비어 있지 않은</b> JWKS 는 기존 캐시에
  * merge 하지 않고 <b>통째로 교체</b>한다. merge(put-only)면 User 가 침해/폐기한 kid 가 Gateway 에
  * 영구 잔존해, 그 키로 새로 서명된 토큰을 재시작 전까지 계속 수용하게 된다.
  * 조회 실패·빈 응답일 때만 직전 snapshot 을 유지한다(LKG).
  *
- * <p><b>LKG / 실패 분류</b> — 계획 P12 응답 행렬:
+ * <p><b>LKG / 실패 분류</b>:
  * <ul>
  *   <li>snapshot 에 kid 존재 → JWKS 가 죽어 있어도 <b>정상 처리</b>. 갱신 실패는 경보만.</li>
  *   <li>unknown kid → 즉시 refresh. 성공했는데도 부재면 {@link UnknownKidException}(→<b>401</b>),

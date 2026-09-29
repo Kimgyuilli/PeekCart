@@ -11,12 +11,12 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 교착한 {@code REQUESTED} 의 <b>단방향 해제</b> (구현 ④-c-2b-4b P24 · ADR-0022 §D4).
+ * 교착한 {@code REQUESTED} 의 <b>단방향 해제</b> (ADR-0022 §D4).
  *
  * <p><b>왜 필요한가</b>: 원장이 가리키는 outbox 행이 사라지면 {@link DeadLetterPublicationWorker} 는
  * 강등하지 않고 그대로 둔다 — 부재는 실패의 증거가 아니기 때문이다(발행됐는데 행만 지워졌을 수 있다).
  * 그 판단은 옳지만, 그 결과 {@code REQUESTED} 가 <b>스스로 해소되지 않는다</b>: I-1 이 사건 종결을 막고
- * drain ⓐ' 가 0 이 되지 않아 <b>롤백이 영구 차단</b>된다. fail-closed 가 아니라 탈출구 없는 교착이다.
+ * drain ⓐ'(ADR-0022 §D2) 가 0 이 되지 않아 <b>롤백이 영구 차단</b>된다. fail-closed 가 아니라 탈출구 없는 교착이다.
  *
  * <p><b>왜 outbox 부재를 요구하는가</b>: 행이 남아 있으면 reconciler 가 스스로 종착시킨다. 그때도 옮길 수
  * 있게 하면 <b>reconciler 와 경쟁하는 두 번째 종착 경로</b>가 생긴다 — 종결 경로를 하나로 묶어온 계약이
@@ -106,7 +106,7 @@ public class DeadLetterPublicationOverrideService {
         }
 
         if (released > 0) {
-            // drain ⓓ 앵커는 이때도 찍는다 — 발행 여부를 모르므로 소비 재시도가 끝났다고 가정할 수 없다.
+            // drain ⓓ(ADR-0022 §D2) 앵커는 이때도 찍는다 — 발행 여부를 모르므로 소비 재시도가 끝났다고 가정할 수 없다.
             repository.stampReplaySettledAt(rootId);
         }
 

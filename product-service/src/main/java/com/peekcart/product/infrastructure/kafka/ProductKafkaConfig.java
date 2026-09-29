@@ -28,8 +28,7 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
  * 서비스는 listener container factory·error-handler 등 자기 소비 경로만 소유).
  * <p><b>NewTopic(producer-owns-topic, ADR-0011 §토픽=발행 서비스 전속 · ADR-0012 D4)</b>: Product 는 자기가 발행하는
  * {@code product.updated}·{@code stock.reservation.result}·{@code stock.compensation.requested}(각 {@code .dlq} 포함)의 {@link NewTopic} 을 소유한다.
- * Payment peel(PR-b)로 root app 이 소멸하기 전엔 root 가 전 토픽을 생성했으나, root 해체 후 자기 토픽 생성자가
- * 사라지므로 본 서비스가 떠안는다. 소비 실패 시 {@code topic.dlq} 로 발행 + {@link SlackPort}(:common) 알림.
+ * 소비 실패 시 {@code topic.dlq} 로 발행 + {@link SlackPort}(:common) 알림.
  */
 @Slf4j
 @Configuration
@@ -55,7 +54,7 @@ public class ProductKafkaConfig {
                 retentionProperties.topicMessageTimestampBeforeMax());
     }
 
-    // --- 발행 토픽(producer-owns-topic) — Payment peel 로 root 소멸 후 자기 토픽 생성 책임 승계 ---
+    // --- 발행 토픽(producer-owns-topic) ---
     @Bean
     public NewTopic productUpdatedTopic() {
         return TopicBuilder.name("product.updated").partitions(3).replicas(1).configs(businessConfigs()).build();
@@ -133,7 +132,7 @@ public class ProductKafkaConfig {
     }
 
     /**
-     * DLQ replay 좌표 reader (구현 ④-c-2b-4a P18).
+     * DLQ replay 좌표 reader.
      *
      * <p><b>공통 모듈에서 자동 등록하지 않는다</b> — {@code @Component} 로 두면 Kafka 가 없는 서비스
      * (user-service)의 컨텍스트가 {@code KafkaAdmin} 부재로 깨진다. 원장을 가진 서비스만 등록한다.

@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
  * 재고 차감/복구를 담당하는 애플리케이션 서비스.
  *
  * <p>동시성 제어 수단은 {@code Inventory.@Version}(낙관적 락) <b>하나</b>다 (ADR-0025 D1).
- * 이전에는 Redis 분산 락({@code InventoryLockFacade})이 앞단에 있었으나, 호출자(consumer)의
- * 트랜잭션에 REQUIRED 로 참여하는 구조 때문에 락 해제가 커밋보다 먼저 일어나 <b>락 구간에 쓰기가
- * 들어가지 않았다</b> — 락은 전원이 획득하면서 직렬화에는 기여하지 않았다(D-025).
+ * Redis 분산 락은 앞단에 두지 않는다. 호출자(consumer)의 트랜잭션에 REQUIRED 로 참여하는 구조에서는
+ * 락 해제가 커밋보다 먼저 일어나 <b>락 구간에 쓰기가 들어가지 않는다</b> — 락은 전원이 획득하면서
+ * 직렬화에는 기여하지 못한다(D-025).
  */
 @Service
 @Transactional

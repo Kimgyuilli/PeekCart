@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Duration;
 
 /**
- * Order 타임아웃 잡의 주기·lock 정책 (계획 P17, ADR-0007).
+ * Order 타임아웃 잡의 주기·lock 정책 (ADR-0007).
  *
  * <p><b>동작 정책이므로 base {@code application.yml} 이 소유한다</b> — 환경마다 달라지는 연결 정보가
  * 아니다. 주기가 환경별로 갈리면 "운영에서만 재고가 늦게 풀린다" 같은 재현 불가 문제가 생긴다.

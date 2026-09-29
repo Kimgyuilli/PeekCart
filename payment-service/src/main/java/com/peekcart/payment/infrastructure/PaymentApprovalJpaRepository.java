@@ -41,7 +41,7 @@ public interface PaymentApprovalJpaRepository extends JpaRepository<PaymentAppro
      * 확정 대상을 reconciliation 이 claim 한다 — lease 만료 {@code CLAIMED} 또는 {@code UNRESOLVED}.
      * 한 인스턴스만 PG 조회를 하도록 소유권을 잡고 {@code generation} 을 올린다.
      *
-     * <p><b>두 분기 모두 {@code claimed_at IS NULL} 을 포함한다</b>(계획 C-9). 웹훅 nudge 가 lease 를
+     * <p><b>두 분기 모두 {@code claimed_at IS NULL} 을 포함한다</b>. 웹훅 nudge 가 lease 를
      * 비우므로, {@code claimed_at < :staleBefore} 만 두면 nudge 된 행을 영원히 못 잡는다.
      * 신규 삽입은 {@code claimed_at = now} 라 여기에 걸리지 않는다.
      */

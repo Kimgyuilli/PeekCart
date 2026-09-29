@@ -1,6 +1,6 @@
-// gateway — Spring Cloud Gateway (ADR-0013 D3 · 구현 ③ PR3a)
+// gateway — Spring Cloud Gateway (ADR-0013 D3)
 //
-// [B6/보강 e] :common 의존 금지. common/build.gradle 이 spring-boot-starter-web(servlet MVC)·JPA·Kafka 를
+// :common 의존 금지(PLAN-BLINDSPOTS B6). common/build.gradle 이 spring-boot-starter-web(servlet MVC)·JPA·Kafka 를
 // `api` 로 전이 노출하므로, 의존하면 WebFlux 런타임에 servlet 스택이 유입된다. 응답 DTO/에러코드는
 // gateway-local 로 정의한다(assertGatewayHasNoServletDeps 가드로 강제).
 //
@@ -51,7 +51,7 @@ dependencies {
     // assertGatewayHasNoServletDeps allowlist + (a2) 무오염 검사가 그 성질을 강제한다.
     implementation project(':peekcart-common-observability')
 
-    // JWT 검증 — RS256(JWKS) + 전환기 HS512 fallback
+    // JWT 검증 — RS256(JWKS)
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
@@ -62,7 +62,7 @@ dependencies {
     // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.projectreactor:reactor-test'
-    // 검증측(common-auth)과 공유하는 키/계약 토큰 fixture — 교차모듈 conformance(계획 P9)
+    // 검증측(common-auth)과 공유하는 키/계약 토큰 fixture — 교차모듈 conformance
     testImplementation testFixtures(project(':internal-token-contract'))
     // 라우팅/필터 E2E — 업스트림 스텁
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'

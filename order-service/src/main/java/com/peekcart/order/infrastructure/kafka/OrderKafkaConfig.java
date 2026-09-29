@@ -27,7 +27,7 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
  * Order 서비스의 Kafka 배선 (ADR-0011 §D2 · ADR-0012 D4).
  * <p><b>NewTopic(producer-owns-topic)</b>: Order 는 자기가 발행하는 토픽 {@code order.created}·{@code order.cancelled}·{@code order.compensation.requested}
  * (각 {@code .dlq} 포함)의 {@link NewTopic} 만 소유한다. {@code payment.*}·{@code product.*}·{@code stock.reservation.result}
- * 는 각 발행 서비스가 소유(ADR-0011 §토픽=발행 서비스 전속). 전환기 root 단독 생성 모델은 폐기됨.
+ * 는 각 발행 서비스가 소유(ADR-0011 §토픽=발행 서비스 전속).
  * <p>consumer 측: 소비 실패 시 {@code topic.dlq} 로 발행 + {@link SlackPort}(:common) 알림.
  */
 @Slf4j
@@ -129,7 +129,7 @@ public class OrderKafkaConfig {
     }
 
     /**
-     * DLQ replay 좌표 reader (구현 ④-c-2b-4a P18).
+     * DLQ replay 좌표 reader.
      *
      * <p><b>공통 모듈에서 자동 등록하지 않는다</b> — {@code @Component} 로 두면 Kafka 가 없는 서비스
      * (user-service)의 컨텍스트가 {@code KafkaAdmin} 부재로 깨진다. 원장을 가진 서비스만 등록한다.

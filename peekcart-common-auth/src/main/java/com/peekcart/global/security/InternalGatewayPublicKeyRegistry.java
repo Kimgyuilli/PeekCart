@@ -10,11 +10,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Gateway 내부 토큰 <b>전용</b> kid → 공개키 레지스트리 (ADR-0017 D3 · 구현 ③ PR3d).
+ * Gateway 내부 토큰 <b>전용</b> kid → 공개키 레지스트리 (ADR-0017 D3).
  *
  * <p>{@code RsaPublicKeyRegistry}(User access token 검증 + JWKS 게시)와 <b>의도적으로 분리</b>한다.
  * 같은 레지스트리를 쓰면 {@code JwkController} 가 {@code all()} 을 JWKS 로 전량 게시하므로,
- * 내부 신뢰 앵커인 Gateway 공개키가 외부에 노출된다(계획 review #3).
+ * 내부 신뢰 앵커인 Gateway 공개키가 외부에 노출된다.
  *
  * <p>{@code RsaPublicKeyRegistry} 와 달리 <b>빈 키셋을 허용하지 않는다</b> — 내부 토큰은 유일한 인증
  * 수단이라 키가 없으면 서비스가 아무도 인증하지 못하는 상태로 조용히 뜬다.

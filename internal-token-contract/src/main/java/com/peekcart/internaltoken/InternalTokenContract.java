@@ -1,7 +1,7 @@
 package com.peekcart.internaltoken;
 
 /**
- * Gateway 서명 내부 토큰의 <b>이름 계약</b> (ADR-0017 D1/D3 · 구현 ③ PR3d).
+ * Gateway 서명 내부 토큰의 <b>이름 계약</b> (ADR-0017 D1/D3).
  *
  * <p>Gateway 가 사용자 토큰을 검증한 뒤, 자기 개인키로 서명한 짧은 수명 JWT 를 {@link #HEADER} 로
  * 주입한다. 리소스 서비스는 Gateway 공개키로 서명·{@code iss}·{@code kid}·{@code exp} 를 검증한 뒤
@@ -10,7 +10,7 @@ package com.peekcart.internaltoken;
  * <p><b>설정 불가(의도)</b>: 여기 값들은 프로퍼티로 노출하지 않는다. issuer 이름이 환경마다 달라지면
  * "이 토큰을 누가 발행했는가" 라는 신뢰 앵커가 환경 설정으로 우회 가능해지고, claim 이름이 달라지면
  * 발행/검증이 조용히 어긋난다. 발행측(gateway)과 검증측(common-auth)이 서로를 의존할 수 없으므로
- * 이 모듈이 <b>단일 출처</b>다(계획 loop3 #7).
+ * 이 모듈이 <b>단일 출처</b>다.
  */
 public final class InternalTokenContract {
 

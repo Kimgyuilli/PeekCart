@@ -11,7 +11,7 @@ public enum PaymentStatus {
             return target == APPROVED || target == FAILED;
         }
     },
-    /** 승인 완료. 환불(보상)로만 벗어난다 — ADR-0018 D2 이전에는 terminal 이었다. */
+    /** 승인 완료. 환불(보상)로만 벗어난다(ADR-0018 D2). */
     APPROVED {
         @Override
         public boolean canTransitionTo(PaymentStatus target) {

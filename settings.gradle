@@ -1,23 +1,21 @@
 rootProject.name = 'peekcart'
 
-// Phase 4 구현 ① 멀티모듈 전환 (ADR-0011 §D1, ADR-0014)
-// PR2a: peekcart-common-auth(전환기 JWT 검증) 신설 + notification-service 첫 peel.
-// 과도기: 루트가 잔여 4서비스(User/Product/Order/Payment) app 으로 유지된다.
+// 멀티모듈 구조 (ADR-0011 §D1, ADR-0014). 루트는 빌드/가드 aggregator 다.
 include 'common'
 include 'peekcart-common-observability'   // ADR-0009 선결정
-include 'peekcart-common-auth'            // ADR-0014 전환기 JWT 검증 공유 모듈
+include 'peekcart-common-auth'            // 서비스 측 인증 공유 모듈 (ADR-0014 · ADR-0017 내부 토큰 검증)
 include 'peekcart-common-messaging'       // ADR-0033 outbox·멱등성·DLQ 원장 실행 세트 (4서비스 공유)
-include 'notification-service'            // PR2a-2b — 첫 서비스 peel
-include 'user-service'                    // PR2b — independent 서비스 peel (발급 owner, ADR-0014)
-include 'product-service'                 // Product peel — 첫 발행 서비스 peel (outbox/idempotency 복제, ADR-0010 F2·ADR-0012)
-include 'order-service'                    // Order peel (PR-a) — order-service 모듈 분리 (outbox/idempotency 복제, ADR-0010/0011/0012/0014)
-include 'payment-service'                   // Payment peel (PR-b) — 마지막 서비스 분리 + root app 해체 (ADR-0010/0011/0012/0014)
+include 'notification-service'            // 알림 서비스 (ADR-0010/0011)
+include 'user-service'                    // 회원·인증 서비스 (발급 owner, ADR-0014)
+include 'product-service'                 // 상품·재고 서비스 (ADR-0010 F2·ADR-0012)
+include 'order-service'                    // 주문 서비스 (ADR-0010/0011/0012/0014)
+include 'payment-service'                   // 결제 서비스 (ADR-0010/0011/0012/0014)
 
-// 구현 ③ PR3a — Spring Cloud Gateway (ADR-0013 D3). 도메인 서비스가 아닌 *인프라 게이트웨이*.
+// Spring Cloud Gateway (ADR-0013 D3). 도메인 서비스가 아닌 *인프라 게이트웨이*.
 // WebFlux(reactive) 기반이라 :common(servlet starter-web 를 api 전이 노출)을 의존하지 않는다.
 include 'gateway'
 
-// 구현 ③ PR3d-a — 내부 토큰 이름 계약 (ADR-0017). 순수 Java(프레임워크 의존 0).
+// 내부 토큰 이름 계약 (ADR-0017). 순수 Java(프레임워크 의존 0).
 // gateway(발행)와 peekcart-common-auth(검증)가 서로를 의존할 수 없어, issuer/claim/헤더 이름의
-// 단일 출처를 별도 모듈로 둔다(계획 loop3 #7).
+// 단일 출처를 별도 모듈로 둔다.
 include 'internal-token-contract'

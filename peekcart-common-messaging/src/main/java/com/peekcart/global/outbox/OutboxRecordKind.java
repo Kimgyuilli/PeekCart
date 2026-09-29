@@ -1,7 +1,7 @@
 package com.peekcart.global.outbox;
 
 /**
- * outbox 레코드 종류 판별자 (ADR-0020 D3 · 구현 ④-c-2b-2 P10).
+ * outbox 레코드 종류 판별자 (ADR-0020 D3).
  *
  * <p>DB 컬럼은 nullable 이고 <b>DEFAULT 가 없다</b>. 두 성질의 이유가 다르다:
  * <ul>

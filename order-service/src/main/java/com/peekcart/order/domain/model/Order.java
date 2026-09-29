@@ -78,8 +78,8 @@ public class Order {
     private List<OrderItem> orderItems = new ArrayList<>();
 
     /**
-     * 상태 전이 동시성 차단 (L-013, 계획 P2). {@code payment.completed} 소비와 타임아웃 취소가
-     * 같은 스냅샷을 읽고 각자 커밋하면 나중 커밋이 앞 커밋을 조용히 덮는다(실측: 계획 §5 P1).
+     * 상태 전이 동시성 차단 (L-013). {@code payment.completed} 소비와 타임아웃 취소가
+     * 같은 스냅샷을 읽고 각자 커밋하면 나중 커밋이 앞 커밋을 조용히 덮는다(실측).
      * 전이 규칙은 트랜잭션 <i>스냅샷</i> 기준이라 가드가 되지 못하므로 버전으로 막는다.
      */
     @Version
@@ -154,7 +154,7 @@ public class Order {
     }
 
     /**
-     * 결제 승인을 요청한다. 재고 예약이 확정된 주문만 결제로 진입할 수 있다 (strangler-3 게이트, ADR-0012 ①).
+     * 결제 승인을 요청한다. 재고 예약이 확정된 주문만 결제로 진입할 수 있다 (ADR-0012 D3 실패 경로 계약).
      * <p>전이 불가(취소/종결) 는 영구 실패({@code ORD-003}), 예약 미확정(in-flight) 은 재시도 가능({@code ORD-008}) 으로 구분한다.
      * 전이 시각({@code paymentRequestedAt}) 을 기록해 타임아웃 기준이 주문 생성이 아닌 결제 요청 시점이 되도록 한다.
      *

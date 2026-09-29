@@ -5,7 +5,7 @@ package com.peekcart.global.outbox.dto;
  * {@code order.compensation.requested})의 공통 필수 필드다.
  *
  * <p>사유는 <b>발행자가 명시</b>한다 — 토픽으로 사유를 추론하면(“stock 토픽이니 UNRESERVED”)
- * 토픽이 늘어날 때마다 추론 규칙이 갈라진다(④-b {@code OrderCancelReason} 과 같은 판단).
+ * 토픽이 늘어날 때마다 추론 규칙이 갈라진다({@link OrderCancelReason} 과 같은 판단).
  */
 public enum CompensationReason {
 

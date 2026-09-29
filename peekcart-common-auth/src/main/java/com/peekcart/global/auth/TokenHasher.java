@@ -6,7 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 /**
- * 토큰 블랙리스트 신키 식별자 해시 (ADR-0014 D1-c · PR2b/U5).
+ * 토큰 블랙리스트 신키 식별자 해시 (ADR-0014 D1-c).
  * <p>블랙리스트 write owner(User)와 read(common-auth)가 <b>동일 해시</b>로 키를 생성/조회하도록
  * 단일 소유 유틸로 둔다(키스킴 드리프트 차단). 신키 = {@code auth:blacklist:<sha256hex(token)>}.
  * <p>ADR-0014 "토큰 원문 금지" 는 신키에 원문 대신 단방향 해시만 저장하여 충족한다.

@@ -47,7 +47,7 @@ public class OrderOutboxEventPublisher {
     }
 
     /**
-     * 주문 취소를 발행한다 (계획 P5·P6).
+     * 주문 취소를 발행한다.
      *
      * @param reason 취소 사유. 진입점이 명시적으로 전달한다 — 소비자가 사유를 추론하지 않게 하기 위함이다
      */

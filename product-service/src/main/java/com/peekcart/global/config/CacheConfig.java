@@ -35,7 +35,7 @@ import java.time.Duration;
  * 기본값은 {@code true} 이며, {@code false} 일 경우 {@link NoOpCacheManager} 가 주입되어
  * {@code @Cacheable} 이 pass-through 로 동작한다.
  *
- * <p><b>{@link CachingConfigurer} 를 구현하는 이유</b> (L-006, 구현 ⑤): Spring 은
+ * <p><b>{@link CachingConfigurer} 를 구현하는 이유</b> (L-006): Spring 은
  * {@code CacheErrorHandler} 를 <b>{@code CachingConfigurer} 빈에서만</b> 수집한다
  * ({@code AbstractCachingConfiguration#setConfigurers}). 맨 {@code @Bean CacheErrorHandler} 는
  * 조용히 무시되므로 반드시 여기서 {@link #errorHandler()} 로 공급해야 한다.

@@ -1,7 +1,7 @@
 package com.peekcart.product.application.port;
 
 /**
- * saga 경로 계측 포트 (구현 ④-d-1 P1 · diff 리뷰 #5).
+ * saga 경로 계측 포트.
  *
  * <p><b>왜 포트인가</b>: 계측 지점이 {@code StockReservationService}(application) 안에 있는데
  * Micrometer 구현을 직접 참조하면 의존 방향이 뒤집힌다 —

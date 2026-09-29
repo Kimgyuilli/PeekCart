@@ -29,13 +29,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * DLQ replay <b>개시</b> — 적격성(P19) · fence(P20) · claim(P21) (ADR-0020 §D5·§D6-4·§D8).
+ * DLQ replay <b>개시</b> — 적격성 · fence · claim (ADR-0020 §D5·§D6-4·§D8).
  *
  * <h2>한 트랜잭션 안의 순서가 계약이다</h2>
  * <ol>
  *   <li><b>canonical root 를 {@code FOR UPDATE}</b> 로 잠근다 — 종결·재개방·purge·reconciler 가 전부
  *       같은 순서로 진입하므로 순환이 없다</li>
- *   <li>적격성 6축(§D5-2)을 <b>독립 조건으로</b> 평가해 <b>사유를 전부 모아</b> 반환한다.
+ *   <li>적격성 6축(ADR-0020 §D5-2)을 <b>독립 조건으로</b> 평가해 <b>사유를 전부 모아</b> 반환한다.
  *       첫 번째에서 멈추면 운영자가 한 번에 한 축만 본다</li>
  *   <li>판정을 <b>allow·deny 양쪽 다</b> root 에 감사 기록한다 — deny 는 claim 에 도달하지 않으므로
  *       claim 에만 기록하면 거부 이력이 남지 않는다</li>
@@ -99,8 +99,8 @@ public class DeadLetterReplayService {
 
         Eligibility eligibility = evaluate(root);
 
-        // allow·deny 양쪽 다 root 잠금 안에서 기록한다(계획 리뷰 2R #9 — 순서를 안 박으면
-        // 동시 deny 가 allow 앵커를 덮어 root=deny/자식=allow 조합이 남는다).
+        // allow·deny 양쪽 다 root 잠금 안에서 기록한다. 순서를 안 박으면
+        // 동시 deny 가 allow 앵커를 덮어 root=deny/자식=allow 조합이 남는다.
         repository.stampReplayPolicy(rootId, eligibility.audit(), actor);
 
         if (!eligibility.reasons().isEmpty()) {
@@ -152,7 +152,7 @@ public class DeadLetterReplayService {
     }
 
     /**
-     * ADR §D5-2 의 6 금지축 + §D5-3 안전창 + §D8-3 fence 를 <b>독립 조건으로</b> 평가한다.
+     * ADR-0020 §D5-2 의 6 금지축 + §D5-3 안전창 + §D8-3 fence 를 <b>독립 조건으로</b> 평가한다.
      * 앞 축이 걸려도 뒤 축을 계속 평가한다 — 단, 원본 레코드를 읽지 못하면 그것에 의존하는
      * 축(fence·eventType·사전조건)은 평가할 수 없으므로 건너뛰고 그 사실을 사유에 남긴다.
      */
@@ -206,7 +206,7 @@ public class DeadLetterReplayService {
             reasons.add("[축5] 정책이 금지한다 — " + policy.id());
         }
 
-        // 원본 레코드 — 축 4(좌표 유효성)의 나머지이자 fence(§D8-3)의 입력.
+        // 원본 레코드 — 축 4(좌표 유효성)의 나머지이자 fence(ADR-0020 §D8-3)의 입력.
         OriginalRecordReader.Original original = null;
         String originalEventId = null;
         if (root.getOriginKind() == DlqOriginKind.RESOLVED_ORIGIN) {
@@ -225,7 +225,7 @@ public class DeadLetterReplayService {
     }
 
     /**
-     * D8 fence — 발행 직전 최종 검사 (§D8-3). 원본과 어긋나면 outbox 행을 만들지 않는다.
+     * fence — 발행 직전 최종 검사 (ADR-0020 §D8-3). 원본과 어긋나면 outbox 행을 만들지 않는다.
      *
      * @return 원본 payload 안의 eventId
      */

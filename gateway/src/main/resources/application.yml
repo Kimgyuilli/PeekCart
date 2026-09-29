@@ -1,4 +1,4 @@
-# gateway — Spring Cloud Gateway (ADR-0013 D3 · 구현 ③ PR3a)
+# gateway — Spring Cloud Gateway (ADR-0013 D3)
 #
 # [ADR-0007] 라우트 predicate / rate limit 파라미터 / 알고리즘 allow-list 는 "동작 규약" 이므로 base 에 둔다.
 # 환경마다 달라지는 것(업스트림 URI·JWKS·Redis)의 **값 소유자는 프로파일**(application-k8s.yml)이고,
@@ -21,7 +21,7 @@ spring:
     gateway:
       server:
         webflux:
-          # 라우트 정본 (계획 P11) — placeholder 금지, 실제 controller prefix 대조로 확정.
+          # 라우트 정본 — placeholder 금지, 실제 controller prefix 대조로 확정.
           # 주의: order 는 /api/v1/cart (단수) + /api/v1/orders, product 는 /api/v1/products + /api/v1/admin/products.
           # RequestRateLimiter 는 rate-limiter=failClosedRedisRateLimiter 를 명시한다 — SCG 기본
           # RedisRateLimiter 는 Redis 오류를 allowed=true 로 삼켜 fail-OPEN 이다(ADR-0013 D3 위반).
@@ -147,13 +147,13 @@ spring:
                     deny-empty-key: true
 
 
-            # --- DLQ 원장 관리자 라우트 (④-c-2b-4b P27 · ADR-0022 §D5) ---
+            # --- DLQ 원장 관리자 라우트 (ADR-0022 §D5) ---
             #
             # 왜 필요한가: 도메인 서비스는 gateway 와 달리 관리 포트를 분리하지 않아 actuator 가 앱 포트에
             #   함께 있다. 그런데 라우트가 /api/v1/** 뿐이고 리소스 서비스는 게이트웨이가 서명한 내부
             #   토큰에서만 인증 주체를 세우므로(ADR-0017), port-forward 직접 호출은 Authentication 이 null
-            #   이라 **DeadLetterEndpoint 의 ROLE_ADMIN 가드에 닿기 전에 인증에서 끊긴다**. 즉 ④-c-2b-4a 의
-            #   진입점은 정확하지만 **부를 방법이 없었다**.
+            #   이라 **DeadLetterEndpoint 의 ROLE_ADMIN 가드에 닿기 전에 인증에서 끊긴다**. 이 라우트가 없으면
+            #   replay 진입점은 정확해도 **부를 방법이 없다**.
             #
             # 권한 판정을 여기로 옮기지 않는다: 게이트웨이는 서명 주체만 전달하고 ADMIN 검사는 리소스를
             #   소유한 서비스가 그대로 진다. 게이트웨이로 옮기면 이 라우트를 우회하는 경로가 생겼을 때
@@ -269,7 +269,7 @@ spring:
                     deny-empty-key: true
 
           # /.well-known/jwks.json · /swagger-ui/** · /api-docs/** 는 라우트가 없다 → 외부 404.
-          # JWKS 는 Gateway 가 내부적으로만 fetch 한다(계획 P11 · 공개 경로 SSOT).
+          # JWKS 는 Gateway 가 내부적으로만 fetch 한다(공개 경로 SSOT).
 
 app:
   gateway:
@@ -280,9 +280,9 @@ app:
       jwks-timeout: PT2S
       jwks-refresh-cooldown: PT10S
       jwks-refresh-interval: PT5M
-    # 내부 토큰 발행 (ADR-0017 D1/D2 · 구현 ③ PR3d).
-    # 개인키는 산출물에 포함하지 않는다 — 로컬 dev 는 gitignored 파일, k8s 는 Secret Manager CSI 마운트
-    # (PR3d-b). 값 자체가 아니라 *위치*만 설정으로 노출한다.
+    # 내부 토큰 발행 (ADR-0017 D1/D2).
+    # 개인키는 산출물에 포함하지 않는다 — 로컬 dev 는 gitignored 파일, k8s 는 Secret Manager CSI 마운트다.
+    # 값 자체가 아니라 *위치*만 설정으로 노출한다.
     # ttl/require-family-id 는 "동작 규약" 이라 base 소유다(ADR-0007).
     internal-token:
       active-kid: peekcart-gateway-dev-2026
@@ -290,7 +290,7 @@ app:
       ttl-seconds: 30
       # family-less 레거시 신원은 내부 토큰을 발행하지 않는다(fail-closed).
       require-family-id: true
-    # 공개 경로 SSOT (method + path) — 계획 §"공개 경로 SSOT".
+    # 공개 경로 SSOT (method + path).
     # method 까지 고정해 관리형 POST 가 무인증으로 새지 않게 한다.
     # 주의: 여기 매칭돼도 Bearer 토큰이 *제시되면* 반드시 검증한다(만료/위조/deny → 401).
     public:
@@ -302,12 +302,12 @@ app:
         - GET /api/v1/products/**
         - POST /api/v1/payments/webhook
 
-# actuator 는 별도 관리 포트로 분리한다(계획 공개 경로 SSOT "외부 미노출").
+# actuator 는 별도 관리 포트로 분리한다(외부 미노출).
 # gateway 는 외부 진입점이라 8080 이 인터넷에 노출된다 — 같은 포트에 prometheus 를 두면
-# 라우트가 없어도 gateway 자신의 handler 로 직접 접근된다(GW-2 c2:7/c3:5).
-# k8s Service 는 8080 만 노출한다(PR3b) — 8081 은 probe 전용이다.
-# scrape 은 PR4 에서 신설할 gateway-metrics Service(labels {app: gateway, monitoring-role: metrics})와
-# ServiceMonitor 가 담당한다(ADR-0015 S5 canonical 5→6 확장은 PR4 소관).
+# 라우트가 없어도 gateway 자신의 handler 로 직접 접근된다.
+# k8s Service 는 8080 만 노출한다 — 8081 은 probe 전용이다.
+# scrape 은 gateway-metrics Service(labels {app: gateway, monitoring-role: metrics})와
+# ServiceMonitor 가 담당한다(ADR-0015 S5 · ADR-0024 D1).
 management:
   server:
     port: 8081

@@ -6,9 +6,9 @@ import org.springframework.core.io.Resource;
 import java.util.List;
 
 /**
- * 리소스 서비스의 내부 토큰 <b>검증</b> 설정 (ADR-0017 D3 · 구현 ③ PR3d).
+ * 리소스 서비스의 내부 토큰 <b>검증</b> 설정 (ADR-0017 D3).
  *
- * <p><b>키 도메인 분리(계획 review #3)</b>: Gateway 공개키는 여기({@code app.internal-token.public-keys})에만
+ * <p><b>키 도메인 분리</b>: Gateway 공개키는 여기({@code app.internal-token.public-keys})에만
  * 둔다. User 의 {@code app.jwt.rs256.public-keys}({@code RsaPublicKeyRegistry}) 에 넣으면
  * {@code JwkController} 가 JWKS 로 전량 게시해 내부 신뢰 앵커가 외부에 노출된다.
  * 이 분리는 {@code scripts/internal-key-ownership-lint.sh} 가 강제한다.
@@ -35,15 +35,15 @@ public record InternalTokenProperties(
     private static final int DEFAULT_SKEW_SECONDS = 5;
     private static final int DEFAULT_MAX_TTL_SECONDS = 120;
 
-    /** 검증 모드 — 롤아웃 단계(계획 §7)와 1:1 대응한다. */
+    /** 검증 모드 — 평문 헤더에서 서명 토큰으로 가는 롤아웃 단계와 1:1 대응한다. */
     public enum Mode {
         /**
-         * 전환기(§7 ②): {@code X-Internal-Auth} 를 우선하되, 없으면 평문 {@code X-User-*} 도 수용한다.
+         * 전환기: {@code X-Internal-Auth} 를 우선하되, 없으면 평문 {@code X-User-*} 도 수용한다.
          * 구 Gateway 이미지가 아직 평문을 주입하는 구간에서만 쓴다. {@code fid} 는 선택.
          */
         DUAL_ACCEPT,
         /**
-         * 최종(§7 ④): {@code X-Internal-Auth} 만 수용하고 평문 {@code X-User-*} 는 <b>무시</b>한다
+         * 최종: {@code X-Internal-Auth} 만 수용하고 평문 {@code X-User-*} 는 <b>무시</b>한다
          * (401 이 아니라 미인증 — 공개 경로가 헤더 유무로 깨지지 않게). {@code fid} 필수.
          */
         SIGNED_ONLY
@@ -62,7 +62,7 @@ public record InternalTokenProperties(
     }
 
     /**
-     * 부팅 시 오배선을 잡는다(계획 loop2 #5). 정상 배선만 통과시키는 게 아니라, 키가 하나도 없거나
+     * 부팅 시 오배선을 잡는다. 정상 배선만 통과시키는 게 아니라, 키가 하나도 없거나
      * 범위를 벗어난 설정이면 서비스 기동 자체를 거부한다 — 런타임에 전 요청 401 로 발현되면 늦다.
      */
     public void validate() {

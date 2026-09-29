@@ -53,7 +53,7 @@ public class OrderCommandService {
         }
 
         // 재고 차감은 order.created → Product 예약 Saga 로 처리한다 (ADR-0012 D3).
-        // 단가는 Product 동기 호출 없이 로컬 가격 캐시에서 스냅샷으로 읽는다 (CQRS ⑤, strangler-2).
+        // 단가는 Product 동기 호출 없이 로컬 가격 캐시에서 스냅샷으로 읽는다 (ADR-0012 CQRS).
         // 미수신 상품(seed·create 발행 전 경합 창)이면 ORD-007 로 명시적 실패 — 동기 fallback 없음.
         List<OrderItemData> itemDataList = cart.getItems().stream()
                 .map(cartItem -> {

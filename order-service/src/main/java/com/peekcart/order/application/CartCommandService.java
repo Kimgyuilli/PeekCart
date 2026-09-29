@@ -26,7 +26,7 @@ public class CartCommandService {
     /**
      * 장바구니에 상품을 추가한다. 장바구니가 없으면 자동으로 생성한다.
      * <p>
-     * 상품 존재 검증은 Product 동기 호출 없이 Order 로컬 캐시로 한다 (strangler-4). 캐시 미수신
+     * 상품 존재 검증은 Product 동기 호출 없이 Order 로컬 캐시로 한다. 캐시 미수신
      * 상품(존재하지 않거나 product.updated 전파 전)이면 {@code ORD-009} 로 거절한다 — createOrder 의
      * 가격 캐시 미스(ORD-007)와 동일한 eventual-consistency 재시도 시맨틱.
      *

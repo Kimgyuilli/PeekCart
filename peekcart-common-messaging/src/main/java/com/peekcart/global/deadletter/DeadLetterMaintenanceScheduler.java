@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * DLQ 원장 유지보수 — 종결 건 정리 + 미결 경보 (계획 ④-c-2a P10).
+ * DLQ 원장 유지보수 — 종결 건 정리 + 미결 경보.
  *
  * <p><b>{@code OPEN}/{@code ACKED} 는 삭제하지 않는다.</b> 장기 미결은 용량 문제가 아니라
  * 운영 SLA 문제이고, 지우면 그 사실 자체가 사라진다. 대신 age·건수 경보로 사람을 부른다.
@@ -48,9 +48,9 @@ public class DeadLetterMaintenanceScheduler {
      * 종결 <b>incident</b> 정리. unbounded DELETE 가 큰 테이블에서 장기 락을 만들지 않도록
      * cutoff 를 1회 계산하고 작은 batch 를 반복한다 (기존 cleanup 계약 승계).
      *
-     * <p><b>root 를 잠그고 상태를 다시 본다</b>(④-c-2b-1 P4). 조회와 삭제 사이에 늦은 자식이 도착해
+     * <p><b>root 를 잠그고 상태를 다시 본다</b>. 조회와 삭제 사이에 늦은 자식이 도착해
      * root 가 재개방될 수 있는데(ADR-0020 §D6-2b I-2), 먼저 조회한 목록으로 그대로 지우면
-     * <b>살아 있는 incident 와 방금 들어온 자식을 삭제</b>한다. 종결 전이(P5)·재개방도 같은 잠금을
+     * <b>살아 있는 incident 와 방금 들어온 자식을 삭제</b>한다. 종결 전이·재개방도 같은 잠금을
      * 먼저 잡으므로 진입 순서가 같아 순환이 없다.
      *
      * <p>삭제는 root + 자식을 <b>함께</b> 한다 — 자식은 진단용이며 독립 종결·정리되지 않는다.

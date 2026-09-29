@@ -17,7 +17,7 @@ public interface PaymentRefundJpaRepository extends JpaRepository<PaymentRefund,
 
     /**
      * fence 획득 (ADR-0018 D3). <b>단일 원자 INSERT</b> — 유니크 충돌을 예외가 아니라
-     * 영향 행 수 0 으로 돌려받아야 소비 트랜잭션이 rollback-only 로 오염되지 않는다(계획 §2.1-m).
+     * 영향 행 수 0 으로 돌려받아야 소비 트랜잭션이 rollback-only 로 오염되지 않는다.
      *
      * <p>{@code ON DUPLICATE KEY UPDATE id = id} 를 쓰지 않는 이유: MySQL Connector/J 는 기본이
      * <b>found-rows</b> 시맨틱이라 값이 바뀌지 않은 중복도 <b>1</b> 로 보고한다 — 그러면 두 진입점이
