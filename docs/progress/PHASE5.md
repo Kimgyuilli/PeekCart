@@ -36,6 +36,17 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## Layer 1 문서의 Phase 1·2 설계 아카이브 분리 (D-053, [#171](https://github.com/Kimgyuilli/PeekCart/pull/171), 2026-09-30)
+
+`docs/02-architecture.md` §5·§12 의 Phase 1 다이어그램, Phase 1·2 패키지 구조, Phase 1 대비 전환 비교표와
+`docs/05-data-design.md` §11 의 Phase 1 ERD, Phase 2 변경점, 비교표를 `docs/progress/design-archive-phase1-2.md` 로 원문
+그대로 옮겼다(02 는 556 에서 344줄, 05 는 490 에서 308줄). 두 문서를 가리키는 34개 파일이 모두 절 번호나 남는 하위 절을
+가리켜 절 제목만 유지하면 참조가 깨지지 않는다. D-052 미충족이던 `consistency-hints.sh` 항목 4 는 찾을 대상이 없어져
+지웠다. 보존 검증은 처음에 줄 집합 비교로 짰다가, ERD 의 반복 줄 하나를 지우는 주입을 놓치는 것을 보고 줄 개수 비교로
+바꿨다. 등급 M, diff 리뷰는 `.cache/codex-off` 로 의도적 생략.
+
+미충족: §12 Phase 3 절의 디렉터리 트리가 지금은 없는 루트 `src/` 를 그린다. 현행 배포 순서의 정본이라 옮기지 않았다.
+
 ## TASKS.md 완료 항목 아카이브와 완료 행 이동 절차 (D-052, [#170](https://github.com/Kimgyuilli/PeekCart/pull/170), 2026-09-30)
 
 `docs/TASKS.md` 153KB 중 열린 행은 1.4KB 였다. 종결된 Phase 4·버킷 1·보류 섹션은 `docs/progress/TASKS-archive-phase4.md`
