@@ -85,8 +85,10 @@ hpx_ship_resume_point() {
   if [ -z "$pr" ]; then
     printf '7\n열린 PR 이 없다\n'; return 0
   fi
-  if ! grep -q "$(basename "$pr")" docs/TASKS.md 2>/dev/null; then
-    printf '8\nPR %s 는 있는데 TASKS.md 에 링크가 없다 (/done 미적용)\n' "$pr"; return 0
+  # 번호만 찾으면 본문의 "170줄" 같은 숫자에 걸린다. 링크 꼬리로 찾는다.
+  # 완료 행은 TASKS-done.md 로 옮겨지므로 두 파일을 본다
+  if ! grep -qsF "/pull/$(basename "$pr"))" docs/TASKS.md docs/progress/TASKS-done.md; then
+    printf '8\nPR %s 는 있는데 TASKS.md · TASKS-done.md 에 링크가 없다 (/done 미적용)\n' "$pr"; return 0
   fi
   printf '0\n완료. 보고만 한다 (PR %s)\n' "$pr"
 }
