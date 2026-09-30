@@ -12,7 +12,6 @@
 #      → 해당 줄 근처에 ADR 참조가 있는지 사람이 확인
 #   2. 모든 `ADR-NNNN` 참조의 실제 파일 존재 여부 (유일한 자동 판정)
 #   3. k8s/ 디렉토리 트리 (02-architecture.md §12 와 사람이 비교)
-#   4. TASKS.md 완료 Task 줄 (progress/PHASE3.md 와 사람이 교차 확인)
 #
 # 사용법: bash docs/consistency-hints.sh
 # 종료 코드: 항목 2 만 영향. 0 = ADR 참조 깨짐 없음, 1 = 깨진 ADR 참조 발견
@@ -57,16 +56,9 @@ else
 fi
 echo
 
-echo "=== 4. [HINT] TASKS.md 완료 Task 줄 ==="
-echo "  (자동 판정 없음. docs/progress/PHASE3.md 의 작업 이력과 사람이 교차 확인)"
-if [ -f docs/TASKS.md ] && [ -f docs/progress/PHASE3.md ]; then
-  grep -nE '상태.*✅' docs/TASKS.md | sed 's/^/    /' || true
-fi
-echo
-
 if [ $ADR_REF_FAIL -ne 0 ]; then
   echo "HINTS — 일부 ADR 참조가 깨졌습니다. 위 [MISS] 항목 확인 필요."
-  echo "        (다른 항목 1·3·4 의 일관성은 사람이 직접 확인해야 합니다.)"
+  echo "        (다른 항목 1·3 의 일관성은 사람이 직접 확인해야 합니다.)"
   exit 1
 fi
-echo "HINTS — ADR 참조 파일은 모두 존재. 항목 1·3·4 는 사람이 위 출력을 읽고 판단하십시오."
+echo "HINTS — ADR 참조 파일은 모두 존재. 항목 1·3 은 사람이 위 출력을 읽고 판단하십시오."
