@@ -36,6 +36,20 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## TASKS.md 완료 항목 아카이브와 완료 행 이동 절차 (D-052, [#170](https://github.com/Kimgyuilli/PeekCart/pull/170), 2026-09-30)
+
+`docs/TASKS.md` 153KB 중 열린 행은 1.4KB 였다. 종결된 Phase 4·버킷 1·보류 섹션은 `docs/progress/TASKS-archive-phase4.md`
+(고정 스냅샷)로, 완료 D- 행 44개는 `docs/progress/TASKS-done.md`(계속 자라는 목록)로 원문 그대로 옮겨 `TASKS.md` 는 4KB 가
+됐다. 한 번 옮기는 것으로는 다시 커지므로 완료 절차(`ship.md` Step 8 · `done.md`)가 완료 행을 `TASKS-done.md` 맨 아래로
+옮기게 바꿨다. 이 PR 의 D-052 행이 첫 적용이다. ADR 이 D- 번호로 가리키는 행은 ADR 을 고치지 않고 `TASKS.md` 부채 섹션
+머리의 포인터로 한 단계 따라가게 했다. 착수 전 코드 검증에서 `hpx_ship_resume_point` 가 PR 번호 숫자만 grep 해 D-053 행의
+"170줄" 에 걸린다는 것이 드러났다. 이 PR 이 #170 이었고, 링크 꼬리(`/pull/<n>)`) 매칭으로 바꾼 뒤 Step 8 전 판정이 정상적으로
+"/done 미적용" 을 냈다. `harness-context.sh` 완료 카운트는 두 파일 합이 되어 60 에서 44 로 바뀐다(Phase 4 표 16행은 세지 않음).
+검증 V1~V6(줄 보존·ID 보존·다이제스트·판정 식·링크·잔존)을 각각 실패 주입으로 확인했다. 등급 L, 계획·diff 리뷰는
+`.cache/codex-off` 로 의도적 생략.
+
+미충족: `docs/consistency-hints.sh` 항목 4 는 옛 Phase 3 형식 줄을 찾는다. 이전에도 0건이라 그대로 두고 D-053 때 본다.
+
 ## 코드 주석의 계획서 내부 식별자 제거 (D-050, [#169](https://github.com/Kimgyuilli/PeekCart/pull/169), 2026-09-30)
 
 main 코드 주석 약 500줄에서 계획서 안에서만 통하는 식별자(`§2.5`·`P15`·`④-c-2b-4a`·`PR3d`·`계획 리뷰 2R #5`, 게이트 라벨
