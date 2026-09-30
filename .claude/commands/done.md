@@ -13,7 +13,7 @@
    - 기존 결정이 대체된 경우 → 새 ADR 작성 + 이전 ADR Status 를 `Superseded` / `Partially Superseded` / `Deprecated` 로 전환
    - ADR 본문의 사실 오류(파일명, 수치 등) 정정이 필요한 경우 → `fix(adr):` 접두사 + 본문 말미 `## Update Log` 절에 변경 일자/커밋/사유 기록 (README "본문 정정 예외" 규칙)
 5. 완료된 항목은 `🔲` → `✅`로, Task 전체가 완료되면 Task 상태도 `🔄 진행 중` → `✅ 완료`로 업데이트합니다.
-6. 완료된 Task가 있다면 `docs/TASKS.md` 하단 "완료된 작업" 표에 오늘 날짜(현재 날짜 사용)와 함께 추가합니다.
+6. 완료된 Task 행은 PR 링크를 단 채로 `docs/progress/TASKS-done.md` 표 맨 아래로 옮기고 `docs/TASKS.md` 에서 지웁니다. `TASKS.md` 에는 열린 행만 남깁니다.
 7. `docs/progress/PHASE{N}.md`를 읽어 현재 Phase의 진행 보고서를 업데이트합니다:
    - "작업 이력" 섹션에 오늘 날짜와 완료 항목 추가 (관련 ADR 이 있으면 번호 명시)
    - 결정 사항은 3번 분류에 따라 ADR 참조 또는 직접 기록

@@ -73,7 +73,8 @@ for l in live:
     out.append('- [%s] %s | %s'
                % (ident, desc[:90], '진행중' if '🔄' in status_of(l) else '대기'))
 
-done_rows = len([l for l in tasks.split('\n')
+# 완료 행은 TASKS-done.md 로 옮겨지므로 두 파일을 합쳐 센다
+done_rows = len([l for l in (tasks + '\n' + read('docs/progress/TASKS-done.md')).split('\n')
                  if l.startswith('|') and '✅' in status_of(l)])
 out.append('')
 out.append('완료 표기 행 %d · 진행중/대기 행 %d' % (done_rows, len(live)))

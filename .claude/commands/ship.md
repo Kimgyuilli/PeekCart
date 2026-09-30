@@ -242,7 +242,9 @@ gh pr create --base "$(hpx_base_branch_name)" --head "$BRANCH" \
 ### 8. `/done` 갱신 (PR URL 확정 후에만)
 
 1. `docs/TASKS.md` — 해당 Task 행에 **PR 링크**를 달고 `🔄`/`🔲` → `✅`.
-   범위가 착수 전과 달라졌으면 **그 사실과 근거를 행에 기록한다** (구현 ④·⑤ 선례)
+   범위가 착수 전과 달라졌으면 **그 사실과 근거를 행에 기록한다** (구현 ④·⑤ 선례).
+   그 행을 `docs/progress/TASKS-done.md` 표 **맨 아래**로 옮기고 `TASKS.md` 에서 지운다.
+   `TASKS.md` 에는 열린 행만 남긴다
 2. 편입 부채가 있으면 `docs/progress/phase4-prep-debt-roadmap.md` 의 해당 행에 ✅ + PR 번호
 3. `docs/progress/PHASE{N}.md` — 작업 이력에 PR URL. **미충족 항목을 함께 남긴다**
 4. 이월 항목 중 구조적이거나 반복되는 것은 `docs/TASKS.md` 부채 표에 `D-0NN` 으로 등록한다.
@@ -254,7 +256,7 @@ gh pr create --base "$(hpx_base_branch_name)" --head "$BRANCH" \
    - 확신이 없으면 사용자에게 묻는다
 6. Layer 1(01~07) 이 코드 사실과 어긋나면 **What 만** 정정. Why 는 ADR
 7. `docs/plans/${TASK_ID}.audit.md` 에 `/ship` 결과 1블록 append (PR URL · precheck 결과 · 갱신 항목).
-   **등급 S 는 audit 파일이 없으므로 이 단계를 건너뛴다** — PR URL 은 `docs/TASKS.md` 와
+   **등급 S 는 audit 파일이 없으므로 이 단계를 건너뛴다** — PR URL 은 `docs/progress/TASKS-done.md` 와
    progress 에 이미 남는다. 없는 파일을 만들자고 audit 을 되살리지 않는다
 
 갱신분은 별도 커밋 후 push 한다.
@@ -289,5 +291,5 @@ bash -c 'source .claude/scripts/shared-logic.sh; hpx_ship_resume_point "<TASK_ID
 | `git status --porcelain` 비어있지 않음 | 커밋 안 된 변경 있음 | Step 3 |
 | `git ls-remote --heads origin <branch>` 없음 | 미push | Step 6 |
 | `gh pr list --head <branch> --state open` 비어있음 | PR 없음 | Step 7 |
-| PR 있고 TASKS 에 PR 링크 없음 | `/done` 미적용 | Step 8 |
+| PR 있고 `TASKS.md` · `TASKS-done.md` 어디에도 PR 링크 없음 | `/done` 미적용 | Step 8 |
 | 위 전부 충족 | 완료 | 보고만 |
