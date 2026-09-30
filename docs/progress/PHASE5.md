@@ -36,6 +36,17 @@ Phase 5 에는 그 순서표가 없다. **필요하다고 판단한 시점에 �
 
 > 엔트리 형식은 PHASE4.md 와 동일: `## <제목> ([PR](...), YYYY-MM-DD)`
 
+## plan · work 공통 Codex 리뷰 규칙의 단일 문서화 (D-057, [#172](https://github.com/Kimgyuilli/PeekCart/pull/172), 2026-09-30)
+
+`.claude/commands/plan.md` 와 `work.md` 에 두 벌 있던 Codex 호출 게이트, 결과 처리, 라운드 2 규칙, 리뷰 상태 4값을
+`docs/conventions/codex-review.md` 로 옮겼다. D-027 ① 이 남은 크기의 주원인으로 지목하고 이월한 부분이다. 두 커맨드
+합계는 29,995B 에서 20,561B(31% 감소)다. 공통 문서는 Codex 를 부를 때만 읽으므로, 읽지 않아도 지켜야 할 두 규칙(승인 없는
+호출 금지, 렌더러 exit 2 는 미결)은 커맨드 본문에 한 줄씩 남겼다. 절 제목은 `harness-rationale.md` · `writing.md` ·
+`codex-review-render.sh` · ADR-0028 이 가리켜 고정했다. 검증 스크립트는 실패 주입으로 두 번 보정했다. 원문 그대로 옮긴 줄까지
+예외로 빼던 것을 좁혔고, 절 이름 접두어 비교를 정확 일치로 바꿨다. 등급 M, diff 리뷰는 `.cache/codex-off` 로 의도적 생략.
+
+미충족: 5-1 호출 프롬프트는 두 커맨드가 역할과 체크 항목이 달라 옮기지 않았다.
+
 ## Layer 1 문서의 Phase 1·2 설계 아카이브 분리 (D-053, [#171](https://github.com/Kimgyuilli/PeekCart/pull/171), 2026-09-30)
 
 `docs/02-architecture.md` §5·§12 의 Phase 1 다이어그램, Phase 1·2 패키지 구조, Phase 1 대비 전환 비교표와
