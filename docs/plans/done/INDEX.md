@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 80개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 81개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-09-29 |  |
 | [task-d048-e2e-stack-startup](./task-d048-e2e-stack-startup.md) | task-d048-e2e-stack-startup | [#156](https://github.com/Kimgyuilli/PeakCart/pull/156) | 2026-09-29 |  |
 
-## 기타 (18)
+## 기타 (19)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -104,4 +104,5 @@
 | [D-058](./D-058.md) | D-058 | [#167](https://github.com/Kimgyuilli/PeakCart/pull/167) | 2026-09-29 | 있음 |
 | [D-050](./D-050.md) | main 코드 주석의 계획서 내부 식별자 제거 | [#169](https://github.com/Kimgyuilli/PeakCart/pull/169) | 2026-09-30 | 있음 |
 | [D-052](./D-052.md) | TASKS.md 완료 항목 아카이브 + 완료 시 이동 규칙 | [#170](https://github.com/Kimgyuilli/PeakCart/pull/170) | 2026-09-30 | 있음 |
+| [D-053](./D-053.md) | Layer 1 문서의 Phase 1·2 설계 아카이브 | [#171](https://github.com/Kimgyuilli/PeakCart/pull/171) | 2026-09-30 | 있음 |
 
