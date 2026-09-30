@@ -110,7 +110,7 @@ Refs: D-025, ADR-0025
 - diff 리뷰: 해당 없음(등급 S)
 ```
 
-상태값 넷의 정의는 `.claude/commands/work.md` §9 에 있다. `미결` 만 미충족 항목으로 올린다.
+상태값 넷의 정의는 `docs/conventions/codex-review.md` §리뷰 상태 에 있다. `미결` 만 미충족 항목으로 올린다.
 
 ## 6. 검사
 
