@@ -306,3 +306,9 @@ erDiagram
 | `processed_events` | `uk_processed_event_consumer (event_id, consumer_group)` | 멱등성 체크 (중복 소비 방지, 복합 UK) |
 | `notifications` | `idx_notifications_user_id (user_id)` | 사용자별 알림 목록 조회 |
 | `refresh_tokens` | `idx_refresh_tokens_user_id (user_id)` | 사용자별 토큰 조회/삭제 |
+
+### 승인 예약 보호 확장 (see ADR-0034)
+
+- Product V11: `stock_reservations.approval_fenced BOOLEAN NOT NULL DEFAULT FALSE`. 상태에 `APPROVAL_HELD`를 추가한다. 이 영속 flag는 성공 환불 시 HELD/CONFIRMED 재고를 복구할 권한을 legacy 예약과 구분한다. 해제 CAS와 재고 증가/환불 marker는 같은 트랜잭션이다.
+- Payment V12: `payment_approvals.dispatch_deadline DATETIME(6) NULL`. 새 접수는 항상 기한을 기록하고 `WAITING_STOCK → READY → CLAIMED`를 거친다. 기존 CLAIMED/UNRESOLVED는 NULL이어도 조회 기반 확정을 계속한다. 신규 상태는 기존 VARCHAR 상태 컬럼을 사용한다.
+- `order_id` UNIQUE는 그대로 주문당 승인 1건을 보장한다. 새 dispatcher와 회신/timeout 처리는 원장 행 잠금을 공유한다. CLAIMED의 generation은 조회 claim마다 증가하며 과거 실행자의 확정을 거부한다.
