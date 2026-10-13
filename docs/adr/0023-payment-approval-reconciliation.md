@@ -1,6 +1,7 @@
 # ADR-0023: 결제 승인 경계 계약 — 승인 원장 + 멱등키 + 조회 기반 reconciliation
 
-- **Status**: Accepted
+- **Status**: Partially Superseded by [ADR-0034](./0034-approval-reservation-fence.md)
+  - D1/D2/D4/D8의 동기 접수·직접 CLAIMED·즉시 응답 부분은 비동기 접수/재고 보호/dispatcher 계약으로 대체. 조회 전용 reconciliation은 유지.
 - **Date**: 2026-09-14
 - **Deciders**: 프로젝트 오너
 - **관련 Phase**: Phase 4 (MSA 분리) — 개발 부채 D-020
