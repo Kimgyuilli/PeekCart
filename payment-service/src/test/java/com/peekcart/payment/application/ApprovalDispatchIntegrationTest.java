@@ -53,7 +53,7 @@ class ApprovalDispatchIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("SAGA-APPROVAL-FENCE-DISPATCH")
+    @DisplayName("[SAGA-APPROVAL-FENCE-DISPATCH]")
     void acceptsWithoutPgAndDispatchesOnlyAfterProtection() {
         accept();
         assertThat(approvals.findByOrderId(ORDER).orElseThrow().getStatus()).isEqualTo(ApprovalStatus.WAITING_STOCK);

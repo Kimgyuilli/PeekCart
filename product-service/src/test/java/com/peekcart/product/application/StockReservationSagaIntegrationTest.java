@@ -280,7 +280,7 @@ class StockReservationSagaIntegrationTest extends AbstractIntegrationTest {
     @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
 
     @Test
-    @DisplayName("SAGA-APPROVAL-HELD-LEASE")
+    @DisplayName("[SAGA-APPROVAL-HELD-LEASE]")
     void heldReservationSurvivesExpiryAndCancellation() {
         reserveForApproval();
         reservationService.holdForApproval(1000L);
