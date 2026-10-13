@@ -24,6 +24,7 @@ public class TossPaymentClient {
 
     private static final String ALREADY_CANCELED = "ALREADY_CANCELED_PAYMENT";
     private static final String ALREADY_PROCESSED = "ALREADY_PROCESSED_PAYMENT";
+    private static final String IDEMPOTENT_REQUEST_PROCESSING = "IDEMPOTENT_REQUEST_PROCESSING";
     private static final String IDEMPOTENCY_HEADER = "Idempotency-Key";
 
     private final RestClient restClient;
@@ -182,6 +183,11 @@ public class TossPaymentClient {
         String code = extractCode(body);
         if (ALREADY_CANCELED.equals(code)) {
             return TossOutcome.alreadyCanceled(body);
+        }
+        // 이전 멱등 요청이 아직 처리 중이다. 실패로 닫지 않고 같은 키로 재시도하며,
+        // 소진하면 기존 UNRESOLVED 조회 복구 경로에서 취소 결과를 확정한다.
+        if (status.value() == 409 && IDEMPOTENT_REQUEST_PROCESSING.equals(code)) {
+            return TossOutcome.transient_(code, body);
         }
         if (status.is5xxServerError() || status.value() == 429) {
             return TossOutcome.transient_(code, body);
