@@ -1,6 +1,7 @@
 # ADR-0012: Phase 4 DB-per-service + 이벤트/Saga 계약
 
-- **Status**: Partially Superseded by [ADR-0016](./0016-reservation-and-payment-table-model.md), [ADR-0020](./0020-dlq-replay-contract.md)
+- **Status**: Partially Superseded by [ADR-0016](./0016-reservation-and-payment-table-model.md), [ADR-0020](./0020-dlq-replay-contract.md), [ADR-0034](./0034-approval-reservation-fence.md)
+  - D3 재고 예약/승인 경계와 D4 payment.requested 구독은 ADR-0034의 APPROVAL_HELD 및 stock.approval.result 계약으로 확장·대체.
 
 > **무효화 범위 (ADR-0016)**: 본 ADR 의 **D1 소유표 중 두 행**과 **D3 재고 예약 모델**이 구현 실제와 달라 ADR-0016 으로 재기록된다.
 > - **D1 Product 행**: `inventories(+예약 컬럼, D3)` → 별도 **`stock_reservations`** 테이블(예약 원장)을 채택. inventories 에 예약 컬럼을 두지 않음.

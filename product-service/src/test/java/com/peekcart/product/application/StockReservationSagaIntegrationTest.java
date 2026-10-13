@@ -275,4 +275,161 @@ class StockReservationSagaIntegrationTest extends AbstractIntegrationTest {
             throw new IllegalStateException(e);
         }
     }
+
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
+    @Autowired org.springframework.transaction.PlatformTransactionManager txManager;
+
+    @Test
+    @DisplayName("[SAGA-APPROVAL-HELD-LEASE]")
+    void heldReservationSurvivesExpiryAndCancellation() {
+        reserveForApproval();
+        reservationService.holdForApproval(1000L);
+        jdbc.update("UPDATE stock_reservations SET expires_at = ? WHERE order_id = 1000",
+                java.time.LocalDateTime.now().minusDays(1));
+        reservationService.release(1000L);
+        reservationService.sweepExpiredLeases();
+        assertThat(stockOf(product1)).isEqualTo(90);
+        assertThat(reservationRepository.findByOrderId(1000L).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.APPROVAL_HELD);
+        assertApprovalGranted(true);
+    }
+
+    @Test
+    void releaseWinsThenApprovalIsRejected() {
+        reserveForApproval();
+        reservationService.release(1000L);
+        reservationService.holdForApproval(1000L);
+        assertApprovalGranted(false);
+        assertThat(stockOf(product1)).isEqualTo(100);
+    }
+
+    @Test
+    void expiredReservationCannotAcquireFenceEvenBeforeSweeper() {
+        reserveForApproval();
+        jdbc.update("UPDATE stock_reservations SET expires_at = ? WHERE order_id = 1000",
+                java.time.LocalDateTime.now().minusSeconds(1));
+        reservationService.holdForApproval(1000L);
+        assertApprovalGranted(false);
+        assertThat(reservationRepository.findByOrderId(1000L).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.RESERVED);
+    }
+
+    @Test
+    void failedPaymentReleasesHeldExactlyOnce() {
+        reserveForApproval();
+        reservationService.holdForApproval(1000L);
+        reservationService.releaseAfterPaymentFailed(1000L);
+        reservationService.releaseAfterPaymentFailed(1000L);
+        reservationService.release(1000L);
+        assertThat(stockOf(product1)).isEqualTo(100);
+        reservationService.holdForApproval(1000L);
+        assertThat(reservationRepository.findByOrderId(1000L).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.RELEASED);
+    }
+
+    @Test
+    void successRefundBeforeCompletionDoesNotResurrectOrCompensateAgain() {
+        reserveForApproval();
+        reservationService.holdForApproval(1000L);
+        reservationService.recordRefundResult(1000L, "SUCCEEDED", null, java.time.LocalDateTime.now());
+        reservationService.confirm(1000L);
+        reservationService.recordRefundResult(1000L, "SUCCEEDED", null, java.time.LocalDateTime.now());
+        assertThat(stockOf(product1)).isEqualTo(100);
+        var row = reservationRepository.findByOrderId(1000L).orElseThrow();
+        assertThat(row.getStatus()).isEqualTo(ReservationStatus.RELEASED);
+        assertThat(row.getRefundResult()).isEqualTo("SUCCEEDED");
+        assertThat(row.getCompensatedAt()).isNull();
+    }
+
+    @Test
+    void successRefundAfterCompletionRestoresFencedStock() {
+        reserveForApproval();
+        reservationService.holdForApproval(1000L);
+        reservationService.confirm(1000L);
+        reservationService.release(1000L);
+        assertThat(stockOf(product1)).isEqualTo(90);
+        reservationService.recordRefundResult(1000L, "SUCCEEDED", null, java.time.LocalDateTime.now());
+        assertThat(stockOf(product1)).isEqualTo(100);
+    }
+
+    @Test
+    void failedRefundDoesNotReleaseHeldStock() {
+        reserveForApproval();
+        reservationService.holdForApproval(1000L);
+        reservationService.recordRefundResult(1000L, "FAILED", "DENIED", java.time.LocalDateTime.now());
+        assertThat(stockOf(product1)).isEqualTo(90);
+        assertThat(reservationRepository.findByOrderId(1000L).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.APPROVAL_HELD);
+    }
+
+    @Test
+    void rollbackDoesNotLeaveProtectionWithoutResultOutbox() {
+        reserveForApproval();
+        var tx = new org.springframework.transaction.support.TransactionTemplate(txManager);
+        assertThatThrownBy(() -> tx.executeWithoutResult(status -> {
+            reservationService.holdForApproval(1000L);
+            throw new IllegalStateException("abort before commit");
+        })).isInstanceOf(IllegalStateException.class);
+        assertThat(reservationRepository.findByOrderId(1000L).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.RESERVED);
+        assertThat(outboxEventRepository.findPendingEvents(100))
+                .noneMatch(e -> e.getEventType().equals("stock.approval.result"));
+    }
+
+    @Test
+    void concurrentHoldAndReleaseHaveOneWinner() throws Exception {
+        reserveForApproval();
+        var pool = Executors.newFixedThreadPool(2);
+        var start = new CountDownLatch(1);
+        try {
+            var hold = pool.submit(() -> { start.await(); reservationService.holdForApproval(1000L); return null; });
+            var release = pool.submit(() -> { start.await(); reservationService.release(1000L); return null; });
+            start.countDown();
+            hold.get(10, TimeUnit.SECONDS);
+            release.get(10, TimeUnit.SECONDS);
+            var status = reservationRepository.findByOrderId(1000L).orElseThrow().getStatus();
+            assertThat(status).isIn(ReservationStatus.APPROVAL_HELD, ReservationStatus.RELEASED);
+            boolean held = status == ReservationStatus.APPROVAL_HELD;
+            assertThat(stockOf(product1)).isEqualTo(held ? 90 : 100);
+            assertApprovalGranted(held);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    @Test
+    void concurrentRefundAndCompletionPreserveClosureAndStock() throws Exception {
+        reserveForApproval();
+        reservationService.holdForApproval(1000L);
+        var pool = Executors.newFixedThreadPool(2);
+        var start = new CountDownLatch(1);
+        try {
+            var completion = pool.submit(() -> { start.await(); reservationService.confirm(1000L); return null; });
+            var refund = pool.submit(() -> {
+                start.await();
+                reservationService.recordRefundResult(1000L, "SUCCEEDED", null, java.time.LocalDateTime.now());
+                return null;
+            });
+            start.countDown();
+            completion.get(10, TimeUnit.SECONDS);
+            refund.get(10, TimeUnit.SECONDS);
+            var row = reservationRepository.findByOrderId(1000L).orElseThrow();
+            assertThat(row.getStatus()).isEqualTo(ReservationStatus.RELEASED);
+            assertThat(row.getRefundResult()).isEqualTo("SUCCEEDED");
+            assertThat(stockOf(product1)).isEqualTo(100);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    private void reserveForApproval() {
+        reservationService.reserve(1000L, "approval-reserve", List.of(new ReservedItemPayload(product1, 10)));
+    }
+
+    private void assertApprovalGranted(boolean granted) {
+        var results = outboxEventRepository.findPendingEvents(100).stream()
+                .filter(e -> e.getEventType().equals("stock.approval.result")).toList();
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getPayload()).contains("\"granted\":" + granted);
+    }
 }

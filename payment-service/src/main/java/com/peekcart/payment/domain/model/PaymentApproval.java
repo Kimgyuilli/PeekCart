@@ -76,6 +76,9 @@ public class PaymentApproval {
     @Column(name = "failure_code", length = 100)
     private String failureCode;
 
+    @Column(name = "dispatch_deadline")
+    private LocalDateTime dispatchDeadline;
+
     @Column(name = "requested_at", nullable = false)
     private LocalDateTime requestedAt;
 
@@ -87,6 +90,20 @@ public class PaymentApproval {
 
     @Column(name = "resolution_reason", length = 500)
     private String resolutionReason;
+
+    public void markReady() {
+        transitionTo(ApprovalStatus.READY);
+    }
+
+    public boolean dispatchExpired(LocalDateTime now) {
+        return dispatchDeadline == null || !now.isBefore(dispatchDeadline);
+    }
+
+    public void claimForDispatch(LocalDateTime now) {
+        transitionTo(ApprovalStatus.CLAIMED);
+        generation++;
+        claimedAt = now;
+    }
 
     /** PG 승인 성공 확정. */
     public void markSucceeded(String pgResponse) {

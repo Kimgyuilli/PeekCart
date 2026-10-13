@@ -13,18 +13,19 @@ import java.util.Optional;
  * <p>fence 획득과 claim 은 <b>원자 쿼리</b>로만 제공한다 — 조회 후 판단하는 API 를 두면
  * 동시 진입에서 둘 다 통과하는 창이 생긴다.
  *
- * <p>환불 원장과 달리 claim 이 <b>한 종류</b>다. 신규 요청은 T1 이 {@code CLAIMED} 로 직접
- * 삽입하므로 "집어야 할 신규" 가 없고, 남는 claim 대상은 "PG 를 불렀는지 알 수 없는" 건
- * (lease 만료 {@code CLAIMED} · {@code UNRESOLVED})뿐이다 — 전부 조회가 선행돼야 한다.
+ * <p>신규 요청은 WAITING_STOCK으로 삽입한다. READY의 최초 dispatch는 원장 행 잠금으로,
+ * CLAIMED/UNRESOLVED의 조회 claim은 조건부 UPDATE로 직렬화한다 (ADR-0034).
  */
 public interface PaymentApprovalRepository {
 
     /**
-     * 승인 원장을 fence 와 함께 {@code CLAIMED} 로 생성한다 (단일 원자 INSERT).
+     * 승인 원장을 fence 와 함께 {@code WAITING_STOCK} 로 생성한다 (단일 원자 INSERT).
      *
      * @return 1 = 이번 호출이 fence 를 획득 · 0 = 이미 존재(중복 승인 시도)
      */
-    int insertClaimedIfAbsent(Long orderId, String paymentKey, Long userId, long amount, LocalDateTime now);
+    int insertWaitingIfAbsent(Long orderId, String paymentKey, Long userId, long amount, LocalDateTime now, LocalDateTime deadline);
+
+    List<Long> findDispatchCandidates(LocalDateTime now, int limit);
 
     /** 확정 대상 claim (lease 만료 CLAIMED · UNRESOLVED, generation 증가). @return 1 = 획득 */
     int claimForReconcile(Long orderId, LocalDateTime staleBefore, LocalDateTime now);

@@ -15,14 +15,13 @@ import java.time.LocalDateTime;
  * <p>"미결로 남기지 않는다"는 계약은 <b>미해결 건수와 그 나이가 보여야</b> 검증 가능하다.
  * Slack 은 배포 구성상 no-op 일 수 있으므로 관측성의 대체물이 아니다.
  *
- * <p>{@code CLAIMED} 도 backlog 다 — 정상 승인은 같은 요청 안에서 종결되므로, 여기 남아 있다는
- * 것은 T2 에 도달하지 못한 건(과금 고아 후보)이라는 뜻이다.
+ * <p>접수/보호 회신 대기/PG 호출/조회 대기의 모든 미종결 상태를 노출한다 (ADR-0034).
  */
 @Component
 public class ApprovalBacklogMetrics {
 
     private static final ApprovalStatus[] BACKLOG_STATUSES = {
-            ApprovalStatus.CLAIMED, ApprovalStatus.UNRESOLVED
+            ApprovalStatus.WAITING_STOCK, ApprovalStatus.READY, ApprovalStatus.CLAIMED, ApprovalStatus.UNRESOLVED
     };
 
     public ApprovalBacklogMetrics(MeterRegistry meterRegistry, PaymentApprovalRepository approvalRepository) {

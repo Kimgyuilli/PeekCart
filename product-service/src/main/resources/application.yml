@@ -82,7 +82,7 @@ app:
       - kid: peekcart-gateway-dev-2026
         location: classpath:keys/dev-gateway-internal-public.pem
   # 재고 예약 lease (ADR-0012 D3) — 동작 정책이므로 base 소유(ADR-0007).
-  # 회수 순서 불변식: Order 취소(ttl 시점) → Product sweeper(ttl + sweeper-grace). 역전되면 oversell.
+  # RESERVED의 정상 취소 경로에 우선권을 준다. 승인 중 HELD는 별도 fence로 보호한다.
   # 예약 lease sweeper 의 주기·lock 정책 (ADR-0007 — 동작 정책이므로 base 소유).
   # 회수 '대상' 판정은 app.reservation.lease 소관이고 여기는 '언제 도는가' 만 다룬다.
   scheduler:
@@ -93,7 +93,7 @@ app:
   reservation:
     lease:
       ttl: 30m
-      sweeper-grace: 5m      # 결제 승인 수락 ~ 예약 확정 반영의 in-flight 구간보다 커야 한다
+      sweeper-grace: 5m      # RESERVED 회수 유예. 승인 중 HELD는 회수하지 않는다 (ADR-0034)
       sweeper-batch-size: 200
   # processed_events 멱등성 보존 정책 (ADR-0012 D5) — 동작 정책이므로 base 소유(ADR-0007).
   idempotency:

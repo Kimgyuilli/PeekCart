@@ -23,19 +23,20 @@ public interface PaymentApprovalJpaRepository extends JpaRepository<PaymentAppro
      * found-rows 시맨틱이라 값이 바뀌지 않은 중복도 <b>1</b> 로 보고한다 — 두 진입점이 모두
      * "내가 fence 를 잡았다"고 판단하게 된다(환불 원장에서 실측으로 확인).
      *
-     * <p>{@code generation} 이 1 에서 시작한다 — T1 자체가 첫 claim 이다.
+     * <p>{@code generation}은 0으로 접수하고 최초 dispatch claim에서 1로 증가한다.
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
             INSERT IGNORE INTO payment_approvals
-                (order_id, payment_key, user_id, amount, status, attempts, generation, claimed_at, requested_at)
-            VALUES (:orderId, :paymentKey, :userId, :amount, 'CLAIMED', 0, 1, :now, :now)
+                (order_id, payment_key, user_id, amount, status, attempts, generation, claimed_at, requested_at, dispatch_deadline)
+            VALUES (:orderId, :paymentKey, :userId, :amount, 'WAITING_STOCK', 0, 0, NULL, :now, :deadline)
             """, nativeQuery = true)
-    int insertClaimedIfAbsent(@Param("orderId") Long orderId,
+    int insertWaitingIfAbsent(@Param("orderId") Long orderId,
                               @Param("paymentKey") String paymentKey,
                               @Param("userId") Long userId,
                               @Param("amount") long amount,
-                              @Param("now") LocalDateTime now);
+                              @Param("now") LocalDateTime now,
+                              @Param("deadline") LocalDateTime deadline);
 
     /**
      * 확정 대상을 reconciliation 이 claim 한다 — lease 만료 {@code CLAIMED} 또는 {@code UNRESOLVED}.
@@ -85,6 +86,11 @@ public interface PaymentApprovalJpaRepository extends JpaRepository<PaymentAppro
                AND status = 'UNRESOLVED'
             """, nativeQuery = true)
     int nudgeUnresolvedByPaymentKey(@Param("paymentKey") String paymentKey);
+
+    @Query(value = "SELECT order_id FROM payment_approvals WHERE status = 'READY' "
+            + "OR (status = 'WAITING_STOCK' AND dispatch_deadline <= :now) "
+            + "ORDER BY requested_at LIMIT :limit", nativeQuery = true)
+    List<Long> findDispatchCandidates(@Param("now") LocalDateTime now, @Param("limit") int limit);
 
     Optional<PaymentApproval> findByOrderId(Long orderId);
 

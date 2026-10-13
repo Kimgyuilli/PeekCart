@@ -79,8 +79,8 @@ app:
       - kid: peekcart-gateway-dev-2026
         location: classpath:keys/dev-gateway-internal-public.pem
   # 결제 승인 정책 — 동작 정책이므로 base 소유(ADR-0007).
-  # 남은 예약 lease 가 이 마진보다 짧으면 승인을 시작하지 않는다(PAY-010).
-  # fence 가 아니라 경합 창 축소다(한계는 PaymentApprovalProperties 참고).
+  # 남은 예약 lease가 이 마진보다 짧으면 접수하지 않는다(PAY-010).
+  # 지연 완화 정책이며 실제 재고 보호는 Product APPROVAL_HELD가 담당한다(ADR-0034).
   payment:
     lease-approval-margin: 2m
     # 승인 원장 reconciliation (ADR-0023 D5 · D-020) — 동작 정책이므로 base 소유(ADR-0007).
@@ -91,6 +91,7 @@ app:
       claim-lease: 2m           # PG 호출 최악(pg-timeout 10s × connect+read = 20s) 보다 넉넉히 길게
       batch-size: 20
       max-batches-per-run: 5
+      dispatch-interval-ms: 1000
       reconcile-interval-ms: 60000
       lock-at-most-for: 10m
       unresolved-limit: 24h     # 초과 시 자동 확정 포기 → 운영 알림 + 수동 종결(감사 필드 필수)

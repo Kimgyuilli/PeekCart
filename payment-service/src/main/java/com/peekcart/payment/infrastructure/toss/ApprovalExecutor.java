@@ -38,10 +38,8 @@ public class ApprovalExecutor {
     /**
      * 신규 승인 실행 — <b>1회만 호출한다</b> (ADR-0023 D4).
      *
-     * <p>환불 dispatcher 와 달리 재시도 루프가 없다. 이 호출은 사용자가 기다리는 동기 요청 안에서
-     * 일어나므로, 재시도하면 응답이 시도 수에 비례해 늘어지고 그동안 예약 lease 가 만료된다
-     * ({@code leaseApprovalMargin} 의 전제가 깨진다). 일시 실패는 {@code UNRESOLVED} 로 넘겨
-     * <b>재시도의 소유자를 배경 잡으로 옮긴다</b>.
+     * <p>비동기 dispatcher도 최초 승인을 재호출하지 않는다. 일시 실패는 UNRESOLVED로
+     * 남기고, 기존 reconciliation이 PG 조회로만 결과를 확정한다 (ADR-0034, ADR-0023 D5).
      */
     public CallResult execute(PaymentApproval approval) {
         TossOutcome outcome = tossPaymentClient.confirm(

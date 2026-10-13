@@ -45,7 +45,7 @@
 | [0020](./0020-dlq-replay-contract.md) | DLQ replay 계약 — 재발행 보장·발행 권한 예외·좌표 유효성·종결 축 분리 (ADR-0012 D1/D4 · ADR-0018 producer 규약 부분 무효화 · ADR-0021/0022 로 부분 무효화) | Partially Superseded | Phase 4 | 02, 04 |
 | [0021](./0021-dlq-replay-correlation-anchor.md) | DLQ replay 재실패 상관 — 대조 축을 `record_kind` 에서 원장 앵커 + payload digest 로 (ADR-0020 D5-4 부분 무효화) | Accepted | Phase 4 | 02, 05 |
 | [0022](./0022-replay-entrypoint-rollout-and-drain.md) | replay 개시 진입점의 개방 절차 — 도달 경로 · drain/롤백 계약 · `PUBLISH_UNKNOWN` (ADR-0020 §D6-1/§D6-2b/§D6-4 부분 무효화) | Accepted | Phase 4 | 02, 04, 05 |
-| [0023](./0023-payment-approval-reconciliation.md) | 결제 승인 경계 계약 — 승인 원장 + 멱등키 + 조회 기반 reconciliation (D-020, ADR-0018 D2/D3/D5 를 승인 경로로 확장) | Accepted | Phase 4 | 03, 04 |
+| [0023](./0023-payment-approval-reconciliation.md) | 결제 승인 경계 계약 — 승인 원장 + 멱등키 + 조회 기반 reconciliation (D-020, ADR-0018 D2/D3/D5 를 승인 경로로 확장) | Partially Superseded | Phase 4 | 03, 04 |
 | [0024](./0024-observability-canonical-with-infra.md) | 관측성 canonical 집합 = 도메인 5 + 인프라 1 — gateway 편입과 세 집합(태그/Service/SM)의 분리 (ADR-0015 부분 무효화) | Accepted | Phase 4 | 02 |
 | [0025](./0025-inventory-concurrency-control.md) | 재고 동시성 제어 — 분산 락 제거, `@Version` 단일 수단 + jitter 재시도 (D-025, 흡수된 L-007) | Accepted | Phase 4 | 02, 04, 05 |
 | [0026](./0026-product-detail-stock-cache-boundary.md) | 상품 상세 재고 캐시 경계 — 재고 전용 짧은 TTL 캐시, 쓰기 경로 무효화 없음 (D-026) | Accepted | Phase 4 | 04, 05 |
@@ -56,4 +56,5 @@
 | [0031](./0031-e2e-fault-injection-boundary.md) | e2e 음성 대조군의 결함 주입 경계 (스택 바깥 주입 · 실패 지점 특정 · 유도한 부재 창) | Accepted | Phase 5 | 06 |
 | [0032](./0032-e2e-jvm-verification-responsibility.md) | 실제 스택 e2e 와 JVM 테스트의 검증 책임 경계 (배선은 스택 · 로직은 JVM · 결함 주입으로만 중복 인정) | Accepted | Phase 5 | 06 |
 | [0033](./0033-shared-messaging-module.md) | Outbox · 멱등성 · DLQ 원장 실행 세트의 공유 모듈 승격 (`peekcart-common-messaging` · 스키마는 서비스 소유 유지) | Accepted | Phase 5 | 02 |
+| [0034](./0034-approval-reservation-fence.md) | 비동기 결제 승인과 재고 예약 fence | Accepted | Phase 5 | 02, 03, 04, 05 |
 <!-- INDEX:END -->

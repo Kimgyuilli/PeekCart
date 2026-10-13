@@ -12,7 +12,7 @@ usage:
   saga_e2e.py readiness
   saga_e2e.py order
   saga_e2e.py validate-order a,b,c,d
-  saga_e2e.py scenario <a|b|c|d>
+  saga_e2e.py scenario <a|b|c|d|e>
   saga_e2e.py negative-control <name>   (이름은 CONTROLS 참조)
 """
 import json
@@ -47,7 +47,7 @@ SERVICES = {
 BUSINESS_TOPICS = [
     "order.created", "order.cancelled", "order.compensation.requested",
     "payment.requested", "payment.completed", "payment.failed", "payment.refunded",
-    "product.updated", "stock.reservation.result", "stock.compensation.requested",
+    "product.updated", "stock.reservation.result", "stock.compensation.requested", "stock.approval.result",
 ]
 
 # DLQ listener readiness (계획 P5 ②). DlqTopology 의 group 은 '실패한 업무 consumer' 의
@@ -68,9 +68,9 @@ EXPECTED_MIGRATIONS = {
     # V11/V9/V9/V7 = drain 앵커 + replay 축 backfill (구현 ④-c-2b-4a P23)
     # V12/V10/V10/V8 = 발행 축 override 감사 2컬럼 (구현 ④-c-2b-4b P24, ADR-0022 D4)
     "order": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],  # V7 = 커서 페이지네이션 인덱스 (구현 ⑥)
-    "product": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+    "product": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
     # payment V11 = 승인 원장 (D-020, ADR-0023 D2)
-    "payment": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+    "payment": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
     "notification": ["1", "2", "3", "4", "5", "6", "7", "8"],
 }
 
@@ -417,13 +417,8 @@ def scenario_a():
     status, body = http("payment", "POST", "/api/v1/payments/confirm",
                         {"paymentKey": payment_key, "orderId": order_id, "amount": 20000},
                         user_id=user_id)
-    if status == 200:
-        raise AssertionError("승인이 성공했다 — cfail script 가 먹지 않았다")
-    # 가드 거부(PAY-008/009/010)와 PG 실패(PAY-005)를 구분한다. 구분하지 않으면 예약이
-    # 확정되지 않아 거부된 것을 '결제 실패 체인 검증' 으로 착각한다.
-    code = (body or {}).get("code")
-    if code != "PAY-005":
-        raise AssertionError("PG 실패가 아니라 가드 거부다 — code=%r body=%r" % (code, body))
+    if status != 202:
+        raise AssertionError("비동기 승인 접수가 거절됐다 — status=%r body=%r" % (status, body))
 
     evidence = {}
     evidence["payment_status"] = wait_for(
@@ -764,7 +759,57 @@ def scenario_d():
     )
 
 
-SCENARIOS = {"a": scenario_a, "b": scenario_b, "c": scenario_c, "d": scenario_d}
+def scenario_e():
+    """재고 보호 이후 PG 결과 불명 + lease 만료/주문 취소의 실제 서비스 경합 (ADR-0034)."""
+    user_id = 105
+    product_id = create_product("e", price=10000, stock=5)
+    wait_price_cached(product_id)
+    order_id = place_order("e", user_id, product_id, 2)
+    wait_reserved(order_id)
+    wait_for("payment ready", lambda: query("payment",
+             "SELECT id FROM payments WHERE order_id=%s AND ready_for_payment=1", (order_id,)))
+    key = "e2e-fence-%s" % order_id
+    http("payment", "POST", "/api/v1/payments/confirm",
+         {"paymentKey": key, "orderId": order_id, "amount": 20000}, user_id=user_id, expect=202)
+    wait_for("approval unresolved", lambda: query("payment",
+             "SELECT id FROM payment_approvals WHERE order_id=%s AND status='UNRESOLVED'", (order_id,)))
+    protected = query("product", "SELECT status, approval_fenced FROM stock_reservations WHERE order_id=%s", (order_id,))[0]
+    if protected["status"] != "APPROVAL_HELD" or not protected["approval_fenced"]:
+        raise AssertionError("PG 호출 이전 재고 보호가 없다: %r" % protected)
+    # 애플리케이션의 만료 우회 플래그 없이, 실제 DB의 시간 조건만 이동시킨다 (ADR-0031).
+    query("product", "UPDATE stock_reservations SET expires_at=NOW()-INTERVAL 1 DAY WHERE order_id=%s", (order_id,))
+    http("order", "POST", "/api/v1/orders/%s/cancel" % order_id, user_id=user_id, expect=204)
+    cancel = wait_for("cancel outbox", lambda: outbox_payload("order", "order.cancelled", order_id))
+    event_id = envelope_event_id(cancel["payload"])
+    for svc, group in (("product", "product-svc-order-cancelled-group"), ("payment", "payment-svc-order-cancelled-group")):
+        wait_for("cancel consumed " + svc, lambda s=svc, g=group: query(s,
+                 "SELECT event_id FROM processed_events WHERE event_id=%s AND consumer_group=%s", (event_id, g)))
+    held = query("product", "SELECT status FROM stock_reservations WHERE order_id=%s", (order_id,))[0]["status"]
+    stock = query("product", "SELECT stock FROM inventories WHERE product_id=%s", (product_id,))[0]["stock"]
+    if held != "APPROVAL_HELD" or stock != 3:
+        raise AssertionError("결과 불명 중 재고 회수: status=%s stock=%s" % (held, stock))
+    # PG가 실패를 확정한 뒤 기존 조회 전용 reconciliation을 실제로 통과시킨다.
+    req = urllib.request.Request("http://pg-stub:8080/__resolve-approval/" + key, data=b"", method="POST")
+    with urllib.request.urlopen(req, timeout=10) as response:
+        if response.status != 200:
+            raise AssertionError("stub resolve failed")
+    wait_for("approval failed after lookup", lambda: query("payment",
+             "SELECT id FROM payment_approvals WHERE order_id=%s AND status='FAILED'", (order_id,)), deadline=240)
+    wait_for("held stock released", lambda: query("product",
+             "SELECT id FROM stock_reservations WHERE order_id=%s AND status='RELEASED'", (order_id,)))
+    restored = query("product", "SELECT stock FROM inventories WHERE product_id=%s", (product_id,))[0]["stock"]
+    calls = [c for c in stub_ledger() if c["paymentKey"] == key]
+    posts = [c for c in calls if c["method"] == "POST"]
+    gets = [c for c in calls if c["method"] == "GET"]
+    if restored != 5 or len(posts) != 1 or not gets or posts[0]["idempotencyKey"] != "approve-%s" % order_id:
+        raise AssertionError("fence 종결/호출 계약 위반: stock=%s calls=%r" % (restored, calls))
+    return ({"approval_reservation_fence": {"actual": {
+        "held_during_unknown": True, "stock_while_cancelled": stock,
+        "stock_restored": restored, "confirm_calls": len(posts), "lookup_observed": bool(gets)
+    }}}, {"order_id": order_id, "stub_calls": calls})
+
+
+SCENARIOS = {"a": scenario_a, "b": scenario_b, "c": scenario_c, "d": scenario_d, "e": scenario_e}
 
 
 # ------------------------------------------------------- 음성 대조군 (계획 P16)
@@ -964,7 +1009,7 @@ CONTROLS = {
 #      내 단언을 만족시키지 못하게 한다. 이게 주된 방어다.
 #   ② **종결되지 않는 잔여를 남기는 시나리오를 맨 뒤**로 고정하고 즉시 teardown — 그
 #      잔여가 뒤 시나리오의 관측 시간창에 겹치지 않게 한다.
-SCENARIO_ORDER = ["a", "b", "c", "d"]
+SCENARIO_ORDER = ["a", "b", "c", "d", "e"]
 
 # 종결되지 않는 잔여(`UNRESOLVED` 환불 등)를 남기는 시나리오. 이들은 SCENARIO_ORDER 의
 # **꼬리**에 모여 있어야 한다. 결과 3종 분기(타임아웃 → UNRESOLVED)는 아직 미구현이라

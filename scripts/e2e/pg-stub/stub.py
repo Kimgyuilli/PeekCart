@@ -34,6 +34,7 @@ TIMEOUT_SLEEP = float(os.environ.get("PG_STUB_TIMEOUT_SLEEP", "60"))
 
 _lock = threading.Lock()
 _ledger = []
+_resolved_approvals = set()
 
 CANCEL_RE = re.compile(r"^/v1/payments/([^/]+)/cancel$")
 FIND_RE = re.compile(r"^/v1/payments/([^/]+)$")
@@ -42,7 +43,7 @@ CONFIRM_PATH = "/v1/payments/confirm"
 ALREADY = {"code": "ALREADY_CANCELED_PAYMENT", "message": "이미 취소된 결제입니다."}
 
 
-SCRIPTS = ("ok", "4xx", "transient", "already-full", "already-part", "already-fail", "timeout", "cfail")
+SCRIPTS = ("ok", "4xx", "transient", "already-full", "already-part", "already-fail", "timeout", "cfail", "fence")
 
 
 def script_of(payment_key):
@@ -97,6 +98,12 @@ class Handler(BaseHTTPRequestHandler):
             self._send(500, {"code": "STUB_UNSCRIPTED_KEY", "message": payment_key})
             return
 
+        if script == "fence":
+            with _lock:
+                resolved = payment_key in _resolved_approvals
+            self._send(200, {"status": "ABORTED" if resolved else "READY"})
+            return
+
         if script == "already-fail":
             self._send(500, {"code": "STUB_LOOKUP_FAILED", "message": "조회 실패 script"})
             return
@@ -142,6 +149,15 @@ class Handler(BaseHTTPRequestHandler):
         return self.rfile.read(length) if length else b""
 
     def do_POST(self):
+        if self.path.startswith("/__resolve-approval/"):
+            payment_key = self.path.removeprefix("/__resolve-approval/")
+            if script_of(payment_key) != "fence":
+                self._send(400, {"code": "NOT_FENCE_SCRIPT"})
+                return
+            with _lock:
+                _resolved_approvals.add(payment_key)
+            self._send(200, {"status": "ABORTED"})
+            return
         raw = self._read_body() or b"{}"
 
         if self.path == CONFIRM_PATH:
@@ -159,6 +175,9 @@ class Handler(BaseHTTPRequestHandler):
                                  "message": "confirm 본문에 paymentKey 가 없다 — 전송/파싱 확인"})
             elif script is None:
                 self._send(500, {"code": "STUB_UNSCRIPTED_KEY", "message": payment_key})
+            elif script == "fence":
+                # 조회 결과를 테스트가 명시적으로 확정할 때까지 과금 결과는 불명이다.
+                self._send(500, {"code": "STUB_APPROVAL_PENDING"})
             elif script == "cfail":
                 # 시나리오 A 의 실패 지점. **4xx 여야 한다** — 카드사 거절처럼 재시도해도
                 # 상태가 바뀌지 않는 확정 거절이라야 payment.failed 체인이 성립한다.
@@ -288,6 +307,14 @@ def _self_test():
     check("미등록 키 → STUB_UNSCRIPTED_KEY", (status, payload.get("code")),
           (500, "STUB_UNSCRIPTED_KEY"))
 
+    status, payload = post(CONFIRM_PATH, '{"paymentKey":"e2e-fence-x-1","orderId":"1"}', chunked=True)
+    check("fence confirm: 결과 불명", status, 500)
+    status, payload = get("/v1/payments/e2e-fence-x-1")
+    check("fence lookup: 확정 전 READY", payload.get("status"), "READY")
+    post("/__resolve-approval/e2e-fence-x-1", "", chunked=False)
+    status, payload = get("/v1/payments/e2e-fence-x-1")
+    check("fence lookup: 명시 확정 후 ABORTED", payload.get("status"), "ABORTED")
+
     # 원장이 빈 키를 기록하면 시나리오의 호출 대조가 전부 무의미해진다.
     _, ledger = get("/__ledger")
     keys = [c["paymentKey"] for c in ledger["calls"] if c["path"] == CONFIRM_PATH]
@@ -297,7 +324,7 @@ def _self_test():
     if fails:
         print("self-test 실패 %d건" % fails)
         return 1
-    print("self-test 통과 (6종)")
+    print("self-test 통과 (9종)")
     return 0
 
 

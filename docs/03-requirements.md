@@ -67,7 +67,7 @@
 | GET | `/api/v1/orders` | 주문 내역 조회 (**커서 페이지네이션** — `cursor`(불투명 문자열, 생략 시 첫 페이지) · `size`(1~100, 기본 20). 응답 `{content, nextCursor, hasNext}`. **breaking change (구현 ⑥)**: `page`/`sort`/`offset` 은 400 `ORD-012`, `totalElements`/`totalPages` 미제공) | O |
 | GET | `/api/v1/orders/{id}` | 주문 상세 조회 | O |
 | POST | `/api/v1/orders/{id}/cancel` | 주문 취소 | O |
-| POST | `/api/v1/payments/confirm` | 결제 승인 | O |
+| POST | `/api/v1/payments/confirm` | 비동기 결제 승인 접수 (202) | O |
 | GET | `/api/v1/payments/{orderId}` | 결제 내역 조회 | O |
 | POST | `/api/v1/payments/webhook` | Toss 웹훅 수신 | X (서명 검증) |
 | GET | `/api/v1/notifications` | 알림 내역 조회 | O |
@@ -137,3 +137,9 @@
 - **Correlation ID 전파**: Micrometer Tracing을 활용하여 요청별 Trace ID를 전체 서비스 체인에 전파
 - **구조화된 로깅**: JSON 포맷 로그 출력, MDC(Mapped Diagnostic Context)에 traceId · userId · orderId 포함
 - **Phase별 적용**: Phase 1에서 MDC + JSON 로깅 적용, Phase 4에서 서비스 간 Correlation ID 전파 구현
+
+### 비동기 승인 응답 (see ADR-0034)
+
+`POST /api/v1/payments/confirm`은 소유자·금액·예약 게이트를 검증하고 승인 접수를 영속한 뒤 **202 Accepted**와 결제 상태를 반환한다. 보통 `PENDING`이며 결과는 `GET /api/v1/payments/{orderId}`로 조회한다. 비동기 실행이 먼저 완료되면 접수 응답에도 최신 상태가 담길 수 있다. 기존 접수 검증 오류와 중복 접수 PAY-013은 유지한다. `PENDING`은 과금 실패를 뜻하지 않으므로 새 주문/재결제로 자동 전환하지 않는다.
+
+Product의 재고 보호 확인을 받은 승인만 PG를 호출한다. 접수 기한 초과/보호 거절/실행 전 취소는 과금 없이 실패 회신하며, PG 결과가 불명확하면 조회로 확정할 때까지 재고를 보유한다. 주문 취소와 승인이 경합하면 기존 자동 환불 절차로 수렴한다.

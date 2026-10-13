@@ -79,6 +79,7 @@ public final class DlqTopology {
         )));
         CONSUMPTION.put(PeekcartService.PRODUCT, Set.copyOf(List.of(
                 sub("order.created", "product-svc-order-created-group"),
+                sub("payment.requested", "product-svc-payment-requested-group"),
                 sub("order.cancelled", "product-svc-order-cancelled-group"),
                 sub("payment.completed", "product-svc-payment-completed-group"),
                 sub("payment.failed", "product-svc-payment-failed-group"),
@@ -86,6 +87,7 @@ public final class DlqTopology {
         )));
         CONSUMPTION.put(PeekcartService.PAYMENT, Set.copyOf(List.of(
                 sub("order.created", "payment-svc-order-created-group"),
+                sub("stock.approval.result", "payment-svc-stock-approval-group"),
                 sub("order.cancelled", "payment-svc-order-cancelled-group"),
                 sub("stock.reservation.result", "payment-svc-stock-result-group"),
                 sub("stock.compensation.requested", "payment-svc-stock-compensation-requested-group"),
@@ -104,7 +106,7 @@ public final class DlqTopology {
                 dlq("order.created"), dlq("order.cancelled"), dlq("order.compensation.requested")
         )));
         QUARANTINE.put(PeekcartService.PRODUCT, Set.copyOf(List.of(
-                dlq("product.updated"), dlq("stock.reservation.result"), dlq("stock.compensation.requested")
+                dlq("stock.approval.result"), dlq("product.updated"), dlq("stock.reservation.result"), dlq("stock.compensation.requested")
         )));
         QUARANTINE.put(PeekcartService.PAYMENT, Set.copyOf(List.of(
                 dlq("payment.completed"), dlq("payment.failed"), dlq("payment.requested"), dlq("payment.refunded")

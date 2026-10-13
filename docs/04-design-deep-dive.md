@@ -5,7 +5,8 @@
 | 토픽명 | Producer | Consumer | 설명 |
 | --- | --- | --- | --- |
 | `order.created` | Order Service | Payment Service, Product Service, Notification Service | 주문 생성 → 재고 예약 |
-| `payment.requested` | Payment Service | Order Service | 결제 시작 (2-phase 결제 게이트) |
+| `payment.requested` | Payment Service | Order Service, Product Service | 비동기 승인 접수 및 재고 보호 요청 (ADR-0034) |
+| `stock.approval.result` | Product Service | Payment Service | 영속 재고 보호 결과, payload=`{orderId, granted}`, key=orderId (ADR-0034) |
 | `payment.completed` | Payment Service | Order Service, Product Service, Notification Service | 결제 성공 → 예약 확정 |
 | `payment.failed` | Payment Service | Order Service, Product Service, Notification Service | 결제 실패 → Saga 보상 트랜잭션 + 알림 |
 | `order.cancelled` | Order Service | Payment Service, Product Service, Notification Service | 주문 취소 → 재고 복구 |
@@ -15,7 +16,7 @@
 | `order.compensation.requested` | Order Service | Payment Service | `PAID_BUT_CANCELLED` 환불 요청 (see ADR-0018 D1) |
 | `payment.refunded` | Payment Service | Order Service, Product Service, Notification Service | 환불 결과 회신 → 각 보상 원장 종결 (see ADR-0018 D4) |
 
-> 토픽 매트릭스의 SSOT 는 **ADR-0012 D4**(기존 7토픽) + **ADR-0018 D1**(환불 3토픽)입니다.
+> 토픽 매트릭스의 SSOT 는 **ADR-0012 D4**(기존 7토픽) + **ADR-0018 D1**(환불 3토픽) + **ADR-0034**(승인 보호 회신/구독)입니다.
 > 각 토픽은 **1 topic = 1 producer** 규약을 따르며, `NewTopic` 프로비저닝은 producer 서비스가 소유합니다.
 
 > 모든 이벤트는 **Outbox 패턴**을 통해 발행됩니다.
@@ -598,3 +599,11 @@ Redis 장애 시:
 - **선택 근거**: ADR-0004 (minikube 의 메모리/네트워크 한계가 측정 정확도를 제약하는 점이 직접 원인)
 
 > Phase 1·2 측정값과 Phase 3 측정값은 환경이 다르므로 동일 축 비교 대상이 아닙니다. Phase 3 의 캐싱 전/후·HPA 전/후 비교는 모두 **동일 GKE 환경 내에서** 수행합니다.
+
+### 승인과 재고 회수의 경합 (see ADR-0034)
+
+접수는 `WAITING_STOCK` 원장과 `payment.requested`를 커밋한다. Product는 미만료 `RESERVED → APPROVAL_HELD` CAS와 허가 회신을 같은 트랜잭션에서 기록한다. Payment는 회신을 `READY`로 반영하고, dispatcher가 deadline·취소 여부를 검사하여 `CLAIMED`를 커밋한 뒤 PG를 한 번 호출한다. crash/결과 불명은 기존 조회 전용 reconciliation으로 확정한다.
+
+일반 취소/lease sweeper는 RESERVED만 회수한다. HELD는 확정된 `payment.failed` 또는 성공 환불에서 해제한다. `payment.completed`는 HELD를 CONFIRMED로 확정하며, 새 fence를 거친 CONFIRMED도 성공 환불이면 한 번 복구된다. legacy CONFIRMED는 이 복구 대상에서 제외한다. 환불 성공과 completed가 역전돼도 재고를 다시 잡지 않는다. 미확정 승인/실패 환불을 시간만으로 풀지 않는다.
+
+배포와 롤백에는 승인 접수 중지 및 기존 처리 drain이 필요하다. 구 Payment와 혼합 실행하면 fence 없이 승인하는 경로가 남으므로 무중단 rolling 호환을 보장하지 않는다(ADR-0034 배포 절차).

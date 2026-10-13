@@ -11,6 +11,14 @@ import java.util.Optional;
  */
 public interface StockReservationRepository {
 
+    Optional<StockReservation> findByOrderIdForUpdate(Long orderId);
+
+    int holdForApproval(Long orderId);
+
+    int releaseAfterPaymentFailed(Long orderId);
+
+    int releaseAfterRefund(Long orderId);
+
     StockReservation save(StockReservation reservation);
 
     Optional<StockReservation> findByOrderId(Long orderId);
@@ -23,8 +31,8 @@ public interface StockReservationRepository {
     int markReleasedIfReserved(Long orderId);
 
     /**
-     * {@code RESERVED → CONFIRMED} 원자 CAS. 확정(commit) 은 이 전이가 1건 성공할 때만 부여된다.
-     * CONFIRMED 는 종결 상태라 이후 {@link #markReleasedIfReserved}(RESERVED 조건) 가 자연히 no-op 이 된다.
+     * {@code RESERVED/APPROVAL_HELD → CONFIRMED} 원자 CAS. 확정(commit) 은 이 전이가 1건 성공할 때만 부여된다.
+     * CONFIRMED는 일반 취소로 복구하지 않으므로 이후 {@link #markReleasedIfReserved}(RESERVED 조건) 가 자연히 no-op 이 된다.
      *
      * @return 전이된 행 수 (0 또는 1)
      */

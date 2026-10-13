@@ -37,6 +37,7 @@ public class DeadLetterQuarantineConsumer {
             id = DeadLetterContainerGuard.LISTENER_ID_PREFIX + "product-quarantine",
             topics = {
                     "product.updated.dlq",
+                    "stock.approval.result.dlq",
                     "stock.reservation.result.dlq",
                     "stock.compensation.requested.dlq"
             },

@@ -54,6 +54,16 @@ public class ProductKafkaConfig {
                 retentionProperties.topicMessageTimestampBeforeMax());
     }
 
+    @Bean
+    public NewTopic stockApprovalResultTopic() {
+        return TopicBuilder.name("stock.approval.result").partitions(3).replicas(1).configs(businessConfigs()).build();
+    }
+
+    @Bean
+    public NewTopic stockApprovalResultDlqTopic() {
+        return TopicBuilder.name("stock.approval.result.dlq").partitions(1).replicas(1).configs(dlqConfigs()).build();
+    }
+
     // --- 발행 토픽(producer-owns-topic) ---
     @Bean
     public NewTopic productUpdatedTopic() {

@@ -35,6 +35,9 @@ ID_RE = re.compile(r"^SAGA-[A-Z0-9-]+$")
 # ---- required-ID 정본 (계획 N4) — 매트릭스 밖에 둔다 ----------------------------
 # 매트릭스가 기대 행의 유일한 입력이면 행 삭제는 검사 대상만 줄여 조용히 통과한다.
 REQUIRED_IDS = {
+    "SAGA-APPROVAL-HELD-LEASE",
+    "SAGA-APPROVAL-FENCE-DISPATCH",
+    "SAGA-APPROVAL-LEASE-RACE",
     # 환불 결과 3종 × 소비자 3곳 (ADR-0018 D4)
     "SAGA-REFUND-RESULT-ORDER-SUCCEEDED",
     "SAGA-REFUND-RESULT-ORDER-FAILED",
@@ -76,6 +79,7 @@ REQUIRED_IDS = {
 # --structure 도 --e2e-evidence 도 통과하면서 payment_status·refund_status·outbox 계약이
 # 사라진다(diff 리뷰 #1). "무엇을 관측해야 하는가" 도 매트릭스 밖에 있어야 한다.
 REQUIRED_E2E_KEYS = {
+    "SAGA-APPROVAL-LEASE-RACE": {"held_during_unknown", "stock_while_cancelled", "stock_restored", "confirm_calls", "lookup_observed"},
     "SAGA-E2E-PAYMENT-FAILED-CONVERGE": {
         "cancel_reason", "order_status", "payment_status",
         "processed_events", "reservation_status",

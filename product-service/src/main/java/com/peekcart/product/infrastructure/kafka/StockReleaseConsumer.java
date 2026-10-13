@@ -12,7 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * {@code order.cancelled} / {@code payment.failed} 를 소비하여 예약 재고를 복구하는 Consumer (ADR-0012 D3).
- * 복구 권한은 예약 원장의 {@code RESERVED → RELEASED} 원자 CAS 로만 부여된다(double-release 방지).
+ * 주문 취소는 RESERVED만 회수하고, 확정된 결제 실패는 APPROVAL_HELD도 회수한다 (ADR-0034).
+ * 각 해제 CAS가 성공한 트랜잭션만 재고를 복구한다.
  */
 @Slf4j
 @Component
@@ -45,7 +46,11 @@ public class StockReleaseConsumer {
 
         idempotencyChecker.executeIfNew(eventId, consumerGroup, () -> {
             Long orderId = payload.get("orderId").asLong();
-            reservationService.release(orderId);
+            if (GROUP_PAYMENT_FAILED.equals(consumerGroup)) {
+                reservationService.releaseAfterPaymentFailed(orderId);
+            } else {
+                reservationService.release(orderId);
+            }
         });
     }
 }

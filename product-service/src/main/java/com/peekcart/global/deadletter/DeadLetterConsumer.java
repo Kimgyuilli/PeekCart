@@ -38,6 +38,7 @@ public class DeadLetterConsumer {
                     "order.cancelled.dlq",
                     "payment.completed.dlq",
                     "payment.failed.dlq",
+                    "payment.requested.dlq",
                     "payment.refunded.dlq"
             },
             groupId = DlqTopology.PRODUCT_DLQ_GROUP,

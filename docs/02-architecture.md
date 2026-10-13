@@ -60,7 +60,7 @@ Phase 4 는 5개 도메인을 모두 독립 서비스로 분해한다 (경계·�
 
 ### Phase 4 — MSA
 
-> 5개 서비스 경계·이벤트 토폴로지·Saga 골격의 정본은 ADR-0010 (see ADR-0010). 재고 예약 모델 도입으로 토픽이 확장되고, Order↔Payment 동기 결합 제거(ADR-0012 §D4 refine)로 `payment.requested` 가 추가되어 **총 10개**다 — 위 7개(`order.created`·`order.cancelled`·`payment.completed`·`payment.failed`·`payment.requested`·`product.updated`·`stock.reservation.result`)에 보상/환불 3개(`stock.compensation.requested`·`order.compensation.requested`·`payment.refunded`, ADR-0018 D1)가 더해진다. Product 가 `order.created`/`payment.completed`/`payment.failed` 도 소비한다(`payment.requested` 는 Order 만 소비) — 토픽×producer×consumer×group 매트릭스 정본은 ADR-0012 §D4 (see ADR-0012). **토픽 생성은 producer-owns-topic** — 각 발행 서비스가 자기 토픽(+`.dlq`)의 `NewTopic` 을 소유한다(order=`order.*`, payment=`payment.*`, product=`product.updated`/`stock.reservation.result`; Order/Payment peel 로 root 단독 생성 모델 폐기). 아래 다이어그램은 ADR-0010 시점의 4토픽 골격.
+> 현재 이벤트 토폴로지는 **11개 토픽**이다. ADR-0012의 7개 토픽과 ADR-0018의 보상/환불 3개에 `stock.approval.result`가 추가됐다(see ADR-0034). `payment.requested`는 Order와 Product가 소비하고, Product의 보호 회신은 Payment가 소비한다. 서비스 직접 호출 없이 재고 보호 확인 뒤 PG를 호출한다. **토픽 생성은 producer-owns-topic**: Order는 `order.*`, Payment는 `payment.*`, Product는 `product.updated`/`stock.*` 및 각 `.dlq`를 소유한다. 계약의 현재 코드 정본은 `DlqTopology`이며 아래 다이어그램은 ADR-0010 시점의 4토픽 골격이다.
 
 ```mermaid
 graph TD

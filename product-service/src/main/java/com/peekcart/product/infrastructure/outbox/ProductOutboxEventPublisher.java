@@ -11,6 +11,7 @@ import com.peekcart.global.outbox.dto.KafkaEventEnvelope;
 import com.peekcart.global.outbox.dto.ProductUpdatedPayload;
 import com.peekcart.global.outbox.dto.ReservedItemPayload;
 import com.peekcart.global.outbox.dto.StockReservationResultPayload;
+import com.peekcart.global.outbox.dto.StockApprovalResultPayload;
 import com.peekcart.product.domain.model.Product;
 import com.peekcart.product.domain.model.ProductStatus;
 import lombok.RequiredArgsConstructor;
@@ -101,6 +102,16 @@ public class ProductOutboxEventPublisher {
                 eventId -> serialize(new KafkaEventEnvelope(eventId, STOCK_COMPENSATION_REQUESTED,
                         LocalDateTime.now(), payload)));
         outboxEventRepository.save(outboxEvent);
+    }
+
+    /** 보호 CAS와 같은 트랜잭션에서 발행하는 PG 승인 허가 (ADR-0034). */
+    public void publishStockApprovalResult(Long orderId, boolean granted) {
+        var payload = new StockApprovalResultPayload(orderId, granted);
+        MdcSnapshot.Snapshot mdc = MdcSnapshot.current();
+        outboxEventRepository.save(OutboxEvent.create(AGGREGATE_TYPE, orderId.toString(),
+                "stock.approval.result", mdc.traceId(), mdc.userId(),
+                eventId -> serialize(new KafkaEventEnvelope(eventId, "stock.approval.result",
+                        LocalDateTime.now(), payload))));
     }
 
     /** ProductStatus → ADR-0012 D2 계약 값 매핑. */

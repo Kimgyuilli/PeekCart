@@ -23,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StockReservationConsumer {
 
+    private static final String GROUP_PAYMENT_REQUESTED = "product-svc-payment-requested-group";
     private static final String GROUP_ORDER_CREATED = "product-svc-order-created-group";
 
     private final StockReservationService reservationService;
@@ -41,6 +42,14 @@ public class StockReservationConsumer {
             List<ReservedItemPayload> items = parseItems(payload.get("items"));
             reservationService.reserve(orderId, eventId, items);
         });
+    }
+
+    @KafkaListener(topics = "payment.requested", groupId = GROUP_PAYMENT_REQUESTED)
+    @Transactional
+    public void handlePaymentRequested(String message) {
+        JsonNode root = kafkaMessageParser.parse(message);
+        idempotencyChecker.executeIfNew(root.get("eventId").asText(), GROUP_PAYMENT_REQUESTED,
+                () -> reservationService.holdForApproval(root.get("payload").get("orderId").asLong()));
     }
 
     private List<ReservedItemPayload> parseItems(JsonNode itemsNode) {
