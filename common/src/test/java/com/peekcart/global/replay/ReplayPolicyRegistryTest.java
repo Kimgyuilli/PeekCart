@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * V-28f — 정책 레지스트리 completeness (계획 리뷰 3R #5).
  *
- * <p>정본은 {@code DlqTopology} 의 소비쌍이다. 토픽 10종만 세면 <b>공유 토픽의 소유자별 누락</b>이
+ * <p>정본은 {@code DlqTopology} 의 소비쌍이다. 토픽 11종만 세면 <b>공유 토픽의 소유자별 누락</b>이
  * 검사되지 않는다 — {@code stock.reservation.result} 는 order·payment 둘 다 소비한다.
  */
 class ReplayPolicyRegistryTest {
@@ -34,10 +34,10 @@ class ReplayPolicyRegistryTest {
     }
 
     @Test
-    @DisplayName("소비쌍은 21개다 — 토픽 10종이 아니다")
+    @DisplayName("소비쌍은 23개다 — 토픽 11종이 아니다")
     void pairCountIsNotTopicCount() {
-        assertThat(ReplayPolicyRegistry.topologyPairs()).hasSize(21);
-        assertThat(ReplayPolicyRegistry.declaredPairs()).hasSize(21);
+        assertThat(ReplayPolicyRegistry.topologyPairs()).hasSize(23);
+        assertThat(ReplayPolicyRegistry.declaredPairs()).hasSize(23);
     }
 
     @Test
@@ -67,6 +67,8 @@ class ReplayPolicyRegistryTest {
         assertThat(ReplayPolicyRegistry.find(PeekcartService.PRODUCT, "order.created").allowed()).isFalse();
         assertThat(ReplayPolicyRegistry.find(PeekcartService.PAYMENT, "order.created").allowed()).isFalse();
         assertThat(ReplayPolicyRegistry.find(PeekcartService.ORDER, "payment.requested").allowed()).isFalse();
+        assertThat(ReplayPolicyRegistry.find(PeekcartService.PRODUCT, "payment.requested").allowed()).isFalse();
+        assertThat(ReplayPolicyRegistry.find(PeekcartService.PAYMENT, "stock.approval.result").allowed()).isFalse();
         // notification 의 order.created 는 통지 소비라 allow — 같은 토픽이어도 소유자별로 갈린다.
         assertThat(ReplayPolicyRegistry.find(PeekcartService.NOTIFICATION, "order.created").allowed()).isTrue();
     }

@@ -16,6 +16,8 @@ class ApprovalStatusTest {
 
     /** 허용 전이 정본. 여기 없는 조합은 전부 거부돼야 한다. */
     private static final Map<ApprovalStatus, Set<ApprovalStatus>> ALLOWED = new EnumMap<>(Map.of(
+            ApprovalStatus.WAITING_STOCK, Set.of(ApprovalStatus.READY, ApprovalStatus.FAILED),
+            ApprovalStatus.READY, Set.of(ApprovalStatus.CLAIMED, ApprovalStatus.FAILED),
             ApprovalStatus.CLAIMED, Set.of(ApprovalStatus.SUCCEEDED, ApprovalStatus.FAILED,
                     ApprovalStatus.UNRESOLVED, ApprovalStatus.CLAIMED),
             ApprovalStatus.UNRESOLVED, Set.of(ApprovalStatus.SUCCEEDED, ApprovalStatus.FAILED,

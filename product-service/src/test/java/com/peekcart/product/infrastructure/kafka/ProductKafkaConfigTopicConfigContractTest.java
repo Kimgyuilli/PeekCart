@@ -38,7 +38,7 @@ class ProductKafkaConfigTopicConfigContractTest {
             "message.timestamp.type", "message.timestamp.before.max.ms");
 
     /** 이 서비스가 발행하는 원본 토픽. 각각 {@code .dlq} 짝이 있어야 한다. */
-    private static final List<String> ORIGIN_TOPICS = List.of("product.updated", "stock.reservation.result", "stock.compensation.requested");
+    private static final List<String> ORIGIN_TOPICS = List.of("product.updated", "stock.reservation.result", "stock.compensation.requested", "stock.approval.result");
 
     private ProductKafkaConfig config() {
         IdempotencyRetentionProperties props = new IdempotencyRetentionProperties();

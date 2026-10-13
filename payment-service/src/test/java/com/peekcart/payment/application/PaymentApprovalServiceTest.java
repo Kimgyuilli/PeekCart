@@ -63,15 +63,15 @@ class PaymentApprovalServiceTest {
         void success() {
             Payment payment = PaymentFixture.readyPaymentWithId();
             given(paymentRepository.findByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(Optional.of(payment));
-            given(approvalRepository.insertClaimedIfAbsent(anyLong(), any(), anyLong(), anyLong(), any()))
+            given(approvalRepository.insertWaitingIfAbsent(anyLong(), any(), anyLong(), anyLong(), any(), any()))
                     .willReturn(1);
             given(approvalRepository.findByOrderId(PaymentFixture.DEFAULT_ORDER_ID))
-                    .willReturn(Optional.of(PaymentFixture.claimedApproval()));
+                    .willReturn(Optional.of(PaymentFixture.approval(ApprovalStatus.WAITING_STOCK, 0L, null)));
 
             PaymentApproval approval = approvalService.beginApproval(PaymentFixture.DEFAULT_USER_ID,
                     PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_AMOUNT);
 
-            assertThat(approval.getStatus()).isEqualTo(ApprovalStatus.CLAIMED);
+            assertThat(approval.getStatus()).isEqualTo(ApprovalStatus.WAITING_STOCK);
             // D-020 의 본체: PG 호출 전에 실제 키가 로컬에 올라가 있어야 사후 조회가 가능하다.
             assertThat(payment.getPaymentKey()).isEqualTo(PaymentFixture.DEFAULT_PAYMENT_KEY);
             then(outboxEventPublisher).should()
@@ -83,7 +83,7 @@ class PaymentApprovalServiceTest {
         void duplicateFence_throwsPAY013() {
             Payment payment = PaymentFixture.readyPaymentWithId();
             given(paymentRepository.findByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(Optional.of(payment));
-            given(approvalRepository.insertClaimedIfAbsent(anyLong(), any(), anyLong(), anyLong(), any()))
+            given(approvalRepository.insertWaitingIfAbsent(anyLong(), any(), anyLong(), anyLong(), any(), any()))
                     .willReturn(0);
 
             assertThatThrownBy(() -> approvalService.beginApproval(PaymentFixture.DEFAULT_USER_ID,
@@ -146,7 +146,7 @@ class PaymentApprovalServiceTest {
                     .extracting(e -> ((PaymentException) e).getErrorCode())
                     .isEqualTo(expected);
             then(approvalRepository).should(never())
-                    .insertClaimedIfAbsent(anyLong(), any(), anyLong(), anyLong(), any());
+                    .insertWaitingIfAbsent(anyLong(), any(), anyLong(), anyLong(), any(), any());
             then(outboxEventPublisher).should(never()).publishPaymentRequested(any(), any());
         }
     }

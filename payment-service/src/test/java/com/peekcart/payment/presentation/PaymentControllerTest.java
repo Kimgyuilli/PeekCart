@@ -46,7 +46,7 @@ class PaymentControllerTest {
 
     @Test
     @WithMockLoginUser
-    @DisplayName("POST /confirm: 결제 승인 성공 시 200을 반환한다")
+    @DisplayName("POST /confirm: 결제 접수 직후 이미 승인되었어도 202을 반환한다")
     void confirmPayment_success_returns200() throws Exception {
         given(paymentCommandService.confirmPayment(eq(1L), any()))
                 .willReturn(PaymentFixture.approvedPaymentDetailDto());
@@ -57,14 +57,14 @@ class PaymentControllerTest {
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.data.status").value("APPROVED"))
                 .andExpect(jsonPath("$.data.method").value("카드"));
     }
 
     @Test
     @WithMockLoginUser
-    @DisplayName("POST /confirm: 결제 승인 실패(FAILED) 시 PAY-005(400)를 반환한다")
+    @DisplayName("POST /confirm: 접수 직후 실패가 확정되어도 202와 현재 상태를 반환한다")
     void confirmPayment_failed_returnsPay005() throws Exception {
         given(paymentCommandService.confirmPayment(eq(1L), any()))
                 .willReturn(PaymentFixture.failedPaymentDetailDto());
@@ -75,13 +75,13 @@ class PaymentControllerTest {
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("PAY-005"));
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.status").value("FAILED"));
     }
 
     @Test
     @WithMockLoginUser
-    @DisplayName("POST /confirm: 결과 불명(PENDING)은 실패가 아니라 PAY-012(409) 다 — 과금이 성립했을 수 있다")
+    @DisplayName("POST /confirm: 접수 후 PENDING과 202를 반환한다")
     void confirmPayment_unresolved_returnsPay012() throws Exception {
         given(paymentCommandService.confirmPayment(eq(1L), any()))
                 .willReturn(PaymentFixture.pendingPaymentDetailDto());
@@ -92,8 +92,8 @@ class PaymentControllerTest {
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("PAY-012"));
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.status").value("PENDING"));
     }
 
     @Test
