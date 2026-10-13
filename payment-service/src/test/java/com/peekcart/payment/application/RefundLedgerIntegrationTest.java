@@ -6,7 +6,13 @@ import com.peekcart.payment.domain.model.Payment;
 import com.peekcart.payment.domain.model.PaymentRefund;
 import com.peekcart.payment.domain.model.PaymentStatus;
 import com.peekcart.payment.domain.model.RefundStatus;
-import com.peekcart.payment.application.RefundOutcome;
+import com.peekcart.payment.infrastructure.toss.RefundExecutor;
+import com.peekcart.payment.infrastructure.toss.TossPaymentClient;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
 
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.SharedContainers;
@@ -20,6 +26,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +37,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -147,6 +160,61 @@ class RefundLedgerIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(currentStatus(payment.getOrderId())).isEqualTo(RefundStatus.UNRESOLVED);
         assertThat(findRefundedOutbox(payment.getOrderId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("PG 처리 중 응답 소진은 미확정 원장을 남기고 조회 복구 시에만 성공 회신한다")
+    void processingConflict_keepsLedgerRecoverableUntilQueryConfirms() throws Exception {
+        Payment payment = seedApprovedPayment(1012L);
+        refundService.requestRefund(payment, "PAID_BUT_CANCELLED");
+        PaymentRefund claimed = refundService.claimRequested(payment.getOrderId()).orElseThrow();
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        String paymentUrl = "http://pg.test/v1/payments/" + payment.getPaymentKey();
+        server.expect(requestTo(paymentUrl + "/cancel"))
+                .andExpect(header("Idempotency-Key", "refund-1012"))
+                .andRespond(request -> { throw new SocketTimeoutException("read timed out"); });
+        for (int retry = 0; retry < 2; retry++) {
+            server.expect(requestTo(paymentUrl + "/cancel"))
+                    .andExpect(header("Idempotency-Key", "refund-1012"))
+                    .andRespond(withStatus(HttpStatus.CONFLICT)
+                            .body("{\"code\":\"IDEMPOTENT_REQUEST_PROCESSING\"}")
+                            .contentType(MediaType.APPLICATION_JSON));
+        }
+        server.expect(requestTo(paymentUrl))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"status\":\"CANCELED\",\"cancels\":[{\"cancelAmount\":50000}]}",
+                        MediaType.APPLICATION_JSON));
+        RefundProperties properties = new RefundProperties();
+        properties.setMaxAttempts(3);
+        properties.setRetryBackoff(Duration.ZERO);
+        RefundExecutor executor = new RefundExecutor(
+                new TossPaymentClient("test-secret", "http://pg.test/v1", builder, objectMapper), properties);
+
+        RefundExecutor.CallResult initial = executor.execute(claimed);
+        refundService.finalizeOutcome(payment.getOrderId(), claimed.getGeneration(),
+                initial.outcome(), initial.attempts());
+
+        assertThat(currentStatus(payment.getOrderId())).isEqualTo(RefundStatus.UNRESOLVED);
+        assertThat(currentPaymentStatus(payment.getOrderId())).isEqualTo(PaymentStatus.APPROVED);
+        assertThat(findRefundedOutbox(payment.getOrderId())).isEmpty();
+        assertThat(refundService.find(payment.getOrderId()).orElseThrow().getAttempts()).isEqualTo(3);
+        ageClaim(payment.getOrderId(), LocalDateTime.now().minusHours(1));
+        assertThat(refundService.findReconcileCandidates()).contains(payment.getOrderId());
+        PaymentRefund reconciling = refundService.claimForReconcile(payment.getOrderId()).orElseThrow();
+
+        RefundExecutor.CallResult resolved = executor.verifyThenExecute(reconciling);
+        refundService.finalizeOutcome(payment.getOrderId(), reconciling.getGeneration(),
+                resolved.outcome(), resolved.attempts());
+
+        assertThat(currentStatus(payment.getOrderId())).isEqualTo(RefundStatus.SUCCEEDED);
+        assertThat(currentPaymentStatus(payment.getOrderId())).isEqualTo(PaymentStatus.REFUNDED);
+        assertThat(refundService.find(payment.getOrderId()).orElseThrow().getAttempts()).isEqualTo(3);
+        List<OutboxEvent> events = findRefundedOutbox(payment.getOrderId());
+        assertThat(events).hasSize(1);
+        assertThat(objectMapper.readTree(events.get(0).getPayload()).path("payload").path("result").asText())
+                .isEqualTo("SUCCEEDED");
+        server.verify();
     }
 
     @Test

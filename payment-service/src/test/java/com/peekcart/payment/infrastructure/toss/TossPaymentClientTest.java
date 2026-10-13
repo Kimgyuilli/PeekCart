@@ -1,6 +1,11 @@
 package com.peekcart.payment.infrastructure.toss;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.peekcart.payment.application.RefundOutcome;
+import com.peekcart.payment.application.RefundProperties;
+import com.peekcart.payment.domain.model.PaymentRefund;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,8 +15,12 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 import java.util.Optional;
+import java.net.SocketTimeoutException;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -160,6 +169,110 @@ class TossPaymentClientTest {
 
         assertThat(client.cancel(PAYMENT_KEY, "이유", "refund-7").kind())
                 .isEqualTo(TossOutcome.Kind.ALREADY_CANCELED);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "409, IDEMPOTENT_REQUEST_PROCESSING, TRANSIENT",
+            "409, OTHER_CONFLICT, PERMANENT_FAILURE",
+            "409, ALREADY_CANCELED_PAYMENT, ALREADY_CANCELED",
+            "400, IDEMPOTENT_REQUEST_PROCESSING, PERMANENT_FAILURE"
+    })
+    @DisplayName("처리 중 멱등 요청은 409와 오류 코드가 일치할 때만 재시도한다")
+    void cancelConflict_classifiesStatusAndCode(int status, String code, TossOutcome.Kind expected) {
+        String body = "{\"code\":\"" + code + "\"}";
+        server.expect(requestTo(CANCEL_URL))
+                .andRespond(withStatus(HttpStatus.valueOf(status))
+                        .body(body).contentType(MediaType.APPLICATION_JSON));
+
+        TossOutcome outcome = client.cancel(PAYMENT_KEY, "이유", "refund-7");
+
+        assertThat(outcome.kind()).isEqualTo(expected);
+        assertThat(outcome.code()).isEqualTo(expected == TossOutcome.Kind.ALREADY_CANCELED
+                ? "ALREADY_CANCELED" : code);
+        assertThat(outcome.rawResponse()).isEqualTo(body);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("코드 없는 409는 HTTP_409 영구 실패로 유지한다")
+    void cancelConflictWithoutCode_isPermanent() {
+        server.expect(requestTo(CANCEL_URL)).andRespond(withStatus(HttpStatus.CONFLICT));
+
+        TossOutcome outcome = client.cancel(PAYMENT_KEY, "이유", "refund-7");
+
+        assertThat(outcome.kind()).isEqualTo(TossOutcome.Kind.PERMANENT_FAILURE);
+        assertThat(outcome.code()).isEqualTo("HTTP_409");
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("타임아웃 뒤 처리 중 409를 받으면 같은 키로 재시도하여 성공한다")
+    void timeoutThenProcessing_retriesUntilSuccess() {
+        expectTimeoutAndProcessing();
+        server.expect(requestTo(CANCEL_URL))
+                .andExpect(header("Idempotency-Key", "refund-7"))
+                .andRespond(withSuccess("{\"status\":\"CANCELED\"}", MediaType.APPLICATION_JSON));
+
+        RefundExecutor.CallResult result = refundExecutor().execute(refund());
+
+        assertThat(result.outcome().kind()).isEqualTo(RefundOutcome.Kind.SUCCEEDED);
+        assertThat(result.attempts()).isEqualTo(3);
+        server.verify();
+    }
+
+    @Test
+    @DisplayName("처리 중 재시도를 소진하면 미확정으로 남고 다음 조회로 성공을 확정한다")
+    void timeoutThenProcessing_exhaustsAndReconcilesByQuery() {
+        expectTimeoutAndProcessing();
+        expectProcessing();
+        server.expect(requestTo(FIND_URL))
+                .andExpect(method(org.springframework.http.HttpMethod.GET))
+                .andRespond(withSuccess("{\"status\":\"CANCELED\",\"cancels\":[{\"cancelAmount\":50000}]}",
+                        MediaType.APPLICATION_JSON));
+        RefundExecutor executor = refundExecutor();
+        PaymentRefund refund = refund();
+
+        RefundExecutor.CallResult initial = executor.execute(refund);
+
+        assertThat(initial.outcome().kind()).isEqualTo(RefundOutcome.Kind.UNRESOLVED);
+        assertThat(initial.attempts()).isEqualTo(3);
+        assertThat(initial.outcome().detail()).contains("IDEMPOTENT_REQUEST_PROCESSING");
+        RefundExecutor.CallResult resolved = executor.verifyThenExecute(refund);
+        assertThat(resolved.outcome().kind()).isEqualTo(RefundOutcome.Kind.SUCCEEDED);
+        assertThat(resolved.attempts()).isZero();
+        server.verify();
+    }
+
+    private void expectTimeoutAndProcessing() {
+        server.expect(requestTo(CANCEL_URL))
+                .andExpect(header("Idempotency-Key", "refund-7"))
+                .andRespond(request -> { throw new SocketTimeoutException("read timed out"); });
+        expectProcessing();
+    }
+
+    private void expectProcessing() {
+        server.expect(requestTo(CANCEL_URL))
+                .andExpect(method(org.springframework.http.HttpMethod.POST))
+                .andExpect(header("Idempotency-Key", "refund-7"))
+                .andRespond(withStatus(HttpStatus.CONFLICT)
+                        .body("{\"code\":\"IDEMPOTENT_REQUEST_PROCESSING\"}")
+                        .contentType(MediaType.APPLICATION_JSON));
+    }
+
+    private RefundExecutor refundExecutor() {
+        RefundProperties properties = new RefundProperties();
+        properties.setMaxAttempts(3);
+        properties.setRetryBackoff(Duration.ZERO);
+        return new RefundExecutor(client, properties);
+    }
+
+    private PaymentRefund refund() {
+        PaymentRefund refund = mock(PaymentRefund.class);
+        given(refund.getOrderId()).willReturn(7L);
+        given(refund.getPaymentKey()).willReturn(PAYMENT_KEY);
+        given(refund.getAmount()).willReturn(50_000L);
+        return refund;
     }
 
     @Test
