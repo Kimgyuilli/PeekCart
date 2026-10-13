@@ -5,7 +5,7 @@
 # 시나리오 본체는 runner 컨테이너 안의 saga_e2e.py 다(internal 네트워크 안에서만 DB·Kafka·앱에 닿는다).
 #
 # 사용:
-#   bash scripts/saga-e2e-smoke.sh                 # 전체 (readiness + 시나리오 4종)
+#   bash scripts/saga-e2e-smoke.sh                 # 전체 (readiness + 시나리오 5종)
 #   bash scripts/saga-e2e-smoke.sh --scenarios a,b # 일부만
 #   bash scripts/saga-e2e-smoke.sh --keep          # 실패 조사용으로 스택 유지
 #   bash scripts/saga-e2e-smoke.sh --self-test     # 순서 계약 검사만 (스택 불필요)
@@ -15,7 +15,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 COMPOSE_FILE="docker-compose.e2e.yml"
-SCENARIOS="a,b,c,d"
+SCENARIOS="a,b,c,d,e"
 KEEP=0
 
 SELF_TEST=0
@@ -318,7 +318,7 @@ run_in_runner() {
 if [[ $NEGATIVE_CONTROL -eq 1 ]]; then
   # ---------------------------------------------------------------- 음성 대조군
   #
-  # **통과하는 검사는 그것이 무엇을 잡을 수 있는지 말해주지 않는다.** 시나리오 4종이 전부
+  # **통과하는 검사는 그것이 무엇을 잡을 수 있는지 말해주지 않는다.** 시나리오 5종이 전부
   # 초록인 상태는 "saga 가 돈다" 와 "단언이 vacuous 하다" 를 구별하지 못한다. 그래서 결함을
   # 일부러 주입하고 **해당 검사가 실패하는지**를 매 CI 에서 확인한다.
   nc_fails=0
