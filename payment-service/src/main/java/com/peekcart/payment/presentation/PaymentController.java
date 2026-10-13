@@ -2,14 +2,12 @@ package com.peekcart.payment.presentation;
 
 import com.peekcart.global.auth.CurrentUser;
 import com.peekcart.global.auth.LoginUser;
-import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.global.response.ApiResponse;
 import com.peekcart.payment.application.PaymentCommandService;
 import com.peekcart.payment.application.PaymentQueryService;
 import com.peekcart.payment.application.WebhookService;
 import com.peekcart.payment.application.dto.ConfirmPaymentCommand;
 import com.peekcart.payment.application.dto.PaymentDetailDto;
-import com.peekcart.payment.domain.exception.PaymentException;
 import com.peekcart.payment.presentation.dto.request.ConfirmPaymentRequest;
 import com.peekcart.payment.presentation.dto.response.PaymentResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,14 +33,8 @@ public class PaymentController {
     private final WebhookService webhookService;
     private final ObjectMapper objectMapper;
 
-    /**
-     * 결제를 승인한다.
-     *
-     * <p>확정 후 상태가 종결이 아니면({@code PENDING}) <b>결과 불명</b>이다 — 과금이 성립했을 수도
-     * 있으므로 실패({@code PAY-005})로 돌려주지 않고 {@code PAY-012}(확인 중)로 구분한다.
-     * 실제 결과는 승인 reconciliation 이 PG 조회로 확정한다(ADR-0023 D8).
-     */
-    @Operation(summary = "결제 승인", description = "Toss Payments에 결제 승인을 요청한다.")
+    /** 승인 접수(202). 결과는 GET /api/v1/payments/{orderId}로 조회한다 (ADR-0034). */
+    @Operation(summary = "결제 승인 접수", description = "재고 보호 확인 후 비동기 승인한다. 결과는 결제 조회로 확인한다.")
     @PostMapping("/confirm")
     public ResponseEntity<ApiResponse<PaymentResponse>> confirmPayment(
             @CurrentUser LoginUser loginUser,
@@ -51,13 +43,7 @@ public class PaymentController {
         ConfirmPaymentCommand command = new ConfirmPaymentCommand(
                 request.paymentKey(), request.orderId(), request.amount());
         PaymentDetailDto result = paymentCommandService.confirmPayment(loginUser.userId(), command);
-        if ("FAILED".equals(result.status())) {
-            throw new PaymentException(ErrorCode.PAY_005);
-        }
-        if ("PENDING".equals(result.status())) {
-            throw new PaymentException(ErrorCode.PAY_012);
-        }
-        return ResponseEntity.ok(ApiResponse.of(PaymentResponse.from(result)));
+        return ResponseEntity.accepted().body(ApiResponse.of(PaymentResponse.from(result)));
     }
 
     /**

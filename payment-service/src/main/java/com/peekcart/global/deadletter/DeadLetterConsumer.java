@@ -36,6 +36,7 @@ public class DeadLetterConsumer {
             topics = {
                     "order.created.dlq",
                     "order.cancelled.dlq",
+                    "stock.approval.result.dlq",
                     "stock.reservation.result.dlq",
                     "stock.compensation.requested.dlq",
                     "order.compensation.requested.dlq"

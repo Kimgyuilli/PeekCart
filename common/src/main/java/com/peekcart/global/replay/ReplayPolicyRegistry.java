@@ -17,7 +17,7 @@ import java.util.Set;
  * payment replay 를 통째로 거부하거나 <b>원격 DB 결합</b>을 들여야 한다.
  *
  * <h2>완전성의 정본은 {@link DlqTopology} 다</h2>
- * 엔트리는 토픽 10종이 아니라 <b>소비쌍 21개</b>다. 토픽만 채우면 공유 토픽의 소유자별 누락이 검사되지
+ * 엔트리는 토픽 11종이 아니라 <b>소비쌍 23개</b>다. 토픽만 채우면 공유 토픽의 소유자별 누락이 검사되지
  * 않는다. {@code ReplayPolicyRegistryTest} 가 topology 의 모든 소비쌍에 정책이 <b>정확히 하나</b> 있고
  * <b>여분 정책이 없음</b>을 대조한다 — 한쪽만 보면 오래된 엔트리가 남아도 통과한다.
  *
@@ -65,15 +65,17 @@ public final class ReplayPolicyRegistry {
         put(PeekcartService.ORDER, "stock.reservation.result", allowWithPrecondition("order/stock.reservation.result"));
         put(PeekcartService.ORDER, "product.updated", allow("order/product.updated"));
 
-        // --- product 원장 (5쌍) ---
+        // --- product 원장 (6쌍) ---
         // 주문 생성은 하류 예약·결제를 연쇄 개시한다 — 늦은 재적용이 이미 취소된 주문의 재고를 다시 잡는다.
+        put(PeekcartService.PRODUCT, "payment.requested", deny("product/payment.requested"));
         put(PeekcartService.PRODUCT, "order.created", deny("product/order.created"));
         put(PeekcartService.PRODUCT, "order.cancelled", allow("product/order.cancelled"));
         put(PeekcartService.PRODUCT, "payment.completed", allow("product/payment.completed"));
         put(PeekcartService.PRODUCT, "payment.failed", allow("product/payment.failed"));
         put(PeekcartService.PRODUCT, "payment.refunded", allow("product/payment.refunded"));
 
-        // --- payment 원장 (5쌍) ---
+        // --- payment 원장 (6쌍) ---
+        put(PeekcartService.PAYMENT, "stock.approval.result", deny("payment/stock.approval.result"));
         put(PeekcartService.PAYMENT, "order.created", deny("payment/order.created"));
         put(PeekcartService.PAYMENT, "order.cancelled", allow("payment/order.cancelled"));
         put(PeekcartService.PAYMENT, "stock.reservation.result",

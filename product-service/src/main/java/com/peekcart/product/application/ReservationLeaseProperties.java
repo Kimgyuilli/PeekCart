@@ -18,8 +18,7 @@ import java.time.Duration;
  * Order 의 취소({@code order.cancelled} → release) 이고 sweeper 는 그 경로가 유실됐을 때만 도는 안전망이므로,
  * sweeper 가 먼저 돌면 살아있는 주문의 재고를 뺏는다.
  *
- * <p>{@code sweeperGrace} 는 "결제 승인 수락 ~ 예약 확정(commit) 반영" 사이의 in-flight 구간보다 커야 한다.
- * 승인은 lease 만료 전에만 허용되므로(Payment 게이트), 이 유예가 그 구간을 덮으면 확정 직전 예약이 회수되지 않는다.
+ * <p>승인 중 예약은 APPROVAL_HELD로 보호되며 sweeper 대상이 아니다 (ADR-0034).
  */
 @ConfigurationProperties(prefix = "app.reservation.lease")
 @Validated

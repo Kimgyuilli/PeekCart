@@ -23,15 +23,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 승인 원장의 트랜잭션 경계를 소유하는 서비스 (ADR-0023 D1).
- *
- * <p><b>여기서 PG 를 호출하지 않는다.</b> 호출자가 T1({@link #beginApproval}) → PG 호출(트랜잭션 밖)
- * → T2({@link #finalizeApproval}) 순으로 부르며, 각 단계가 독립 트랜잭션이어야 D-020 이 닫힌다:
- * 하나로 묶으면 PG 성공 후 롤백 시 <b>원장 행과 실제 {@code paymentKey} 가 함께 사라져</b> 사후에
- * 과금 여부를 물을 수단이 없어진다(ADR-0023 C2).
- *
- * <p>확정은 <b>claim 당시의 generation</b> 을 함께 받는다 — lease 가 만료돼 소유권이 넘어간 뒤
- * 옛 owner 가 뒤늦게 확정하려 하면 no-op 이 된다(fencing token).
+ * 승인 접수/재고 보호 회신/dispatch claim/결과 확정의 트랜잭션 경계 (ADR-0034).
+ * PG 호출은 이 클래스 밖에서 수행한다. 실제 키와 원장 claim을 먼저 커밋하므로
+ * crash 뒤에는 조회 기반 reconciliation이 진실을 확정할 수 있다 (ADR-0023).
  */
 @Slf4j
 @Service
@@ -52,7 +46,7 @@ public class PaymentApprovalService {
      * <p>이 커밋이 D-020 수정의 본체다. 여기가 커밋된 뒤에는 어떤 실패가 나도
      * {@code payment_approvals.payment_key} 로 PG 에 진실을 물을 수 있다.
      *
-     * @return claim 한 원장 (PG 호출에 쓸 generation 을 담고 있다)
+     * @return Product의 보호 회신을 기다리는 원장 (아직 PG 호출 불가)
      * @throws PaymentException 결제 미존재 {@code PAY-003}, 금액 불일치 {@code PAY-001},
      *                          소유자 불일치 {@code PAY-007}, 예약 미확정 {@code PAY-008},
      *                          결제 불가 상태 {@code PAY-009}, lease 만료 {@code PAY-010},
@@ -70,15 +64,58 @@ public class PaymentApprovalService {
         outboxEventPublisher.publishPaymentRequested(payment, userId);
         payment.assignPaymentKey(paymentKey);
 
-        // fence 획득. 실패는 "이미 이 주문의 승인이 진행 중/종결됨" 이며, 새 PG 호출을 시작하지 않는다 —
+        // 주문 단위 중복 접수 fence. 실패하면 새 승인 절차를 시작하지 않는다 —
         // 시작하면 같은 주문에 두 번 과금할 창이 열린다. 멱등키가 PG 측에서 막아 주더라도 그 방어를
         // 로컬 fence 의 대체물로 쓰지 않는다(방어가 한 겹 줄어든다).
-        if (approvalRepository.insertClaimedIfAbsent(
-                orderId, paymentKey, payment.getUserId(), amount, LocalDateTime.now()) == 0) {
+        if (approvalRepository.insertWaitingIfAbsent(
+                orderId, paymentKey, payment.getUserId(), amount, LocalDateTime.now(),
+                payment.getReservationExpiresAt() != null ? payment.getReservationExpiresAt()
+                        : LocalDateTime.now().plus(properties.getLeaseApprovalMargin())) == 0) {
             log.warn("승인 중복 요청 — 진행 중이거나 종결된 원장이 있다, orderId={}", orderId);
             throw new PaymentException(ErrorCode.PAY_013);
         }
         return approvalRepository.findByOrderId(orderId).orElseThrow();
+    }
+
+    /** 재고 보호 회신은 원장만 전이한다. 소비 트랜잭션 안에서 PG를 호출하지 않는다. */
+    @Transactional
+    public void applyStockApprovalResult(Long orderId, boolean granted) {
+        PaymentApproval approval = approvalRepository.findByOrderIdForUpdate(orderId).orElseThrow();
+        if (approval.getStatus() != ApprovalStatus.WAITING_STOCK) {
+            return;
+        }
+        if (granted && !approval.dispatchExpired(LocalDateTime.now())) {
+            approval.markReady();
+        } else {
+            Payment payment = paymentRepository.findByOrderId(orderId).orElseThrow();
+            fail(approval, payment, ApprovalOutcome.failed("STOCK_APPROVAL_REJECTED",
+                    "재고 보호 거절 또는 승인 시작 기한 초과"));
+        }
+    }
+
+    public List<Long> findDispatchCandidates() {
+        return approvalRepository.findDispatchCandidates(LocalDateTime.now(), properties.getApproval().getBatchSize());
+    }
+
+    /** READY의 최초 실행만 claim한다. 만료 WAITING_STOCK은 PG 없이 실패 회신으로 닫는다. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Optional<PaymentApproval> claimForDispatch(Long orderId) {
+        PaymentApproval approval = approvalRepository.findByOrderIdForUpdate(orderId).orElseThrow();
+        if (approval.getStatus() != ApprovalStatus.READY && approval.getStatus() != ApprovalStatus.WAITING_STOCK) {
+            return Optional.empty();
+        }
+        Payment payment = paymentRepository.findByOrderId(orderId).orElseThrow();
+        LocalDateTime now = LocalDateTime.now();
+        if (payment.getStatus() != PaymentStatus.PENDING || approval.dispatchExpired(now)) {
+            fail(approval, payment, ApprovalOutcome.failed("APPROVAL_NOT_DISPATCHABLE",
+                    "주문 취소 또는 승인 시작 기한 초과 — PG 호출 없음"));
+            return Optional.empty();
+        }
+        if (approval.getStatus() != ApprovalStatus.READY) {
+            return Optional.empty();
+        }
+        approval.claimForDispatch(now);
+        return Optional.of(approval);
     }
 
     /**
@@ -95,6 +132,9 @@ public class PaymentApprovalService {
         PaymentApproval approval = approvalRepository.findByOrderIdForUpdate(orderId).orElseThrow();
         Payment payment = paymentRepository.findByOrderId(orderId).orElseThrow();
 
+        if (approval.getStatus() == ApprovalStatus.WAITING_STOCK || approval.getStatus() == ApprovalStatus.READY) {
+            throw new IllegalStateException("PG 호출을 claim하지 않은 승인 확정: " + orderId);
+        }
         if (approval.isTerminal()) {
             log.debug("이미 종결된 승인 — 확정 no-op, orderId={}", orderId);
             return payment.getStatus();
@@ -213,8 +253,9 @@ public class PaymentApprovalService {
         approval.markFailed(outcome.code(), outcome.detail());
         if (payment.getStatus() == PaymentStatus.PENDING) {
             payment.fail();
-            outboxEventPublisher.publishPaymentFailed(payment, payment.getUserId());
         }
+        // 취소가 먼저 와도 Product의 HELD 해제에는 확정된 실패 회신이 필요하다.
+        outboxEventPublisher.publishPaymentFailed(payment, payment.getUserId());
         countResult("failed");
         log.error("승인 실패 확정 — orderId={}, code={}", approval.getOrderId(), outcome.code());
     }

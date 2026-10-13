@@ -5,6 +5,7 @@ import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.global.idempotency.IdempotencyChecker;
 import com.peekcart.global.kafka.KafkaMessageParser;
 import com.peekcart.payment.application.PaymentRefundService;
+import com.peekcart.payment.application.PaymentApprovalService;
 import com.peekcart.global.port.SlackPort;
 import com.peekcart.payment.domain.exception.PaymentException;
 import com.peekcart.payment.domain.model.Payment;
@@ -30,16 +31,31 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class PaymentEventConsumer {
 
+    private static final String GROUP_STOCK_APPROVAL = "payment-svc-stock-approval-group";
     private static final String GROUP_ORDER_CREATED = "payment-svc-order-created-group";
     private static final String GROUP_STOCK_RESULT = "payment-svc-stock-result-group";
     private static final String GROUP_ORDER_CANCELLED = "payment-svc-order-cancelled-group";
 
+    private final PaymentApprovalService approvalService;
     private final PaymentRepository paymentRepository;
     private final PaymentCancellationRepository paymentCancellationRepository;
     private final IdempotencyChecker idempotencyChecker;
     private final KafkaMessageParser kafkaMessageParser;
     private final PaymentRefundService paymentRefundService;
     private final SlackPort slackPort;
+
+    @KafkaListener(topics = "stock.approval.result", groupId = GROUP_STOCK_APPROVAL)
+    @Transactional
+    public void handleStockApprovalResult(String message) {
+        JsonNode root = kafkaMessageParser.parse(message);
+        JsonNode payload = root.get("payload");
+        if (!payload.has("granted") || !payload.get("granted").isBoolean()) {
+            throw new IllegalArgumentException("stock.approval.result granted는 필수 boolean이다");
+        }
+        idempotencyChecker.executeIfNew(root.get("eventId").asText(), GROUP_STOCK_APPROVAL,
+                () -> approvalService.applyStockApprovalResult(payload.get("orderId").asLong(),
+                        payload.get("granted").asBoolean()));
+    }
 
     /** 주문 생성 시 {@code PENDING} 상태의 Payment를 생성한다 (소유자 검증용 userId 포함). */
     @KafkaListener(topics = "order.created", groupId = GROUP_ORDER_CREATED)

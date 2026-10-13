@@ -20,6 +20,26 @@ public class StockReservationRepositoryImpl implements StockReservationRepositor
     private final StockReservationJpaRepository jpaRepository;
 
     @Override
+    public Optional<StockReservation> findByOrderIdForUpdate(Long orderId) {
+        return jpaRepository.findByOrderIdForUpdate(orderId);
+    }
+
+    @Override
+    public int holdForApproval(Long orderId) {
+        return jpaRepository.holdForApproval(orderId, LocalDateTime.now());
+    }
+
+    @Override
+    public int releaseAfterPaymentFailed(Long orderId) {
+        return jpaRepository.releaseAfterPaymentFailed(orderId, LocalDateTime.now());
+    }
+
+    @Override
+    public int releaseAfterRefund(Long orderId) {
+        return jpaRepository.releaseAfterRefund(orderId, LocalDateTime.now());
+    }
+
+    @Override
     public StockReservation save(StockReservation reservation) {
         return jpaRepository.save(reservation);
     }

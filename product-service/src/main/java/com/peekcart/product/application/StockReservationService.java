@@ -162,6 +162,12 @@ public class StockReservationService {
      * </ul>
      */
     public void confirm(Long orderId) {
+        // 환불 성공과 completed의 역전을 같은 행 잠금으로 직렬화한다.
+        Optional<StockReservation> locked = reservationRepository.findByOrderIdForUpdate(orderId);
+        if (locked.isPresent() && "SUCCEEDED".equals(locked.get().getRefundResult())
+                && locked.get().isApprovalFenced()) {
+            return;
+        }
         if (reservationRepository.markConfirmedIfReserved(orderId) == 1) {
             sagaMetrics.reservationConfirmed();
             log.debug("재고 예약 확정(commit) — orderId={}", orderId);
@@ -188,8 +194,12 @@ public class StockReservationService {
      * @param result {@code SUCCEEDED} 또는 {@code FAILED} — 확정된 결과만 전달된다
      */
     public void recordRefundResult(Long orderId, String result, String failureCode, LocalDateTime resolvedAt) {
-        reservationRepository.findByOrderId(orderId).ifPresentOrElse(reservation -> {
+        reservationRepository.findByOrderIdForUpdate(orderId).ifPresentOrElse(reservation -> {
             reservation.recordRefundResult(result, failureCode, resolvedAt);
+            // bulk UPDATE는 marker를 먼저 flush한다. 회신/재고 복구는 같은 트랜잭션이다.
+            if (reservationRepository.releaseAfterRefund(orderId) == 1) {
+                restoreReleasedStock(orderId);
+            }
             log.info("환불 결과 회신 기록 — orderId={}, result={}", orderId, result);
         }, () -> log.debug("환불 회신 수신했으나 예약 원장 없음 — 다른 감지 지점발 환불, orderId={}", orderId));
     }
@@ -228,11 +238,36 @@ public class StockReservationService {
         // 이미 보상됨 → 멱등 no-op
     }
 
+    /** 회수와 같은 예약 행 CAS로 경쟁하며, 회신은 보호 상태와 함께 커밋한다 (ADR-0034). */
+    public void holdForApproval(Long orderId) {
+        boolean granted = reservationRepository.holdForApproval(orderId) == 1;
+        if (!granted) {
+            granted = reservationRepository.findByOrderId(orderId)
+                    .map(r -> r.getStatus() == ReservationStatus.APPROVAL_HELD).orElse(false);
+        }
+        publisher.publishStockApprovalResult(orderId, granted);
+    }
+
+    /** 과금 없음이 확정된 회신만 HELD를 해제할 수 있다. */
+    public void releaseAfterPaymentFailed(Long orderId) {
+        if (reservationRepository.releaseAfterPaymentFailed(orderId) == 1) {
+            restoreReleasedStock(orderId);
+        } else {
+            // 선도착 실패는 기존 tombstone 경로를 쓴다.
+            release(orderId);
+        }
+    }
+
     private boolean tryReleaseReserved(Long orderId) {
         int updated = reservationRepository.markReleasedIfReserved(orderId);
         if (updated != 1) {
             return false;
         }
+        restoreReleasedStock(orderId);
+        return true;
+    }
+
+    private void restoreReleasedStock(Long orderId) {
         StockReservation reservation = reservationRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new IllegalStateException("RELEASED 전이 후 원장 미존재: " + orderId));
         for (ReservedItemPayload item : fromJson(reservation.getItems())) {
@@ -240,7 +275,6 @@ public class StockReservationService {
         }
         sagaMetrics.reservationReleased();
         log.debug("예약 재고 복구 완료 — orderId={}", orderId);
-        return true;
     }
 
     private String toJson(List<ReservedItemPayload> items) {

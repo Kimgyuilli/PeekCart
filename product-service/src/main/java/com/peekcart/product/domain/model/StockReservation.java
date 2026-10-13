@@ -51,6 +51,10 @@ public class StockReservation {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
+    /** 새 승인 fence를 거쳤는지 보존한다. legacy CONFIRMED의 환불 정책은 변경하지 않는다. */
+    @Column(name = "approval_fenced", nullable = false)
+    private boolean approvalFenced;
+
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
 
