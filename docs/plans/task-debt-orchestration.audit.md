@@ -204,3 +204,8 @@ D-075는 사용자 보류. D-064/D-065/D-078은 제외·열림 유지. 현재 �
 - Saga/monitoring Draft https://github.com/Kimgyuilli/PeekCart/pull/180, head `e417b8a7f1d08e14fc27ed16738845b0c6612035`, base3e1ba64, CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38981330710 진행. active PR CI는177/180 두 개. D063 실제 발화/복구 결과는 아직 대기.
 - root 기록에 언급된 ADR0036은 미병합 app lane7607에만 존재해 Saga consistency 사전 검사에서 missing 경고. PR 본문에 공개했고 다음 base 갱신 때 로컬 문서 보완 ee9325c를 포함한다. 필수 guard 실패를 무시하지 않는다.
 - 아카이브 실제 원격 조회 preview: 기존 #175/#176의 계획6건 이동 대상, 상위계획은177 미병합으로 진행중. sandbox 네트워크 없는 첫 조회의 UNKNOWN은 미병합 사실로 채택하지 않았다. main 복구 확인 뒤 이동/인덱스 갱신 예정.
+
+- D084 소스296a82c의 독립 재검토에서 DONE 추가 조회 제거, 중복 ID/결과 회수, 분리 거절 감사 누락 해소 확인. generation/version을 보존하는 resume/retry 경로도 소스상 추가 차단점 없음. 실제 테스트는 미실행이라 최종 PASS가 아니다.
+- D084 foundation cb58 통합 후 최신 `5d9e1bf909870dd538ee231d07717d41f8933d2c` clean. 현재 미병합 foundation 기반임을 명시. run2 종료/cleanup 이후 common topology/replay, Payment 복구/기존 승인, Product version/Saga 집중 실제 회귀 큐.
+- B에게 D084의 Layer1 docs03 운영 API 절, docs05 복구/감사/stock version 및 RECOVERY_PENDING 설명, ADR index0040 Proposed 행 편집을 독점 위임. app lane의 ADR0036/37 및 기존 문구를 통합 시 보존한다.
+- D063 run2에서 정본10m를 유지한 DLQ/get 발화도 관측. compensation15m 및 최종 실제 정상값 복귀는 대기. recovery branch의 경보 변경은 approval-stale 규칙 하나뿐이며 기존 D063 대상3개 규칙 전체동일 확인. 이후 D070 cache2 통합 뒤 대상5규칙 불변을 재확인해야 한다.
