@@ -159,3 +159,37 @@
 - 통합app `d88c6392be889718e13873de08a648463eac01a8` clean/no push: productf3+foundation5466+messaginga777 무충돌병합. HTTPmetadata6/common400회귀보존, 원본분류commit유지. 독립통합검토큐.
 - Saga최종 `8e68b43` (구현7d1f436) clean, syntax/33selftest/matrix35구조·selftest/consistency통과. CI45분상한유지/D480s/F600s, 실제E2E/durations증거는대기. 독립하네스검토큐.
 - D-084 request/snapshot/execute/result4event 및Product version/fenceCAS 설계중. 기존reconciler가비동기결과대기를재claim하지않도록 RECOVERY_PENDING 후보제외상태검토. API/metrics/scheduler/inbound스윕과nativeCAS/@Version실제DB검증필수. Product예약관련파일소유B, Aquery/cache·Saga와구분. 구현전정확프로토콜확정중.
+
+- foundation root기록통합후 `8cc47c52daae0f19065d8fc25abfc24b59ae358a` clean/no push. 상위계획/audit2파일추가, 충돌없음.
+- app최신 `7607c0ac35525311fc9e9ab3908aa1f4acd60817` clean/no push. root문서정합성으로 docs04jitter설명/ADR0036·0037인덱스를각분류commit으로보존. 통합코드 d88c639독립PASS는유지하며새문서추가검토대기.
+- Saga최신 `538fec4` OffsetAndMetadata2필드호출정정: 고정kafka-python-ng2.2.3공식wheel/hash/API읽기대조, 33selftest재PASS, 독립작은diffPASS. 실제broker/E2E는아직대기.
+- D-063 run2 baseline정상후 transient Pending 관측, 정상값복귀관측구간진행. 전체발화/복구통과아직주장하지않음.
+
+- 사용자 D-084 신뢰원천질문에 `권장하는 방안으로 진행해주세요` 응답. 질문에명시한보수적방안(서버직접PG확정결과복구만구현,404/업로드hash강제해제금지,영구404는미완유지)으로확정. 외부증빙원천을임의로승인받았다고해석하지않음. D-084전체완료표시금지, 가능한안전복구부분은계속구현.
+- Saga+monitoring 통합 `26b5af20b5e07dbf8439b7c91278300a381a1bf2` clean/no push, c406204무충돌병합·관측lint/diffcheckPASS. B실험원본worktree미접촉, D-063실제검증대기. 후속검증PR큐.
+
+## 현재 실행 체크포인트 (2026-10-17, 병합 전)
+
+| 담당 | 작업 | branch / worktree | 현재 근거와 남은 조건 |
+|---|---|---|---|
+| A | D-083/068/080/073/077 | debt/foundation / /private/tmp/peakcart-worker-a | local8cc47c5에 문서와 root audit 통합. 원격#177 e0dcd01 CI·독립PASS, #178 b2a090d도PASS. 새통합head는 진단복구 후 base갱신/CI 필요 |
+| A | main publish 진단 | debt/publish-diagnostics / /private/tmp/peakcart-publish-diagnostics | #179 head392901c, CI38979426567 E2E진행. root만 검증 후 우선병합; main 성공 확인 전 일반병합보류 |
+| A | D-067/066/072/069/076/071 | debt/product-lane / /private/tmp/peakcart-worker-a-product | 통합7607c0a, 개별실제DB/HTTP/장애회귀 및 독립로컬PASS. PR/최신base 전체CI 필요 |
+| A | D-061/062/070/063 | debt/saga-evidence / /private/tmp/peakcart-worker-a-saga | 통합26b5af2. Saga/경보 정적·독립PASS, 실제E2E는CI대기. D063 별도실험진행 |
+| B | D-063 실제 평가 | debt/monitoring / /private/tmp/peakcart-worker-b-monitoring | c406204, run2 session80307/projectpeakcart-alert-1792192171. /private/tmp/peakcart-d063-20261017-run2에 증거. heavy독점, 끝나면 소유컨테이너 정리 확인 |
+| B | D-084 안전복구 | debt/approval-recovery / /private/tmp/peakcart-worker-b-recovery | ADR0040·이벤트/권한/감사/경합 구현중. PG확정결과 경로만 승인, 영구404 외부증빙은 미완 유지 |
+| root | 기록/최종병합 | debt/orchestration-records / 원래저장소 | 현행TASKS/PHASE/ADR정합·done은 병합/main검증 뒤. 아직 이번부채 완료표시0 |
+| verifier | 모든 PR 독립검증 | /private/tmp/peakcart-verifier | 구현참여없음. 최신head/base/checkout/gate/artifact 재확인. codex exec 미호출 |
+
+D-075는 사용자 보류. D-064/D-065/D-078은 제외·열림 유지. 현재 무거운 로컬 실행은 B run2 하나뿐이며, A와 verifier는 경량 작업만 한다. 다른 사용자의 기존 Gradle daemon PID4627은 건드리지 않는다.
+
+다음 순서: #179 최신CI/독립증거 확인 → root 복구목적 병합 → main push(gate와publish) 확인 → foundation 최신main 통합/push 및 #178 통합대체 정리 → 다음 통합PR 검증. 코드/base 변경 전의 green을 새SHA에 사용하지 않는다.
+
+## 복구 진단 PR 병합 (2026-10-17)
+
+- #179 head `392901c7134937e6a8a98566756b6221a1fbc291` / base `92755566074fc28d78e53dd84b2b085a7fbfdb38` 독립 최종 PASS. 실제 checkout `f2c01383b482bcdedf0eb48b969abb4333b82df9` 부모 대조, CI38979426567 필수17jobs/gate 성공, XML228/1292tests 실패·오류·skip0, 양 E2E 이미지 checksum/ID와 동일SHA A–E 및 음성 대조군 확인, artifact20개 만료0.
+- root가 PR 본문에 최종 증거를 기록하고 ready 후 정확 head 조건으로 정상 merge. 보호 우회/force push 없음. 병합 SHA `3e1ba64c715d22b1f5a2d2635a97da17eb4ebb28`, 시각 2026-10-16T23:21:59Z. 복구 진단 목적이며 기존 unknown blob 원인 해결로 주장하지 않음.
+- main push CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38981041166 시작. gate와 6개 publish 성공 확인 전 일반 부채 병합 보류. verifier가 실제 checkout 및 배포 산출물 검증 담당.
+- A는 대기 중 foundation을 새 main에 통합해 #177 최신 CI 실행 준비. 원격 포함 확인 후 #178을 통합 대체로 닫고 PR138 원문에 D080 정정을 append. 앞선 head의 green은 재사용하지 않음.
+- D063 run2는 transient 전체 Normal 복귀를 통과한 뒤 sustained 관측 진행 중. heavy 슬롯은 B session80307이 계속 독점. 성공/완료 판정 아직 없음.
+- Saga 최신544f983의 lingering F 등록 명시 가드 추가까지 독립 소스 확인. 실제 CI는 대기.
