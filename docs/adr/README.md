@@ -58,4 +58,6 @@
 | [0033](./0033-shared-messaging-module.md) | Outbox · 멱등성 · DLQ 원장 실행 세트의 공유 모듈 승격 (`peekcart-common-messaging` · 스키마는 서비스 소유 유지) | Accepted | Phase 5 | 02 |
 | [0034](./0034-approval-reservation-fence.md) | 비동기 결제 승인과 재고 예약 fence | Accepted | Phase 5 | 02, 03, 04, 05 |
 | [0035](./0035-protected-approval-manual-handoff.md) | 보호된 승인 미결의 운영 인수와 상태 조회 | Accepted | Phase 5 | 03, 04, 05, 06 |
+| [0036](./0036-cart-product-read-model.md) | 장바구니의 로컬 상품 정보 조합 | Accepted | Phase 5 | 03, 05 |
+| [0037](./0037-product-read-cache-boundaries.md) | 상품 목록 정렬과 캐시 조회의 DB 진입 경계 | Accepted | Phase 5 | 03, 04 |
 <!-- INDEX:END -->
