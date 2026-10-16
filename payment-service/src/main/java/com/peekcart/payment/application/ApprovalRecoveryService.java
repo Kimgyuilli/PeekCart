@@ -138,7 +138,7 @@ public class ApprovalRecoveryService {
             return tx().execute(status -> {
                 PaymentApproval current = lockedApproval(previous.getOrderId());
                 ApprovalRecovery rejected = recoveries.findForUpdate(id).orElseThrow(this::invalid);
-                if (!rejected.hasStatus("REVIEW_REQUIRED") || current.getGeneration() != rejected.getGeneration()) throw invalid();
+                if (!rejected.hasStatus("REVIEW_REQUIRED") || current.getGeneration() != rejected.getGeneration()) throw invalid("Rejected recovery state or generation changed");
                 requireRefund(current, evidence);
                 current.restartRecovery(rejected.getGeneration());
                 rejected.reject(); audit(rejected, actor, "RESUMED", reason);
@@ -251,8 +251,8 @@ public class ApprovalRecoveryService {
         var refund = refunds.findByOrderIdForUpdate(approval.getOrderId());
         if (evidence.refunded()) {
             if (refund.isEmpty() || refund.get().getStatus() != RefundStatus.SUCCEEDED
-                    || refund.get().getAmount() != approval.getAmount()) throw invalid();
-        } else if (refund.isPresent()) throw invalid();
+                    || refund.get().getAmount() != approval.getAmount()) throw invalid("Refund ledger does not confirm exact full cancellation");
+        } else if (refund.isPresent()) throw invalid("Refund ledger conflicts with no-charge evidence");
     }
     private void requireUnchanged(PaymentApproval current, long generation) {
         if (!current.isRecoveryEligible() || current.getGeneration() != generation) throw invalid("Approval state or generation changed");
