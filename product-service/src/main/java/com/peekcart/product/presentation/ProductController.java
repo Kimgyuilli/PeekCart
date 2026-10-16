@@ -26,7 +26,7 @@ public class ProductController {
 
     private final ProductQueryService productQueryService;
 
-    @Operation(summary = "상품 목록 조회", description = "판매 중(ON_SALE) 상품을 페이징 조회한다. 카테고리 필터 가능.")
+    @Operation(summary = "상품 목록 조회", description = "판매 중(ON_SALE) 상품을 페이징 조회한다. 카테고리 필터 가능. 기본 id ASC, sort=id|name|price,asc|desc를 지원하며 동률은 id ASC로 정렬한다.")
     @GetMapping
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> getProducts(
             @RequestParam(required = false) Long categoryId,

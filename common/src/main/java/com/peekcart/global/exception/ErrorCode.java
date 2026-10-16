@@ -25,6 +25,7 @@ public enum ErrorCode {
     PRD_003(HttpStatus.NOT_FOUND, "PRD-003", "카테고리를 찾을 수 없습니다."),
     // 낙관적 락 충돌(409). 분산 락 획득 실패에도 쓰였으나 그 경로는 ADR-0025 D1 로 사라졌다 —
     // 남은 의미는 GlobalExceptionHandler 의 OptimisticLockingFailureException → 409 하나다.
+    PRD_005(HttpStatus.SERVICE_UNAVAILABLE, "PRD-005", "상품 조회가 혼잡합니다. 잠시 후 다시 시도해주세요."),
     PRD_004(HttpStatus.CONFLICT, "PRD-004", "재고 변경 충돌이 발생했습니다. 다시 시도해주세요."),
 
     // Order
@@ -60,6 +61,7 @@ public enum ErrorCode {
 
     // System
     SYS_001(HttpStatus.INTERNAL_SERVER_ERROR, "SYS-001", "내부 서버 오류가 발생했습니다."),
+    SYS_003(HttpStatus.BAD_REQUEST, "SYS-003", "입력값이 올바르지 않습니다."),
     SYS_002(HttpStatus.SERVICE_UNAVAILABLE, "SYS-002", "외부 API 호출에 실패했습니다."),
     SYS_004(HttpStatus.FORBIDDEN, "SYS-004", "접근 권한이 없습니다.");
 

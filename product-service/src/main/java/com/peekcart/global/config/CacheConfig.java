@@ -47,7 +47,7 @@ import java.time.Duration;
  * 명시 배선을 넣으면 두 빈 사이에서 모호성만 만든다.
  */
 @Configuration
-@EnableCaching
+@EnableCaching(order = -200)
 public class CacheConfig implements CachingConfigurer {
 
     public static final String PRODUCT_DETAIL_CACHE = "product";

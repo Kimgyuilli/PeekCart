@@ -5,15 +5,19 @@ import com.peekcart.product.application.dto.ProductInfoDto;
 import com.peekcart.product.application.dto.ProductListDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import com.peekcart.global.exception.ErrorCode;
+import com.peekcart.product.domain.exception.ProductException;
+import java.util.HashSet;
+import java.util.Set;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 상품 조회를 담당하는 애플리케이션 서비스.
  */
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ProductQueryService {
 
@@ -27,7 +31,7 @@ public class ProductQueryService {
      * @return 상품 페이지
      */
     public Page<ProductListDto> getProducts(Long categoryId, Pageable pageable) {
-        return productCacheService.getProductList(categoryId, pageable).toPage();
+        return productCacheService.getProductList(categoryId, normalizePage(pageable)).toPage();
     }
 
     /**
@@ -47,5 +51,18 @@ public class ProductQueryService {
                 info.id(), info.categoryId(), info.categoryName(),
                 info.name(), info.description(), info.price(),
                 info.imageUrl(), info.status(), stock);
+    }
+    static Pageable normalizePage(Pageable pageable) {
+        Sort sort = pageable.getSort().isSorted() ? pageable.getSort() : Sort.by("id");
+        Set<String> seen = new HashSet<>();
+        for (Sort.Order order : sort) {
+            if (!Set.of("id", "name", "price").contains(order.getProperty())
+                    || !seen.add(order.getProperty()) || order.isIgnoreCase()
+                    || order.getNullHandling() != Sort.NullHandling.NATIVE) {
+                throw new ProductException(ErrorCode.SYS_003);
+            }
+        }
+        if (!seen.contains("id")) sort = sort.and(Sort.by("id"));
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
     }
 }
