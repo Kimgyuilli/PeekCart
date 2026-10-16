@@ -9,7 +9,7 @@
 | Infrastructure | 통합 테스트 | Testcontainers | DB Repository 쿼리, Redis 캐시/락, Kafka Producer/Consumer |
 | Presentation | 슬라이스 테스트 | MockMvc + @WebMvcTest | 요청/응답 직렬화, 인증/인가 필터, Bean Validation |
 | E2E (단일 서비스) | 통합 테스트 | @SpringBootTest + Testcontainers | 주문 → 결제 → 알림 전체 플로우 |
-| E2E (cross-service saga) | 실제 스택 | `docker-compose.e2e.yml` + `scripts/saga-e2e-smoke.sh` | 4서비스를 실제 HTTP 진입점으로 구동해 saga 4종(결제 실패·예약 실패·환불 체인·DLQ intake) 관측 (구현 ④-d-2) |
+| E2E (cross-service saga) | 실제 스택 | `docker-compose.e2e.yml` + `scripts/saga-e2e-smoke.sh` | 4서비스를 실제 HTTP 진입점으로 구동해 saga 5종(결제 실패·예약 실패·환불 체인·DLQ intake·승인 예약 보호) 관측 (구현 ④-d-2) |
 | 음성 대조군 | 결함 주입 | `saga-e2e-smoke.sh --negative-control` | **검사가 결함을 실제로 잡는지** — poller 정지·서비스 정지·재고 충분·listener 부재·project 병렬·egress 격리 양음 대조 |
 | 계약 게이트 | 증적 대조 | `scripts/saga-contract-matrix-lint.sh` | 매트릭스(`docs/plans/fixtures/saga-contract-matrix.tsv`) ↔ JUnit XML · E2E manifest 를 `evidence_key` 단위 exact equality 로 대조 |
 
@@ -54,7 +54,7 @@
 
 **스케줄러는 "돈다는 사실" 을 따로 고정한다.** `@InjectMocks` 객체를 직접 호출하는 단위 테스트는 `@Scheduled` 를 지워도 통과한다. 실제 Spring scheduling 발화 후 DB 상태를 기다리는 통합 테스트를 별도로 두고, 운영 주기·lock 기본값은 properties 계약 테스트가 고정한다(한 테스트에 두 관심사를 넣으면 둘 중 하나는 반드시 거짓이 된다).
 
-**자율 writer 는 테스트에서 기본 off 다 (see ADR-0029).** `@Scheduled` 스케줄러와 `@KafkaListener` 리스너는 아무도 요청하지 않았는데 도메인 상태를 고치는 주체라, 컨테이너를 공유하면(ADR-0028) 테스트가 단언하는 상태와 경주한다. `app.scheduling.enabled` · `app.kafka.listener.enabled` 로 게이트하고(프로덕션 기본값은 켜짐), 그 동작을 검증하는 테스트만 `@TestPropertySource` 인라인으로 켜며, 켠 테스트는 `@DirtiesContext(AFTER_CLASS)` 로 수명을 자기 클래스에 가둔다 — context 캐시 때문에 켜진 writer 가 자기 테스트가 끝난 뒤에도 계속 돈다. 리스너 게이트는 Boot 의 `spring.kafka.listener.auto-startup` 이 아니라 container factory 의 `autoStartup` 에 건다(서비스가 factory 를 직접 만들어 Boot 속성이 도달하지 않는다). 리스너를 켠 테스트는 발행 전에 `AbstractIntegrationTest#awaitListenerAssignment` 로 파티션 할당을 기다리고, 발행 future 를 동기화해 발행 실패를 예외로 드러낸다(D-058). 대기 누락은 `integration-test-container-lint.sh` 의 ITC-006 이 막는다.
+**자율 writer 는 테스트에서 기본 off 다 (see ADR-0029).** `@Scheduled` 스케줄러와 `@KafkaListener` 리스너는 아무도 요청하지 않았는데 도메인 상태를 고치는 주체라, 컨테이너를 공유하면(ADR-0028) 테스트가 단언하는 상태와 경주한다. `app.scheduling.enabled` · `app.kafka.listener.enabled` 로 게이트하고(프로덕션 기본값은 켜짐), 그 동작을 검증하는 테스트만 `@TestPropertySource` 인라인으로 켜며, 켠 테스트는 `@DirtiesContext(AFTER_CLASS)` 로 수명을 자기 클래스에 가둔다 — context 캐시 때문에 켜진 writer 가 자기 테스트가 끝난 뒤에도 계속 돈다. 리스너 게이트는 Boot 의 `spring.kafka.listener.auto-startup` 이 아니라 container factory 의 `autoStartup` 에 건다(서비스가 factory 를 직접 만들어 Boot 속성이 도달하지 않는다). 리스너를 켠 테스트는 발행 전에 `AbstractIntegrationTest#awaitListenerAssignment` 로 파티션 할당을 기다리고, 발행 future 를 동기화해 발행 실패를 예외로 드러낸다(D-058). 수동 `start()`로 켠 리스너도 같은 규약을 따르며, 선택한 컨테이너 목록을 헬퍼에 전달해 중지된 리스너를 기다리지 않는다. ITC-006은 프로퍼티 opt-in과 수동 기동의 대기 누락을 검사하고, ITC-007은 자율 writer를 켠 클래스의 `@DirtiesContext(AFTER_CLASS)`를 검사한다(`integration-test-container-lint.sh`, D-081·D-082).
 
 ### 13-2. 커버리지 목표
 
@@ -83,3 +83,5 @@
 | 결제 연속 처리 | nGrinder | 300 VUser, 3분 | 결제 성공률, Kafka Lag |
 | K8s HPA 스케일아웃 | nGrinder | 점진적 VUser 증가 | Pod 수 변화, TPS 회복 시간 |
 | 전체 플로우 E2E | k6 | 100 VUser, 10분 | 전체 TPS, p95/p99 응답시간 |
+
+승인 예약 보호 검증은 실제 MySQL `data_lock_waits`로 두 승자 순서를 확인하고, PG 호출 전 중단과 성공 후 결과 저장 누락을 HTTP stub 및 원장 조회로 검사한다. 실제 스택 시나리오 e는 sweeper 대조군 회수·취소된 보호 유지·Payment 재시작 후 PG 조회와 정상 승인 확정을 검증한다(see ADR-0034, ADR-0035).

@@ -5,6 +5,7 @@ import com.peekcart.payment.application.dto.PaymentDetailDto;
 import com.peekcart.payment.domain.exception.PaymentException;
 import com.peekcart.payment.domain.model.Payment;
 import com.peekcart.payment.domain.repository.PaymentRepository;
+import com.peekcart.payment.domain.repository.PaymentApprovalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentQueryService {
 
     private final PaymentRepository paymentRepository;
+    private final PaymentApprovalRepository approvalRepository;
 
     /**
      * @throws PaymentException 결제 정보 미존재 시 {@code PAY-003}, 본인 주문이 아니면 {@code PAY-007}
@@ -26,6 +28,7 @@ public class PaymentQueryService {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new PaymentException(ErrorCode.PAY_003));
         payment.verifyOwner(userId);
-        return PaymentDetailDto.from(payment);
+        return PaymentDetailDto.from(payment, approvalRepository.findByOrderId(orderId)
+                .map(approval -> approval.getStatus().name()).orElse(null));
     }
 }

@@ -108,7 +108,7 @@ def root_query(sql, args=()):
         conn.close()
 
 
-def http(service, method, path, body=None, user_id=1, role="USER", expect=None):
+def http(service, method, path, body=None, user_id=1, role="USER", expect=None, response_headers=None):
     host, _ = SERVICES[service]
     url = "http://%s:8080%s" % (host, path)
     headers = {
@@ -124,6 +124,8 @@ def http(service, method, path, body=None, user_id=1, role="USER", expect=None):
         with urllib.request.urlopen(req, timeout=20) as r:
             payload = json.loads(r.read().decode("utf-8") or "{}")
             status = r.status
+            if response_headers is not None:
+                response_headers.update(dict(r.headers))
     except urllib.error.HTTPError as e:
         raw = e.read().decode("utf-8")
         payload = json.loads(raw) if raw.strip().startswith("{") else {"raw": raw}
@@ -788,6 +790,48 @@ def scenario_e():
     stock = query("product", "SELECT stock FROM inventories WHERE product_id=%s", (product_id,))[0]["stock"]
     if held != "APPROVAL_HELD" or stock != 3:
         raise AssertionError("결과 불명 중 재고 회수: status=%s stock=%s" % (held, stock))
+    # 단순 sleep은 sweeper 실행 증거가 아니다. 별도 RESERVED 대조군이 실제로
+    # 회수되는 동안, 이미 취소를 소비한 HELD는 보존되는지 확인한다.
+    witness_product = create_product("e-sweep", price=10000, stock=5)
+    wait_price_cached(witness_product)
+    witness_order = place_order("e-sweep", user_id, witness_product, 1)
+    wait_reserved(witness_order)
+    query("product", "UPDATE stock_reservations SET expires_at=NOW()-INTERVAL 1 DAY WHERE order_id=%s", (witness_order,))
+    wait_for("actual sweeper reclaimed RESERVED witness", lambda: query("product",
+             "SELECT id FROM stock_reservations WHERE order_id=%s AND status='RELEASED'", (witness_order,)))
+    if outbox_payload("order", "order.cancelled", witness_order):
+        raise AssertionError("sweeper 대조군이 주문 취소로 회수돼 실행 증거가 아니다")
+    if query("product", "SELECT stock FROM inventories WHERE product_id=%s", (witness_product,))[0]["stock"] != 5:
+        raise AssertionError("sweeper 대조군 재고가 복구되지 않았다")
+    assert_held = lambda: query("product", "SELECT id FROM stock_reservations WHERE order_id=%s AND status='APPROVAL_HELD'", (order_id,))
+    if not assert_held() or query("product", "SELECT stock FROM inventories WHERE product_id=%s", (product_id,))[0]["stock"] != 3:
+        raise AssertionError("실제 sweeper 실행 후 HELD/재고 보호가 깨졌다")
+    # runner에 Docker socket을 노출하지 않는다. host가 파일 요청을 읽고 실제 JVM을
+    # 재시작한 뒤 StartedAt 전후 값을 반환한다. stub은 재시작하지 않아 호출 원장이 유지된다.
+    os.makedirs(OUT_DIR, exist_ok=True)
+    request_path = os.path.join(OUT_DIR, "e-payment-restart.request")
+    ack_path = os.path.join(OUT_DIR, "e-payment-restart.json")
+    with open(request_path, "w") as f:
+        f.write(str(order_id))
+    wait_for("host Payment restart", lambda: os.path.isfile(ack_path), deadline=180)
+    with open(ack_path) as f:
+        restart = json.load(f)
+    if not restart.get("before") or restart["before"] == restart.get("after"):
+        raise AssertionError("Payment 프로세스 재시작 증거 없음: %r" % restart)
+    # ack 이후 발생한 조회를 요구한다. 재시작 전 GET을 재사용하면 false-green이다.
+    restart_seq = max((c["seq"] for c in stub_ledger()), default=0)
+    wait_for("PG lookup after Payment restart", lambda: [c for c in stub_ledger()
+             if c["paymentKey"] == key and c["method"] == "GET" and c["seq"] > restart_seq], deadline=180)
+    if not assert_held() or query("product", "SELECT stock FROM inventories WHERE product_id=%s", (product_id,))[0]["stock"] != 3:
+        raise AssertionError("재시작 후 결과 불명 예약/재고 보호가 깨졌다")
+    def unknown_payment_visible():
+        data = http("payment", "GET", "/api/v1/payments/%s" % order_id,
+                    user_id=user_id, expect=200)[1].get("data", {})
+        return data if data.get("status") == "CANCELLED" and data.get("approvalStatus") == "UNRESOLVED" else None
+    unknown_payment = wait_for("HTTP cancelled payment still approval UNRESOLVED", unknown_payment_visible)
+    posts_before_resolution = [c for c in stub_ledger() if c["paymentKey"] == key and c["method"] == "POST"]
+    if len(posts_before_resolution) != 1:
+        raise AssertionError("재시작이 PG 승인을 반복했다: %r" % posts_before_resolution)
     # PG가 실패를 확정한 뒤 기존 조회 전용 reconciliation을 실제로 통과시킨다.
     req = urllib.request.Request("http://pg-stub:8080/__resolve-approval/" + key, data=b"", method="POST")
     with urllib.request.urlopen(req, timeout=10) as response:
@@ -803,10 +847,40 @@ def scenario_e():
     gets = [c for c in calls if c["method"] == "GET"]
     if restored != 5 or len(posts) != 1 or not gets or posts[0]["idempotencyKey"] != "approve-%s" % order_id:
         raise AssertionError("fence 종결/호출 계약 위반: stock=%s calls=%r" % (restored, calls))
+    # 별도 정상 주문은 HTTP 상태조회로 승인 완료를 확인하고 실제 예약 확정까지 본다.
+    success_product = create_product("e-success", price=10000, stock=5)
+    wait_price_cached(success_product)
+    success_order = place_order("e-success", user_id, success_product, 2)
+    wait_reserved(success_order)
+    wait_for("success payment ready", lambda: query("payment",
+             "SELECT id FROM payments WHERE order_id=%s AND ready_for_payment=1", (success_order,)))
+    success_key = "e2e-ok-%s" % success_order
+    headers = {}
+    http("payment", "POST", "/api/v1/payments/confirm",
+         {"paymentKey": success_key, "orderId": success_order, "amount": 20000},
+         user_id=user_id, expect=202, response_headers=headers)
+    location = next((v for k, v in headers.items() if k.lower() == "location"), None)
+    if location != "/api/v1/payments/%s" % success_order:
+        raise AssertionError("승인 접수 Location 불일치: %r" % headers)
+    def success_payment_visible():
+        data = http("payment", "GET", location, user_id=user_id, expect=200)[1].get("data", {})
+        return data if data.get("status") == "APPROVED" and data.get("approvalStatus") == "SUCCEEDED" else None
+    wait_for("HTTP payment APPROVED / approval SUCCEEDED", success_payment_visible)
+    wait_for("successful reservation CONFIRMED", lambda: query("product",
+             "SELECT id FROM stock_reservations WHERE order_id=%s AND status='CONFIRMED' AND approval_fenced=1", (success_order,)))
+    success_stock = query("product", "SELECT stock FROM inventories WHERE product_id=%s", (success_product,))[0]["stock"]
+    success_posts = [c for c in stub_ledger() if c["paymentKey"] == success_key and c["method"] == "POST"]
+    if success_stock != 3 or len(success_posts) != 1:
+        raise AssertionError("승인 성공 재고/PG 호출 불일치")
     return ({"approval_reservation_fence": {"actual": {
         "held_during_unknown": True, "stock_while_cancelled": stock,
         "stock_restored": restored, "confirm_calls": len(posts), "lookup_observed": bool(gets)
-    }}}, {"order_id": order_id, "stub_calls": calls})
+    }}}, {"order_id": order_id, "stub_calls": calls, "payment_restart": restart,
+           "sweeper_witness_order": witness_order, "held_after_sweep_and_restart": True,
+           "unknown_payment_status": unknown_payment["status"],
+           "unknown_approval_status": unknown_payment["approvalStatus"],
+           "successful_order": success_order, "successful_reservation": "CONFIRMED",
+           "successful_stock": success_stock, "successful_confirm_calls": len(success_posts)})
 
 
 SCENARIOS = {"a": scenario_a, "b": scenario_b, "c": scenario_c, "d": scenario_d, "e": scenario_e}

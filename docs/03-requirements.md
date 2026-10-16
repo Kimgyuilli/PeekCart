@@ -140,6 +140,11 @@
 
 ### 비동기 승인 응답 (see ADR-0034)
 
-`POST /api/v1/payments/confirm`은 소유자·금액·예약 게이트를 검증하고 승인 접수를 영속한 뒤 **202 Accepted**와 결제 상태를 반환한다. 보통 `PENDING`이며 결과는 `GET /api/v1/payments/{orderId}`로 조회한다. 비동기 실행이 먼저 완료되면 접수 응답에도 최신 상태가 담길 수 있다. 기존 접수 검증 오류와 중복 접수 PAY-013은 유지한다. `PENDING`은 과금 실패를 뜻하지 않으므로 새 주문/재결제로 자동 전환하지 않는다.
+`POST /api/v1/payments/confirm`은 소유자·금액·예약 게이트를 검증하고 승인 접수를 영속한 뒤 **202 Accepted**, 조회 URL을 담은 `Location: /api/v1/payments/{orderId}` 및 결제 상태를 반환한다. 보통 `PENDING`이며 결과는 `GET /api/v1/payments/{orderId}`로 조회한다. 비동기 실행이 먼저 완료되면 접수 응답에도 최신 상태가 담길 수 있다. 기존 접수 검증 오류와 중복 접수 PAY-013은 유지한다. `PENDING`은 과금 실패를 뜻하지 않으므로 새 주문/재결제로 자동 전환하지 않는다.
 
 Product의 재고 보호 확인을 받은 승인만 PG를 호출한다. 접수 기한 초과/보호 거절/실행 전 취소는 과금 없이 실패 회신하며, PG 결과가 불명확하면 조회로 확정할 때까지 재고를 보유한다. 주문 취소와 승인이 경합하면 기존 자동 환불 절차로 수렴한다.
+
+### 보호 승인 미결의 조회 (see ADR-0035)
+
+결제 조회 응답의 `status`는 결제 상태, nullable `approvalStatus`는 PG 승인 원장 상태다. 원장이 없으면 `approvalStatus=null`이다. `CANCELLED + UNRESOLVED`는 미과금 확정을 뜻하지 않는다.
+보호된 승인의 운영자·사유 기록은 과금 부재의 증명이 아니므로 조회 복구와 재고 보호를 유지한다. 공개 HTTP 수동 처리 API는 제공하지 않는다.

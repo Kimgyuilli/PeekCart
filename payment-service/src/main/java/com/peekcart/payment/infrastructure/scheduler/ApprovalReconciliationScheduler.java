@@ -78,7 +78,7 @@ public class ApprovalReconciliationScheduler {
         approvalService.find(orderId).ifPresent(this::escalateIfOverLimit);
     }
 
-    /** 자동 확정 상한(정책값)을 넘긴 미해결은 운영 알림 + 수동 종결 대상으로 남긴다. */
+    /** 자동 확정 상한(정책값)을 넘긴 미해결은 운영 알림 + 수동 인수 대상으로 남긴다. */
     private void escalateIfOverLimit(PaymentApproval approval) {
         if (approval.isTerminal()) {
             return;
@@ -87,9 +87,9 @@ public class ApprovalReconciliationScheduler {
         if (LocalDateTime.now().isBefore(limit)) {
             return;
         }
-        log.error("승인 미해결 상한 초과 — 수동 종결 필요, orderId={}, requestedAt={}",
+        log.error("승인 미해결 상한 초과 — 운영 인수 필요, orderId={}, requestedAt={}",
                 approval.getOrderId(), approval.getRequestedAt());
         slackPort.send("[승인 미해결] orderId=" + approval.getOrderId()
-                + " — 자동 확정 상한 초과. PG 조회 후 수동 종결 필요(과금 성립 여부 확인).");
+                + " — 자동 확정 상한 초과. PG 대사와 운영 감사 기록 필요. 보호 건은 조회 확정 전 해제하지 않는다.");
     }
 }

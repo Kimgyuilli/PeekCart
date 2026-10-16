@@ -489,12 +489,40 @@ if [[ $NEGATIVE_CONTROL -eq 1 ]]; then
   exit 0
 fi
 
+# Scenario e asks the host to restart Payment while its runner stays inside the
+# isolated network. The acknowledgement records a real process start change.
+run_fence_scenario() {
+  local request="$OUT_DIR/e-payment-restart.request" ack="$OUT_DIR/e-payment-restart.json"
+  local runner_pid before after container restarted=0
+  rm -f "$request" "$ack"
+  run_in_runner "python3 /work/e2e/saga_e2e.py scenario e" &
+  runner_pid=$!
+  while kill -0 "$runner_pid" 2>/dev/null; do
+    if [[ -f "$request" && "$restarted" -eq 0 ]]; then
+      container=$(dc ps -q payment-service)
+      before=$(docker inspect --format '{{.State.StartedAt}}' "$container")
+      dc restart payment-service >/dev/null || { kill "$runner_pid"; wait "$runner_pid" || true; return 1; }
+      after=$(docker inspect --format '{{.State.StartedAt}}' "$container")
+      [[ -n "$before" && "$before" != "$after" ]] || { kill "$runner_pid"; wait "$runner_pid" || true; return 1; }
+      printf '{"before":"%s","after":"%s"}\n' "$before" "$after" > "$ack.tmp"
+      mv "$ack.tmp" "$ack"
+      restarted=1
+    fi
+    sleep 1
+  done
+  wait "$runner_pid"
+}
+
 IFS=',' read -ra LIST <<< "$SCENARIOS"
 for s in "${LIST[@]}"; do
   echo "== 시나리오 $s =="
   # **재시도하지 않는다** — 상태 단언은 한 번에 성립해야 한다(계획 P19).
-  with_budget "$BUDGET_SCENARIO" "scenario:$s" \
-    run_in_runner "python3 /work/e2e/saga_e2e.py scenario $s"
+  if [[ "$s" == "e" ]]; then
+    with_budget "${E2E_BUDGET_FENCE:-600}" "scenario:$s" run_fence_scenario
+  else
+    with_budget "$BUDGET_SCENARIO" "scenario:$s" \
+      run_in_runner "python3 /work/e2e/saga_e2e.py scenario $s"
+  fi
 done
 
 echo "== 완료 (구간별 소요: $DURATIONS) =="

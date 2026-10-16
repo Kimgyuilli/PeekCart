@@ -7,15 +7,15 @@ kind: Kustomization
 # 그 대부분이 이 축과 무관하거나(4서비스·kafka) minikube 에서 뜨지 않는다(CRD/CSI 부재).
 
 resources:
-  - ../../base/namespace.yml
+  - ../../base/namespace
   - ../../base/infra/mysql/secret.yml
   - ../../base/infra/mysql/init-configmap.yml
   - ../../base/infra/mysql/mysql.yml
   - ../../base/infra/redis/redis.yml
   # 사용자 토큰 공개키(JWKS 게시 원본) + Spring 바인딩 — 이 드릴의 조작 대상이다.
-  - ../../base/services/user-jwt-public-keys.yml
+  - ../../base/services/user-jwt-public-keys
   # gateway 내부 토큰 공개키 — user-service 가 내부 토큰을 검증하는 데 필요하다.
-  - ../../base/services/internal-token-keys.yml
+  - ../../base/services/internal-token-keys
   - ../../base/services/user-service/serviceaccount.yml
   - ../../base/services/user-service/deployment.yml
   - ../../base/services/user-service/configmap.yml

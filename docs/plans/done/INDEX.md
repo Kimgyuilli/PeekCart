@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 82개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 83개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-09-29 |  |
 | [task-d048-e2e-stack-startup](./task-d048-e2e-stack-startup.md) | task-d048-e2e-stack-startup | [#156](https://github.com/Kimgyuilli/PeakCart/pull/156) | 2026-09-29 |  |
 
-## 기타 (20)
+## 기타 (21)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -106,4 +106,5 @@
 | [D-052](./D-052.md) | TASKS.md 완료 항목 아카이브 + 완료 시 이동 규칙 | [#170](https://github.com/Kimgyuilli/PeakCart/pull/170) | 2026-09-30 | 있음 |
 | [D-053](./D-053.md) | Layer 1 문서의 Phase 1·2 설계 아카이브 | [#171](https://github.com/Kimgyuilli/PeakCart/pull/171) | 2026-09-30 | 있음 |
 | [D-057](./D-057.md) | `plan.md` · `work.md` 공통 리뷰 규칙의 단일 문서화 | [#172](https://github.com/Kimgyuilli/PeakCart/pull/172) | 2026-09-30 | 있음 |
+| [D-059](./D-059.md) | 환불 처리 중 응답의 재시도 분류 | [#174](https://github.com/Kimgyuilli/PeakCart/pull/174) | 2026-10-14 |  |
 

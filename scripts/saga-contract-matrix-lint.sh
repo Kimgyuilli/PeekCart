@@ -35,6 +35,12 @@ ID_RE = re.compile(r"^SAGA-[A-Z0-9-]+$")
 # ---- required-ID 정본 (계획 N4) — 매트릭스 밖에 둔다 ----------------------------
 # 매트릭스가 기대 행의 유일한 입력이면 행 삭제는 검사 대상만 줄여 조용히 통과한다.
 REQUIRED_IDS = {
+    "SAGA-APPROVAL-FENCE-CONTENTION",
+    "SAGA-APPROVAL-FENCE-TERMINAL-REORDER",
+    "SAGA-APPROVAL-FENCE-CRASH",
+    "SAGA-APPROVAL-FENCE-PG-SUCCESS-CRASH",
+    "SAGA-APPROVAL-FENCE-MANUAL",
+
     "SAGA-APPROVAL-HELD-LEASE",
     "SAGA-APPROVAL-FENCE-DISPATCH",
     "SAGA-APPROVAL-LEASE-RACE",

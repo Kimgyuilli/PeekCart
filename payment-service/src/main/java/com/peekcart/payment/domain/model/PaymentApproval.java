@@ -130,13 +130,19 @@ public class PaymentApproval {
     }
 
     /**
-     * 운영자 수동 종결 (ADR-0023 D5 — 자동 확정 상한 초과). 감사 필드가 없으면 종결시키지 않는다.
+     * 운영자 수동 처리 (ADR-0035). 신규 fence 건은 감사만 기록하고 legacy만 종결한다.
      *
      * @throws PaymentException actor/사유가 비었으면 {@code PAY-004}
      */
     public void resolveManually(String resolvedBy, String reason) {
         if (isBlank(resolvedBy) || isBlank(reason)) {
             throw new PaymentException(ErrorCode.PAY_004);
+        }
+        if (dispatchDeadline != null) {
+            // 신규 fence 접수: 운영 인수는 과금 부재 증명이 아니므로 조회와 재고 보호를 유지한다.
+            this.resolvedBy = truncate(resolvedBy, 100);
+            this.resolutionReason = truncate(reason, 500);
+            return;
         }
         transitionTo(ApprovalStatus.FAILED);
         this.resolvedBy = truncate(resolvedBy, 100);

@@ -11,7 +11,7 @@ kind: Kustomization
 # kustomize `namespace:` 필드는 사용하지 않습니다 — 모든 리소스를 한 NS 로 강제하기 때문.
 
 resources:
-  - namespace.yml
+  - namespace/namespace.yml
   - infra/mysql/secret.yml
   - infra/mysql/init-configmap.yml
   - infra/mysql/mysql.yml
@@ -21,10 +21,10 @@ resources:
   # 독립 Flyway 마이그레이션 → 전환기 order-service readiness initContainer 게이트 제거.
   # gateway 내부 토큰 공개키 + Spring 바인딩 — 5 도메인 서비스 공용(ADR-0017 D3 · 구현 ③ PR3d-b).
   # gateway 자신은 서명만 하므로 소비하지 않는다(검증 = 리소스 서비스 쪽).
-  - services/internal-token-keys.yml
+  - services/internal-token-keys/configmap.yml
   # user-service 사용자 토큰 공개키 + Spring 바인딩 — JWKS 게시 원본(ADR-0013 D1).
   # internal-token-keys 와 **키 도메인이 다르다**(ADR-0017 D3) — 섞이면 JWKS 로 내부 앵커가 샌다.
-  - services/user-jwt-public-keys.yml
+  - services/user-jwt-public-keys/configmap.yml
   - services/notification-service/deployment.yml
   - services/notification-service/configmap.yml
   - services/notification-service/secret.yml

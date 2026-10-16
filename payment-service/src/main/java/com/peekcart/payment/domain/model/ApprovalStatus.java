@@ -6,7 +6,7 @@ package com.peekcart.payment.domain.model;
  * <p>WAITING_STOCK → READY → CLAIMED 순서로 재고 보호 후에만 PG를 호출한다 (ADR-0034).
  *
  * <p>{@code UNRESOLVED} 는 <b>종결이 아니다</b> — reconciliation 이 PG 조회로 확정하거나,
- * 상한을 넘기면 수동 종결로 {@code FAILED} 에 도달한다.
+ * legacy는 상한을 넘기면 수동 종결로 {@code FAILED} 에 도달한다.
  */
 public enum ApprovalStatus {
 
@@ -52,10 +52,10 @@ public enum ApprovalStatus {
     },
 
     /**
-     * 결과 불명 — 종결이 아니라 미해결. reconciliation 또는 수동 종결로만 벗어난다.
+     * 결과 불명 — 종결이 아니라 미해결. reconciliation으로 확정하며 legacy에만 수동 종결을 허용한다.
      *
      * <p>→ {@code CLAIMED} 전이가 필요한 이유는 환불 원장과 같다: 상태를 그대로 두고 조회하면
-     * 진행 중인 건을 운영자가 수동 종결(UNRESOLVED 대상)할 수 있고, 그 뒤 조회가 과금을
+     * 진행 중인 legacy 건을 운영자가 수동 종결(UNRESOLVED 대상)할 수 있고, 그 뒤 조회가 과금을
      * 확인해도 이미 terminal 이라 반영되지 않는다.
      */
     UNRESOLVED {

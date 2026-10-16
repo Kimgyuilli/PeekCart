@@ -10,6 +10,7 @@ public record PaymentResponse(
         String paymentKey,
         long amount,
         String status,
+        String approvalStatus,
         String method,
         LocalDateTime approvedAt,
         LocalDateTime createdAt
@@ -22,6 +23,7 @@ public record PaymentResponse(
                 dto.paymentKey(),
                 dto.amount(),
                 dto.status(),
+                dto.approvalStatus(),
                 dto.method(),
                 dto.approvedAt(),
                 dto.createdAt()

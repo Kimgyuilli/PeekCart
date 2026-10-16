@@ -91,7 +91,7 @@ public class PaymentFixture {
     public static PaymentDetailDto approvedPaymentDetailDto() {
         return new PaymentDetailDto(
                 DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PAYMENT_KEY,
-                DEFAULT_AMOUNT, "APPROVED", DEFAULT_METHOD,
+                DEFAULT_AMOUNT, "APPROVED", "SUCCEEDED", DEFAULT_METHOD,
                 DEFAULT_APPROVED_AT, DEFAULT_CREATED_AT
         );
     }
@@ -100,7 +100,7 @@ public class PaymentFixture {
     public static PaymentDetailDto pendingPaymentDetailDto() {
         return new PaymentDetailDto(
                 DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PAYMENT_KEY,
-                DEFAULT_AMOUNT, "PENDING", null,
+                DEFAULT_AMOUNT, "PENDING", "WAITING_STOCK", null,
                 null, DEFAULT_CREATED_AT
         );
     }
@@ -108,7 +108,7 @@ public class PaymentFixture {
     public static PaymentDetailDto failedPaymentDetailDto() {
         return new PaymentDetailDto(
                 DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PAYMENT_KEY,
-                DEFAULT_AMOUNT, "FAILED", null,
+                DEFAULT_AMOUNT, "FAILED", "FAILED", null,
                 null, DEFAULT_CREATED_AT
         );
     }

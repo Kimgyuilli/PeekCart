@@ -157,13 +157,21 @@ public abstract class AbstractIntegrationTest {
      * 원인이 할당인지 로직인지 구분되지 않는다.
      */
     protected void awaitListenerAssignment(KafkaListenerEndpointRegistry registry) {
-        await().atMost(Duration.ofSeconds(30))
-                .alias("리스너 파티션 할당")
-                .until(() -> unassignedListenerIds(registry), empty());
+        awaitListenerAssignment(registry.getListenerContainers());
     }
 
-    private static List<String> unassignedListenerIds(KafkaListenerEndpointRegistry registry) {
-        return registry.getListenerContainers().stream()
+    /** 수동 기동한 일부 리스너만 기다린다. 정지된 업무 리스너는 대상에 넣지 않는다. */
+    protected void awaitListenerAssignment(Collection<? extends MessageListenerContainer> containers) {
+        if (containers.isEmpty()) {
+            throw new IllegalArgumentException("할당을 기다릴 리스너가 없다");
+        }
+        await().atMost(Duration.ofSeconds(30))
+                .alias("리스너 파티션 할당")
+                .until(() -> unassignedListenerIds(containers), empty());
+    }
+
+    private static List<String> unassignedListenerIds(Collection<? extends MessageListenerContainer> containers) {
+        return containers.stream()
                 .filter(container -> !isAssigned(container))
                 .map(MessageListenerContainer::getListenerId)
                 .toList();

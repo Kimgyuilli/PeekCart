@@ -29,6 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 
 @WebMvcTest(controllers = PaymentController.class,
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = PaymentSecurityConfig.class))
@@ -58,6 +59,7 @@ class PaymentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isAccepted())
+                .andExpect(header().string("Location", "/api/v1/payments/1"))
                 .andExpect(jsonPath("$.data.status").value("APPROVED"))
                 .andExpect(jsonPath("$.data.method").value("카드"));
     }
@@ -76,6 +78,7 @@ class PaymentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isAccepted())
+                .andExpect(header().string("Location", "/api/v1/payments/1"))
                 .andExpect(jsonPath("$.data.status").value("FAILED"));
     }
 
@@ -93,6 +96,7 @@ class PaymentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isAccepted())
+                .andExpect(header().string("Location", "/api/v1/payments/1"))
                 .andExpect(jsonPath("$.data.status").value("PENDING"));
     }
 
@@ -122,6 +126,19 @@ class PaymentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.orderId").value(PaymentFixture.DEFAULT_ORDER_ID))
                 .andExpect(jsonPath("$.data.amount").value(PaymentFixture.DEFAULT_AMOUNT));
+    }
+
+    @Test
+    @WithMockLoginUser
+    void cancelledPaymentStillExposesUnresolvedApproval() throws Exception {
+        var dto = new com.peekcart.payment.application.dto.PaymentDetailDto(
+                1L, PaymentFixture.DEFAULT_ORDER_ID, "key", 1000L, "CANCELLED", "UNRESOLVED",
+                null, null, java.time.LocalDateTime.now());
+        given(paymentQueryService.getPaymentByOrderId(1L, PaymentFixture.DEFAULT_ORDER_ID)).willReturn(dto);
+        mockMvc.perform(get("/api/v1/payments/{orderId}", PaymentFixture.DEFAULT_ORDER_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.data.approvalStatus").value("UNRESOLVED"));
     }
 
     @Test

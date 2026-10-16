@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 측정 overlay 재사용 진입점. 운영 base의 리소스 목록은 base/kustomization.yml이 소유한다.
+resources:
+  - configmap.yml

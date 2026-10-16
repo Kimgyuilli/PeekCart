@@ -167,7 +167,7 @@ public class PaymentApprovalService {
     }
 
     /**
-     * 운영자 수동 종결 (ADR-0023 D5). <b>{@code UNRESOLVED} 이면서 자동 확정 상한을 넘긴 건만</b>
+     * 운영자 수동 처리 (ADR-0035). 보호 건은 감사만 기록하고 조회를 계속한다. <b>{@code UNRESOLVED} 이면서 자동 확정 상한을 넘긴 건만</b>
      * 허용한다 — 진행 중인 {@code CLAIMED} 를 닫으면 성립한 과금을 실패로 확정할 수 있다.
      * 외부 API 로 노출하지 않는다.
      *
@@ -191,7 +191,7 @@ public class PaymentApprovalService {
             throw new PaymentException(ErrorCode.PAY_004);
         }
         approval.resolveManually(resolvedBy, reason);
-        log.warn("승인 수동 종결 — orderId={}, by={}, reason={}", orderId, resolvedBy, reason);
+        log.warn("승인 수동 처리 기록 — orderId={}, by={}, reason={}", orderId, resolvedBy, reason);
     }
 
     public List<Long> findReconcileCandidates() {

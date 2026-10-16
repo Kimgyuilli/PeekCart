@@ -24,6 +24,7 @@ class PaymentQueryServiceTest {
 
     @InjectMocks PaymentQueryService paymentQueryService;
     @Mock PaymentRepository paymentRepository;
+    @Mock com.peekcart.payment.domain.repository.PaymentApprovalRepository approvalRepository;
 
     @Test
     @DisplayName("getPaymentByOrderId: 결제 정보를 정상 조회한다")
@@ -37,6 +38,7 @@ class PaymentQueryServiceTest {
 
         assertThat(result.orderId()).isEqualTo(PaymentFixture.DEFAULT_ORDER_ID);
         assertThat(result.amount()).isEqualTo(PaymentFixture.DEFAULT_AMOUNT);
+        assertThat(result.approvalStatus()).isNull();
     }
 
     @Test

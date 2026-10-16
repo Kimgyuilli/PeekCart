@@ -322,6 +322,35 @@ data:
             annotations:
               summary: "PeekCart 미해소 보상 원장 존재 — {{ $labels.application }}"
               description: "order_compensations 에 OPEN 또는 REFUND_FAILED 건이 남아 있습니다. OPEN 은 환불 요청이 아직 종결되지 않은 것이고, REFUND_FAILED 는 '닫혔지만 해결되지 않은' 상태라 사람이 처리해야 합니다(ADR-0018 D4). for=15m 은 정상 환불 왕복 시간을 넘긴 잔존만 잡기 위한 값입니다."
+          # D-060: 요청시각부터 15분 넘게 미결인 승인. DB 공유 replica의 age를 합산하지 않는다.
+          - uid: peekcart-payment-approval-stale
+            title: "Payment Approval Stale (승인 보호 장기 미결)"
+            condition: B
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  expr: "max by (application)(payment_approval_oldest_age_seconds{application=~\"payment-service\", status=~\"waiting_stock|ready|claimed|unresolved\"})"
+                  instant: true
+                  range: false
+              - refId: B
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: math
+                  expression: "$A > 900"
+            for: 0s
+            labels:
+              severity: warning
+              signal: payment-approval
+            annotations:
+              summary: "PeekCart 승인 요청 15분 초과 미결 — {{ $labels.application }}"
+              description: "WAITING_STOCK/READY/CLAIMED/UNRESOLVED 승인 요청이 15분 넘게 남아 있습니다. age는 현재 상태 진입시각이 아닌 최초 requested_at 기준이며, 빈 상태는 0입니다. 보호 handshake의 Outbox/DLQ, 승인 dispatcher, PG 조회 reconciliation을 확인하십시오. 결과 불명 동안 예약 보호를 유지하며, 나이만으로 자동 보호 해제하거나 PG 승인을 재호출하지 마십시오."
           - uid: peekcart-dlq-backlog
             title: "DLQ Backlog (미결 DLQ 원장)"
             condition: B

@@ -1,6 +1,7 @@
 # ADR-0023: 결제 승인 경계 계약 — 승인 원장 + 멱등키 + 조회 기반 reconciliation
 
 - **Status**: Partially Superseded by [ADR-0034](./0034-approval-reservation-fence.md)
+- **후속 범위**: ADR-0035는 D5의 수동 FAILED 종결을 legacy 원장에 한정한다. 신규 보호 승인은 감사 후 조회 복구를 유지한다.
   - D1/D2/D4/D8의 동기 접수·직접 CLAIMED·즉시 응답 부분은 비동기 접수/재고 보호/dispatcher 계약으로 대체. 조회 전용 reconciliation은 유지.
 - **Date**: 2026-09-14
 - **Deciders**: 프로젝트 오너
