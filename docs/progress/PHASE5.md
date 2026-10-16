@@ -464,6 +464,11 @@ PR CI [run 36075940872](https://github.com/Kimgyuilli/PeekCart/actions/runs/3607
 
 ## 통합 테스트 컨테이너 모듈 싱글톤 전환 (D-032, [#138](https://github.com/Kimgyuilli/PeakCart/pull/138), 2026-09-24)
 
+> 2026-10-17 D-080 정정: 아래 844초 전부를 기동 비용으로 귀속한 서술은 철회한다.
+> 같은 CI 자료에는 마지막 클래스 뒤 약 515초가 있으며, 로컬 재현의 종료 꼬리는 479.5초다.
+> [원본 재집계](../evidence/D-080/README.md) 참조. 셔플 이전 실패의 원본 확인은 대기 중이며
+> D-080 전체 완료를 뜻하지 않는다.
+
 ADR-0028 의 결정을 order-service 에 구현했다. `:order-service:test` 975초 중 844초(87%)가
 컨테이너 부팅·Flyway·context 기동이었고, 그것을 모듈 싱글톤으로 합쳤다. 로컬 221~277초.
 
