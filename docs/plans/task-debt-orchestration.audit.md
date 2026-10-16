@@ -247,3 +247,13 @@ D-075는 사용자 보류. D-064/D-065/D-078은 제외·열림 유지. 현재 �
 
 - D063 run3 시작 session83995, clean `460217ec3dd4b869f87d1199191d49a57b006b68`, project `peakcart-alert-1792194274`, evidence `/private/tmp/peakcart-d063-20261017-run3`와 sibling.log. 정본/provision hash는 run2와 동일. B가 종료·cleanup까지 heavy 독점.
 - D084115건 XML은 독립 대조 완료. 추가 ADR 반례(localrefund CANCELED 대사 없음/FAILED/금액 불일치/정상SUCCEEDED, historicalFAILED 원인·deadline 부적합)를 새 테스트로 보강해 DraftPR CI에서 검증한다. 현재 단일 로컬 슬롯은 D063가 사용하므로 로컬 추가 Gradle은 실행하지 않는다.
+
+- D084 Draft https://github.com/Kimgyuilli/PeekCart/pull/181, head `2ef2b7f3f23d4672418131e8f4d931f203cf484e`, base850b0d4, CI38983263940 시작. 기존115PASS/새반례6CI대기/전체D084미완/ADRProposed를 명시했다.
+- root가 PR 생성 직후 E2E prerequisite 추가 갭 발견: Product V12(및 Payment 새 DDL)와 saga_e2e EXPECTED_MIGRATIONS의 기존 집합 불일치. B가 정확한 버전 집합을 대조·정정하고 경량 검증 후 새 head로 push한다. 가드 제거/동적 허용은 금지하며 이전run이 대체되는 원인을 이 소스 수정으로 기록한다. 향후 app의 Order V13 통합도 함께 보존해야 한다.
+
+- D084 #181 최신 head `9f763181117a12a498943c09ef315ffb93e2f652`, 새 CI38983400228. 실제 migration 집합 order12/product12/payment13/notification8과 정확히 맞췄고 신규 업무4토픽 및 DLQ readiness도 추가. 독립 소스 PASS. A의 추가 읽기 조사에서 emitter 토픽/그룹·예약version 기본값·기존E/F seed·기본닫힘권한 기동에 다른 누락 없음.
+- 이전head CI38983263940은 새소스검증과 혼용하지 않으며 root가 대체 실행 취소 요청을 제출했다. 실패 우회/무근거 재실행이 아니라 명확한 prerequisite 소스 수정에 따른 대체다.
+- #181 단독은 기존 A–E 회귀이며 #180의 새F는 아직 포함하지 않는다. 새ADMIN 복구 체인의 증거는 focused 실제DB/서명HTTP/직렬화consumer·inbox 매핑이며 기존 Saga CI를 그 체인 자체 실행으로 확대하지 않는다. 향후 통합 시 Order13/Product12/Payment13 정확 집합을 보존한다.
+
+- A 최종 로컬 통합 준비 head `8928ed4a6e116855d923cb17b0f0eca0ccbca5c9`: app+recovery9f+monitor460+root22. 충돌4곳(data-design/ADRindex/runner migration/lint요약)을 양계약 보존으로 해결. 독립 검토에서 실제migration13/12/13/8, 신규4topic 및 jitter0.5, ADR0036/37 Accepted와0040 Proposed, D063대상5rule 모델동일 확인. 독립 경량lint47/parser5 PASS. 원격push/최종CI는 아직 대기.
+- 이전181 CI38983263940 completed/cancelled 확인. 최신38983400228은 진행중이며 실패 없음(조회 시점). root 조회 한 건은 자동 권한 검토 시간초과로 실행되지 않았고, 허용된 읽기 전용 재시도1회로 정상 조회했다. CI 자체의 실패/재실행으로 기록하지 않는다.
