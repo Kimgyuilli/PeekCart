@@ -50,3 +50,46 @@
 - D-073 블로그 원본 추가 발견: `/Users/kimgyuill/dev/projects/blog/src/content/blog/peekcart-28-ruled-out-bottleneck.mdx`, 로드맵27편과 실제28편 대응 검토. 외부 저장소는 읽기만 수행하며 수정/게시 없음.
 - 다음 B worktree `/private/tmp/peakcart-worker-b-messaging`, branch `debt/messaging` base9275556, D-076→D-071. ADR0036은 D-071 필요시 예약. 문서 검증 수정이 우선.
 - D-063 동등성: ADR0015는 실제 Prometheus/Grafana 평가를 요구하며 GKE 고유 불변식은 아님. 로컬 정본 provisioning·실제 scrape·Normal→Pending→Alerting→Normal, 원본 for(15m/10m/5m)를 유지하면 규칙 평가 범위 충족 가능. NoData를 resolved로 오인 금지, 값0 복귀와 동일 instance Normal 확인. GKE ServiceMonitor/운영 series/외부 알림 전달은 이 검증으로 주장하지 않음. D-070 뒤 실제 실행 예정이며 아직 검증하지 않음.
+
+- 로컬 root 기록 commit `9f860e7`, branch `debt/orchestration-records`. 계획/audit는 이제 git에 보존됨. 원격 push 없음.
+- foundation head `fa2cf77`: D-083/D-068 및 main publish 로그 보존 진단 보강을 별도 커밋으로 보존. GHCR 원인 해결을 주장하지 않음. D-080 원본 shuffle 증거는 추가 조사 중.
+- heavy 슬롯 A에 D-068 `./gradlew :order-service:test --tests com.peekcart.order.infrastructure.OrderCursorQueryPlanTest --no-parallel --max-workers=1 --no-daemon` 승인. MySQL-only 집중 통합, 실제 결과는 종료 후 기록.
+
+- documentation 최신 `37b6342`: 독립 지적 ADR0025 반대 의미 문장·현행 requirements·roadmap 요약 수정. D-073 블로그 원본(실제28편/로드맵27편) 114–120/314/452행 대조로 원본 부재 차단 해소. 구현 기록의 완료는 로컬 구현만 뜻하며 CI/PR/병합 미충족 유지. 독립 재검증 배정.
+
+- foundation `fa2cf7731bfa46d26dbe112fcfff7506ca6e94d8` 독립 로컬 검증: D-083 실제helper 4반례/worker JUnit4·0·0 대조, MySQL guard+27 음성 self-test, publish 실패 probe exit17/출력보존/승격차단 및 releaseguard24/24 통과. D-080은 제외. PR head/base/CI checkout 검증이 아니므로 병합 승인 아님.
+- D-068 heavy 실행: 2026-10-16T22:44:59Z, workerA session8962, 위 SHA + D-080 주석·문서 미커밋(실행코드 불변), `.cache/debt-orchestration/D-068-query-plan.log`. 슬롯 A 소유, 종료 확인 전 재할당 금지.
+
+- documentation 최종 `b2a090db81c41dd5b9a1c6653f2e696593b31666`: 독립 로컬 source/evidence PASS. MySQL만 상한 미조작이고 product CPU는1000→3000 조작한 주어 구분까지 수정. D-073 원본대기 해소. D-073/D-077 CI/PR/병합·done은 대기.
+- D-076 실제handler retry/recoverer 단위테스트 heavy 큐1, A MySQL 실행 종료·컨테이너 정리 확인 후 배정. 동시 heavy 실행 없음.
+
+### 사용자 후속 결정 (2026-10-17)
+
+- 무료 CI 확인 질문(artifact/cache 무료 범위 및 유료 cache 확대 꺼짐)에 `네 문제 없습니다` 응답. 사용자 계정 확인과 PUBLIC/standard runner/공식 GHCR무료 근거를 합쳐 원격 CI 실행 보류 해제. 예산/결제/한도 변경 없음. 최초 active PR CI는 foundation+documentation 두 개로 제한.
+- D-069 `DB 보호·초과 요청 503 허용` 승인. 실제 pool 여유·로컬 실측 기반 동시성 상한 설계 진행.
+- D-075 `보류` 결정. 목표TPS/허용backlog 수용 판단 미결, 완료 처리 금지. 별도 재개 결정 전 성능정책 변경 보류.
+- D-084 `권장안대로 진행합니다` 승인. PG 발급 대사 증빙·예약/환불 대사·승인자/실행자 분리·감사 기록 필수 정책으로 설계/구현 진행. 운영/실PG 실행 제외는 유지.
+- D-068 집중 통합4건 실패0/오류0, XML24.927s, Gradle1m, seed1792190712260. A session8962 종료; MySQL/Ryuk 정리 뒤 docker ps0, 기존 사용자 Gradle PID4627만 유지. 슬롯 반환.
+- heavy 슬롯 B에 D-076 실제handler 집중 단위검증 승인, no-parallel/max-workers1/no-daemon/offline. A 동시실행 없음.
+
+### PR 큐와 main 복구 순서
+
+- 자동승인 검토가 PeakCart/PeekCart 이름 차이 및 구체 payload 확인을 요구하여 첫 push 거절. 읽기전용 API로 두 경로 모두 repository ID1187970015/full_name Kimgyuilli/PeekCart, origin clone_url 일치 확인. 문서17파일/source설명 및 foundation의 승인된 diff 확인 뒤 재검토 승인, 우회 없음.
+- foundation PR https://github.com/Kimgyuilli/PeekCart/pull/177 , head `e0dcd01c0f65e52dcf31b8d358c95f4e996c093f`, base9275556, Draft, CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38977855850 진행중. D-083/068 구현·집중검증, D-080 부분정정(셔플원본 근거대기), main publish 진단 포함. 완료로 세지 않음.
+- main 실패 복구 우선: 작업자 A의 진단커밋82d3e4c/fa2cf77만 root가 `/private/tmp/peakcart-publish-diagnostics`, branch `debt/publish-diagnostics`, head392901c(base9275556)로 cherry-pick. 코드 작성자는 A, PR 작성도 A에 유지; root는 병합만 담당. CI슬롯 확보 후 별도 PR/검증, 복구 목적 진단 변경 우선 병합 후 main 결과 확인. 일반 부채 병합은 그때까지 보류.
+- A 다음 lane `/private/tmp/peakcart-worker-a-product`, branch `debt/product-lane`, base e0dcd01(미병합foundation). D-067→066→072→069 진행. ADR0037 예약(필요시0038/0039); B의 D-071 ADR0036과 구분. base변경 때 검증 갱신 필수.
+- D-076 B focused 최초compile 실패는 Order handler 생성자 인수 누락, 수정 뒤 실제handler 테스트4건 PASS(28s), session75678 exit0. Docker/잔여프로세스 없음, 슬롯 반환. 미원인 반복재실행 아님.
+
+- documentation PR https://github.com/Kimgyuilli/PeekCart/pull/178 Draft, head `b2a090db81c41dd5b9a1c6653f2e696593b31666`, base9275556. CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38977913185 실행 중. 최초2CI(#177/#178) 활성, 진단PR는 슬롯대기.
+- B messaging 로컬 head `af17542`, D-076 구현/집중4tests PASS, D-071 계획/ADR0036 및 구현진행. 원격 PR아직 없음.
+
+- #177 독립 검증 진행: 실제 guards checkout `e094905ebd2cb61b5199d869ceebc050c5e3a7af`, 부모9275556+e0dcd01 확인. D-080 원본174XML hash/name/time/testcount 대조 및 CI58개131.202s·마지막13:21:14.693 재산출, E1log/jstack3hash·실제jar CacheKey/identity equals 대조 통과. 셔플 P3 열림 유지 확인. 현재 root-reports만 존재, 전체CI/최종승인 아직 대기.
+- 분리 diagnostics392901c 2파일 로컬 코드 독립 PASS, PR/CI대기.
+
+- D-080 원본 차단 해소 조사: verifier가 `~/.claude/projects/-Users-kimgyuill-dev-projects-PeakCart/bf37ea21-0531-4800-8ebf-4ee2fcc96d3b.jsonl`에서 순차run1(1281/1287), run3(1382/1386), run5(1464/1465) 실패와 이후 셔플 최초도입1592행 발견. A에 원본근거 추가정정 배정. 현재#177 CI는 유지하고 진단복구 병합 후 base갱신과 함께 최신수정 재검증 예정. 아직 문서/PR 수정·완료된 것으로 세지 않음.
+- 복구 우선순위 때문에 진단PR 생성 시 미완PR가 일시3개가 되는 예외를 허용한다. 일반 구현PR 추가는 보류하고 활성CI는 계속 최대2개. 기존 main 실패 해소를 위해 진단PR만 우선 처리한 뒤 일반 큐로 복귀한다.
+
+- PR138 원격 본문도 verifier 읽기검증:78행 '순차실행에서한번도보이지않던것들',85행 결함4에 실제순차실패 반례 있음. 원문보존 정정추기 필요. 다른3결함의 최초발견까지 일괄부정하지 않음. A가 정정안 준비, 원격수정전 내용확인 예정.
+- 로컬 heavy 슬롯 B D-071에 승인, foundation e0dcd01을 먼저 병합하여 고정MySQL/cleanup기반에서 검증. A D-067은 대기큐. D-071은 actual MySQL/Kafka/Redis 테스트 포함, 컨테이너정리까지 확인후 반환.
+
+- D-071 heavy 시작: workerB messaging head `a3ed06892d066715cfe756691c91eca04a05eb35` (foundation e0dcd01 merge, 선행PR미병합), session87257, `/private/tmp/peakcart-d071-test.log`. 시작 docker ps0, 테스트중코드고정. A D067대기.
