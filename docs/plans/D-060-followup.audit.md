@@ -30,3 +30,9 @@ cb8056d 기반 전체 test/:build/4서비스 bootJar 성공(8m22s, 67 tasks exec
 ## /ship 실행 결과
 PR: https://github.com/Kimgyuilli/PeekCart/pull/176
 preflight/consistency precheck/writing lint 통과. TASKS 완료 4행을 TASKS-done으로 이동, D-060 기존 #175 완료 행에 후속 링크 추가, PHASE5와 계획서 갱신. 운영 미해결은 D-084/ADR-0035로 추적. 별도 Codex 리뷰 미호출. 머지 미실행.
+
+## /ship 추가 문서 반영 (2026-10-17)
+
+사용자의 기존 미커밋 변경 전체 반영 요청에 따라 PR #176에 부채 등록 D-072·D-073·D-075·D-076·D-077·D-078·D-080·D-083의 원문을 추가했다. 8건은 미완료 상태이며 구현 완료로 처리하지 않았다. #174에서 완료한 D-059 계획서는 내용 변경 없이 done 디렉터리로 이동하고 인덱스를 83행으로 재생성했다. PHASE5와 PR 본문의 기존 제외 설명을 수정했다.
+
+ship preflight 통과, 등급 L, consistency precheck warnings 0, plans-index --check 통과, PR 본문 writing lint 통과. 기존 최종 검증 대상 코드·테스트·설정의 해시가 모두 같음을 확인했다. 이번 추가는 문서 변경으로 전체 Gradle/E2E를 재실행하지 않았으며 앞서 기록한 실제 검증 결과를 유지한다. 별도 Codex 리뷰 미호출. 머지 미실행.
