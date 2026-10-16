@@ -88,4 +88,10 @@ class ProductControllerTest {
         mockMvc.perform(get("/api/v1/products/{id}", 99L))
                 .andExpect(status().isNotFound());
     }
+    @Test
+    void invalidPathIdReturns400() throws Exception {
+        mockMvc.perform(get("/api/v1/products/abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("SYS-003"));
+    }
 }

@@ -1,5 +1,8 @@
 # ADR-0027: base MySQL CPU 상한 = 2000m — 공통 읽기/쓰기 천장의 해제 (D-029)
 
+> 2026-10-17 D-073 사실 정정은 이 문서 끝의 정정 추기를 함께 읽는다.
+
+
 - **Status**: Accepted
 - **Date**: 2026-09-22
 - **Deciders**: Kimgyuilli
@@ -172,3 +175,14 @@ list 380.0)을 두고 **"CPU 도 Hikari 풀도 아니다 — MySQL 내부가 남
 ## Update Log
 
 - 2026-10-17 — D-074: Alternative A 제목의 "base 500m 유지"를 삭제하고 base `limits` 2000m / `requests` 250m 유지를 명시했다. Decision 및 현재 매니페스트와 모순되고 Alternative C와 혼동되던 제목의 사실 오류만 정정했으며 결정·트레이드오프는 바꾸지 않았다. 변경 대상 기준 커밋: `1f42c4f`; 정정 커밋: `6fc9d04` (`fix(adr): 보호 승인 운영 인수 계약과 CPU 제목 정정`).
+
+---
+
+## 2026-10-17 사실 정정 (D-073)
+
+Context의 “배제한 CPU는 product-service의 CPU”는 원 증적과 다르다. 원 증적은
+MySQL CPU도 `kubectl top`의 50 VU 표본으로 배제했다. 미검증이었던 것은 MySQL CPU
+상한 변경의 인과 효과와 높은 VU의 CPU 상태다. 관찰과 대조 실험을 구분한다.
+Context 측정 ①과 References의 주문 경로 실측 PR은 #120이며 #119는 하네스다.
+base CPU 상한 결정은 변경하지 않는다.
+[원본 시각·git 대조](../progress/evidence/d073-source-corrections.md).

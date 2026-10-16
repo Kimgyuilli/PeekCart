@@ -167,3 +167,14 @@ race 가 남으므로 상한은 여전히 TTL 이 준다). 그리고 evict 은 �
 - 관련 ADR: ADR-0007(설정 소유), ADR-0009/0015(S7 관측성), ADR-0012 §D2(이벤트 페이로드),
   ADR-0025(참여 트랜잭션에서 커밋 전 부수효과 — D3 의 근거)
 - 부채: TASKS.md D-026 · D-002(2차 병목 미분리)
+
+## Update Log
+
+### 2026-10-17 D-072 사실 정정 및 ADR-0037 참조
+
+Context의 "쿼리가 0이면 물리 커넥션을 잡지 않는다"를 철회한다. Hibernate Statistics의
+prepared statement 수 0은 MySQL의 SET/COMMIT 같은 세션 명령 부재를 입증하지 않는다.
+ProductQueryService의 readOnly 트랜잭션이 cache hit을 감싸던 경계를 ADR-0037에 따라 제거하고,
+cache advice가 miss의 transaction advice보다 앞서도록 명시한다. 서버 general_log 검증은
+ProductDetailQueryCostIntegrationTest에서 수행한다. 기존 GKE 배속 차이와의 인과는 여전히
+D-078 측정 대상이며 로컬 계약만으로 확정하지 않는다. 재고 TTL/쓰기 evict 정책은 유지한다.

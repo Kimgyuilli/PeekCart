@@ -89,6 +89,9 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
         consumer.handleProductUpdated(buildMessage("evt-1", productId, 60_000L, 1));   // version 1, price 60000
 
         assertThat(priceCacheRepository.findUnitPrice(productId)).contains(60_000L);
+        var snapshot = priceCacheRepository.findAllByProductIdIn(java.util.List.of(productId)).get(0);
+        assertThat(snapshot.getProductName()).isEqualTo("상품-1");
+        assertThat(snapshot.getProductStatus()).isEqualTo("INACTIVE");
     }
 
     @Test
@@ -101,6 +104,9 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
         consumer.handleProductUpdated(buildMessage("stale-evt", productId, 99_999L, 0));
 
         assertThat(priceCacheRepository.findUnitPrice(productId)).contains(60_000L);
+        var snapshot = priceCacheRepository.findAllByProductIdIn(java.util.List.of(productId)).get(0);
+        assertThat(snapshot.getProductName()).isEqualTo("상품-1");
+        assertThat(snapshot.getProductStatus()).isEqualTo("INACTIVE");
     }
 
     @Test
@@ -111,8 +117,12 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
         String msg = buildMessage("dup-evt", productId, 70_000L, 5);
         consumer.handleProductUpdated(msg);
         consumer.handleProductUpdated(msg);   // 중복 — processed_events 로 skip
+        consumer.handleProductUpdated(buildMessage("dup-evt", productId, 99_999L, 6));
 
         assertThat(priceCacheRepository.findUnitPrice(productId)).contains(70_000L);
+        var snapshot = priceCacheRepository.findAllByProductIdIn(java.util.List.of(productId)).get(0);
+        assertThat(snapshot.getProductName()).isEqualTo("상품-5");
+        assertThat(snapshot.getSourceVersion()).isEqualTo(5);
     }
 
     @Test
@@ -158,7 +168,7 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
 
     private String buildMessage(String eventId, Long productId, long price, long version) throws Exception {
         ProductUpdatedPayload payload = new ProductUpdatedPayload(
-                productId, "상품", price, 1, "ACTIVE", categoryId, LocalDateTime.now(), version);
+                productId, "상품-" + version, price, 1, version == 0 ? "ACTIVE" : "INACTIVE", categoryId, LocalDateTime.now(), version);
         return objectMapper.writeValueAsString(
                 new KafkaEventEnvelope(eventId, "product.updated", LocalDateTime.now(), payload));
     }

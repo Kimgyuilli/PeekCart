@@ -12,6 +12,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 
@@ -66,6 +68,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(new ErrorResponse(400, "SYS-003", "필수 파라미터가 누락되었습니다: " + e.getParameterName(), Instant.now()));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(400, "SYS-003", "파라미터 형식이 올바르지 않습니다: " + e.getName(), Instant.now()));
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ErrorResponse> handleMethodValidation(HandlerMethodValidationException e) {
+        // 반환값 제약 위반은 서버 결함이다. 입력 오류와 함께 400으로 숨기지 않는다.
+        if (e.isForReturnValue()) {
+            return handleException(e);
+        }
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(400, "SYS-003", "입력값이 올바르지 않습니다.", Instant.now()));
     }
 
     /**

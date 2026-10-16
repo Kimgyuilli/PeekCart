@@ -45,7 +45,7 @@ spec:
     spec:
       containers:
         - name: mysql
-          image: mysql:8.0
+          image: mysql:8.0.46
           ports:
             - containerPort: 3306
           # DB-per-service (구현 ② PR2): 단일 MYSQL_DATABASE/USER 생성 책임을 init ConfigMap(5 DB/계정)으로

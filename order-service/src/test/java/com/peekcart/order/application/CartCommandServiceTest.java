@@ -29,6 +29,13 @@ class CartCommandServiceTest {
 
     @InjectMocks CartCommandService cartCommandService;
     @Mock CartRepository cartRepository;
+    @Mock CartDetailReader cartDetailReader;
+
+    @org.junit.jupiter.api.BeforeEach
+    void composeCartResponse() {
+        org.mockito.Mockito.lenient().when(cartDetailReader.read(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(invocation -> CartDetailDto.from(invocation.getArgument(0)));
+    }
     @Mock ProductPriceCacheRepository priceCacheRepository;
 
     @Test
