@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 89개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 90개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -57,13 +57,11 @@
 | [task-d005-observability-consolidation](./task-d005-observability-consolidation.md) | 관측성 계약 강제 메커니즘 격상 (D-005 잔여 리스크 해결) | [#32](https://github.com/Kimgyuilli/PeakCart/pull/32) | 2026-05-06 | 있음 |
 | [task-d002a-cache-speedup-session](./task-d002a-cache-speedup-session.md) | D-002a 캐시 배속 격리 측정 (GKE 세션) | [#117](https://github.com/Kimgyuilli/PeakCart/pull/117) | 2026-09-14 |  |
 | [task-d020-approval-reconciliation](./task-d020-approval-reconciliation.md) | D-020 — 결제 승인 경계: 승인 원장 + 멱등키 + 조회 기반 reconciliation | [#107](https://github.com/Kimgyuilli/PeakCart/pull/107) | 2026-09-14 | 있음 |
-| [task-d002-bc-session](./task-d002-bc-session.md) | D-002 잔여 3축 측정 세션 (b' / c + a 천장 분리) | [#119](https://github.com/Kimgyuilli/PeakCart/pull/119) | 2026-09-17 | 있음 |
 | [task-d025-inventory-lock-boundary](./task-d025-inventory-lock-boundary.md) | D-025 재고 락 경계 (분산 락이 커밋을 감싸지 못한다) | [#123](https://github.com/Kimgyuilli/PeakCart/pull/123) | 2026-09-18 | 있음 |
 | [task-d026-detail-stock-cache-boundary](./task-d026-detail-stock-cache-boundary.md) | D-026 상품 상세 재고 조회 캐시 경계 | [#124](https://github.com/Kimgyuilli/PeakCart/pull/124) | 2026-09-18 | 있음 |
 | [task-d026-d002a-read-ceiling-session](./task-d026-d002a-read-ceiling-session.md) | 이번 세션 한정 — 사용자 지시(2026-09-20) "코덱스 리뷰 돌리지 마세요". | [#129](https://github.com/Kimgyuilli/PeakCart/pull/129) | 2026-09-20 | 있음 |
 | [task-d029-mysql-cpu-base-promotion](./task-d029-mysql-cpu-base-promotion.md) | 사용자 지시(2026-09-22, `.cache/codex-off`) — Codex 리뷰 미호출. | [#131](https://github.com/Kimgyuilli/PeakCart/pull/131) | 2026-09-22 | 있음 |
 | [task-d031-ci-graph-parallelization](./task-d031-ci-graph-parallelization.md) | D-031 — CI 워크플로 그래프 직렬화 해소 | [#135](https://github.com/Kimgyuilli/PeakCart/pull/135) | 2026-09-23 | 있음 |
-| [task-d032-integration-test-container-singleton](./task-d032-integration-test-container-singleton.md) | D-032 — 통합 테스트 컨테이너 모듈 싱글톤 전환 (order-service) | [#138](https://github.com/Kimgyuilli/PeakCart/pull/138) | 2026-09-24 | 있음 |
 | [task-d033-e2e-parallel](./task-d033-e2e-parallel.md) | D-033 — e2e 시나리오와 음성 대조군 병렬 실행 | [#140](https://github.com/Kimgyuilli/PeakCart/pull/140) | 2026-09-25 | 있음 |
 | [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-09-25 | 있음 |
 | [task-d035-notification-container-singleton](./task-d035-notification-container-singleton.md) | task-d035-notification-container-singleton | [#145](https://github.com/Kimgyuilli/PeakCart/pull/145) | 2026-09-26 | 있음 |
@@ -81,14 +79,17 @@
 | [task-d027-grade-audit](./task-d027-grade-audit.md) | D-027 ③ — 등급 사후 검증 | [#159](https://github.com/Kimgyuilli/PeakCart/pull/159) | 2026-09-29 | 있음 |
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-09-29 |  |
 | [task-d048-e2e-stack-startup](./task-d048-e2e-stack-startup.md) | task-d048-e2e-stack-startup | [#156](https://github.com/Kimgyuilli/PeakCart/pull/156) | 2026-09-29 |  |
+| [task-d002-bc-session](./task-d002-bc-session.md) | D-002 잔여 3축 측정 세션 (b' / c + a 천장 분리) | [#119](https://github.com/Kimgyuilli/PeakCart/pull/119) | 2026-10-17 | 있음 |
+| [task-d032-integration-test-container-singleton](./task-d032-integration-test-container-singleton.md) | D-032 — 통합 테스트 컨테이너 모듈 싱글톤 전환 (order-service) | [#138](https://github.com/Kimgyuilli/PeakCart/pull/138) | 2026-10-17 | 있음 |
 
-## 기타 (27)
+## 기타 (28)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
 | [D-051](./D-051.md) | D-051 | [#163](https://github.com/Kimgyuilli/PeakCart/pull/163) |  |  |
 | [D-054](./D-054.md) | D-054 | [#164](https://github.com/Kimgyuilli/PeakCart/pull/164) |  |  |
 | [task-phase5-baseline](./task-phase5-baseline.md) | task-phase5-baseline | [#134](https://github.com/Kimgyuilli/PeakCart/pull/134) |  |  |
+| [task-publish-diagnostics](./task-publish-diagnostics.md) | Publish 실패 출력 보존 | [#179](https://github.com/Kimgyuilli/PeakCart/pull/179) |  |  |
 | [task-hpa-manifest](./task-hpa-manifest.md) | HPA 매니페스트 작성 |  | 2026-04-21 | 있음 |
 | [task-jmeter-to-k6](./task-jmeter-to-k6.md) | 부하 테스트 도구 JMeter → k6 전환 | [#26](https://github.com/Kimgyuilli/PeakCart/pull/26) | 2026-04-24 | 있음 |
 | [task-loadtest-session-c](./task-loadtest-session-c.md) | Phase 3 세션 C 실행 + Task 3-4 / 3-5 마무리 |  | 2026-04-30 | 있음 |

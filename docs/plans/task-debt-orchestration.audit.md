@@ -235,3 +235,6 @@ D-075는 사용자 보류. D-064/D-065/D-078은 제외·열림 유지. 현재 �
 - 다음 앱6건과 Saga/monitor4건은 #180에 통합해 전체 테스트와 새 E2E를 함께 검증한다. 개별 계획·등급·증거는 유지. A local68246 통합 무충돌, D071 V13에 맞춰 E2E의 정확 migration집합에13 추가, step표시6종 정정. 기존180원격e417 CI는 유지하며 결과관측 후 최신base/기록/실험증거로 갱신한다.
 - D063 run2 exit1: 실제 rule.state=firing/instance.state=Alerting인데 파서가 instance firing을 기대해 sustained끝 assert 실패. 실제5rule 발화 원문은 있으나 healthy 복귀 미실행, 완료 아님. session80307 종료·project1792192171 ps-a0 cleanup 확인, 슬롯반환. 실제응답fixture로 파서계약 수정·독립검토 후 run3 필요.
 - heavy 슬롯을 B D084 집중검증으로 전환 승인(abbe001, --no-parallel/--max-workers=1/--no-daemon). D063 run3는 집중검증 종료·cleanup과 수정독립PASS 후 다시 배정. 두 실행 중첩 금지.
+
+- #180 기존 e417/base3e1 CI38981330710 독립 증거 PASS(후속 통합 head의 병합 승인은 아님). 실제checkout9c0834e 부모 일치, 필수17jobs/XML1292 실패·skip0, E2E 이미지·음성 대조군 확인. D061 F에서 실제 POST/ALREADY POST→GET/reconcile GET만/transient POST3 동일key, 소비자3곳 종착 및 UNRES 생산outbox0와 합성 소비 검증 구분 확인. D062 groupEmpty, 실제DLT p0o0 committed2→0 rewind 후 같은 원장 attempt2 확인. D62초/F122초/전체job12분5초로45분 상한 이내.
+- 진단 #179는 main 배포까지 확인되어 개별 P3를 완료하고 계획을 done/로 아카이브, index90행/check통과. foundation177은 별도로 새main 검증 대기이므로 아직 완료 이동하지 않았다.
