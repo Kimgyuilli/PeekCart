@@ -39,6 +39,12 @@ public class ApprovalRecoveryController {
     public ApiResponse<RecoveryResponse> retry(@PathVariable String id, @Valid @RequestBody Reason request) {
         return ApiResponse.of(RecoveryResponse.from(service.retry(id, request.reason())));
     }
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public org.springframework.http.ResponseEntity<com.peekcart.global.exception.ErrorResponse> forbidden() {
+        var code = com.peekcart.global.exception.ErrorCode.SYS_004;
+        return org.springframework.http.ResponseEntity.status(code.getHttpStatus()).body(
+                new com.peekcart.global.exception.ErrorResponse(403, code.getCode(), code.getMessage(), java.time.Instant.now()));
+    }
     public record Reason(@NotBlank @Size(max = 500) String reason) {}
     public record RecoveryResponse(String id, Long orderId, String status, long generation) {
         static RecoveryResponse from(ApprovalRecovery recovery) {
