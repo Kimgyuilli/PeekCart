@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 public class ApprovalBacklogMetrics {
 
     private static final ApprovalStatus[] BACKLOG_STATUSES = {
-            ApprovalStatus.WAITING_STOCK, ApprovalStatus.READY, ApprovalStatus.CLAIMED, ApprovalStatus.UNRESOLVED
+            ApprovalStatus.WAITING_STOCK, ApprovalStatus.READY, ApprovalStatus.CLAIMED, ApprovalStatus.UNRESOLVED, ApprovalStatus.RECOVERY_PENDING
     };
 
     public ApprovalBacklogMetrics(MeterRegistry meterRegistry, PaymentApprovalRepository approvalRepository) {

@@ -56,6 +56,26 @@ public class PaymentKafkaConfig {
 
     // --- 발행 토픽(producer-owns-topic) ---
     @Bean
+    public NewTopic paymentApprovalRecoveryRequestedTopic() {
+        return TopicBuilder.name("payment.approval-recovery.requested").partitions(3).replicas(1).configs(businessConfigs()).build();
+    }
+
+    @Bean
+    public NewTopic paymentApprovalRecoveryRequestedDlqTopic() {
+        return TopicBuilder.name("payment.approval-recovery.requested.dlq").partitions(1).replicas(1).configs(dlqConfigs()).build();
+    }
+
+    @Bean
+    public NewTopic paymentApprovalRecoveryExecuteTopic() {
+        return TopicBuilder.name("payment.approval-recovery.execute").partitions(3).replicas(1).configs(businessConfigs()).build();
+    }
+
+    @Bean
+    public NewTopic paymentApprovalRecoveryExecuteDlqTopic() {
+        return TopicBuilder.name("payment.approval-recovery.execute.dlq").partitions(1).replicas(1).configs(dlqConfigs()).build();
+    }
+
+    @Bean
     public NewTopic paymentCompletedTopic() {
         return TopicBuilder.name("payment.completed").partitions(3).replicas(1).configs(businessConfigs()).build();
     }

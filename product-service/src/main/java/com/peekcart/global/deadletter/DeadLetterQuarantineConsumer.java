@@ -36,6 +36,8 @@ public class DeadLetterQuarantineConsumer {
     @KafkaListener(
             id = DeadLetterContainerGuard.LISTENER_ID_PREFIX + "product-quarantine",
             topics = {
+                    "stock.approval-recovery.snapshot.dlq",
+                    "stock.approval-recovery.result.dlq",
                     "product.updated.dlq",
                     "stock.approval.result.dlq",
                     "stock.reservation.result.dlq",
