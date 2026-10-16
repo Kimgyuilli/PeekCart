@@ -146,3 +146,16 @@
 - D-084 신뢰원천미결추가: signedADMIN역할+분리allowlist/감사는가능하나PG발급무과금증빙검증형식/공개키/공식대사원천이없음. 사용자에게구체원천질문. 그전404/운영자업로드hash만으로해제금지. 서버직접PG확정결과복구는진행가능하나영구404해제는미완유지.
 
 - D-063 run1 session55392 exit1, GrafanaUID기동실패/API180초timeout/observations0. finally cleanup후 소유project `peakcart-alert-1792191745` ps-a0확인. startup/containers/cleanup로그보존, B슬롯반환. 원인수정/독립검토전재실행없음.
+
+- #178 최종독립CI PASS: b2a090d/base927/actual075c87f, 필수17jobs, XML228/1292tests 실패·skip0, E2Ea–e exactSHA/success·4imagechecksum/ID·negative-control. 통합후새head/base검증으로대체필요.
+- D-063 수정68dc697 독립재검토에서추가결함: REQUIRED_UIDS만새UID이고 ALERT_EXPR_CONTRACTS생성은옛UID라 notification식정확검증우회. run2보류, 공통mapping적용과0*식음성반례추가반환. selftest45PASS만으로이누락을통과시키지않음.
+- D-084 직접관련안전조사: 기존 ApprovalExecutor TERMINAL_NEGATIVE의PARTIAL_CANCELED가잔여과금미확정인데해제로흐를위험. 범위내안전분류/회귀보강승인. Product대사는Payment직접DB/동기호출을추가하지않고기존이벤트request/reply·outbox/inbox·generation/finalCAS로설계하도록지시, ADR0040에서배포/DLQ/replay/경합조건확인후구현.
+
+- D-063 최종원인수정 `c406204c9cede0ea36c5eac0761c78c2949a4ad8` 실행전독립PASS. 공통UID함수로expr/required일치, 정본lint0/selftest46직접PASS, 동일notification0*독립반례exit1확인. B run2승인(새output/project, run1증거보존), 실제상태평가아직대기.
+- #179 CI38979426567 test/guards/images통과후E2E두모드진행중. 최종gate미완료.
+- D-084 설계검토: 이벤트대사·분리ADMINallowlist방향수용. plan/ADR정규형식, 실행시PG재확인/staleapproval거부, 늦은DONE안전환불/확정경로, 감사원문민감정보로그제한, 정확상태머신/DDL/배포계약을추가확정하도록반환. 404외부증빙원천미결유지.
+
+- D-063 run2 시작 session80307, project `peakcart-alert-1792192171`, SHA c406204 clean, evidence `/private/tmp/peakcart-d063-20261017-run2` 및log. Prometheus3.2.1/Grafana11.6 health/provision통과, imageidentity기록, rulehash `b8effdda5853605f47bc9b13db2c9006bdaf35893c06a5c72bdc99266c38a09e`. B슬롯독점, baseline평가진행.
+- 통합app `d88c6392be889718e13873de08a648463eac01a8` clean/no push: productf3+foundation5466+messaginga777 무충돌병합. HTTPmetadata6/common400회귀보존, 원본분류commit유지. 독립통합검토큐.
+- Saga최종 `8e68b43` (구현7d1f436) clean, syntax/33selftest/matrix35구조·selftest/consistency통과. CI45분상한유지/D480s/F600s, 실제E2E/durations증거는대기. 독립하네스검토큐.
+- D-084 request/snapshot/execute/result4event 및Product version/fenceCAS 설계중. 기존reconciler가비동기결과대기를재claim하지않도록 RECOVERY_PENDING 후보제외상태검토. API/metrics/scheduler/inbound스윕과nativeCAS/@Version실제DB검증필수. Product예약관련파일소유B, Aquery/cache·Saga와구분. 구현전정확프로토콜확정중.
