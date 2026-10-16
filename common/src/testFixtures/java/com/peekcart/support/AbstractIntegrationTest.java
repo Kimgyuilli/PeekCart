@@ -6,6 +6,7 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.OffsetSpec;
 import org.apache.kafka.clients.admin.RecordsToDelete;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -17,6 +18,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.empty;
@@ -122,8 +124,11 @@ public abstract class AbstractIntegrationTest {
                 try {
                     description.get().partitions().forEach(p ->
                             toDelete.put(new TopicPartition(topic, p.partition()), null));
-                } catch (Exception missing) {
-                    continue;   // 아직 생성 전인 토픽 — 비울 것이 없다
+                } catch (ExecutionException failure) {
+                    if (failure.getCause() instanceof UnknownTopicOrPartitionException) {
+                        continue; // 아직 생성 전인 토픽만 비울 것이 없다
+                    }
+                    throw failure;
                 }
             }
             if (toDelete.isEmpty()) {

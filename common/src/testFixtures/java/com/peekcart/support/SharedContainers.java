@@ -56,7 +56,7 @@ import java.util.List;
 public class SharedContainers {
 
     public static final MySQLContainer<?> MYSQL =
-            new MySQLContainer<>("mysql:8.0").withDatabaseName("peekcart_test");
+            new MySQLContainer<>("mysql:8.0.46").withDatabaseName("peekcart_test");
 
     public static final GenericContainer<?> REDIS =
             new GenericContainer<>("redis:7").withExposedPorts(6379);
