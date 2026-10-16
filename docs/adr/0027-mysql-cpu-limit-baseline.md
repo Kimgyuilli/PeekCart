@@ -74,7 +74,7 @@ list 380.0)을 두고 **"CPU 도 Hikari 풀도 아니다 — MySQL 내부가 남
 
 ## Alternatives Considered
 
-### Alternative A: base 500m 유지 · `requests` 동반 상향 없이 상한만 2000m — **채택**
+### Alternative A: base `limits`만 2000m · `requests` 250m 유지 — **채택**
 
 - **장점**: 측정된 손잡이 하나만 움직인다 · `requests` 불변이므로 **스케줄링 영향 0**
   (k8s 스케줄러는 `limits` 를 보지 않는다) · QoS 가 Burstable 로 유지돼 기존 거동과 같은 계열
@@ -168,3 +168,7 @@ list 380.0)을 두고 **"CPU 도 Hikari 풀도 아니다 — MySQL 내부가 남
 - D-023 (`docs/TASKS.md`) · `k8s/base/infra/mysql/mysql.yml:24-33` — `Recreate` 전략 / RWO PVC 단일 인스턴스
 - ADR-0026 — 상품 상세 재고 캐시 경계 (읽기 경로 측정의 대상)
 - `docs/plans/done/task-d029-mysql-cpu-base-promotion.md` — 이 결정의 계획서
+
+## Update Log
+
+- 2026-10-17 — D-074: Alternative A 제목의 "base 500m 유지"를 삭제하고 base `limits` 2000m / `requests` 250m 유지를 명시했다. Decision 및 현재 매니페스트와 모순되고 Alternative C와 혼동되던 제목의 사실 오류만 정정했으며 결정·트레이드오프는 바꾸지 않았다. 변경 대상 기준 커밋: `1f42c4f`; 이 정정은 **미커밋** 상태이며 정정 커밋 해시는 아직 없다. 후속 커밋은 `fix(adr):` 접두사를 사용한다.
