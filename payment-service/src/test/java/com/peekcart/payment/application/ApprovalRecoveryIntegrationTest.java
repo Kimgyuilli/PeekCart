@@ -276,6 +276,66 @@ class ApprovalRecoveryIntegrationTest extends AbstractIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type IN ('payment.failed', 'payment.approval-recovery.execute')", Long.class)).isZero();
     }
 
+    private void canceledPg() {
+        String body = "{\"paymentKey\":\"" + PaymentFixture.DEFAULT_PAYMENT_KEY + "\",\"orderId\":\"1\","
+                + "\"totalAmount\":" + PaymentFixture.DEFAULT_AMOUNT + ",\"balanceAmount\":0,\"status\":\"CANCELED\","
+                + "\"cancels\":[{\"cancelAmount\":" + PaymentFixture.DEFAULT_AMOUNT + "}]}";
+        when(pg.find(anyString())).thenReturn(Optional.of(new TossPaymentSnapshot("CANCELED", PaymentFixture.DEFAULT_AMOUNT, body)));
+    }
+
+    private void refund(String variant) {
+        jdbc.update("DELETE FROM payment_refunds WHERE order_id=1");
+        if ("MISSING".equals(variant)) return;
+        jdbc.update("INSERT INTO payment_refunds(order_id,payment_key,user_id,amount,status,requested_at) VALUES(1,?,?,?,?,NOW())",
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_USER_ID,
+                "WRONG_AMOUNT".equals(variant) ? PaymentFixture.DEFAULT_AMOUNT - 1 : PaymentFixture.DEFAULT_AMOUNT,
+                "FAILED".equals(variant) ? "FAILED" : "SUCCEEDED");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"MISSING", "FAILED", "WRONG_AMOUNT"})
+    void canceledPgNeedsMatchingSucceededLocalRefundAtRequestAndExecution(String variant) {
+        canceledPg(); refund(variant);
+        assertThatThrownBy(() -> recoveryService.request(1L, "inconsistent refund ledger"))
+                .isInstanceOf(com.peekcart.payment.domain.exception.PaymentException.class);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type LIKE 'payment.approval-recovery.%'", Long.class)).isZero();
+        refund("SUCCEEDED");
+        var approved = approved();
+        refund(variant); actor("202", "ADMIN");
+        assertThatThrownBy(() -> recoveryService.execute(approved.getId(), "refund changed after approval"))
+                .isInstanceOf(com.peekcart.payment.domain.exception.PaymentException.class);
+        assertThat(approvals.findByOrderId(1L).orElseThrow().getStatus()).isEqualTo(ApprovalStatus.UNRESOLVED);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type IN ('payment.approval-recovery.execute','payment.failed')", Long.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM approval_recovery_audit WHERE action IN ('REQUEST_REJECTED','EXECUTE_REJECTED')", Long.class)).isEqualTo(2);
+    }
+
+    @Test
+    void canceledPgAndExactSucceededLocalRefundPermitApprovedExecution() {
+        canceledPg(); refund("SUCCEEDED");
+        var requested = recoveryService.request(1L, "confirmed full cancellation");
+        recoveryService.snapshot(new ApprovalRecoverySnapshotPayload(requested.getId(), 1L, requested.getGeneration(),
+                "RELEASED", 8, true, "SUCCEEDED"));
+        recoveryService.approve(requested.getId(), "matching PG and refund ledger"); actor("202", "ADMIN");
+        var execution = recoveryService.execute(requested.getId(), "execute reconciled cancellation");
+        assertThat(execution.getStatus()).isEqualTo("EXECUTION_REQUESTED");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='payment.approval-recovery.execute'", Long.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='payment.failed'", Long.class)).isZero();
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"OTHER_FAILURE", "NO_DEADLINE"})
+    void historicalFailedWithoutProtectedManualHandoffCannotRecover(String variant) {
+        jdbc.update("UPDATE payment_approvals SET status='FAILED', failure_code=? WHERE order_id=1",
+                "OTHER_FAILURE".equals(variant) ? "PG_REJECTED" : "MANUALLY_RESOLVED");
+        if ("NO_DEADLINE".equals(variant)) jdbc.update("UPDATE payment_approvals SET dispatch_deadline=NULL WHERE order_id=1");
+        assertThatThrownBy(() -> recoveryService.request(1L, "not an eligible protected handoff"))
+                .isInstanceOf(com.peekcart.payment.domain.exception.PaymentException.class);
+        verify(pg, never()).find(anyString());
+        assertThat(approvals.findByOrderId(1L).orElseThrow().getStatus()).isEqualTo(ApprovalStatus.FAILED);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type LIKE 'payment.approval-recovery.%'", Long.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM approval_recovery_audit WHERE action='REQUEST_REJECTED'", Long.class)).isEqualTo(1);
+    }
+
     @Test
     void onlyAssignedAdminCanApproveAndExecute() {
         actor("101", "USER");
