@@ -1,6 +1,6 @@
 package com.peekcart.global.deadletter;
 
-import com.peekcart.global.kafka.FixedSequenceBackOff;
+import com.peekcart.global.kafka.JitteredSequenceBackOff;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,14 +30,14 @@ public class DeadLetterKafkaConfig {
     /**
      * DLQ listener 전용 error handler.
      *
-     * <p>재시도는 유한하다(1s → 5s → 30s). 소진되면 컨테이너를 정지하고 사람을 부른다 —
+     * <p>재시도는 기준 1s → 5s → 30s에 ±50% jitter를 적용한 3회다. 소진되면 컨테이너를 정지하고 사람을 부른다 —
      * DB 장애를 무한 재시도로 덮으면 로그만 쌓이고, 커밋하면 유실된다.
      */
     @Bean
     public CommonErrorHandler deadLetterErrorHandler() {
         DefaultErrorHandler handler = new DefaultErrorHandler(
                 containerGuard::onRetriesExhausted,
-                new FixedSequenceBackOff(1_000, 5_000, 30_000));
+                new JitteredSequenceBackOff(0.5, 1_000, 5_000, 30_000));
         // 무유실 — recoverer 가 돌아도 offset 을 커밋하지 않는다.
         handler.setAckAfterHandle(false);
         return handler;
