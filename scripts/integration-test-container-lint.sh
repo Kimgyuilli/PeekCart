@@ -55,8 +55,8 @@ MODULES = sys.argv[2:]
 # 화이트리스트: 파일명 -> 사유. 사유 없는 항목은 허용하지 않는다.
 ALLOWED = {
     "OrderCursorQueryPlanTest.java":
-        "mysql:8.0.46 을 의도적으로 고정한다 — EXPLAIN 실행계획이 마이너 버전에 따라 달라져 "
-        "싱글톤(mysql:8.0)과 공유할 수 없다.",
+        "EXPLAIN 전용 DataJpaTest 는 MySQL 만 필요하다. SharedContainers 를 import 하면 "
+        "불필요한 Kafka/Redis 까지 기동되므로 같은 mysql:8.0.46 의 독립 컨테이너를 허용한다.",
 }
 
 violations = []
