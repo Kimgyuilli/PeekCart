@@ -171,4 +171,4 @@ list 380.0)을 두고 **"CPU 도 Hikari 풀도 아니다 — MySQL 내부가 남
 
 ## Update Log
 
-- 2026-10-17 — D-074: Alternative A 제목의 "base 500m 유지"를 삭제하고 base `limits` 2000m / `requests` 250m 유지를 명시했다. Decision 및 현재 매니페스트와 모순되고 Alternative C와 혼동되던 제목의 사실 오류만 정정했으며 결정·트레이드오프는 바꾸지 않았다. 변경 대상 기준 커밋: `1f42c4f`; 이 정정은 **미커밋** 상태이며 정정 커밋 해시는 아직 없다. 후속 커밋은 `fix(adr):` 접두사를 사용한다.
+- 2026-10-17 — D-074: Alternative A 제목의 "base 500m 유지"를 삭제하고 base `limits` 2000m / `requests` 250m 유지를 명시했다. Decision 및 현재 매니페스트와 모순되고 Alternative C와 혼동되던 제목의 사실 오류만 정정했으며 결정·트레이드오프는 바꾸지 않았다. 변경 대상 기준 커밋: `1f42c4f`; 정정 커밋: `6fc9d04` (`fix(adr): 보호 승인 운영 인수 계약과 CPU 제목 정정`).
