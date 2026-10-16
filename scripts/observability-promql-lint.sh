@@ -452,10 +452,24 @@ yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
 PYEOF
     run_case "Grafana UID 40자 초과" "$ST_TMP/long-uid.yml"
 
+    python3 - "$ST_SRC" "$ST_TMP/notification-zero.yml" <<'PYEOF'
+import sys, yaml
+src, dst = sys.argv[1:]
+doc = yaml.safe_load(open(src))
+inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+rule = next(r for g in inner["groups"] for r in g["rules"] if r["uid"] == "peekcart-scrape-absent-notification")
+for data in rule["data"]:
+    if data["refId"] == "A":
+        data["model"]["expr"] = "0 * (" + data["model"]["expr"] + ")"
+doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
+yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    run_case "notification scrape 식 무력화" "$ST_TMP/notification-zero.yml"
+
     if [[ "$ST_FAIL" -ne 0 ]]; then
         exit 1
     fi
-    echo "observability-promql-lint self-test 45종 통과 (기존 19 + 승인 장기 미결 9 + cache fallback 16 + UID 길이 1)"
+    echo "observability-promql-lint self-test 46종 통과 (기존 19 + 승인 장기 미결 9 + cache fallback 16 + UID 길이/식 2)"
     exit 0
 fi
 
@@ -598,8 +612,13 @@ ALERT_EXPR_CONTRACTS = {
         'count by (service)(up{namespace="peekcart"} == 0) or on() vector(0)',
     ],
 }
+def scrape_absent_uid(service):
+    suffix = "notification" if service == "notification-service" else service
+    return "peekcart-scrape-absent-" + suffix
+
+
 for _svc in sorted(EXPECTED_SCRAPE_SERVICES):
-    ALERT_EXPR_CONTRACTS["peekcart-scrape-absent-%s" % _svc] = [_scrape_absent_expr(_svc)]
+    ALERT_EXPR_CONTRACTS[scrape_absent_uid(_svc)] = [_scrape_absent_expr(_svc)]
 for _uid, _c in METRIC_ALERT_CONTRACTS.items():
     ALERT_EXPR_CONTRACTS[_uid] = [_c["expr"]]
 
@@ -923,8 +942,7 @@ for group in alerts_doc.get("groups", []) or []:
 # 필수 alert uid 존재 검증 — rule 삭제 시 분기 미실행으로 통과하는 false-green 차단 (Codex GP-2 #2)
 REQUIRED_UIDS = (
     {"peekcart-high-error-rate", "peekcart-slow-response", "peekcart-target-down"}
-    | {f"peekcart-scrape-absent-{s}" if s != "notification-service" else "peekcart-scrape-absent-notification"
-       for s in EXPECTED_SCRAPE_SERVICES}
+    | {scrape_absent_uid(s) for s in EXPECTED_SCRAPE_SERVICES}
     # 구현 ④-d-1 P5 — alert 를 지우면 위 분기가 실행되지 않아 라벨 검사가 통과해버린다.
     | set(METRIC_ALERT_CONTRACTS)
 )
