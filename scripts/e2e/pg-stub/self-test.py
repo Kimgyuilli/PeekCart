@@ -54,8 +54,8 @@ def main():
           status == 200 and body["method"] and body["approvedAt"], "got %s %s" % (status, body))
 
     status, body = call(base, "POST", "/v1/payments/confirm", body={"paymentKey": "e2e-cfail-9", "orderId": 9})
-    check("confirm cfail script → 500 (시나리오 A 의 실패 지점)",
-          status == 500 and body["code"] == "STUB_CONFIRM_FAILED", "got %s %s" % (status, body))
+    check("confirm cfail script → 400 (시나리오 A 의 실패 지점)",
+          status == 400 and body["code"] == "REJECT_CARD_COMPANY", "got %s %s" % (status, body))
 
     status, body = call(base, "POST", "/v1/payments/confirm", body={"paymentKey": "typo-key", "orderId": 9})
     check("미등록 키 confirm → 500 STUB_UNSCRIPTED_KEY — 조용한 성공 차단",

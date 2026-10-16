@@ -11,45 +11,31 @@ kind: Kustomization
 # RateLimiter 는 **건드리지 않는다**. 사용자별 키(userKeyResolver)이므로 부하는 사용자 수로 올린다
 # (계획서 §2 V8 · P2). fail-closed 계약(ADR-0013 D3)을 측정 편의로 흔들지 않는다.
 #
-# 이 overlay 는 lint 범위(k8s/overlays/{minikube,gke}) 밖이다 — gke-d002a·gke-probe-state1 과 같다.
+# 이 overlay 는 운영 정책 lint 범위(k8s/overlays/{minikube,gke}) 밖이다.
+# 기본 렌더·namespace lint에는 gke-d002a와 함께 포함된다(D-079).
 # **운영 매니페스트로 승격 금지.**
 
 resources:
-  - ../../base/namespace.yml
+  - ../../base/namespace
   # --- 인프라 ---
-  - ../../base/infra/mysql/secret.yml
-  - ../../base/infra/mysql/init-configmap.yml
-  - ../../base/infra/mysql/mysql.yml
-  - ../../base/infra/redis/redis.yml
+  - ../../base/infra/mysql
+  - ../../base/infra/redis
   # Kafka 는 b'/c 의 측정 대상 그 자체다(order.created → 예약 → stock.reservation.result).
-  - ../../base/infra/kafka/kafka.yml
+  - ../../base/infra/kafka
   # --- 키 ---
   # 내부 토큰 공개키(검증측) + 사용자 access token 공개키. 개인키는 CSI 로만 들어온다.
-  - ../../base/services/internal-token-keys.yml
-  - ../../base/services/user-jwt-public-keys.yml
+  - ../../base/services/internal-token-keys
+  - ../../base/services/user-jwt-public-keys
   # --- gateway (외부 진입점 · 내부 토큰 발행자) ---
-  - ../../base/services/gateway/serviceaccount.yml
-  - ../../base/services/gateway/secretproviderclass.yml
-  - ../../base/services/gateway/configmap.yml
-  - ../../base/services/gateway/deployment.yml
+  - ../../base/services/gateway
   # --- user (로그인 발급) ---
-  - ../../base/services/user-service/serviceaccount.yml
-  - ../../base/services/user-service/secretproviderclass.yml
-  - ../../base/services/user-service/configmap.yml
-  - ../../base/services/user-service/secret.yml
-  - ../../base/services/user-service/deployment.yml
+  - ../../base/services/user-service
   # --- product (예약 consumer · 락 경합 지점) ---
-  - ../../base/services/product-service/configmap.yml
-  - ../../base/services/product-service/secret.yml
-  - ../../base/services/product-service/deployment.yml
+  - ../../base/services/product-service
   # --- order (측정 대상 경로) ---
-  - ../../base/services/order-service/configmap.yml
-  - ../../base/services/order-service/secret.yml
-  - ../../base/services/order-service/deployment.yml
+  - ../../base/services/order-service
   # --- payment (사가 참여자 — 빼면 결제 단계가 열린 채로 남아 사가 완결 지연이 무의미해진다) ---
-  - ../../base/services/payment-service/configmap.yml
-  - ../../base/services/payment-service/secret.yml
-  - ../../base/services/payment-service/deployment.yml
+  - ../../base/services/payment-service
   - measurement-lb.yml
 
 # notification-service 제외: 이벤트 소비만 하고 측정 경로에 없다. Slack 연동을 들이지 않는다.

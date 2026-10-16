@@ -322,6 +322,36 @@ yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
 PYEOF
     run_case "outbox status matcher 변조" "$ST_TMP/outbox-pending.yml"
 
+    # D-060: 원본 통과 뒤 독립 변이마다 red 확인. 나이는 backlog 개수로 대체할 수 없다.
+    python3 - "$ST_SRC" "$ST_TMP" <<'PYEOF'
+import copy, os, sys, yaml
+src, tmp = sys.argv[1:]
+original = yaml.safe_load(open(src))
+for mutation in ("deleted", "status", "metric", "sum", "threshold", "pending", "condition", "zero", "reference"):
+    doc = copy.deepcopy(original)
+    inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+    rules = inner["groups"][0]["rules"]
+    rule = next(r for r in rules if r["uid"] == "peekcart-payment-approval-stale")
+    if mutation == "deleted":
+        rules.remove(rule)
+    elif mutation in ("status", "metric", "sum", "zero"):
+        model = next(d["model"] for d in rule["data"] if d["refId"] == "A")
+        if mutation == "status": model["expr"] = model["expr"].replace("waiting_stock|", "")
+        elif mutation == "metric": model["expr"] = model["expr"].replace("payment_approval_oldest_age_seconds", "payment_approval_backlog")
+        elif mutation == "sum": model["expr"] = model["expr"].replace("max by", "sum by")
+        else: model["expr"] = "0 * " + model["expr"]
+    elif mutation == "threshold":
+        next(d["model"] for d in rule["data"] if d["refId"] == "B")["expression"] = "$A > 9000"
+    elif mutation == "pending": rule["for"] = "15m"
+    elif mutation == "reference": next(d for d in rule["data"] if d["refId"] == "A")["refId"] = "C"
+    else: rule["condition"] = "A"
+    doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
+    yaml.dump(doc, open(os.path.join(tmp, "approval-" + mutation + ".yml"), "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    for mutation in deleted status metric sum threshold pending condition zero reference; do
+        run_case "승인 장기 미결 $mutation 변이" "$ST_TMP/approval-$mutation.yml"
+    done
+
     # (15~17) dashboard 변수 드리프트 — alert 만 고치고 패널을 두면 거기서만 조용히 빠진다.
     #         조작 대상이 dashboard 이므로 alert 는 원본을 쓰고 디렉터리만 갈아끼운다.
     run_dash_case() {
@@ -382,7 +412,7 @@ PYEOF
     if [[ "$ST_FAIL" -ne 0 ]]; then
         exit 1
     fi
-    echo "observability-promql-lint self-test 19종 통과"
+    echo "observability-promql-lint self-test 28종 통과 (기존 19 + 승인 장기 미결 9)"
     exit 0
 fi
 
@@ -440,6 +470,15 @@ PROMQL_KEYWORDS = {
 # 동일 메트릭을 두 selector 에 쓰고 한쪽에만 정상 matcher 를 붙이는 우회도 같은 부류다.
 # PromQL AST 파서를 들이는 대신, 우리가 소유한 alert 2종의 **식 형태 자체**를 못박는다.
 METRIC_ALERT_CONTRACTS = {
+    "peekcart-payment-approval-stale": {
+        # D-060: requested_at 기준 age. 동일 DB를 읽는 replica는 합산하지 않는다.
+        "metric": "payment_approval_oldest_age_seconds",
+        "apps": {"payment-service"},
+        "expr": 'max by (application)(payment_approval_oldest_age_seconds'
+                '{application=~"payment-service", status=~"waiting_stock|ready|claimed|unresolved"})',
+        "condition": "$A > 900",
+        "for": "0s",
+    },
     "peekcart-compensation-backlog": {
         # order_compensations 원장은 order-service 단독 소유 (ADR-0012 D1).
         # status 를 명시 고정 — 상태가 추가돼도 조용히 alert 대상에 들어오지 않는다.
@@ -735,6 +774,18 @@ for group in alerts_doc.get("groups", []) or []:
         elif uid in METRIC_ALERT_CONTRACTS:
             contract = METRIC_ALERT_CONTRACTS[uid]
             expected_apps = contract["apps"]
+            # age 자체가 대기시간이므로 임계·추가 pending 시간을 함께 고정한다.
+            if "condition" in contract:
+                math_entries = [d for d in (rule.get("data") or [])
+                                if d.get("datasourceUid") == "__expr__"]
+                if (rule.get("condition") != "B" or rule.get("for") != contract["for"]
+                        or len(entries) != 1 or entries[0][0] != "A"
+                        or len(math_entries) != 1
+                        or math_entries[0].get("refId") != "B"
+                        or (math_entries[0].get("model") or {}).get("type") != "math"
+                        or (math_entries[0].get("model") or {}).get("expression") != contract["condition"]):
+                    violations.append(f"[D5-V6] alert 시간/임계 계약 불일치: uid={uid} "
+                                      f"condition=B/{contract['condition']}, for={contract['for']} 필요")
             # prometheus entry 를 전부 지우면 아래 루프가 돌지 않아 라벨 검사가 통과해버린다
             # (uid 만 남기면 required 검사도 통과) → entry 수를 먼저 못박는다.
             if len(entries) != 1:

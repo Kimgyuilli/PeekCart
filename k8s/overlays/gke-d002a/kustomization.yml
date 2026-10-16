@@ -9,20 +9,16 @@ kind: Kustomization
 # NetworkPolicy 를 빼는 이유: 8080 ingress 를 gateway 로만 제한해 loadgen VM 이 도달할 수 없다.
 
 resources:
-  - ../../base/namespace.yml
-  - ../../base/infra/mysql/secret.yml
-  - ../../base/infra/mysql/init-configmap.yml
-  - ../../base/infra/mysql/mysql.yml
-  - ../../base/infra/redis/redis.yml
+  - ../../base/namespace
+  - ../../base/infra/mysql
+  - ../../base/infra/redis
   # Kafka — 읽기 경로와 무관하지만 **product-service 가 Kafka 없이는 부팅하지 않는다**
   # (StockReservation/Confirm/Release consumer → internalKafkaListenerEndpointRegistry 시작 실패).
   # 계획서가 "읽기 경로 무관" 으로 뺐다가 CrashLoopBackOff 로 확인하고 되넣었다.
-  - ../../base/infra/kafka/kafka.yml
+  - ../../base/infra/kafka
   # product 는 내부 토큰 **공개키**만 소비한다(검증용) — 개인키/CSI 없음.
-  - ../../base/services/internal-token-keys.yml
-  - ../../base/services/product-service/deployment.yml
-  - ../../base/services/product-service/configmap.yml
-  - ../../base/services/product-service/secret.yml
+  - ../../base/services/internal-token-keys
+  - ../../base/services/product-service
   - measurement-lb.yml
 
 patches:
