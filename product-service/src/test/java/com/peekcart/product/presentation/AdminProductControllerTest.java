@@ -136,4 +136,10 @@ class AdminProductControllerTest {
         mockMvc.perform(delete("/api/v1/admin/products/{id}", ProductFixture.DEFAULT_PRODUCT_ID))
                 .andExpect(status().isNoContent());
     }
+    @Test
+    void invalidPathIdReturns400() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/products/abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("SYS-003"));
+    }
 }

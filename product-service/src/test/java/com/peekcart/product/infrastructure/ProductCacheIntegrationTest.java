@@ -25,6 +25,7 @@ import com.peekcart.support.SharedContainers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
@@ -34,8 +35,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ProductCacheIntegrationTest extends AbstractIntegrationTest {
 
     private static final PageRequest DEFAULT_PAGE = PageRequest.of(0, 10);
-    private static final String LIST_CACHE_KEY = "list:null:0:10";
+    private static final String LIST_CACHE_KEY = "list:null:0:10:id: ASC";
 
+    @Autowired org.springframework.test.web.servlet.MockMvc mockMvc;
     @Autowired ProductQueryService queryService;
     @Autowired ProductCommandService commandService;
     @Autowired CacheManager cacheManager;
@@ -137,5 +139,33 @@ class ProductCacheIntegrationTest extends AbstractIntegrationTest {
 
         Page<ProductListDto> refreshed = queryService.getProducts(null, DEFAULT_PAGE);
         assertThat(refreshed.getTotalElements()).isEqualTo(2);
+    }
+    @Test
+    void differentSortsDoNotPolluteEachOtherInEitherOrder() {
+        Long second = commandService.create(new CreateProductCommand(categoryId, "동률", "설명", 200L, null, 1)).id();
+        Long third = commandService.create(new CreateProductCommand(categoryId, "동률", "설명", 200L, null, 1)).id();
+        var ascending = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("price"));
+        for (boolean sortedFirst : new boolean[]{true, false}) {
+            cleanCaches(cacheManager);
+            if (sortedFirst) queryService.getProducts(null, ascending);
+            else queryService.getProducts(null, DEFAULT_PAGE);
+            assertThat(queryService.getProducts(null, DEFAULT_PAGE).getContent())
+                    .extracting(ProductListDto::id).containsExactly(productId, second, third);
+            assertThat(queryService.getProducts(null, ascending).getContent())
+                    .extracting(ProductListDto::id).containsExactly(second, third, productId);
+            var descending = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("price").descending());
+            assertThat(queryService.getProducts(null, descending).getContent())
+                    .extracting(ProductListDto::id).containsExactly(productId, second, third);
+            assertThat(queryService.getProducts(null, PageRequest.of(1, 1,
+                    org.springframework.data.domain.Sort.by("price"))).getContent())
+                    .extracting(ProductListDto::id).containsExactly(third);
+        }
+    }
+    @Test
+    void invalidSortIsBadRequestBeforeDatabaseQuery() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/products")
+                        .param("sort", "noSuchField,desc"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value("SYS-003"));
     }
 }

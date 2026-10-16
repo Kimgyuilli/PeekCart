@@ -46,6 +46,11 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.reset;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.atLeast;
@@ -144,6 +149,7 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
         }
     }
 
+    @Autowired javax.sql.DataSource dataSource;
     @Autowired ProductQueryService queryService;
     @Autowired ProductCommandService commandService;
     @Autowired TestRestTemplate restTemplate;
@@ -467,5 +473,80 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
                         assertThat(connection.ping()).isNotNull();
                     }
                 });
+    }
+    @Test
+    void outageBoundsConcurrentDatabaseLoadsAndRecovers() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        var executor = Executors.newFixedThreadPool(5);
+        doAnswer(invocation -> {
+            entered.countDown();
+            if (!release.await(15, TimeUnit.SECONDS)) throw new IllegalStateException("test release timed out");
+            return invocation.callRealMethod();
+        }).when(productRepository).findById(productId);
+        redisProxy.disable();
+        try {
+            var admitted = executor.submit(() -> queryService.getProduct(productId));
+            assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
+            var rejected = new java.util.ArrayList<java.util.concurrent.Future<ResponseEntity<String>>>();
+            for (int i = 0; i < 4; i++) rejected.add(executor.submit(() ->
+                    restTemplate.getForEntity("/api/v1/products/" + productId, String.class)));
+            for (var response : rejected) {
+                var result = response.get(10, TimeUnit.SECONDS);
+                assertThat(result.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+                assertThat(result.getBody()).contains("PRD-005");
+            }
+            verify(productRepository, times(1)).findById(productId);
+            var pool = dataSource.unwrap(com.zaxxer.hikari.HikariDataSource.class);
+            int active = pool.getHikariPoolMXBean().getActiveConnections();
+            System.out.printf("D-069 pool maximum=%d active=%d idle=%d%n", pool.getMaximumPoolSize(),
+                    active, pool.getHikariPoolMXBean().getIdleConnections());
+            assertThat(pool.getMaximumPoolSize()).isGreaterThan(1);
+            assertThat(active).as("only admitted cache miss holds a DB connection").isEqualTo(1);
+            // A real unrelated writer must still obtain a connection and commit while the read is held.
+            try (var connection = dataSource.getConnection();
+                 var update = connection.prepareStatement("UPDATE categories SET name = name WHERE id = ?")) {
+                update.setQueryTimeout(2);
+                update.setLong(1, categoryId);
+                assertThat(update.executeUpdate()).isEqualTo(1);
+            }
+            release.countDown();
+            assertThat(admitted.get(10, TimeUnit.SECONDS).id()).isEqualTo(productId);
+        } finally {
+            release.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+            reset(productRepository);
+            healRedis();
+        }
+        assertThat(queryService.getProduct(productId).id()).isEqualTo(productId);
+        clearInvocations(productRepository);
+        assertThat(queryService.getProduct(productId).id()).isEqualTo(productId);
+        verify(productRepository, times(0)).findById(productId);
+    }
+    @Test
+    void healthyCacheHitBypassesSaturatedDatabasePermit() throws Exception {
+        queryService.getProducts(null, DEFAULT_PAGE); // warm only the list, leaving detail a miss
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        var executor = Executors.newSingleThreadExecutor();
+        doAnswer(invocation -> {
+            entered.countDown();
+            if (!release.await(10, TimeUnit.SECONDS)) throw new IllegalStateException("test release timed out");
+            return invocation.callRealMethod();
+        }).when(productRepository).findById(productId);
+        try {
+            var miss = executor.submit(() -> queryService.getProduct(productId));
+            assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
+            assertThat(queryService.getProducts(null, DEFAULT_PAGE).getContent())
+                    .extracting(ProductListDto::id).containsExactly(productId);
+            release.countDown();
+            assertThat(miss.get(10, TimeUnit.SECONDS).id()).isEqualTo(productId);
+        } finally {
+            release.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+            reset(productRepository);
+        }
     }
 }

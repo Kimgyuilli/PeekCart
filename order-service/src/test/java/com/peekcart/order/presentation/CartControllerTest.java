@@ -164,4 +164,11 @@ class CartControllerTest {
         mockMvc.perform(delete("/api/v1/cart/items/{itemId}", 1L))
                 .andExpect(status().isNotFound());
     }
+    @Test
+    @WithMockLoginUser
+    void invalidPathIdReturns400() throws Exception {
+        mockMvc.perform(delete("/api/v1/cart/items/abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("SYS-003"));
+    }
 }
