@@ -133,7 +133,7 @@ PR CI에서 실제 검사한 checkout SHA와 PR head/base SHA를 각각 기록�
 
 ## 5. 작업 항목
 
-- [ ] P1. 실행 전 무료 조건·원격 접근·branch protection·하드웨어·잔여 프로세스 확인, root/worker/verifier 역할과 worktree·CI/로컬 큐 마련.
+- [x] P1. 실행 전 무료 조건·원격 접근·branch protection·하드웨어·잔여 프로세스 확인, root/worker/verifier 역할과 worktree·CI/로컬 큐 마련.
 - [ ] P2. 개별 D- 계획을 순차 수립하고 공용 기반 D-083/068/080 및 정정 D-073/077 처리.
 - [ ] P3. API/상품/장바구니 D-067/066/072/069/071 처리. 정책·ADR 결정과 반례 검증 포함.
 - [ ] P4. 메시징/처리율 D-076/075 및 saga E2E D-061/062 처리.

@@ -93,3 +93,56 @@
 - 로컬 heavy 슬롯 B D-071에 승인, foundation e0dcd01을 먼저 병합하여 고정MySQL/cleanup기반에서 검증. A D-067은 대기큐. D-071은 actual MySQL/Kafka/Redis 테스트 포함, 컨테이너정리까지 확인후 반환.
 
 - D-071 heavy 시작: workerB messaging head `a3ed06892d066715cfe756691c91eca04a05eb35` (foundation e0dcd01 merge, 선행PR미병합), session87257, `/private/tmp/peakcart-d071-test.log`. 시작 docker ps0, 테스트중코드고정. A D067대기.
+
+- #178 실제guards checkout `075c87f17e7a92c06cb8e848f635ca49dfec49fa`, 부모9275556+b2a090d 확인. #177 checkout과 혼용하지 않음. 두 PR 모두 최종gate대기.
+- D-071 첫 focused24건 중23PASS(실제MySQL metadata4/Saga7 포함), reader unit 기대값의 Boolean삼항식 null언박싱 NPE1. 구현switch와 별개 기대값수정후 실패클래스 재검증 session33764. 첫 실행을 전체green으로 기록하지 않음.
+- B 다음 worktree `/private/tmp/peakcart-worker-b-monitoring`, branch `debt/monitoring`, base9275556. D-070/D-063 정본alert/guard/runbook/무료로컬실제평가하네스 배정. D-075보류 유지.
+- root 문서통합 대기: D-076 docs04 §8-3 fixed sequence 설명을 기준1/5/30초 ±50%jitter로 정렬, ADR0036 인덱스 추가. 작업자간 파일소유충돌 회피를 위해 root후속기록으로 모음.
+
+- messaging `07a14e5` 로컬clean 고정, D-071 수정후 실패클래스3PASS(15s), session33764 exit0, 실제DB11PASS와 합성증거 구분. docker ps0으로 MySQL/Redis/Kafka/Ryuk 정리확인, 슬롯반환. 독립검증큐 배정.
+- heavy 슬롯 A D-067 집중회귀: 22:53:59Z, basee0dcd01+상품lane미커밋, session14434, `.cache/debt-orchestration/D-067-focused.log`. 테스트중소스수정중지. product MVC/5controller tasks별필터/직렬옵션.
+- D-080 local foundation `a559fde` 추가정정(원격PR177은e0dcd01유지), 순차원본발견이력/README/과거plan·audit/PHASE5/TASKS-done/ADR28 원문보존 정정추기. 독립검증 배정. PR138본문 추가정정 초안은 수치/서술 확인후 반영 예정, 아직원격수정없음.
+
+- D-080 a559fde 로컬 원본정정 독립PASS, PR138추기안 수치/범위PASS. 기존본문보존하며 foundation최신head push시 고정근거링크와 함께 추기 예정.
+- D-071 독립검증P1: applicationDTO에 추가한4필드가 CartItemResponse.from에서 버려져 실제GET/POST/PUT HTTP응답에 나오지 않음. 기존serializer검증은applicationDTO만확인한false-green. B에매핑수정+실제HTTP회귀 반환, 통과/완료표시금지. D-076은독립소스검토PASS(CI미검증).
+- #177/#178 모듈test/guards/images통과후 E2E scenarios/negative-control 진행중. 최종gate/artifact승인대기.
+
+- D-067 session14434 종료0, Gradle48s, product16/order43/payment10 총69실패0. docker ps0, 슬롯반환.
+- D-071 B actualHTTP known/null GET·POST·PUT 6사례 WebMvc 회귀 슬롯승인. 기존내부DTO검증불충분을audit에명시하고 계획검증항목재개방. 끝나면A상품실제DB회귀큐.
+- D-069 기본동시1은SLO로주장하지않고보수적설계선택이라는A설명을검토중. 실제Hikari pool여유·쓰기예산·동시요청DB진입측정근거보강요청. 무근거성능목표로완료선언금지.
+
+- D-071 actualHTTP GET/POST/PUT known/null6건 PASS(37s), session86078exit0/dockerps0. messaging최신 `a777799` clean, 독립P1수정재검증배정. 슬롯반환.
+- A 상품lane최신 `68f8d48` clean, ADR0037. D-066/072/069 실제MySQL/Redis/Kafka/Toxiproxy 회귀5클래스(ProductQueryServiceTest, ProductReadBulkheadConfigTest, ProductCacheIntegrationTest, ProductDetailQueryCostIntegrationTest, ProductCacheFallbackIntegrationTest) heavy슬롯승인. pool계수/blocked DBread옆쓰기성공·cachehit우회반례추가, 결과대기.
+
+- 상품 lane 독립1차검토: D-067 입력400/반환500, D-072 cache→bulkhead→transaction 및서버general_log 양성대조, D-069 finally permit반환/503/다른UPDATE연결여유검증 타당. default1은최소양의DB보호정책으로명시했고SLO측정치로주장하지않음. D-066 priceASC/default 위주테스트는불충분하여nameASC/DESC/idDESC·동률/페이지경계·모든방향cache격리·duplicate/ignoreCase/nullHandling 반례보강요구. 완료승인아님.
+- A Saga worktree `/private/tmp/peakcart-worker-a-saga`, branch `debt/saga-evidence`, base9275556. D-061/062와외부정지/재기동오케스트레이션 `scripts/saga-e2e-smoke.sh` 소유. 중간실패정리·후속시나리오무간섭필수.
+
+- 상품 lane26건실제회귀 PASS(Gradle1m22s), session49386종료/dockerps0. Hikari maximum10 active1 idle9 및별도UPDATE성공, Redis차단4동시HTTP503/repo진입1/회복/cachehit우회. D-072 MySQLgeneral_log hit0/miss>0/advisor순서통과. D-066 보강검증은별도진행중.
+- D-066 보강2클래스 session35309, 23:00:42Z, head68f8d48+test2/문서미커밋, `.cache/debt-orchestration/D-066-strengthened.log`, 실행코드고정.
+- monitoring `b47bd1b` clean: D-070 PromQL/SSOT/44변이selftest PASS. D-063 하네스실행전 독립계약PASS(정본전체byte/hash/provision,for/1m간격,실제exporter2,잘못된label음성,짧은breach/18m지속/0값복귀,NoData거절,소유project정리). 실제Grafana호환/발화상태는아직검증안함. A슬롯반환후35분무료로컬검증예정.
+
+- D-066 보강 session35309 종료0/35s/11tests0실패, dockerps0. 허용정렬6종·각양방향·동률·2페이지·옵션거부검증. A슬롯반환, 최종commit/독립재검증예정.
+- heavy 슬롯 B D-063 실제35분monitoring 승인: SHA b47bd1b(clean), `python3 scripts/monitoring/verify_alerts.py --output /private/tmp/peakcart-d063-20261017-run1 --run`, log `/private/tmp/peakcart-d063-20261017-run1.log`. 고유project4containers(loopback동적포트), finally logs/down-volumes/소유ps0검사. 다른heavy금지.
+- B 복구설계 worktree `/private/tmp/peakcart-worker-b-recovery`, branch `debt/approval-recovery`, base9275556. ADR0040예약. 사용자승인정책을기존인증principal/대사증빙/승인실행분리/감사와과거FAILED·generation·재고CAS경합조건으로구체화후root설계검토. 우선읽기/계획, 실험중다른heavy실행안함.
+- D-061 UNRESOLVED는생산자가회신미발행하는ADR계약유지: 실제Payment원장UNRESOLVED/outbox0 관측과consumer3곳합성회신무전이/idempotency검증을구분. SUCCEEDED/FAILED는실제dispatcher회신. 합성검증을실제생산chain으로주장하지않음.
+
+- 상품최종 `f3a311f6ce3861d398ede9ca697fbf83817a467b` clean, 독립로컬sourcePASS. D-066 정렬6종양방향/2페이지/금지옵션11testXML직접대조. ADR0026물리커넥션해석/현행정렬·503문서검토PASS. 전체PR/CI대기.
+- D-063 시작 session55392, project `peakcart-alert-1792191745`, SHA `b47bd1bffe771208e17c7279bdc1ebc7ab3bbe64` clean, rulehash3c453153..., evidence `/private/tmp/peakcart-d063-20261017-run1`, 시작dockerps0. B슬롯독점, 현재pull/startup.
+- #177 run38977855850 SUCCESS완료(root실조회), 원격e0dcd01기준. verifier최종artifact/실제checkout대조배정. 새로컬a559fde정정에는그green을사용하지않음.
+- CI슬롯1개반환으로 A에 diagnostics392901c push/DraftPR생성승인. main실패복구용우선, 일반PR병합보류유지.
+
+### 통합 큐 조정
+
+순차병합마다 strict base가 바뀌어 같은전체CI를반복하는비용/시간을줄이기위해, root가서로검토된작업을묶어최신head에서다시검증하도록조정했다. 검증생략아님.
+- 첫묶음: #177에 documentation b2a090d를합쳐 D-083/068/080/073/077. A가local통합준비, 진단main복구후최신base와함께push하여전체CI/독립검증. #178은변경포함확인뒤통합대체로닫고완료로세지않음. 원래branch/증적보존.
+- 다음app묶음: product f3a311f와messaging a777799 통합검토예정. 개별계획/검증/담당은유지하고합쳐진코드의전체CI를새로확인한다.
+- 진단PR우선순위/activeCI최대2/heavy슬롯1/독립검증/root만PR병합 원칙유지.
+
+- 진단PR https://github.com/Kimgyuilli/PeekCart/pull/179 , head `392901c7134937e6a8a98566756b6221a1fbc291`, CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38979426567 진행중.
+- #178 run38977913185 SUCCESS완료(root실조회), 독립artifact최종대조/통합대체대기.
+- foundation local 통합 `5466a4c653b1101902a5d38af1176bc1a1dde7cf` clean, documentation b2a090d포함. TASKS-done 유일충돌은 D073/D080정정양쪽보존. 분류별원본commit을유지하는merge snapshot의mixed hook예외(HPX_ALLOW_MIXED=1), 테스트/CI/보호우회아님. push아직없음.
+- #177 원격e0dcd01/base927 독립CI PASS: actualcheckout e094905, 필수17job+gate, XML229개/1296tests failure/error/skip0, queryplan4, E2Ea–e동일checkoutsuccess, artifact4checksum/imageID검증load, negative-control실제주입검출. PR조건publish skip은mainpublish증거로세지않음. 로컬새head/base에는이green적용불가.
+- D-063 run1 기동실패: Grafana11.6가정본 `peekcart-scrape-absent-notification-service` UID41자(max40)에서종료. 평가0건, 성공증거없음. B가UID/전체참조정정·길이lint/음성반례·old/new mapping준비, expr/for/labels보존. cleanup확인후새SHA독립검토/run2승인순서.
+- D-084 신뢰원천미결추가: signedADMIN역할+분리allowlist/감사는가능하나PG발급무과금증빙검증형식/공개키/공식대사원천이없음. 사용자에게구체원천질문. 그전404/운영자업로드hash만으로해제금지. 서버직접PG확정결과복구는진행가능하나영구404해제는미완유지.
+
+- D-063 run1 session55392 exit1, GrafanaUID기동실패/API180초timeout/observations0. finally cleanup후 소유project `peakcart-alert-1792191745` ps-a0확인. startup/containers/cleanup로그보존, B슬롯반환. 원인수정/독립검토전재실행없음.
