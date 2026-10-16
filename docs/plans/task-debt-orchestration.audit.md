@@ -238,3 +238,12 @@ D-075는 사용자 보류. D-064/D-065/D-078은 제외·열림 유지. 현재 �
 
 - #180 기존 e417/base3e1 CI38981330710 독립 증거 PASS(후속 통합 head의 병합 승인은 아님). 실제checkout9c0834e 부모 일치, 필수17jobs/XML1292 실패·skip0, E2E 이미지·음성 대조군 확인. D061 F에서 실제 POST/ALREADY POST→GET/reconcile GET만/transient POST3 동일key, 소비자3곳 종착 및 UNRES 생산outbox0와 합성 소비 검증 구분 확인. D062 groupEmpty, 실제DLT p0o0 committed2→0 rewind 후 같은 원장 attempt2 확인. D62초/F122초/전체job12분5초로45분 상한 이내.
 - 진단 #179는 main 배포까지 확인되어 개별 P3를 완료하고 계획을 done/로 아카이브, index90행/check통과. foundation177은 별도로 새main 검증 대기이므로 아직 완료 이동하지 않았다.
+
+- B D084 focused 실행 session86805, clean head `499d8e1f6ca8969b147f73808131bcd68fd1f3a5`, 로그 `/private/tmp/peakcart-d084-focused.log`, offline/no-parallel/no-daemon/max-workers1, seed1792194145976. common/Payment compile 통과 후 테스트 진행, 종료·cleanup까지 heavy 독점.
+- A local통합0cd0fd2는 app/Saga/root22a/main850을 무충돌 포함. b41673f에서 D061/062 audit에 기존 e417 CI의 실제checkout `9c0834e2612061f3b4ea649b759c55bd2d4e71c4`, D62초/F122초 증거를 기록했다. 해당 원본head의 P1~3 검증과 최신통합CI/병합·기록 P4 대기를 분리. 원격180은 아직e417이며 새통합push전.
+
+- D084 focused499d8e session86805 exit0/1분14초. common19/payment58/product38, 합계115tests 실패·오류·skip0. Payment seed1792194145976, Product1792194179479. 실제 MySQL 경합·historicalFAILED·4consumer/inbox·6bulkversion·서명HTTP 포함. 종료 후 소유 Testcontainers0 확인 및 슬롯반환. 전체CI/최신독립검증은 미완.
+- D063 parser `460217e` 실행 전 독립PASS: 관측 fixture3개가 run2 원문112표본의 실제 응답과 일치, 회귀5개 직접PASS. rule firing과 instance Alerting 분리, 정상은 inactive+전체Normal+존재하는0vector를 요구해 NoData/빈값/잘못된state 거부. expr/for/labels 불변. root가 B run3의 새output/project 실행 승인, 시작session 대기. run2는 발화만 확인했고 복귀 미검증 상태 유지.
+
+- D063 run3 시작 session83995, clean `460217ec3dd4b869f87d1199191d49a57b006b68`, project `peakcart-alert-1792194274`, evidence `/private/tmp/peakcart-d063-20261017-run3`와 sibling.log. 정본/provision hash는 run2와 동일. B가 종료·cleanup까지 heavy 독점.
+- D084115건 XML은 독립 대조 완료. 추가 ADR 반례(localrefund CANCELED 대사 없음/FAILED/금액 불일치/정상SUCCEEDED, historicalFAILED 원인·deadline 부적합)를 새 테스트로 보강해 DraftPR CI에서 검증한다. 현재 단일 로컬 슬롯은 D063가 사용하므로 로컬 추가 Gradle은 실행하지 않는다.
