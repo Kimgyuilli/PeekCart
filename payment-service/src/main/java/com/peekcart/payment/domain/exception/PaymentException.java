@@ -8,6 +8,10 @@ import com.peekcart.global.exception.ErrorCode;
  */
 public class PaymentException extends BusinessException {
 
+    public PaymentException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
+    }
+
     public PaymentException(ErrorCode errorCode) {
         super(errorCode);
     }

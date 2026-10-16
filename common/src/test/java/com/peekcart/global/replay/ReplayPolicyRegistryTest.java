@@ -34,10 +34,10 @@ class ReplayPolicyRegistryTest {
     }
 
     @Test
-    @DisplayName("소비쌍은 23개다 — 토픽 11종이 아니다")
+    @DisplayName("소비쌍은 27개다 — 토픽 수와 다르다")
     void pairCountIsNotTopicCount() {
-        assertThat(ReplayPolicyRegistry.topologyPairs()).hasSize(23);
-        assertThat(ReplayPolicyRegistry.declaredPairs()).hasSize(23);
+        assertThat(ReplayPolicyRegistry.topologyPairs()).hasSize(27);
+        assertThat(ReplayPolicyRegistry.declaredPairs()).hasSize(27);
     }
 
     @Test
@@ -68,6 +68,10 @@ class ReplayPolicyRegistryTest {
         assertThat(ReplayPolicyRegistry.find(PeekcartService.PAYMENT, "order.created").allowed()).isFalse();
         assertThat(ReplayPolicyRegistry.find(PeekcartService.ORDER, "payment.requested").allowed()).isFalse();
         assertThat(ReplayPolicyRegistry.find(PeekcartService.PRODUCT, "payment.requested").allowed()).isFalse();
+        assertThat(ReplayPolicyRegistry.find(PeekcartService.PRODUCT, "payment.approval-recovery.requested").allowed()).isFalse();
+        assertThat(ReplayPolicyRegistry.find(PeekcartService.PRODUCT, "payment.approval-recovery.execute").allowed()).isFalse();
+        assertThat(ReplayPolicyRegistry.find(PeekcartService.PAYMENT, "stock.approval-recovery.snapshot").allowed()).isFalse();
+        assertThat(ReplayPolicyRegistry.find(PeekcartService.PAYMENT, "stock.approval-recovery.result").allowed()).isFalse();
         assertThat(ReplayPolicyRegistry.find(PeekcartService.PAYMENT, "stock.approval.result").allowed()).isFalse();
         // notification 의 order.created 는 통지 소비라 allow — 같은 토픽이어도 소유자별로 갈린다.
         assertThat(ReplayPolicyRegistry.find(PeekcartService.NOTIFICATION, "order.created").allowed()).isTrue();

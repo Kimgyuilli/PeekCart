@@ -60,4 +60,5 @@
 | [0035](./0035-protected-approval-manual-handoff.md) | 보호된 승인 미결의 운영 인수와 상태 조회 | Accepted | Phase 5 | 03, 04, 05, 06 |
 | [0036](./0036-cart-product-read-model.md) | 장바구니의 로컬 상품 정보 조합 | Accepted | Phase 5 | 03, 05 |
 | [0037](./0037-product-read-cache-boundaries.md) | 상품 목록 정렬과 캐시 조회의 DB 진입 경계 | Accepted | Phase 5 | 03, 04 |
+| [0040](./0040-protected-approval-recovery.md) | 보호 승인 대사 복구 — PG 직접 증빙·역할 분리·예약 version·감사 | Proposed | Phase 5 | 03, 05 |
 <!-- INDEX:END -->

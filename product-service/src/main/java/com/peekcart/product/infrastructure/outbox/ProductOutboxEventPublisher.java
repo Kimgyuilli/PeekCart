@@ -114,6 +114,21 @@ public class ProductOutboxEventPublisher {
                         LocalDateTime.now(), payload))));
     }
 
+    public void publishApprovalRecoverySnapshot(com.peekcart.global.outbox.dto.ApprovalRecoverySnapshotPayload payload) {
+        publishRecoveryEvent("stock.approval-recovery.snapshot", payload.orderId(), payload);
+    }
+
+    public void publishApprovalRecoveryResult(com.peekcart.global.outbox.dto.ApprovalRecoveryResultPayload payload) {
+        publishRecoveryEvent("stock.approval-recovery.result", payload.orderId(), payload);
+    }
+
+    private void publishRecoveryEvent(String type, Long orderId, Object payload) {
+        MdcSnapshot.Snapshot mdc = MdcSnapshot.current();
+        outboxEventRepository.save(OutboxEvent.create(AGGREGATE_TYPE, orderId.toString(), type,
+                mdc.traceId(), mdc.userId(), eventId -> serialize(new KafkaEventEnvelope(
+                        eventId, type, LocalDateTime.now(), payload))));
+    }
+
     /** ProductStatus → ADR-0012 D2 계약 값 매핑. */
     private static String mapStatus(ProductStatus status) {
         return switch (status) {

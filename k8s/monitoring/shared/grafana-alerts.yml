@@ -333,7 +333,7 @@ data:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "max by (application)(payment_approval_oldest_age_seconds{application=~\"payment-service\", status=~\"waiting_stock|ready|claimed|unresolved\"})"
+                  expr: "max by (application)(payment_approval_oldest_age_seconds{application=~\"payment-service\", status=~\"waiting_stock|ready|claimed|unresolved|recovery_pending\"})"
                   instant: true
                   range: false
               - refId: B

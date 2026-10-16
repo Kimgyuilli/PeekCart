@@ -28,6 +28,14 @@ public class StockReservation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** 예약 snapshot 이후의 상태 변경을 탐지한다. bulk CAS도 함께 증가시킨다. */
+    @Version
+    @Column(nullable = false)
+    private long version;
+
+    @Column(name = "recovery_id", length = 36)
+    private String recoveryId;
+
     @Column(name = "order_id", nullable = false, unique = true)
     private Long orderId;
 
@@ -85,6 +93,21 @@ public class StockReservation {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    /** 행 잠금 안에서 검증하고 JPA version CAS로 최종 저장한다. */
+    public boolean releaseForRecovery(String requestId, long expectedVersion) {
+        if (requestId == null || requestId.isBlank() || requestId.length() > 36) {
+            throw new IllegalArgumentException("recoveryId is required");
+        }
+        if (version != expectedVersion || status != ReservationStatus.APPROVAL_HELD || !approvalFenced
+                || refundResult != null) {
+            return false;
+        }
+        status = ReservationStatus.RELEASED;
+        releasedAt = LocalDateTime.now();
+        recoveryId = requestId;
+        return true;
+    }
 
     private StockReservation(Long orderId, ReservationStatus status, String items, String sourceEventId,
                              Duration leaseTtl) {

@@ -48,6 +48,9 @@ class StockReservationSagaIntegrationTest extends AbstractIntegrationTest {
     @Autowired InventoryRepository inventoryRepository;
     @Autowired StockReservationRepository reservationRepository;
     @Autowired OutboxEventRepository outboxEventRepository;
+    @Autowired com.peekcart.product.infrastructure.kafka.ApprovalRecoveryConsumer recoveryConsumer;
+    @Autowired com.fasterxml.jackson.databind.ObjectMapper recoveryMapper;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate recoveryJdbc;
     @Autowired com.peekcart.product.infrastructure.kafka.StockConfirmConsumer confirmConsumer;
 
     private Long product1;  // 재고 100
@@ -83,6 +86,64 @@ class StockReservationSagaIntegrationTest extends AbstractIntegrationTest {
         return outboxEventRepository.findPendingEvents(100).stream()
                 .filter(e -> e.getEventType().equals("stock.reservation.result"))
                 .count();
+    }
+
+    private String recoveryMessage(String topic, Object payload, String eventId) throws Exception {
+        return recoveryMapper.writeValueAsString(new com.peekcart.global.outbox.dto.KafkaEventEnvelope(eventId, topic, java.time.LocalDateTime.now(), payload));
+    }
+
+    @Test
+    void recoveryConsumersPublishRepliesAndDeduplicateBothEventIdentities() throws Exception {
+        reservationService.reserve(1L, "wire-recovery", List.of(new ReservedItemPayload(product1, 10)));
+        reservationService.holdForApproval(1L);
+        long version = reservationRepository.findByOrderId(1L).orElseThrow().getVersion();
+        var request = new com.peekcart.global.outbox.dto.ApprovalRecoveryRequestPayload("wire-request", 1L, 3);
+        String requestMessage = recoveryMessage("payment.approval-recovery.requested", request, java.util.UUID.randomUUID().toString());
+        recoveryConsumer.snapshot(requestMessage); recoveryConsumer.snapshot(requestMessage);
+        recoveryConsumer.snapshot(recoveryMessage("payment.approval-recovery.requested", request, java.util.UUID.randomUUID().toString()));
+        assertThat(recoveryJdbc.queryForObject("SELECT COUNT(*) FROM processed_events WHERE consumer_group='product-svc-approval-recovery-request-group'", Long.class)).isEqualTo(2);
+        assertThat(recoveryJdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='stock.approval-recovery.snapshot'", Long.class)).isEqualTo(2);
+        var execution = new com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload("wire-request", 1L, 3, version);
+        String executionMessage = recoveryMessage("payment.approval-recovery.execute", execution, java.util.UUID.randomUUID().toString());
+        recoveryConsumer.execute(executionMessage); recoveryConsumer.execute(executionMessage);
+        recoveryConsumer.execute(recoveryMessage("payment.approval-recovery.execute", execution, java.util.UUID.randomUUID().toString()));
+        assertThat(recoveryJdbc.queryForObject("SELECT COUNT(*) FROM processed_events WHERE consumer_group='product-svc-approval-recovery-execute-group'", Long.class)).isEqualTo(2);
+        assertThat(recoveryJdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='stock.approval-recovery.result'", Long.class)).isEqualTo(2);
+        assertThat(stockOf(product1)).isEqualTo(100);
+    }
+
+    @Test
+    void concurrentRecoveryConsumersRestoreExactlyOnce() throws Exception {
+        reservationService.reserve(1L, "concurrent-recovery", List.of(new ReservedItemPayload(product1, 10)));
+        reservationService.holdForApproval(1L);
+        long version = reservationRepository.findByOrderId(1L).orElseThrow().getVersion();
+        var request = new com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload("same-recovery", 1L, 2, version);
+        var start = new CountDownLatch(1);
+        var pool = Executors.newFixedThreadPool(2);
+        try {
+            java.util.concurrent.Callable<Void> consume = () -> { start.await(); reservationService.executeRecovery(request); return null; };
+            var first = pool.submit(consume); var second = pool.submit(consume); start.countDown();
+            first.get(15, TimeUnit.SECONDS); second.get(15, TimeUnit.SECONDS);
+            assertThat(stockOf(product1)).isEqualTo(100);
+            assertThat(reservationRepository.findByOrderId(1L).orElseThrow().getVersion()).isEqualTo(version + 1);
+        } finally { pool.shutdownNow(); }
+    }
+
+    @Test
+    void recoveryVersionFenceRestoresInventoryOnlyOnceAcrossDifferentEvents() {
+        reservationService.reserve(1L, "recovery-reserve", List.of(new ReservedItemPayload(product1, 10)));
+        reservationService.holdForApproval(1L);
+        long version = reservationRepository.findByOrderId(1L).orElseThrow().getVersion();
+        var stale = new com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload("recovery-stale", 1L, 2, version - 1);
+        reservationService.executeRecovery(stale);
+        assertThat(stockOf(product1)).isEqualTo(90);
+        var valid = new com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload("recovery-valid", 1L, 2, version);
+        reservationService.executeRecovery(valid);
+        reservationService.executeRecovery(valid);
+        reservationService.executeRecovery(new com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload("another-request", 1L, 3, version));
+        assertThat(stockOf(product1)).isEqualTo(100);
+        assertThat(reservationRepository.findByOrderId(1L).orElseThrow().getVersion()).isEqualTo(version + 1);
+        assertThat(reservationRepository.findByOrderId(1L).orElseThrow().getRecoveryId()).isEqualTo("recovery-valid");
     }
 
     @Test

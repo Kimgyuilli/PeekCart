@@ -36,6 +36,8 @@ public class DeadLetterQuarantineConsumer {
     @KafkaListener(
             id = DeadLetterContainerGuard.LISTENER_ID_PREFIX + "payment-quarantine",
             topics = {
+                    "payment.approval-recovery.requested.dlq",
+                    "payment.approval-recovery.execute.dlq",
                     "payment.completed.dlq",
                     "payment.failed.dlq",
                     "payment.requested.dlq",

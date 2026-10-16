@@ -34,6 +34,8 @@ public class DeadLetterConsumer {
     @KafkaListener(
             id = DeadLetterContainerGuard.LISTENER_ID_PREFIX + "payment-consumption",
             topics = {
+                    "stock.approval-recovery.snapshot.dlq",
+                    "stock.approval-recovery.result.dlq",
                     "order.created.dlq",
                     "order.cancelled.dlq",
                     "stock.approval.result.dlq",
