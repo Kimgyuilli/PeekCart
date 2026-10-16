@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 83개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 89개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-09-29 |  |
 | [task-d048-e2e-stack-startup](./task-d048-e2e-stack-startup.md) | task-d048-e2e-stack-startup | [#156](https://github.com/Kimgyuilli/PeakCart/pull/156) | 2026-09-29 |  |
 
-## 기타 (21)
+## 기타 (27)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -107,4 +107,10 @@
 | [D-053](./D-053.md) | Layer 1 문서의 Phase 1·2 설계 아카이브 | [#171](https://github.com/Kimgyuilli/PeakCart/pull/171) | 2026-09-30 | 있음 |
 | [D-057](./D-057.md) | `plan.md` · `work.md` 공통 리뷰 규칙의 단일 문서화 | [#172](https://github.com/Kimgyuilli/PeakCart/pull/172) | 2026-09-30 | 있음 |
 | [D-059](./D-059.md) | 환불 처리 중 응답의 재시도 분류 | [#174](https://github.com/Kimgyuilli/PeakCart/pull/174) | 2026-10-14 |  |
+| [D-060](./D-060.md) | 승인과 예약 lease 회수 사이의 fence | [#175](https://github.com/Kimgyuilli/PeakCart/pull/175) | 2026-10-14 | 있음 |
+| [D-060-followup](./D-060-followup.md) | D-060 followup — PR #175 기반 보호 승인 복구 보강 | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
+| [D-074](./D-074.md) | ADR-0027 Alternative A 제목 정정 | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 |  |
+| [D-079](./D-079.md) | 측정 overlay 기본 렌더 복구 | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
+| [D-081](./D-081.md) | 수동 리스너 기동의 할당 대기 (D-082 공동 구현) | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
+| [D-082](./D-082.md) | 자율 writer 수명 lint (D-081 공동 구현) | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
 
