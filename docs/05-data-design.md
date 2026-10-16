@@ -169,6 +169,8 @@ erDiagram
   product_price_cache {
     bigint product_id PK
     bigint unit_price
+    string product_name
+    string product_status
     bigint source_version
     timestamp updated_at
   }
