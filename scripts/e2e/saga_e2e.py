@@ -903,8 +903,7 @@ def dlq_rewind():
                                  enable_auto_commit=False)
         try:
             consumer.assign([tp])
-            values = {"offset": coordinate["offset"], "metadata": "D-062 same-record replay", "leader_epoch": -1}
-            consumer.commit({tp: OffsetAndMetadata(**{k: values[k] for k in OffsetAndMetadata._fields})})
+            consumer.commit({tp: OffsetAndMetadata(coordinate["offset"], "D-062 same-record replay")})
         finally:
             consumer.close()
         after = admin.list_consumer_group_offsets(DLQ_GROUP)
