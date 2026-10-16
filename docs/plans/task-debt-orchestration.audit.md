@@ -193,3 +193,14 @@ D-075는 사용자 보류. D-064/D-065/D-078은 제외·열림 유지. 현재 �
 - A는 대기 중 foundation을 새 main에 통합해 #177 최신 CI 실행 준비. 원격 포함 확인 후 #178을 통합 대체로 닫고 PR138 원문에 D080 정정을 append. 앞선 head의 green은 재사용하지 않음.
 - D063 run2는 transient 전체 Normal 복귀를 통과한 뒤 sustained 관측 진행 중. heavy 슬롯은 B session80307이 계속 독점. 성공/완료 판정 아직 없음.
 - Saga 최신544f983의 lingering F 등록 명시 가드 추가까지 독립 소스 확인. 실제 CI는 대기.
+
+- foundation #177 최신 head `cb58da0944fc49ee14756f307328662f8bcca39a`, base3e1ba64, CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38981159191 진행. D083/068/080/073/077 통합. 기존 검토5466 대비 소스는 상위 계획/audit 기록 추가와 이미 검토한 동일 publish 진단이며 독립 증분 확인; 실제 최신 CI 산출물은 아직 대기.
+- #178은 원격177의 b2a090d 포함(behind0/ahead22) 확인 후 통합 대체로 CLOSED, mergedAt null. 병합 완료로 계산하지 않는다.
+- PR138 본문은 기존 원문 prefix를 보존한 채 D080 정정 추기 완료. 셔플 전 순차 run1/3/5에서 결함4가 이미 발생한 사실과 약515초 종료 꼬리 구분, 원격 a559fde의 원본 증거 링크를 기록했다. 기존 기록을 덮어쓰지 않았다.
+- app7607의 ADR 인덱스 및 jitter 문구도 독립 소스 대조 완료. Saga는 최신 main과 root835dd92 기록 통합 후 두 번째 Draft PR CI 준비 허용. 실제 D063 실험과 E2E가 미완이며 foundation 후 base 변경 시 재검증한다.
+- D084 독립 초안 검토에서 strict DONE 후 두 번째 느슨한 재조회가 negative 실패해제로 우회할 수 있는 경로를 발견해 수정 반환. 응답 유실의 멱등 회수·유효 principal 거절 감사·명시 false 후 재대사 및 동일 payload 재전송의 generation/version 경합 조건을 보강 중. 아직 컴파일/실DB 검증 전이므로 안전복구 부분 완료도 주장하지 않는다.
+- D075는 사용자 보류 이후 구현·원인분리 실험을 수행하지 않았다. 목표 처리율/backlog 수용 기준을 결정해야 재개할 수 있다.
+
+- Saga/monitoring Draft https://github.com/Kimgyuilli/PeekCart/pull/180, head `e417b8a7f1d08e14fc27ed16738845b0c6612035`, base3e1ba64, CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38981330710 진행. active PR CI는177/180 두 개. D063 실제 발화/복구 결과는 아직 대기.
+- root 기록에 언급된 ADR0036은 미병합 app lane7607에만 존재해 Saga consistency 사전 검사에서 missing 경고. PR 본문에 공개했고 다음 base 갱신 때 로컬 문서 보완 ee9325c를 포함한다. 필수 guard 실패를 무시하지 않는다.
+- 아카이브 실제 원격 조회 preview: 기존 #175/#176의 계획6건 이동 대상, 상위계획은177 미병합으로 진행중. sandbox 네트워크 없는 첫 조회의 UNKNOWN은 미병합 사실로 채택하지 않았다. main 복구 확인 뒤 이동/인덱스 갱신 예정.
