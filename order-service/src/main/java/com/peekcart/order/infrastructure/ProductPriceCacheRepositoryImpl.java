@@ -6,6 +6,9 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
+import java.util.Collection;
+import com.peekcart.order.domain.model.ProductPriceCache;
 
 /**
  * {@link ProductPriceCacheRepository}의 JPA 구현체.
@@ -27,7 +30,11 @@ public class ProductPriceCacheRepositoryImpl implements ProductPriceCacheReposit
     }
 
     @Override
-    public void applyUpdate(Long productId, long unitPrice, long version) {
-        jpaRepository.upsertIfNewer(productId, unitPrice, version, LocalDateTime.now());
+    public void applyUpdate(Long productId, long unitPrice, long version, String productName, String productStatus) {
+        jpaRepository.upsertIfNewer(productId, unitPrice, version, productName, productStatus, LocalDateTime.now());
+    }
+    @Override
+    public List<ProductPriceCache> findAllByProductIdIn(Collection<Long> productIds) {
+        return jpaRepository.findAllById(productIds);
     }
 }

@@ -15,13 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class CartQueryService {
 
     private final CartRepository cartRepository;
+    private final CartDetailReader cartDetailReader;
 
     /**
      * 사용자의 장바구니를 조회한다. 장바구니가 없으면 빈 DTO를 반환한다.
      */
     public CartDetailDto getCart(Long userId) {
         return cartRepository.findByUserId(userId)
-                .map(CartDetailDto::from)
+                .map(cartDetailReader::read)
                 .orElse(CartDetailDto.empty());
     }
 }

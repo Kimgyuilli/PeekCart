@@ -23,12 +23,15 @@ public interface ProductPriceCacheJpaRepository extends JpaRepository<ProductPri
      * (two-step update→insert 는 catch 밖 commit 위반이 생겨 쓰지 않는다).
      */
     @Modifying(clearAutomatically = true)
-    @Query(value = "INSERT INTO product_price_cache (product_id, unit_price, source_version, updated_at) "
-            + "VALUES (:productId, :unitPrice, :version, :now) "
+    @Query(value = "INSERT INTO product_price_cache (product_id, unit_price, source_version, product_name, product_status, updated_at) "
+            + "VALUES (:productId, :unitPrice, :version, :productName, :productStatus, :now) "
             + "ON DUPLICATE KEY UPDATE "
             + "unit_price = IF(:version > source_version, :unitPrice, unit_price), "
-            + "source_version = IF(:version > source_version, :version, source_version), "
-            + "updated_at = IF(:version > source_version, :now, updated_at)", nativeQuery = true)
+            + "product_name = IF(:version > source_version, :productName, product_name), "
+            + "product_status = IF(:version > source_version, :productStatus, product_status), "
+            + "updated_at = IF(:version > source_version, :now, updated_at), "
+            + "source_version = IF(:version > source_version, :version, source_version)", nativeQuery = true)
     void upsertIfNewer(@Param("productId") Long productId, @Param("unitPrice") long unitPrice,
-                       @Param("version") long version, @Param("now") LocalDateTime now);
+                       @Param("version") long version, @Param("productName") String productName,
+                       @Param("productStatus") String productStatus, @Param("now") LocalDateTime now);
 }
