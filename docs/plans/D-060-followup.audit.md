@@ -26,3 +26,7 @@ Location 수정 후 전체 test/:build/bootJar 재실행 성공(1m26s, 12 execut
 
 ## 최신 main 기준 최종 검증 (2026-10-17)
 cb8056d 기반 전체 test/:build/4서비스 bootJar 성공(8m22s, 67 tasks executed). Location 보강 후 전체 재실행도 성공(1m26s, 12 executed/55 up-to-date), JUnit 1,292건 실패·오류·skip 0. 아키텍처 가드 5개, JVM 및 E2E 매트릭스 각 34행 통과. 최종 runtime E2E a~e와 Payment 실제 재시작, PG 조회·보호 유지·실패 해제·정상 승인 확정 성공. 증거 `.cache/e2e/d060-followup-location-final-20261017`. 관련 lint 및 self-test 통과. 최초 E2E Location 실패는 audit에 보존하고 최종 실행과 구분한다. 별도 Codex 리뷰 미호출.
+
+## /ship 실행 결과
+PR: https://github.com/Kimgyuilli/PeekCart/pull/176
+preflight/consistency precheck/writing lint 통과. TASKS 완료 4행을 TASKS-done으로 이동, D-060 기존 #175 완료 행에 후속 링크 추가, PHASE5와 계획서 갱신. 운영 미해결은 D-084/ADR-0035로 추적. 별도 Codex 리뷰 미호출. 머지 미실행.
