@@ -104,8 +104,8 @@
     - Phase 1: `@TransactionalEventListener`로 결제 실패 시 로컬 보상 트랜잭션 처리
     - Phase 4: Choreography-based Saga — `order.created` → Product 재고 예약 → `stock.reservation.result` → 결제, `payment.failed`/`order.cancelled` → **Product 재고(예약) 복구** (재고 소유자가 Product). 재고 예약/차감 경계·토픽 매트릭스 확정은 ADR-0012 §D3/§D4 (see ADR-0012). **보상 수렴**: 환불이 필요한 상태를 감지한 서비스가 요청 토픽(`stock.compensation.requested` · `order.compensation.requested`)을 발행하고, Payment 가 `payment_refunds.order_id` UNIQUE fence 로 합류시켜 실행한 뒤 `payment.refunded` 로 각 원장을 닫습니다 (see ADR-0018)
 - **재고 동시성 제어**
-    - 1차: Redis 분산 락으로 동시 요청 직렬화 (획득 실패 시 즉시 409 응답)
-    - 2차: DB 낙관적 락 (`version` 컬럼) — Redis 장애/만료 시 최후 방어선
+    - `Inventory.@Version`과 DB 트랜잭션 원자성으로 보호하며 재고 경로에는 Redis 분산 락을 사용하지 않습니다 (see ADR-0025).
+    - Product Kafka 소비 중 낙관락 충돌은 jitter를 적용해 최대 3회 재시도하고, 소진하면 DLQ로 보냅니다. HTTP 경로의 낙관락 충돌은 `PRD-004`/409로 응답합니다.
 - **JWT Refresh Token 전략**
     - `refresh_tokens` 테이블(DB)에 토큰 저장 → 영속성 보장, 발급 이력 관리
     - Redis는 로그아웃된 토큰 블랙리스트 (+ Phase 4: family/session deny — 탈취 즉시 차단, see ADR-0013) 용도 → 역할 분리(저장은 DB, 즉시 차단/deny enforcement는 Redis)

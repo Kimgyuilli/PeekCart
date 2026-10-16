@@ -85,7 +85,7 @@ public class OrderCommandService {
     }
 
     /**
-     * 주문을 취소하고 재고를 복구한다.
+     * 주문을 취소하고 취소 이벤트를 Outbox에 저장한다. 재고 복구는 Product 예약 해제로 비동기 처리한다.
      *
      * @throws OrderException 주문이 없으면 {@code ORD-001}, 취소 불가 상태면 {@code ORD-003}
      */
