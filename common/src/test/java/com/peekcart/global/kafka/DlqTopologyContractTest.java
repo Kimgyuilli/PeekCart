@@ -66,8 +66,8 @@ class DlqTopologyContractTest {
 
         assertThat(total).isEqualTo(23);
         assertThat(DlqTopology.consumptionSubscriptions(PeekcartService.ORDER)).hasSize(6);
-        assertThat(DlqTopology.consumptionSubscriptions(PeekcartService.PRODUCT)).hasSize(6);
-        assertThat(DlqTopology.consumptionSubscriptions(PeekcartService.PAYMENT)).hasSize(6);
+        assertThat(DlqTopology.consumptionSubscriptions(PeekcartService.PRODUCT)).hasSize(8);
+        assertThat(DlqTopology.consumptionSubscriptions(PeekcartService.PAYMENT)).hasSize(8);
         assertThat(DlqTopology.consumptionSubscriptions(PeekcartService.NOTIFICATION)).hasSize(5);
     }
 

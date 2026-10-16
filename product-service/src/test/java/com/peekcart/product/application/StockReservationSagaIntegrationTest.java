@@ -86,6 +86,40 @@ class StockReservationSagaIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void concurrentRecoveryConsumersRestoreExactlyOnce() throws Exception {
+        reservationService.reserve(1L, "concurrent-recovery", List.of(new ReservedItemPayload(product1, 10)));
+        reservationService.holdForApproval(1L);
+        long version = reservationRepository.findByOrderId(1L).orElseThrow().getVersion();
+        var request = new com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload("same-recovery", 1L, 2, version);
+        var start = new CountDownLatch(1);
+        var pool = Executors.newFixedThreadPool(2);
+        try {
+            java.util.concurrent.Callable<Void> consume = () -> { start.await(); reservationService.executeRecovery(request); return null; };
+            var first = pool.submit(consume); var second = pool.submit(consume); start.countDown();
+            first.get(15, TimeUnit.SECONDS); second.get(15, TimeUnit.SECONDS);
+            assertThat(stockOf(product1)).isEqualTo(100);
+            assertThat(reservationRepository.findByOrderId(1L).orElseThrow().getVersion()).isEqualTo(version + 1);
+        } finally { pool.shutdownNow(); }
+    }
+
+    @Test
+    void recoveryVersionFenceRestoresInventoryOnlyOnceAcrossDifferentEvents() {
+        reservationService.reserve(1L, "recovery-reserve", List.of(new ReservedItemPayload(product1, 10)));
+        reservationService.holdForApproval(1L);
+        long version = reservationRepository.findByOrderId(1L).orElseThrow().getVersion();
+        var stale = new com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload("recovery-stale", 1L, 2, version - 1);
+        reservationService.executeRecovery(stale);
+        assertThat(stockOf(product1)).isEqualTo(90);
+        var valid = new com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload("recovery-valid", 1L, 2, version);
+        reservationService.executeRecovery(valid);
+        reservationService.executeRecovery(valid);
+        reservationService.executeRecovery(new com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload("another-request", 1L, 3, version));
+        assertThat(stockOf(product1)).isEqualTo(100);
+        assertThat(reservationRepository.findByOrderId(1L).orElseThrow().getVersion()).isEqualTo(version + 1);
+        assertThat(reservationRepository.findByOrderId(1L).orElseThrow().getRecoveryId()).isEqualTo("recovery-valid");
+    }
+
+    @Test
     @DisplayName("happy: 전 품목 충분 → 일괄 차감 + 원장 RESERVED + 결과 발행")
     void reserve_happy() {
         reservationService.reserve(1L, "evt-1",
