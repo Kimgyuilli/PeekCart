@@ -36,6 +36,8 @@ class ApprovalRecoveryIntegrationTest extends AbstractIntegrationTest {
     @Autowired PaymentApprovalRepository approvals;
     @Autowired PaymentRepository payments;
     @Autowired JdbcTemplate jdbc;
+    @Autowired com.peekcart.payment.infrastructure.kafka.ApprovalRecoveryConsumer consumer;
+    @Autowired com.fasterxml.jackson.databind.ObjectMapper mapper;
     @MockitoBean TossPaymentClient pg;
 
     @BeforeEach
@@ -150,6 +152,83 @@ class ApprovalRecoveryIntegrationTest extends AbstractIntegrationTest {
         assertThat(second.getId()).isEqualTo(first.getId());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='payment.approval-recovery.requested'", Long.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM approval_recovery_audit WHERE action='REQUEST_DUPLICATE'", Long.class)).isEqualTo(1);
+    }
+
+    private String message(String topic, Object payload, String eventId) throws Exception {
+        return mapper.writeValueAsString(new com.peekcart.global.outbox.dto.KafkaEventEnvelope(eventId, topic, LocalDateTime.now(), payload));
+    }
+
+    @Test
+    void snapshotAndResultConsumersPreservePayloadAndInboxIdempotency() throws Exception {
+        var requested = recoveryService.request(1L, "consumer wiring");
+        var snapshot = new ApprovalRecoverySnapshotPayload(requested.getId(), 1L, requested.getGeneration(), "APPROVAL_HELD", 7, true, null);
+        String first = message("stock.approval-recovery.snapshot", snapshot, java.util.UUID.randomUUID().toString());
+        consumer.snapshot(first); consumer.snapshot(first);
+        consumer.snapshot(message("stock.approval-recovery.snapshot", snapshot, java.util.UUID.randomUUID().toString()));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM processed_events WHERE consumer_group='payment-svc-approval-recovery-snapshot-group'", Long.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM approval_recovery_audit WHERE action='RESERVATION_SNAPSHOT'", Long.class)).isEqualTo(1);
+        recoveryService.approve(requested.getId(), "approve snapshot"); actor("202", "ADMIN");
+        var execution = recoveryService.execute(requested.getId(), "execute snapshot");
+        var result = new ApprovalRecoveryResultPayload(execution.getId(), 1L, execution.getGeneration(), true, null);
+        String resultMessage = message("stock.approval-recovery.result", result, java.util.UUID.randomUUID().toString());
+        consumer.result(resultMessage); consumer.result(resultMessage);
+        consumer.result(message("stock.approval-recovery.result", result, java.util.UUID.randomUUID().toString()));
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM processed_events WHERE consumer_group='payment-svc-approval-recovery-result-group'", Long.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='payment.failed'", Long.class)).isEqualTo(1);
+    }
+
+    @Test
+    void realReconcilerWinningDuringPgQueryInvalidatesApprovedRecovery() throws Exception {
+        var approved = approved();
+        var proof = pg.find(PaymentFixture.DEFAULT_PAYMENT_KEY);
+        var queryEntered = new java.util.concurrent.CountDownLatch(1);
+        var allowReturn = new java.util.concurrent.CountDownLatch(1);
+        when(pg.find(anyString())).thenAnswer(invocation -> {
+            queryEntered.countDown();
+            assertThat(allowReturn.await(10, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+            return proof;
+        });
+        var pool = java.util.concurrent.Executors.newSingleThreadExecutor();
+        try {
+            var executing = pool.submit(() -> {
+                actor("202", "ADMIN");
+                try { recoveryService.execute(approved.getId(), "racing reconciler"); return true; }
+                catch (com.peekcart.payment.domain.exception.PaymentException expected) { return false; }
+                finally { SecurityContextHolder.clearContext(); }
+            });
+            assertThat(queryEntered.await(10, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+            jdbc.update("UPDATE payment_approvals SET claimed_at=DATE_SUB(NOW(), INTERVAL 1 HOUR) WHERE order_id=1");
+            var claimed = approvalService.claimForReconcile(1L).orElseThrow();
+            approvalService.finalizeApproval(1L, claimed.getGeneration(), ApprovalOutcome.succeeded("CARD", LocalDateTime.now(), "DONE evidence"), 0);
+            allowReturn.countDown();
+            assertThat(executing.get(20, java.util.concurrent.TimeUnit.SECONDS)).isFalse();
+            assertThat(approvals.findByOrderId(1L).orElseThrow().getStatus()).isEqualTo(ApprovalStatus.SUCCEEDED);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='payment.approval-recovery.execute'", Long.class)).isZero();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='payment.completed'", Long.class)).isEqualTo(1);
+        } finally { allowReturn.countDown(); pool.shutdownNow(); }
+    }
+
+    @Test
+    void recoveryWinningRejectsLateRealReconcilerFinalization() throws Exception {
+        jdbc.update("UPDATE payment_approvals SET claimed_at=DATE_SUB(NOW(), INTERVAL 1 HOUR) WHERE order_id=1");
+        var oldClaim = approvalService.claimForReconcile(1L).orElseThrow();
+        approvalService.finalizeApproval(1L, oldClaim.getGeneration(), ApprovalOutcome.unresolved("first response uncertain"), 0);
+        var approved = approved();
+        var release = new java.util.concurrent.CountDownLatch(1);
+        var pool = java.util.concurrent.Executors.newSingleThreadExecutor();
+        try {
+            var late = pool.submit(() -> {
+                release.await(10, java.util.concurrent.TimeUnit.SECONDS);
+                return approvalService.finalizeApproval(1L, oldClaim.getGeneration(), ApprovalOutcome.succeeded("CARD", LocalDateTime.now(), "late old owner"), 0);
+            });
+            actor("202", "ADMIN");
+            recoveryService.execute(approved.getId(), "recovery wins fence");
+            release.countDown(); late.get(20, java.util.concurrent.TimeUnit.SECONDS);
+            assertThat(approvalService.claimForReconcile(1L)).isEmpty();
+            assertThat(approvals.findByOrderId(1L).orElseThrow().getStatus()).isEqualTo(ApprovalStatus.RECOVERY_PENDING);
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='payment.completed'", Long.class)).isZero();
+            assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events WHERE event_type='payment.approval-recovery.execute'", Long.class)).isEqualTo(1);
+        } finally { release.countDown(); pool.shutdownNow(); }
     }
 
     @Test

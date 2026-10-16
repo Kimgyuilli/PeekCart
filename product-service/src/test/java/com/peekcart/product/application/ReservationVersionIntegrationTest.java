@@ -57,6 +57,21 @@ class ReservationVersionIntegrationTest extends AbstractIntegrationTest {
         assertThat(version()).isEqualTo(3);
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"payment-failed", "reserved-release", "confirm", "compensate"})
+    void remainingBulkCasPathsIncrementOnlyWhenTheyChangeState(String path) {
+        java.util.function.IntSupplier update = switch (path) {
+            case "payment-failed" -> () -> repository.releaseAfterPaymentFailed(1L, LocalDateTime.now());
+            case "reserved-release" -> () -> repository.markReleasedIfReserved(1L, LocalDateTime.now());
+            case "confirm" -> () -> repository.markConfirmedIfReserved(1L, LocalDateTime.now());
+            default -> () -> repository.markCompensatedIfAbsent(1L, LocalDateTime.now());
+        };
+        tx.executeWithoutResult(status -> assertThat(update.getAsInt()).isEqualTo(1));
+        assertThat(version()).isEqualTo(1);
+        tx.executeWithoutResult(status -> assertThat(update.getAsInt()).isZero());
+        assertThat(version()).isEqualTo(1);
+    }
+
     @Test
     void staleEntityCannotOverwriteNativeCasChange() {
         EntityManager stale = emf.createEntityManager();
