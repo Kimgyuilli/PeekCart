@@ -437,10 +437,25 @@ PYEOF
     run_dash_case "dashboard options 드리프트" "$ST_TMP/dash-option-drift"
     run_dash_case "kafka-lag 에 비소비 서비스 추가" "$ST_TMP/dash-kafka-extra"
 
+    # Grafana rejects a UID longer than 40 characters before any rule is evaluated.
+    python3 - "$ST_SRC" "$ST_TMP/long-uid.yml" <<'PYEOF'
+import sys, yaml
+src, dst = sys.argv[1:]
+doc = yaml.safe_load(open(src))
+inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+import copy
+rule = copy.deepcopy(inner["groups"][0]["rules"][0])
+rule["uid"] = "x" * 41
+inner["groups"][0]["rules"].append(rule)
+doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
+yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    run_case "Grafana UID 40자 초과" "$ST_TMP/long-uid.yml"
+
     if [[ "$ST_FAIL" -ne 0 ]]; then
         exit 1
     fi
-    echo "observability-promql-lint self-test 44종 통과 (기존 19 + 승인 장기 미결 9 + cache fallback 16)"
+    echo "observability-promql-lint self-test 45종 통과 (기존 19 + 승인 장기 미결 9 + cache fallback 16 + UID 길이 1)"
     exit 0
 fi
 
@@ -727,6 +742,8 @@ def prom_entries(rule):
 for group in alerts_doc.get("groups", []) or []:
     for rule in group.get("rules", []) or []:
         uid = rule.get("uid", "")
+        if len(uid) > 40:
+            violations.append(f"[D5-V6] Grafana UID 40자 초과: uid={uid}")
         seen_uids.add(uid)
         entries = prom_entries(rule)
         for ref_id, expr in entries:
@@ -906,7 +923,8 @@ for group in alerts_doc.get("groups", []) or []:
 # 필수 alert uid 존재 검증 — rule 삭제 시 분기 미실행으로 통과하는 false-green 차단 (Codex GP-2 #2)
 REQUIRED_UIDS = (
     {"peekcart-high-error-rate", "peekcart-slow-response", "peekcart-target-down"}
-    | {f"peekcart-scrape-absent-{s}" for s in EXPECTED_SCRAPE_SERVICES}
+    | {f"peekcart-scrape-absent-{s}" if s != "notification-service" else "peekcart-scrape-absent-notification"
+       for s in EXPECTED_SCRAPE_SERVICES}
     # 구현 ④-d-1 P5 — alert 를 지우면 위 분기가 실행되지 않아 라벨 검사가 통과해버린다.
     | set(METRIC_ALERT_CONTRACTS)
 )

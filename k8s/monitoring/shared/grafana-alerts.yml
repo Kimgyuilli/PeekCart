@@ -117,7 +117,7 @@ data:
             annotations:
               summary: "PeekCart 타겟 스크랩 실패 (up == 0) — {{ $labels.service }}"
               description: "{{ $labels.service }} 의 타겟을 Prometheus 가 스크랩 시도했으나 실패 (네트워크, 인증, /actuator/prometheus 500 등). up 시계열은 존재하되 0. Error Rate 패널의 강제 0% 표시와 구분하는 신호."
-          - uid: peekcart-scrape-absent-notification-service
+          - uid: peekcart-scrape-absent-notification
             title: "Peekcart Metrics Scrape Absent — notification-service"
             condition: B
             data:
