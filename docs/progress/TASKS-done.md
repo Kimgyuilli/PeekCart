@@ -65,3 +65,12 @@ D-001(✅), D-005(✅), D-006(✅), D-007(✅), D-008(✅), D-009(✅), D-010(�
 | D-079 | Infra / Kustomize | **`k8s/overlays/gke-d002a` 가 기본 `kubectl kustomize` 로 렌더되지 않는다** — `../../base/*.yml` 을 파일로 직접 참조해 kustomize root 이탈 제한에 걸린다(2026-10-15 현재 트리에서 재확인: 기본 FAIL · `--load-restrictor LoadRestrictionsNone` OK). #129 가 "구조 수정은 범위 밖"으로 남기고 렌더 명령에 플래그를 명시하는 것으로 우회했다. 같은 구조의 측정 overlay `gke-d002bc` · `gke-d002a-mysql-500m` · `gke-d002a-mysql-2000m` 도 기본 렌더 FAIL(같은 날 확인) | 블로그 28편(로드맵 27편) 작성 중 재확인(2026-10-15) · 출처 PHASE4 "D-026 배속 재측정" 선재 결함 | ✅ 완료 ([#176](https://github.com/Kimgyuilli/PeekCart/pull/176)) |
 | D-081 | Testing / Lint | **`integration-test-container-lint.sh` ITC-006 이 리스너를 수동 기동하는 테스트를 보지 못한다** — 규칙은 문자열 리터럴 `app.kafka.listener.enabled=true` 가 있는 파일만 검사한다. `order-service` `DlqReplayEntrypointIntegrationTest` 는 프로퍼티 없이 `@BeforeEach` 에서 `KafkaListenerEndpointRegistry` 의 `dlq-*` 컨테이너를 `MessageListenerContainer::start` 로 켜고, 재실패분이 실제 `.dlq` 를 거쳐 `DeadLetterConsumer` 에 소비되는 것을 기다리지만 `awaitListenerAssignment` 를 호출하지 않는다(origin/main `cb8056d` 기준). D-058 이 막은 "할당 전 발행" 경로가 이 클래스에 남는다. 같은 규칙은 `"app.kafka.listener.enabled = true"`(공백) · `app.kafka.listener.enabled:true` 표기도 놓친다. 처리: 헬퍼 호출 추가 + 규칙을 `.start()` 수동 기동 · 표기 변형까지 확장하고 self-test 픽스처 추가 | 블로그 29편(로드맵 28편) 작성 중 발견(2026-10-17) | ✅ 완료 ([#176](https://github.com/Kimgyuilli/PeekCart/pull/176)) |
 | D-082 | Testing / Lint | **자율 writer opt-in 클래스의 `@DirtiesContext(AFTER_CLASS)` 가 검사되지 않는다** — `CLAUDE.md` · ADR-0029 D3 는 `app.scheduling.enabled=true` · `app.kafka.listener.enabled=true` 로 writer 를 켠 테스트가 `@DirtiesContext(AFTER_CLASS)` 로 수명을 가두도록 정했으나 lint 규칙이 없다(ADR-0029 "게이트 우회 lint 화는 확산 후 재판단" 이후 판단 기록 없음). 현재 opt-in 16클래스는 모두 붙어 있다(origin/main 확인). 빠지면 캐시된 context 의 타이머 · 리스너가 다른 클래스 실행 중에도 공유 DB · 브로커를 고치고(D-032 계획서 §2-3b 기록), 실패는 원인 클래스가 아닌 뒤 클래스에서 난다. 처리: opt-in 프로퍼티(또는 리스너 수동 `start()`)가 있는 파일에 `@DirtiesContext` 가 없으면 위반으로 세는 규칙 + self-test | 블로그 29편(로드맵 28편) 작성 중 발견(2026-10-17) | ✅ 완료 ([#176](https://github.com/Kimgyuilli/PeekCart/pull/176)) |
+
+
+### 2026-10-17 D-080 사실 정정
+
+D-032 완료 행의 `TestcontainersConfiguration` 및 `@ServiceConnection @Bean` 설명을 정정한다.
+실제 구현은 `SharedContainers`가 static 컨테이너를 소유하고 `ConnectionDetails`만 빈으로
+노출한다. Spring bean으로 컨테이너를 노출하지 않는다(ADR-0028 Update Log).
+기동 비용과 셔플 최초 발견 이력의 정정 근거는 [D-080 원본 재집계](../evidence/D-080/README.md)다.
+과거 완료 행의 원문은 이력으로 보존하며 이 추기는 D-080의 최종 병합·완료 선언이 아니다.
