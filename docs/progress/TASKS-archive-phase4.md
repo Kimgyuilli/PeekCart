@@ -1,5 +1,8 @@
 # PeekCart — Task 관리 (Phase 4 아카이브)
 
+> 2026-10-17 D-073 사실 정정은 이 문서 끝의 정정 추기를 함께 읽는다.
+
+
 > ⚠️ **아카이브 문서**: 2026-09-30 분리 (D-052). 종결된 Phase 4 섹션과 진입 전 부채(버킷 1)·보류(버킷 3) 섹션을 `docs/TASKS.md` 에서 원문 그대로 옮겼다. 이후 수정하지 않는다.
 > 현행 task 추적은 `docs/TASKS.md`, 완료된 D- 행은 `docs/progress/TASKS-done.md`, Phase 1~3 은 `docs/progress/TASKS-archive-phase1-3.md`.
 
@@ -76,3 +79,13 @@
 | ~~L-013~~ | ~~주문 *상태 전이* 동시성(`Order @Version` 부재)~~ | **✅ 해소 (2026-08-13, [#84](https://github.com/Kimgyuilli/PeakCart/pull/84))** — 게이트대로 실측 선행. `payment.completed` 소비 ↔ 타임아웃 취소를 두 EntityManager 가 같은 스냅샷을 읽도록 강제한 **결정적** 재현으로 양방향 lost update 확증(취소 선커밋→`PAYMENT_COMPLETED`, 결제 선커밋→`CANCELLED`) → `@Version` 승격 + 충돌 정책 확정. 상세: 계획서 §5.1 |
 
 상세·승격 시 동반 결정: 로드맵 §4.
+
+---
+
+## 2026-10-17 역사 기록 정정 (D-073)
+
+D-002 행의 GKE 실측은 #120이고 #119는 하네스다. 당시 MySQL CPU도 관찰로 배제했으나,
+낮은 VU 표본을 천장 상태에 일반화한 것이 문제였다. MySQL 상한 변경 대조는 없었다.
+L-007 행의 역전은 이동 뒤 새로 생긴 것이 아니다. `7cadfa0` 모놀리스 주문 트랜잭션부터
+있던 역전이 Product consumer 경로에도 이어졌다. 완료 처분 자체는 바꾸지 않는다.
+[원본 대조 근거](evidence/d073-source-corrections.md).

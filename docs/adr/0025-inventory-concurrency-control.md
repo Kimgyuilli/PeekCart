@@ -1,5 +1,8 @@
 # ADR-0025: 재고 동시성 제어 — 분산 락 제거, `@Version` + jitter 재시도
 
+> 2026-10-17 D-073 사실 정정은 이 문서 끝의 정정 추기를 함께 읽는다.
+
+
 - **Status**: Accepted
 - **Date**: 2026-09-18
 - **Deciders**: Kimgyuilli
@@ -153,3 +156,14 @@ consumer 계층에서 productId 정렬 순으로 다중 락을 선획득한 뒤 
 - 재현 테스트: `StockReservationLockBoundaryIntegrationTest` ·
   `DistributedLockLeaseExpiryIntegrationTest` · `StockConflictRetryPolicyTest`
 - `docs/learning/09-distributed-lock-optimistic-lock.md` (이 결정으로 갱신 대상)
+
+---
+
+## 2026-10-17 사실 정정 (D-073)
+
+Context의 “표면 이동 후 역전”은 새 역전이 이동 뒤 생겼다는 뜻이 아니다. 도입 당시부터 존재한 역전이 이어졌다는 뜻으로 정정한다.
+`7cadfa0` 도입 당시부터 `@Transactional OrderCommandService` 안에서 adapter를 거쳐
+Facade가 호출되어 unlock이 바깥 트랜잭션 커밋보다 앞섰다. 기존 역전이 Product 예약
+consumer 경로로 이어진 것이다. Context·References의 측정 세션은 #120이며 #119는
+측정 하네스다. Decision은 변경하지 않는다.
+[원본 코드·git 대조](../progress/evidence/d073-source-corrections.md).
