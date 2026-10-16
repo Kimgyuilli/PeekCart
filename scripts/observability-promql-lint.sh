@@ -352,6 +352,34 @@ PYEOF
         run_case "승인 장기 미결 $mutation 변이" "$ST_TMP/approval-$mutation.yml"
     done
 
+    # D-070: 삭제·시간·operation·서비스·캐시 grouping·알림 분류 변이를 잡는다.
+    python3 - "$ST_SRC" "$ST_TMP" <<'PYEOF'
+import sys, os, yaml
+src, tmp = sys.argv[1:]
+for op in ("get", "evict"):
+    for mutation in ("deleted", "pending", "threshold", "operation", "application", "cache", "signal", "instant"):
+        doc = yaml.safe_load(open(src))
+        inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+        rules = inner["groups"][0]["rules"]
+        rule = next(r for r in rules if r["uid"] == "peekcart-cache-fallback-" + op)
+        a = next(d["model"] for d in rule["data"] if d["refId"] == "A")
+        if mutation == "deleted": rules.remove(rule)
+        elif mutation == "pending": rule["for"] = "1m"
+        elif mutation == "threshold": next(d["model"] for d in rule["data"] if d["refId"] == "B")["expression"] = "$A > 999"
+        elif mutation == "operation": a["expr"] = a["expr"].replace('operation="' + op + '"', 'operation="put"')
+        elif mutation == "application": a["expr"] = a["expr"].replace("product-service", "order-service")
+        elif mutation == "cache": a["expr"] = a["expr"].replace("application, cache", "application")
+        elif mutation == "signal": rule["labels"]["signal"] = "dlq"
+        elif mutation == "instant": a["instant"] = False
+        doc["data"]["alerts.yaml"] = yaml.safe_dump(inner, allow_unicode=True, sort_keys=False)
+        yaml.safe_dump(doc, open(os.path.join(tmp, "cache-" + op + "-" + mutation + ".yml"), "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    for op in get evict; do
+        for mutation in deleted pending threshold operation application cache signal instant; do
+            run_case "cache $op $mutation 변이" "$ST_TMP/cache-$op-$mutation.yml"
+        done
+    done
+
     # (15~17) dashboard 변수 드리프트 — alert 만 고치고 패널을 두면 거기서만 조용히 빠진다.
     #         조작 대상이 dashboard 이므로 alert 는 원본을 쓰고 디렉터리만 갈아끼운다.
     run_dash_case() {
@@ -412,7 +440,7 @@ PYEOF
     if [[ "$ST_FAIL" -ne 0 ]]; then
         exit 1
     fi
-    echo "observability-promql-lint self-test 28종 통과 (기존 19 + 승인 장기 미결 9)"
+    echo "observability-promql-lint self-test 44종 통과 (기존 19 + 승인 장기 미결 9 + cache fallback 16)"
     exit 0
 fi
 
@@ -470,6 +498,23 @@ PROMQL_KEYWORDS = {
 # 동일 메트릭을 두 selector 에 쓰고 한쪽에만 정상 matcher 를 붙이는 우회도 같은 부류다.
 # PromQL AST 파서를 들이는 대신, 우리가 소유한 alert 2종의 **식 형태 자체**를 못박는다.
 METRIC_ALERT_CONTRACTS = {
+    "peekcart-cache-fallback-get": {
+        "metric": "cache_fallback_total",
+        "apps": {"product-service"},
+        "expr": 'sum by (application, cache)(rate(cache_fallback_total{application=~"product-service", operation="get"}[5m]))',
+        "condition": "$A > 0",
+        "for": "10m",
+        "labels": {"signal": "cache-fallback-get", "operation": "get", "severity": "warning"},
+    },
+    "peekcart-cache-fallback-evict": {
+        "metric": "cache_fallback_total",
+        "apps": {"product-service"},
+        "expr": 'sum by (application, cache)(increase(cache_fallback_total{application=~"product-service", operation="evict"}[5m]))',
+        "condition": "$A >= 1",
+        "for": "0s",
+        "labels": {"signal": "cache-fallback-evict", "operation": "evict", "severity": "warning"},
+    },
+
     "peekcart-payment-approval-stale": {
         # D-060: requested_at 기준 age. 동일 DB를 읽는 replica는 합산하지 않는다.
         "metric": "payment_approval_oldest_age_seconds",
@@ -774,6 +819,12 @@ for group in alerts_doc.get("groups", []) or []:
         elif uid in METRIC_ALERT_CONTRACTS:
             contract = METRIC_ALERT_CONTRACTS[uid]
             expected_apps = contract["apps"]
+            if "labels" in contract:
+                if any((rule.get("labels") or {}).get(key) != value for key, value in contract["labels"].items()):
+                    violations.append(f"[D5-V6] cache fallback 라벨 계약 불일치: uid={uid}")
+                data_a = [d for d in (rule.get("data") or []) if d.get("refId") == "A"]
+                if len(data_a) != 1 or (data_a[0].get("model") or {}).get("instant") is not True or (data_a[0].get("model") or {}).get("range") is not False:
+                    violations.append(f"[D5-V6] cache fallback instant 평가 계약 불일치: uid={uid}")
             # age 자체가 대기시간이므로 임계·추가 pending 시간을 함께 고정한다.
             if "condition" in contract:
                 math_entries = [d for d in (rule.get("data") or [])
