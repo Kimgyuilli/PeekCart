@@ -11,8 +11,8 @@
 2. **역할**: signed internal token의 authenticated ADMIN principal ID가 서로 겹치지 않는 승인자/실행자 allowlist에 있어야 한다. 요청의 resolvedBy는 신원 근거로 사용하지 않는다. 증빙 수집, 승인, 실행, 거부 사유를 별도 불변 감사 행으로 남긴다. 같은 사람이 승인과 실행할 수 없다.
 3. **예약 대사**: Payment가 Product를 동기 호출하거나 DB를 직접 읽지 않는다. 기존 outbox/inbox 패턴으로 recovery.requested를 발행하고 Product가 orderId/recoveryId/approvalGeneration과 예약 status/version/fence snapshot을 회신한다. 응답이 요청 generation과 다르거나 원장과 모순되면 실행하지 않는다.
 4. **최종 경합 방어**: snapshot만으로 재고를 해제하지 않는다. 실행은 approval row lock+generation+현재 상태 조건으로 한 번만 인정하고, Product는 실행 이벤트가 지시한 reservation version/fence에 대해 최종 CAS를 적용한다. CAS 불일치는 수동 검토 상태로 남기며 다른 예약을 해제하지 않는다. reconciler와 경합하면 먼저 확정된 generation만 승리한다. historical FAILED도 별도 허용된 원인/dispatch deadline 검사 없이 일반 terminal을 재개하지 않는다.
-5. **감사 및 트랜잭션**: 증빙 원문/조회 시각/원장 식별자/해시/승인 principal/실행 principal/상태 전이/generation/이벤트 ID를 보존한다. 상태 변경과 실행 outbox는 같은 DB 트랜잭션이다. 재요청은 recoveryId 멱등키로 동일 결과를 반환한다.
-6. **배포/복구**: 먼저 양 서비스 additive DDL, 다음 소비자 및 새 inbox subscription의 replay DENY 정책, 마지막 운영 진입을 배포한다. 신규 메시지의 과거 임의 replay는 금지한다. 실패는 DLQ에서 원문과 감사 원장을 대조하고 새 generation의 새 요청으로만 재개한다. 구버전은 새 운영 진입 비활성 상태에서 유지 가능해야 한다.
+5. **감사 및 트랜잭션**: 증빙 원문/조회 시각/원장 식별자/해시/승인 principal/실행 principal/상태 전이/generation을 보존한다. 메시지 eventId는 기존 outbox/inbox 원장에 보존한다. 상태 변경과 실행 outbox는 같은 DB 트랜잭션이다. 재요청은 recoveryId 멱등키로 동일 결과를 반환한다.
+6. **배포/복구**: 먼저 양 서비스 additive DDL, 다음 소비자 및 새 inbox subscription의 replay DENY 정책, 마지막 운영 진입을 배포한다. 신규 메시지의 과거 임의 replay는 금지한다. 실패는 DLQ에서 원문과 감사 원장을 대조한다. 명시 false 결과는 새 generation과 재승인으로, 응답 유실은 같은 fence의 명시 재전달로 처리한다. 구버전은 새 운영 진입 비활성 상태에서 유지 가능해야 한다.
 
 ## 대안과 제한
 
@@ -25,18 +25,18 @@
 ## 미해결
 
 - 영구 404에 대한 신뢰 가능한 PG 발급 무과금 증빙 원천/형식.
-- request/reply와 실행 결과 확인 이벤트의 정확한 상태 머신/DDL/실패 후 재개 계약은 구현 전 코드 수준 설계로 확정한다. 이 ADR 초안은 아직 구현된 계약이 아니다.
+- 제한된 서버 조회 복구는 구현 및 로컬 집중 검증을 마쳤다. 추가 반례의 CI 검증, 필수 전체 gate와 독립 최종 검증은 대기하므로 Proposed를 유지한다.
 
 
-## 프로토콜 초안
+## 구현된 프로토콜
 
-- Payment `approval_recoveries`는 UUID recovery_id, order_id, expected_generation, expected_approval_status, pg_evidence, pg_evidence_digest, reservation_snapshot, status, approved_by, executed_by, timestamps를 가진다. 같은 주문의 활성 복구는 approval row lock 아래 한 건만 생성한다. `approval_recovery_audit`는 append-only 행으로 actor/action/reason/evidence digest를 보존한다. 원문은 DB에만 보존하고 응답·로그에는 paymentKey나 인증값을 노출하지 않는다.
-- 상태는 AWAITING_RESERVATION → READY_FOR_APPROVAL → APPROVED → EXECUTION_REQUESTED → COMPLETED이며, 불일치는 REJECTED이다. COMPLETED는 Product의 해제 성공 또는 이미 동일 복구가 적용된 결과를 수신한 뒤에만 기록한다. 응답 유실은 미완료 상태를 유지하며 임의 완료하지 않는다.
+- Payment `approval_recoveries`는 UUID id, order_id, generation, pg_status, pg_evidence, evidence_digest, reservation_version, reservation_status, status, approved_by, executed_by, created_at, resolved_at를 가진다. 같은 주문의 활성 복구는 approval row lock 아래 한 건만 생성한다. `approval_recovery_audit`는 append-only 행으로 actor/action/reason/evidence digest를 보존한다. 원문은 DB에만 보존하고 응답·로그에는 paymentKey나 인증값을 노출하지 않는다.
+- 상태는 AWAITING_RESERVATION → READY_FOR_APPROVAL → APPROVED → EXECUTION_REQUESTED → COMPLETED이며, snapshot 부적합은 REJECTED, 실행 뒤 Product 거절은 REVIEW_REQUIRED이다. COMPLETED는 Product의 해제 성공 또는 이미 동일 복구가 적용된 결과를 수신한 뒤에만 기록한다. 응답 유실은 미완료 상태를 유지하며 임의 완료하지 않는다.
 - `payment.approval-recovery.requested`는 recoveryId/orderId/generation을 담는다. Product가 기존 예약 행을 잠그고 snapshot을 생성하며 `stock.approval-recovery.snapshot`으로 status/fence/refundResult와 예약 변경 token을 반환한다. 예약 상태 변경 token은 모든 관련 상태 변화에 증가하는 version이며 신규 컬럼/기존 CAS 갱신을 함께 수정한다.
 - 승인 시에는 수집 증빙과 snapshot을 고정한다. 실행 시 PG를 다시 조회하고 같은 key/order/amount/무과금 결과인지 확인한다. 승인 이후 approval generation/status 또는 예약 token이 바뀌면 거부한다. 승인된 snapshot을 그대로 믿고 실행하지 않는다.
 - 실행 시 Payment의 generation을 증가시켜 기존 reconciler를 fence하고 복구 실행 outbox를 쓴다. Product의 `payment.approval-recovery.execute` 소비는 snapshot token/fence/status에 대한 CAS 성공일 때만 재고를 반환하고 결과를 발행한다. 성공 결과의 Payment 소비가 final ledger/audit를 확정한다. 각 소비자는 고유 group과 inbox로 중복을 제거하며, Product CAS가 별도 eventId 중복도 차단한다.
-- 실행 재조회가 DONE이면 failed/해제 이벤트를 발행하지 않는다. 기존 성공 승인/고아 승인 환불 경로로 전달하고 복구 요청은 대사 필요 상태로 남긴다. historical FAILED만 제한적으로 재개하는 domain 메서드는 dispatch_deadline과 MANUALLY_RESOLVED 원인을 모두 요구한다.
-- 배포 순서: Payment additive V13 복구/감사 테이블, Product 다음 migration 예약 version → 새로운 소비자와 topic/replay DENY 등록 → 운영 진입. 이벤트의 정확 필드와 전체 version 갱신 경로는 코드 조사로 재검증 후 구현한다.
+- 실행 재조회가 DONE이면 failed/해제 이벤트를 발행하지 않는다. 기존 성공 승인/고아 승인 환불 경로로 전달하고 기존 복구 요청은 REJECTED로 기록한다. historical FAILED만 제한적으로 재개하는 domain 메서드는 dispatch_deadline과 MANUALLY_RESOLVED 원인을 모두 요구한다.
+- 배포 순서: Payment additive V13 복구/감사 테이블, Product V12 예약 version/recovery_id → 새로운 소비자와 topic/replay DENY 등록 → 운영 진입. 네 이벤트의 필드는 common DTO로 정의했고 6개 native CAS와 entity @Version 경로를 실제 MySQL에서 검증했다.
 
 ### 경합 전제 추가
 
