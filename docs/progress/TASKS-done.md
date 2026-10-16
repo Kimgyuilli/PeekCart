@@ -1,5 +1,8 @@
 # PeekCart — 완료된 작업 (D- 행 아카이브)
 
+> 2026-10-17 D-073 사실 정정은 이 문서 끝의 정정 추기를 함께 읽는다.
+
+
 > `docs/TASKS.md` §개발 부채 / 작업 표에서 완료된 행을 옮겨 둔다. 2026-09-30 분리 (D-052).
 >
 > **추가 규칙**: 행이 완료되면 PR 링크를 달고 상태를 `✅` 로 바꾼 뒤, 이 표 **맨 아래**에 붙이고 `docs/TASKS.md` 에서 지운다(`/ship` Step 8 · `/done`). 행 본문은 요약하지 않는다. ADR 이 D- 번호로 행의 근거를 가리킨다.
@@ -65,3 +68,12 @@ D-001(✅), D-005(✅), D-006(✅), D-007(✅), D-008(✅), D-009(✅), D-010(�
 | D-079 | Infra / Kustomize | **`k8s/overlays/gke-d002a` 가 기본 `kubectl kustomize` 로 렌더되지 않는다** — `../../base/*.yml` 을 파일로 직접 참조해 kustomize root 이탈 제한에 걸린다(2026-10-15 현재 트리에서 재확인: 기본 FAIL · `--load-restrictor LoadRestrictionsNone` OK). #129 가 "구조 수정은 범위 밖"으로 남기고 렌더 명령에 플래그를 명시하는 것으로 우회했다. 같은 구조의 측정 overlay `gke-d002bc` · `gke-d002a-mysql-500m` · `gke-d002a-mysql-2000m` 도 기본 렌더 FAIL(같은 날 확인) | 블로그 28편(로드맵 27편) 작성 중 재확인(2026-10-15) · 출처 PHASE4 "D-026 배속 재측정" 선재 결함 | ✅ 완료 ([#176](https://github.com/Kimgyuilli/PeekCart/pull/176)) |
 | D-081 | Testing / Lint | **`integration-test-container-lint.sh` ITC-006 이 리스너를 수동 기동하는 테스트를 보지 못한다** — 규칙은 문자열 리터럴 `app.kafka.listener.enabled=true` 가 있는 파일만 검사한다. `order-service` `DlqReplayEntrypointIntegrationTest` 는 프로퍼티 없이 `@BeforeEach` 에서 `KafkaListenerEndpointRegistry` 의 `dlq-*` 컨테이너를 `MessageListenerContainer::start` 로 켜고, 재실패분이 실제 `.dlq` 를 거쳐 `DeadLetterConsumer` 에 소비되는 것을 기다리지만 `awaitListenerAssignment` 를 호출하지 않는다(origin/main `cb8056d` 기준). D-058 이 막은 "할당 전 발행" 경로가 이 클래스에 남는다. 같은 규칙은 `"app.kafka.listener.enabled = true"`(공백) · `app.kafka.listener.enabled:true` 표기도 놓친다. 처리: 헬퍼 호출 추가 + 규칙을 `.start()` 수동 기동 · 표기 변형까지 확장하고 self-test 픽스처 추가 | 블로그 29편(로드맵 28편) 작성 중 발견(2026-10-17) | ✅ 완료 ([#176](https://github.com/Kimgyuilli/PeekCart/pull/176)) |
 | D-082 | Testing / Lint | **자율 writer opt-in 클래스의 `@DirtiesContext(AFTER_CLASS)` 가 검사되지 않는다** — `CLAUDE.md` · ADR-0029 D3 는 `app.scheduling.enabled=true` · `app.kafka.listener.enabled=true` 로 writer 를 켠 테스트가 `@DirtiesContext(AFTER_CLASS)` 로 수명을 가두도록 정했으나 lint 규칙이 없다(ADR-0029 "게이트 우회 lint 화는 확산 후 재판단" 이후 판단 기록 없음). 현재 opt-in 16클래스는 모두 붙어 있다(origin/main 확인). 빠지면 캐시된 context 의 타이머 · 리스너가 다른 클래스 실행 중에도 공유 DB · 브로커를 고치고(D-032 계획서 §2-3b 기록), 실패는 원인 클래스가 아닌 뒤 클래스에서 난다. 처리: opt-in 프로퍼티(또는 리스너 수동 `start()`)가 있는 파일에 `@DirtiesContext` 가 없으면 위반으로 세는 규칙 + self-test | 블로그 29편(로드맵 28편) 작성 중 발견(2026-10-17) | ✅ 완료 ([#176](https://github.com/Kimgyuilli/PeekCart/pull/176)) |
+
+---
+
+## 2026-10-17 역사 기록 정정 (D-073)
+
+D-002/D-029 행의 주문 경로 GKE 실측 PR은 #120이며 #119는 하네스다.
+D-002의 “CPU는 product-service” 서술도 정정한다. MySQL CPU는 낮은 VU 관찰로 배제됐고,
+MySQL 상한 변경 대조는 하지 않았다. 높은 VU 천장의 CPU 병목을 배제한 근거는 아니었다.
+기존 부채의 완료 상태는 변경하지 않는다. [원본 대조 근거](evidence/d073-source-corrections.md).
