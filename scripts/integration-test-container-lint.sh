@@ -9,7 +9,8 @@
 #   ADR-0028 이 컨테이너 수명을 per-class 에서 모듈 싱글톤으로 바꿨다. 그런데 이 규약은
 #   코드로 강제하지 않으면 **반년 뒤 원상복구된다** — 새 통합 테스트가 관행대로
 #   @Container 를 선언하면 그 클래스만 조용히 컨테이너를 다시 띄우고, CI 는 초록이며,
-#   :order-service:test 는 다시 우상향한다. 실측으로 그 비용이 클래스당 약 31초였다.
+#   :order-service:test 의 반복 기동 비용이 다시 늘어난다. task 시간과 XML time의 차이에는
+#   종료 대기도 포함되므로 클래스당 기동 비용으로 환산하지 않는다(D-080).
 #
 #   화이트리스트는 **사유와 함께** 이 파일 안에 둔다. 목록만 있으면 왜 예외인지 모르는 채
 #   항목이 늘어난다.
@@ -55,8 +56,8 @@ MODULES = sys.argv[2:]
 # 화이트리스트: 파일명 -> 사유. 사유 없는 항목은 허용하지 않는다.
 ALLOWED = {
     "OrderCursorQueryPlanTest.java":
-        "mysql:8.0.46 을 의도적으로 고정한다 — EXPLAIN 실행계획이 마이너 버전에 따라 달라져 "
-        "싱글톤(mysql:8.0)과 공유할 수 없다.",
+        "EXPLAIN 전용 DataJpaTest 는 MySQL 만 필요하다. SharedContainers 를 import 하면 "
+        "불필요한 Kafka/Redis 까지 기동되므로 같은 mysql:8.0.46 의 독립 컨테이너를 허용한다.",
 }
 
 violations = []
