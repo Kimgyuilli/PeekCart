@@ -57,14 +57,14 @@ class DlqTopologyContractTest {
     }
 
     @Test
-    @DisplayName("소비 구독 총 23개 — 운영 코드의 @KafkaListener 수와 같다")
+    @DisplayName("소비 구독 총 27개 — 운영 코드의 @KafkaListener 수와 같다")
     void consumptionSubscriptionCountMatchesListeners() {
         int total = 0;
         for (PeekcartService service : PeekcartService.values()) {
             total += DlqTopology.consumptionSubscriptions(service).size();
         }
 
-        assertThat(total).isEqualTo(23);
+        assertThat(total).isEqualTo(27);
         assertThat(DlqTopology.consumptionSubscriptions(PeekcartService.ORDER)).hasSize(6);
         assertThat(DlqTopology.consumptionSubscriptions(PeekcartService.PRODUCT)).hasSize(8);
         assertThat(DlqTopology.consumptionSubscriptions(PeekcartService.PAYMENT)).hasSize(8);

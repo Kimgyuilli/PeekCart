@@ -34,7 +34,7 @@ class ReplayPolicyRegistryTest {
     }
 
     @Test
-    @DisplayName("소비쌍은 23개다 — 토픽 11종이 아니다")
+    @DisplayName("소비쌍은 27개다 — 토픽 수와 다르다")
     void pairCountIsNotTopicCount() {
         assertThat(ReplayPolicyRegistry.topologyPairs()).hasSize(27);
         assertThat(ReplayPolicyRegistry.declaredPairs()).hasSize(27);
