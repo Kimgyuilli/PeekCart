@@ -103,6 +103,9 @@ check_control("대조군: 타임아웃 아닌 단언 실패", lambda: raise_(Ass
 check_control("대조군: 결함이 검사에 안 닿음(성공)", lambda: None, False)
 
 # Real lingering F must remain last, and ledger/identity assertions need negative probes.
+if m.LINGERING_SCENARIOS != ["f"]:
+    print("  FAIL [실제 F lingering 등록 누락]")
+    fails += 1
 check("실제 F 뒤에 E 금지", ["f", "e"], False)
 check("실제 F 꼬리", ["e", "f"], True)
 
