@@ -31,6 +31,12 @@ public class ProductPriceCache {
     @Column(name = "unit_price", nullable = false)
     private long unitPrice;
 
+    @Column(name = "product_name")
+    private String productName;
+
+    @Column(name = "product_status")
+    private String productStatus;
+
     @Column(name = "source_version", nullable = false)
     private long sourceVersion;
 

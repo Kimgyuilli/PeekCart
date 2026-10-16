@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CartCommandService {
 
     private final CartRepository cartRepository;
+    private final CartDetailReader cartDetailReader;
     private final ProductPriceCacheRepository priceCacheRepository;
 
     /**
@@ -40,7 +41,7 @@ public class CartCommandService {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseGet(() -> cartRepository.save(Cart.create(userId)));
         cart.addItem(command.productId(), command.quantity());
-        return CartDetailDto.from(cart);
+        return cartDetailReader.read(cart);
     }
 
     /**
@@ -52,7 +53,7 @@ public class CartCommandService {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new OrderException(ErrorCode.ORD_006));
         cart.updateItemQuantity(cartItemId, command.quantity());
-        return CartDetailDto.from(cart);
+        return cartDetailReader.read(cart);
     }
 
     /**
