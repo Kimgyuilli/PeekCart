@@ -312,3 +312,5 @@ erDiagram
 - Product V11: `stock_reservations.approval_fenced BOOLEAN NOT NULL DEFAULT FALSE`. 상태에 `APPROVAL_HELD`를 추가한다. 이 영속 flag는 성공 환불 시 HELD/CONFIRMED 재고를 복구할 권한을 legacy 예약과 구분한다. 해제 CAS와 재고 증가/환불 marker는 같은 트랜잭션이다.
 - Payment V12: `payment_approvals.dispatch_deadline DATETIME(6) NULL`. 새 접수는 항상 기한을 기록하고 `WAITING_STOCK → READY → CLAIMED`를 거친다. 기존 CLAIMED/UNRESOLVED는 NULL이어도 조회 기반 확정을 계속한다. 신규 상태는 기존 VARCHAR 상태 컬럼을 사용한다.
 - `order_id` UNIQUE는 그대로 주문당 승인 1건을 보장한다. 새 dispatcher와 회신/timeout 처리는 원장 행 잠금을 공유한다. CLAIMED의 generation은 조회 claim마다 증가하며 과거 실행자의 확정을 거부한다.
+
+승인 보호 후속 보강은 추가 마이그레이션 없이 `dispatch_deadline`을 신규 fence 접수 표지로 재사용한다. 신규 미결의 수동 감사는 `resolved_by`·`resolution_reason`만 기록하고 `resolved_at=NULL` 및 `UNRESOLVED`를 유지한다(see ADR-0035).

@@ -607,3 +607,9 @@ Redis 장애 시:
 일반 취소/lease sweeper는 RESERVED만 회수한다. HELD는 확정된 `payment.failed` 또는 성공 환불에서 해제한다. `payment.completed`는 HELD를 CONFIRMED로 확정하며, 새 fence를 거친 CONFIRMED도 성공 환불이면 한 번 복구된다. legacy CONFIRMED는 이 복구 대상에서 제외한다. 환불 성공과 completed가 역전돼도 재고를 다시 잡지 않는다. 미확정 승인/실패 환불을 시간만으로 풀지 않는다.
 
 배포와 롤백에는 승인 접수 중지 및 기존 처리 drain이 필요하다. 구 Payment와 혼합 실행하면 fence 없이 승인하는 경로가 남으므로 무중단 rolling 호환을 보장하지 않는다(ADR-0034 배포 절차).
+
+### 보호 승인 운영 인수와 경보 (see ADR-0035)
+
+신규 승인 원장(`dispatch_deadline` non-null)의 수동 처리는 actor/reason을 기록하고 `UNRESOLVED` 및 조회 복구를 유지한다. 기존 원장(NULL deadline)의 수동 종결 정책은 유지한다.
+`payment_approval_oldest_age_seconds`는 요청 시각부터의 나이를 측정한다. WAITING_STOCK·READY·CLAIMED·UNRESOLVED 중 최장 대기가 900초를 넘으면 `max by(application)`과 `for: 0s`로 알린다. 알림이나 시간 경과만으로 보호를 해제하지 않는다.
+PG 호출 전 중단 후 조회가 영구 404이면 `UNRESOLVED/APPROVAL_HELD`가 무기한 남을 수 있다. 외부 대사 증빙으로 강제 종결·재고 해제하는 진입점은 미구현이며 후속 운영 계약이 필요하다.
