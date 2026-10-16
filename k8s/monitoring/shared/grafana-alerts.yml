@@ -117,7 +117,7 @@ data:
             annotations:
               summary: "PeekCart 타겟 스크랩 실패 (up == 0) — {{ $labels.service }}"
               description: "{{ $labels.service }} 의 타겟을 Prometheus 가 스크랩 시도했으나 실패 (네트워크, 인증, /actuator/prometheus 500 등). up 시계열은 존재하되 0. Error Rate 패널의 강제 0% 표시와 구분하는 신호."
-          - uid: peekcart-scrape-absent-notification-service
+          - uid: peekcart-scrape-absent-notification
             title: "Peekcart Metrics Scrape Absent — notification-service"
             condition: B
             data:
@@ -445,3 +445,62 @@ data:
             annotations:
               summary: "PeekCart refresh token reuse 감지 — {{ $labels.application }}"
               description: "무효화되었거나 이미 로테이션된 refresh token 이 재제시되었습니다. 해당 family 는 전체 무효화되고 access token 은 family deny 로 차단됩니다(ADR-0013 D4). 정상 동시요청은 grace 창에서 흡수되므로, 이 카운터가 오르는 것은 탈취 또는 클라이언트 토큰 관리 결함을 뜻합니다."
+
+          - uid: peekcart-cache-fallback-get
+            title: Product Cache Fallback (get)
+            condition: B
+            data:
+            - refId: A
+              relativeTimeRange:
+                from: 300
+                to: 0
+              datasourceUid: prometheus
+              model:
+                expr: sum by (application, cache)(rate(cache_fallback_total{application=~"product-service", operation="get"}[5m]))
+                instant: true
+                range: false
+            - refId: B
+              relativeTimeRange:
+                from: 300
+                to: 0
+              datasourceUid: __expr__
+              model:
+                type: math
+                expression: $A > 0
+            for: 10m
+            labels:
+              severity: warning
+              signal: cache-fallback-get
+              operation: get
+            annotations:
+              summary: Product cache get 실패 — {{ $labels.cache }}
+              description: Redis 조회 fallback이 10분 지속되었습니다. DB 부하와 Redis 연결을 확인하십시오. docs/runbooks/redis-cache-fallback.md §3
+          - uid: peekcart-cache-fallback-evict
+            title: Product Cache Fallback (evict)
+            condition: B
+            data:
+            - refId: A
+              relativeTimeRange:
+                from: 300
+                to: 0
+              datasourceUid: prometheus
+              model:
+                expr: sum by (application, cache)(increase(cache_fallback_total{application=~"product-service", operation="evict"}[5m]))
+                instant: true
+                range: false
+            - refId: B
+              relativeTimeRange:
+                from: 300
+                to: 0
+              datasourceUid: __expr__
+              model:
+                type: math
+                expression: $A >= 1
+            for: 0s
+            labels:
+              severity: warning
+              signal: cache-fallback-evict
+              operation: evict
+            annotations:
+              summary: Product cache evict 실패 — {{ $labels.cache }}
+              description: 캐시 무효화가 실패했습니다. 상세 30분/목록 10분 stale 창을 즉시 확인하십시오. docs/runbooks/redis-cache-fallback.md §4

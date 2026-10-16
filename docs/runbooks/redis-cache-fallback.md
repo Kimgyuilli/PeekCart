@@ -54,9 +54,15 @@ sum by (cache, result) (rate(cache_gets_total[5m]))
 **상세 조회는 캐시를 둘 탄다.** 무응답 Redis 구간에서 상세의 타임아웃 예산은 목록의 2배
 (4×500ms = 2s)다 — 상세만 유독 느리다는 신고는 이 구조 때문일 수 있다(ADR-0026 Consequences).
 
-### 2.1 수동 감시 계약 (alert 도입 전)
+### 2.1 자동 alert와 보조 수동 감시
 
-`cache_fallback_total` 기반 자동 alert 은 아직 없다(계획 §6 M4). 그 전까지는 **수동 감시**다.
+`k8s/monitoring/shared/grafana-alerts.yml`의 `peekcart-cache-fallback-get`은 get rate가
+10분 지속되면, `peekcart-cache-fallback-evict`는 5분 increase가 1 이상이면 추가 대기 없이
+발화합니다. "즉시"는 다음 1분 평가 주기에서 pending 없이 판정한다는 뜻입니다.
+두 규칙은 product-service만 평가하고 `application, cache`별로 집계합니다.
+`signal=cache-fallback-get`/`cache-fallback-evict`와 operation 라벨로 경로를 구분합니다.
+실제 외부 채널 전달은 기존 contact point/notification policy 운영 범위이며 여기서 보장하지 않습니다.
+put은 아래 수동 감시를 유지합니다. 실제 series 기반 발화/해소 검증은 D-063에서 추적합니다.
 
 | 신호 | 임계 | 판정 | 조치 |
 |---|---|---|---|
