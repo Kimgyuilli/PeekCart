@@ -111,10 +111,12 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         // 종전에는 여기서 업무 컨테이너를 stop() 했으나 **그것으로는 막히지 않았다**. groupId 가
         // 상수라 캐시된 다른 context 의 consumer 가 같은 그룹으로 파티션을 넘겨받는다(ADR-0029
         // §Context). 막는 지점은 per-context stop 이 아니라 factory 의 autoStartup 이다.
-        listenerRegistry.getListenerContainers().stream()
+        var dlqContainers = listenerRegistry.getListenerContainers().stream()
                 .filter(container -> container.getListenerId() != null
                         && container.getListenerId().startsWith(DeadLetterContainerGuard.LISTENER_ID_PREFIX))
-                .forEach(org.springframework.kafka.listener.MessageListenerContainer::start);
+                .toList();
+        dlqContainers.forEach(org.springframework.kafka.listener.MessageListenerContainer::start);
+        awaitListenerAssignment(dlqContainers);
         // lockAtLeastFor(PT4S) 가 남아 있으면 두 번째 이후의 reconcile() 호출이 통째로 건너뛰어지고,
         // 그 테스트는 "아무 일도 안 일어났다" 를 관측하며 green 이 된다.
         jdbcTemplate.update("UPDATE shedlock SET lock_until = NOW() - INTERVAL 1 DAY WHERE name = ?",
