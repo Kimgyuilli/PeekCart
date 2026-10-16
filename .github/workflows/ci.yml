@@ -64,6 +64,8 @@ jobs:
           # 규약을 코드로 강제하지 않으면 새 테스트가 관행대로 @Container 를 선언하고,
           # 그 클래스만 조용히 컨테이너를 다시 띄운다 — CI 는 초록이고 테스트 시간만 우상향한다.
           # 실측으로 그 비용이 클래스당 약 31초였다.
+          bash scripts/mysql-image-lint.sh
+          bash scripts/mysql-image-lint.sh --self-test
           bash scripts/integration-test-container-lint.sh
           bash scripts/integration-test-container-lint.sh --self-test
           # D-056: 스케줄러 풀이 4라 cron/fixedRate 잡이 자기 자신과 겹칠 수 있다(D-024).
@@ -568,9 +570,8 @@ jobs:
           set -euo pipefail
           IMG="${{ steps.img.outputs.name }}"
           docker tag ${{ matrix.service }}:ci "$IMG:${{ github.sha }}"
-          push_out="$(docker push "$IMG:${{ github.sha }}")"
-          echo "$push_out"
-          DIGEST="$(printf '%s\n' "$push_out" | sed -nE 's/^.*digest: (sha256:[0-9a-f]{64}).*$/\1/p' | tail -1)"
+          docker push "$IMG:${{ github.sha }}" 2>&1 | tee "$RUNNER_TEMP/ghcr-push.log"
+          DIGEST="$(sed -nE 's/^.*digest: (sha256:[0-9a-f]{64}).*$/\1/p' "$RUNNER_TEMP/ghcr-push.log" | tail -1)"
           if [[ ! "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
             echo "::error::[L-016a] ${IMG} push digest 산출 실패 — D-016 image promotion 계약 위반" >&2
             exit 1

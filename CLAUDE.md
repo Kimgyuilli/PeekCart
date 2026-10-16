@@ -150,7 +150,8 @@ com.peekcart.global.{config|exception|jwt|response}
 
 - 컨테이너는 **모듈 싱글톤**이다. `@SpringBootTest` 에 `@Import(SharedContainers.class)` 를 붙이고
   `@Testcontainers` / `@Container` 를 **선언하지 않는다**. 그 어노테이션 쌍의 수명이 곧 per-class 라,
-  클래스마다 컨테이너·Flyway·Spring context 를 다시 만든다(실측 클래스당 약 31초)
+  클래스마다 컨테이너·Flyway·Spring context 를 다시 만든다. 과거 task 시간에서 XML time을
+  뺀 값에는 JVM 종료 대기도 포함되므로 클래스당 기동 비용으로 환산하지 않는다(ADR-0028 Update Log)
 - Spring 컨텍스트가 없는 테스트는 `SharedContainers.KAFKA` 등 정적 필드를 직접 읽는다
 - 예외는 `scripts/integration-test-container-lint.sh` 의 `ALLOWED` 에 **사유와 함께** 등록한다.
   목록만 있으면 왜 예외인지 모르는 채 항목이 늘어난다

@@ -88,7 +88,7 @@ public class OrderController {
                 OrderDetailResponse.from(orderQueryService.getOrder(loginUser.userId(), id))));
     }
 
-    @Operation(summary = "주문 취소", description = "주문을 취소하고 차감된 재고를 복구한다.")
+    @Operation(summary = "주문 취소", description = "주문을 취소한다. 재고 복구는 order.cancelled 이벤트를 통한 Product 예약 해제로 비동기 처리되며, 응답 시점에 완료를 보장하지 않는다.")
     @PostMapping("/{id}/cancel")
     public ResponseEntity<Void> cancelOrder(
             @CurrentUser LoginUser loginUser,
