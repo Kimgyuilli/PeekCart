@@ -48,7 +48,11 @@ class CartDetailReaderTest {
             var item = reader.read(cart).items().get(0);
             assertThat(item.productName()).isEqualTo("상품 이름");
             assertThat(item.productStatus()).isEqualTo(status);
-            Boolean expected = status.equals("ACTIVE") ? true : status.equals("FUTURE_STATUS") ? null : false;
+            Boolean expected = switch (status) {
+                case "ACTIVE" -> Boolean.TRUE;
+                case "FUTURE_STATUS" -> null;
+                default -> Boolean.FALSE;
+            };
             assertThat(item.available()).isEqualTo(expected);
         }
     }
