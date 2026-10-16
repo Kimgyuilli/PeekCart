@@ -193,3 +193,48 @@ D-075는 사용자 보류. D-064/D-065/D-078은 제외·열림 유지. 현재 �
 - A는 대기 중 foundation을 새 main에 통합해 #177 최신 CI 실행 준비. 원격 포함 확인 후 #178을 통합 대체로 닫고 PR138 원문에 D080 정정을 append. 앞선 head의 green은 재사용하지 않음.
 - D063 run2는 transient 전체 Normal 복귀를 통과한 뒤 sustained 관측 진행 중. heavy 슬롯은 B session80307이 계속 독점. 성공/완료 판정 아직 없음.
 - Saga 최신544f983의 lingering F 등록 명시 가드 추가까지 독립 소스 확인. 실제 CI는 대기.
+
+- foundation #177 최신 head `cb58da0944fc49ee14756f307328662f8bcca39a`, base3e1ba64, CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38981159191 진행. D083/068/080/073/077 통합. 기존 검토5466 대비 소스는 상위 계획/audit 기록 추가와 이미 검토한 동일 publish 진단이며 독립 증분 확인; 실제 최신 CI 산출물은 아직 대기.
+- #178은 원격177의 b2a090d 포함(behind0/ahead22) 확인 후 통합 대체로 CLOSED, mergedAt null. 병합 완료로 계산하지 않는다.
+- PR138 본문은 기존 원문 prefix를 보존한 채 D080 정정 추기 완료. 셔플 전 순차 run1/3/5에서 결함4가 이미 발생한 사실과 약515초 종료 꼬리 구분, 원격 a559fde의 원본 증거 링크를 기록했다. 기존 기록을 덮어쓰지 않았다.
+- app7607의 ADR 인덱스 및 jitter 문구도 독립 소스 대조 완료. Saga는 최신 main과 root835dd92 기록 통합 후 두 번째 Draft PR CI 준비 허용. 실제 D063 실험과 E2E가 미완이며 foundation 후 base 변경 시 재검증한다.
+- D084 독립 초안 검토에서 strict DONE 후 두 번째 느슨한 재조회가 negative 실패해제로 우회할 수 있는 경로를 발견해 수정 반환. 응답 유실의 멱등 회수·유효 principal 거절 감사·명시 false 후 재대사 및 동일 payload 재전송의 generation/version 경합 조건을 보강 중. 아직 컴파일/실DB 검증 전이므로 안전복구 부분 완료도 주장하지 않는다.
+- D075는 사용자 보류 이후 구현·원인분리 실험을 수행하지 않았다. 목표 처리율/backlog 수용 기준을 결정해야 재개할 수 있다.
+
+- Saga/monitoring Draft https://github.com/Kimgyuilli/PeekCart/pull/180, head `e417b8a7f1d08e14fc27ed16738845b0c6612035`, base3e1ba64, CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38981330710 진행. active PR CI는177/180 두 개. D063 실제 발화/복구 결과는 아직 대기.
+- root 기록에 언급된 ADR0036은 미병합 app lane7607에만 존재해 Saga consistency 사전 검사에서 missing 경고. PR 본문에 공개했고 다음 base 갱신 때 로컬 문서 보완 ee9325c를 포함한다. 필수 guard 실패를 무시하지 않는다.
+- 아카이브 실제 원격 조회 preview: 기존 #175/#176의 계획6건 이동 대상, 상위계획은177 미병합으로 진행중. sandbox 네트워크 없는 첫 조회의 UNKNOWN은 미병합 사실로 채택하지 않았다. main 복구 확인 뒤 이동/인덱스 갱신 예정.
+
+- D084 소스296a82c의 독립 재검토에서 DONE 추가 조회 제거, 중복 ID/결과 회수, 분리 거절 감사 누락 해소 확인. generation/version을 보존하는 resume/retry 경로도 소스상 추가 차단점 없음. 실제 테스트는 미실행이라 최종 PASS가 아니다.
+- D084 foundation cb58 통합 후 최신 `5d9e1bf909870dd538ee231d07717d41f8933d2c` clean. 현재 미병합 foundation 기반임을 명시. run2 종료/cleanup 이후 common topology/replay, Payment 복구/기존 승인, Product version/Saga 집중 실제 회귀 큐.
+- B에게 D084의 Layer1 docs03 운영 API 절, docs05 복구/감사/stock version 및 RECOVERY_PENDING 설명, ADR index0040 Proposed 행 편집을 독점 위임. app lane의 ADR0036/37 및 기존 문구를 통합 시 보존한다.
+- D063 run2에서 정본10m를 유지한 DLQ/get 발화도 관측. compensation15m 및 최종 실제 정상값 복귀는 대기. recovery branch의 경보 변경은 approval-stale 규칙 하나뿐이며 기존 D063 대상3개 규칙 전체동일 확인. 이후 D070 cache2 통합 뒤 대상5규칙 불변을 재확인해야 한다.
+
+## 복구 main 검증 (2026-10-17)
+
+- main3e1ba64의 CI38981041166 overall SUCCESS, 필수 gate 및 6개 publish 모두 SUCCESS(root 실제 API 조회). 실제 checkout3e1ba64, XML228/1292tests 실패·skip0, 양 E2E A–E 동일mainSHA 성공을 독립 검증자가 확인했다. 원격 SHA/latest manifest 최종 대조는 진행 중.
+- 과거 payment unknown blob의 상세 원인은 여전히 미확정이다. 이번 진단 보존 변경의 main 배포 성공을 확인했으며, 원인 없는 실패 run 재실행을 하지 않았다.
+- 기존 완료 PR175/176 계획6건의 아카이브와 참조 정리를 root가 시작했다. 현재 범위의 부채 완료는 아직0이며 #177 최종 E2E/독립 검증 대기.
+
+- 복구 main 독립 최종 PASS: CI23jobs 모두 SUCCESS, 6서비스 공개GHCR SHA태그/latest manifest digest 및 config 동일. 일반 부채 병합 차단 해제. 원격 조회 시점 main3e1ba64 기준이며 이후 latest 이동과 구분한다.
+
+| 서비스 | main3e1ba64 SHA/latest 공통 digest |
+|---|---|
+| gateway | `sha256:0e9339a679aa6949cb1be378aa4eaefa9dd073de910c16e4668f9dee6ec0db00` |
+| user-service | `sha256:6b3e427300502cd080309e7607ccb6c674d663a2935aea365f1c85d113ac2157` |
+| product-service | `sha256:90feb3e02ae3a0a6b80dba2a987a7e497caa01664aec624bcaad0023740e7151` |
+| order-service | `sha256:4e25807ebb20584a62f39d9a89fdafd3709ba1d38caa060f8163ce39b7fbeeca` |
+| payment-service | `sha256:6c814e661e8d22b220f985c92489a2c8ee056c81efac390edf7d561f3b54267e` |
+| notification-service | `sha256:8ee2fc6a6b292e689294ca6cc7339dc0b3a617f1c5d3b3b65f0be5e3cc18045d` |
+
+## 첫 부채 묶음 병합 (2026-10-17)
+
+- #177 headcb58da0/base3e1ba64 최종 독립 PASS. CI38981159191 필수17jobs/gate SUCCESS, 실제 checkout `4bde8cced2ff8b4ec43bc6a476bcda59ef4cbdbb`의 부모 일치, XML229/1296tests 실패·오류·skip0, 양E2E 동일checkout A–E/이미지 identity/음성 대조군 확인. PR138 정정과 a559 원본 permalink도 독립 readback.
+- root가 PR 본문에 증거를 기록한 뒤 정확 head 조건으로 #177 정상 merge. 병합 SHA `850b0d448ebc6e46524aa2576545b3d55c1ff9d6`, 시각2026-10-16T23:40:06Z. main CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38982636776 진행. 다음 병합과 D083/068/080/073/077 완료 기록은 이 main 검증 뒤 진행.
+- 기존 #175/#176 완료 계획6건(11파일)을 done/로 이동, 인바운드 참조1곳 갱신, done index89행/check 및 harness-context check 통과. 상위 orchestration은 진행중으로 유지.
+- 다음 앱6건과 Saga/monitor4건은 #180에 통합해 전체 테스트와 새 E2E를 함께 검증한다. 개별 계획·등급·증거는 유지. A local68246 통합 무충돌, D071 V13에 맞춰 E2E의 정확 migration집합에13 추가, step표시6종 정정. 기존180원격e417 CI는 유지하며 결과관측 후 최신base/기록/실험증거로 갱신한다.
+- D063 run2 exit1: 실제 rule.state=firing/instance.state=Alerting인데 파서가 instance firing을 기대해 sustained끝 assert 실패. 실제5rule 발화 원문은 있으나 healthy 복귀 미실행, 완료 아님. session80307 종료·project1792192171 ps-a0 cleanup 확인, 슬롯반환. 실제응답fixture로 파서계약 수정·독립검토 후 run3 필요.
+- heavy 슬롯을 B D084 집중검증으로 전환 승인(abbe001, --no-parallel/--max-workers=1/--no-daemon). D063 run3는 집중검증 종료·cleanup과 수정독립PASS 후 다시 배정. 두 실행 중첩 금지.
+
+- #180 기존 e417/base3e1 CI38981330710 독립 증거 PASS(후속 통합 head의 병합 승인은 아님). 실제checkout9c0834e 부모 일치, 필수17jobs/XML1292 실패·skip0, E2E 이미지·음성 대조군 확인. D061 F에서 실제 POST/ALREADY POST→GET/reconcile GET만/transient POST3 동일key, 소비자3곳 종착 및 UNRES 생산outbox0와 합성 소비 검증 구분 확인. D062 groupEmpty, 실제DLT p0o0 committed2→0 rewind 후 같은 원장 attempt2 확인. D62초/F122초/전체job12분5초로45분 상한 이내.
+- 진단 #179는 main 배포까지 확인되어 개별 P3를 완료하고 계획을 done/로 아카이브, index90행/check통과. foundation177은 별도로 새main 검증 대기이므로 아직 완료 이동하지 않았다.

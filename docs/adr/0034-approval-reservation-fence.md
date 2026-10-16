@@ -51,4 +51,8 @@ PG 전에 실제 재고 소유자의 회수와 경쟁하는 CAS가 완료된다.
 ## References
 
 - ADR-0012, ADR-0018, ADR-0023, ADR-0032
-- `docs/plans/D-060.md`
+- `docs/plans/done/D-060.md`
+
+## Update Log
+
+- 2026-10-17: 계획 아카이브 커밋 `2edcdb1`에 맞춰 D-060 참조 경로를 `docs/plans/done/D-060.md`로 갱신했다. 결정과 근거는 변경하지 않았다.
