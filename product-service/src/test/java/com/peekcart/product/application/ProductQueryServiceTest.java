@@ -90,6 +90,15 @@ class ProductQueryServiceTest {
                     PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(property))))
                     .isInstanceOf(com.peekcart.product.domain.exception.ProductException.class);
         }
+        for (var sort : List.of(
+                org.springframework.data.domain.Sort.by("price", "price"),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.asc("name").ignoreCase()),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.asc("name").nullsFirst()),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.asc("name").nullsLast()))) {
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> productQueryService.getProducts(null,
+                    PageRequest.of(0, 10, sort)))
+                    .isInstanceOf(com.peekcart.product.domain.exception.ProductException.class);
+        }
         org.mockito.Mockito.verifyNoInteractions(productCacheService);
     }
 }

@@ -18,6 +18,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import java.util.List;
 
 import com.peekcart.product.application.dto.UpdateProductCommand;
 import com.peekcart.support.SharedContainers;
@@ -141,24 +143,36 @@ class ProductCacheIntegrationTest extends AbstractIntegrationTest {
         assertThat(refreshed.getTotalElements()).isEqualTo(2);
     }
     @Test
-    void differentSortsDoNotPolluteEachOtherInEitherOrder() {
-        Long second = commandService.create(new CreateProductCommand(categoryId, "동률", "설명", 200L, null, 1)).id();
-        Long third = commandService.create(new CreateProductCommand(categoryId, "동률", "설명", 200L, null, 1)).id();
-        var ascending = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("price"));
-        for (boolean sortedFirst : new boolean[]{true, false}) {
-            cleanCaches(cacheManager);
-            if (sortedFirst) queryService.getProducts(null, ascending);
-            else queryService.getProducts(null, DEFAULT_PAGE);
-            assertThat(queryService.getProducts(null, DEFAULT_PAGE).getContent())
-                    .extracting(ProductListDto::id).containsExactly(productId, second, third);
-            assertThat(queryService.getProducts(null, ascending).getContent())
-                    .extracting(ProductListDto::id).containsExactly(second, third, productId);
-            var descending = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("price").descending());
-            assertThat(queryService.getProducts(null, descending).getContent())
-                    .extracting(ProductListDto::id).containsExactly(productId, second, third);
-            assertThat(queryService.getProducts(null, PageRequest.of(1, 1,
-                    org.springframework.data.domain.Sort.by("price"))).getContent())
-                    .extracting(ProductListDto::id).containsExactly(third);
+    void everyAllowedSortHasIndependentCacheAndStablePageBoundaries() {
+        commandService.update(productId, new UpdateProductCommand(categoryId, "B", "설명", 300L, null));
+        Long second = commandService.create(new CreateProductCommand(categoryId, "A", "설명", 100L, null, 1)).id();
+        Long third = commandService.create(new CreateProductCommand(categoryId, "C", "설명", 200L, null, 1)).id();
+        Long fourth = commandService.create(new CreateProductCommand(categoryId, "A", "설명", 200L, null, 1)).id();
+        var defaultIds = List.of(productId, second, third, fourth);
+        record Case(Sort sort, List<Long> ids) {}
+        var cases = List.of(
+                new Case(Sort.by("id"), defaultIds),
+                new Case(Sort.by("id").descending(), List.of(fourth, third, second, productId)),
+                new Case(Sort.by("price"), List.of(second, third, fourth, productId)),
+                new Case(Sort.by("price").descending(), List.of(productId, third, fourth, second)),
+                new Case(Sort.by("name"), List.of(second, fourth, productId, third)),
+                new Case(Sort.by("name").descending(), List.of(third, productId, second, fourth)));
+        for (Case item : cases) {
+            for (boolean sortedFirst : new boolean[]{true, false}) {
+                cleanCaches(cacheManager);
+                var sortedPage = PageRequest.of(0, 10, item.sort());
+                if (sortedFirst) queryService.getProducts(null, sortedPage);
+                else queryService.getProducts(null, DEFAULT_PAGE);
+                assertThat(queryService.getProducts(null, DEFAULT_PAGE).getContent())
+                        .extracting(ProductListDto::id).containsExactlyElementsOf(defaultIds);
+                assertThat(queryService.getProducts(null, sortedPage).getContent())
+                        .extracting(ProductListDto::id).containsExactlyElementsOf(item.ids());
+                for (int page = 0; page < 2; page++) {
+                    assertThat(queryService.getProducts(null, PageRequest.of(page, 2, item.sort())).getContent())
+                            .extracting(ProductListDto::id)
+                            .containsExactlyElementsOf(item.ids().subList(page * 2, page * 2 + 2));
+                }
+            }
         }
     }
     @Test
