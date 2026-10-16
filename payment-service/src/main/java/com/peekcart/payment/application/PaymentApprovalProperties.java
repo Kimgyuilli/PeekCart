@@ -65,13 +65,13 @@ public class PaymentApprovalProperties {
         @NotNull
         private Duration lockAtMostFor;
 
-        /** 결과 불명 상태를 자동 확정 시도하는 상한. 초과 시 운영 알림 + 수동 종결 대상. */
+        /** 결과 불명의 운영 인수 기준. 초과 후에도 조회를 계속하며, 보호 건은 수동 감사만 기록한다(ADR-0035). */
         @NotNull
         private Duration unresolvedLimit;
 
         /**
-         * 미해결 상한은 claim lease 보다 길어야 한다 — 짧으면 reconciliation 이 한 번도 회수해 보기
-         * 전에 수동 종결 대상이 된다(자동 확정 기회를 스스로 없애는 설정).
+         * 운영 인수 기준은 claim lease 보다 길어야 한다 — 최초 조회 회수 전에 운영 인수를
+         * 요구하지 않도록 한다. 기준 초과는 조회 중단이나 보호 해제 조건이 아니다.
          */
         @AssertTrue(message = "app.payment.approval.unresolved-limit 는 claim-lease 보다 길어야 합니다")
         public boolean isUnresolvedLimitLongerThanClaimLease() {

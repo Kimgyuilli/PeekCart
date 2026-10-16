@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+
 /**
  * 결제 API 컨트롤러.
  */
@@ -43,7 +45,9 @@ public class PaymentController {
         ConfirmPaymentCommand command = new ConfirmPaymentCommand(
                 request.paymentKey(), request.orderId(), request.amount());
         PaymentDetailDto result = paymentCommandService.confirmPayment(loginUser.userId(), command);
-        return ResponseEntity.accepted().body(ApiResponse.of(PaymentResponse.from(result)));
+        return ResponseEntity.accepted()
+                .location(URI.create("/api/v1/payments/" + result.orderId()))
+                .body(ApiResponse.of(PaymentResponse.from(result)));
     }
 
     /**
