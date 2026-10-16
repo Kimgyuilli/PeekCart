@@ -17,9 +17,10 @@ import java.util.List;
  *
  * <p><b>왜</b>: 종전에는 테스트 클래스마다 {@code @Container} 로 MySQL/Redis/Kafka 를 따로
  * 선언했다. {@code @Testcontainers} extension 의 수명이 곧 per-class 라, 클래스가 바뀔 때마다
- * 셋을 다시 띄우고 Flyway 를 다시 돌리고 Spring context 를 다시 만들었다. 실측으로
- * {@code :order-service:test} 975초 중 844초(87%)가 그 비용이었다 — JUnit 은 static
- * initializer 를 testcase 시간에 넣지 않아 XML 증적에는 131초만 잡혔다.
+ * 셋을 다시 띄우고 Flyway 와 Spring context 를 다시 만들었다.
+ * 종전 975초에서 JUnit XML time 합 131초를 뺀 844초는 기동 비용만이 아니다.
+ * 마지막 클래스 뒤 약 515초의 종료 꼬리도 포함됐다(ADR-0028 Update Log · D-080).
+ * 따라서 클래스당 일정한 기동 비용으로 환산하지 않는다.
  *
  * <p><b>왜 컨테이너를 빈으로 노출하지 않는가</b>: 노출하면 <b>Spring 이 수명을 가져간다</b>. {@code TestcontainersLifecycleBeanPostProcessor}
  * 는 {@code DestructionAwareBeanPostProcessor} 라 빈이 파괴될 때 컨테이너를 stop 하고,

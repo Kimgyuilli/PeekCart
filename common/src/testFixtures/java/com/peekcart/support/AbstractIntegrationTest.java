@@ -28,7 +28,8 @@ import static org.hamcrest.Matchers.empty;
  *
  * <p><b>컨테이너는 모듈 싱글톤이다</b>({@link SharedContainers}, ADR-0028 · D-032).
  * 자식 클래스가 {@code @Container} 를 선언하지 않는다 — 그 어노테이션의 수명이 곧 per-class 라,
- * 클래스마다 컨테이너·Flyway·Spring context 를 다시 만들었다(실측 클래스당 약 31초).
+ * 클래스마다 컨테이너·Flyway·Spring context 를 다시 만들었다. 기동과 JVM 종료 대기 비용은
+ * 분리해서 관측한다(ADR-0028 Update Log · D-080).
  * 이 클래스는 공유 자원의 cleanup 유틸리티와 규약을 제공한다.</p>
  *
  * <h3>사용 규약</h3>
