@@ -34,6 +34,32 @@ def duration(text):
     return sum(int(n) * {'h': 3600, 'm': 60, 's': 1}[u] for n, u in re.findall(r'(\d+)([hms])', text))
 
 
+def all_normal(result):
+    """Grafana rule state and instance state use different vocabularies."""
+    for uid, rule in result.items():
+        if rule['state'] != 'inactive' or not rule['vector'] or not rule['alerts']:
+            return False
+        if any(float(v['value'][1]) != 0 for v in rule['vector']):
+            return False
+        if any(a['state'] != 'Normal' for a in rule['alerts']):
+            return False
+        if {a['labels'].get('application') for a in rule['alerts']} != CONTRACT[uid][0]:
+            return False
+        if uid.startswith('peekcart-cache-fallback') and {a['labels'].get('cache') for a in rule['alerts']} != {'product', 'products', 'productStock'}:
+            return False
+    return set(result) == set(CONTRACT)
+
+
+def assert_alerting_instances(uid, rule):
+    # Grafana 11.6 /api/prometheus/grafana/api/v1/rules: rule=firing,
+    # each individual instance=Alerting (not the Prometheus rule vocabulary).
+    assert rule['state'] == 'firing', (uid, rule['state'])
+    assert rule['alerts'] and all(a['state'] == 'Alerting' for a in rule['alerts']), (uid, rule['alerts'])
+    assert {a['labels'].get('application') for a in rule['alerts']} == CONTRACT[uid][0], uid
+    if uid.startswith('peekcart-cache-fallback'):
+        assert {a['labels'].get('cache') for a in rule['alerts']} == {'product', 'products', 'productStock'}, uid
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
@@ -159,9 +185,6 @@ def main():
             events.write(json.dumps(entry) + '\n')
             return result
 
-        def all_normal(result):
-            return all(r['state'] == 'inactive' and all(float(v['value'][1]) == 0 for v in r['vector']) for r in result.values())
-
         def sample_for(phase, seconds, forbid_firing=False):
             deadline = time.time() + seconds
             seen = []
@@ -203,10 +226,7 @@ def main():
             assert 'firing' in states, (uid, 'never fired')
             assert ('pending' in states) == (pending_seconds > 0), (uid, states)
             firing = next(s[uid] for s in reversed(sustained) if s[uid]['state'] == 'firing')
-            firing_apps = {a['labels']['application'] for a in firing['alerts'] if a['state'] == 'firing'}
-            assert firing_apps == apps, (uid, firing_apps)
-            if uid.startswith('peekcart-cache-fallback'):
-                assert {a['labels']['cache'] for a in firing['alerts'] if a['state'] == 'firing'} == {'product', 'products', 'productStock'}
+            assert_alerting_instances(uid, firing)
             if pending_seconds:
                 observations = [json.loads(line) for line in (out / 'observations.jsonl').read_text().splitlines()]
                 pending_at = next(o['timestamp'] for o in observations if o['phase'] == 'sustained' and o['rules'][uid]['state'] == 'pending')
