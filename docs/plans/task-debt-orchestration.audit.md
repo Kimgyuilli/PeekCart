@@ -320,3 +320,5 @@ ADR-0040은 서버가 직접 확인한 확정 PG 결과의 제한된 복구 결�
 - 수정54bf CI38986536187에서 다음 lint REPLAY-ENTRY-006 실패. 이전 E2E 이름 가드는 통과했으나 DLQ retry를 FixedSequenceBackOff로 고정한 검사가 D076의 JitteredSequenceBackOff와 불일치했다. 추가 조사에서 preflight BACKOFF_TOTAL_SECONDS=36은 실제 jitter 최악 합54초보다18초 짧은 안전 계약 갭도 확인했다. 클래스명만 바꾸지 않고 최악상한·attempt4·drift 반례·ADR0022 사실 정정을 포함해 수정한다. root는 원인 확인 후 이전run 취소 요청, CI policy lint 전체 점검을 A에 배정했다. D065 운영개방은 계속 제외한다.
 
 - D076 수정 f1e64c5 독립 PASS: 실제 Math.round 기반 최대54초/전체564초, 비율0.5·기준1/5/30·attempt4 고정, replay lint9변이/판정14종 통과. 독립 임시복사에서 상한36 회귀 시 고정546/563초 fixture가 잘못된 조기통과를 검출했다. A의 전체 CI policy 명령은 sandbox loopback bind 제한으로 처음 중단했고, 같은 명령을 허용된 권한에서 실행해 session73911 exit0. Docker/Gradle heavy는 실행하지 않았다. 원문 명령·로그는 docs/evidence/D-076/ci-policy-{commands,local}.txt에 보존(2dde324).
+
+- 최종 수정 head `2dde3244e7419fa64a0cb52ef28a17c72c71486c`, CI38987011757: 독립 소스 PASS 및 D063 대상5rule full model이 실행460과 동일함을 재확인했다. 완료된 모듈 artifact는 XML244/1372tests 실패·오류·skip0. D067입력계약, D066실DBsort/cache, D072general_log0/advisor순서, D069동시상한·hit우회, D071실제HTTP6+metadataDB4, D0764handler retry를 대조했다. 양E2E/최종gate/checkout 전체 판정은 이 기록 시점 대기다.
