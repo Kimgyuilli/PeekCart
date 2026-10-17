@@ -394,3 +394,12 @@ root가 보호 규칙을 지켜 병합한 SHA는 `1178071e9bbffec77676fa0e2f0bee
 | order-service | `sha256:0b3fa8e1adfa0e758fa500fd396ce6fe223831a0228ae16c01fae98f8b12ad71` |
 | payment-service | `sha256:402fd7089903f6493e534117e94c3744b035db4b2d06d3a01ef8427975fa4f7d` |
 | notification-service | `sha256:8d8e8fa896309e5d8d13a2d950cc1a18e6a4426acb2faa907f60b42a4fdba55c` |
+
+## 최종 기록 전달 ship 준비 (worker B, 2026-10-17)
+
+- root의 main180 독립 최종 PASS 확인 후 `debt/final-records` / `/private/tmp/peakcart-worker-b-final-records`에 기록 `4f08677`을 fast-forward 통합했다. 기준 main은 `1178071e9bbffec77676fa0e2f0bee79de8eadc2`이며 main CI `38988468800`의 검증 결과는 위 root/독립 검증 기록에 있다.
+- main 대비 변경 경로는 모두 docs 아래다. 제품 코드·설정·워크플로 변경 없음. 완료 15건, 사용자 보류 D075, 부분 구현 D084, 제외 D064/065/078의 열린 상태를 대조했다. 완료한 10개 plan/audit 20파일만 선택 archive, 인덱스105개, 활성 D075/D084/상위계획은 유지한다.
+- sync archive는 dry-run만 수행했다. 네트워크 미접속 preview의 과거 PR 미병합 표시는 실제 원격 판정으로 채택하지 않는다. digest가 D075 보류/D084 부분 상태를 목록에서 빠뜨리므로 원문 TASKS를 기준으로 확인했다.
+- ship preflight는 상위 P4(D075)/P6(D084) 두 미완으로 blocked, grade L, consistency precheck warning0, diff-check 통과다. 사용자가 승인한 완료 기록 전달 PR이며 미완 체크를 임의로 채우지 않고 Draft를 생성한다. 새 정책 결정이나 미완 항목 완료 처리는 없다.
+- 별도 codex exec 리뷰 미호출. 작성자는 이 PR의 독립 검증·병합을 수행하지 않는다. 최신 PR head/base·실제 checkout·필수 CI 검증은 독립 verifier, 최종 병합/main 확인은 root가 담당한다.
+- PR 생성 전 기록이다. 실제 URL과 이후 CI·검증·병합/main 결과는 PR 본문과 root 최종 기록으로 연결하며 현재 그 결과를 미리 통과로 표시하지 않는다.
