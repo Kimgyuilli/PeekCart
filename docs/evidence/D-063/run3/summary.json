@@ -1,0 +1,30 @@
+{
+  "result": "PASS",
+  "startedAt": 1792194274.737846,
+  "finishedAt": 1792196374.338884,
+  "rules": [
+    "peekcart-compensation-backlog",
+    "peekcart-dlq-backlog",
+    "peekcart-outbox-failed",
+    "peekcart-cache-fallback-get",
+    "peekcart-cache-fallback-evict"
+  ],
+  "originalForSeconds": {
+    "peekcart-compensation-backlog": 900,
+    "peekcart-dlq-backlog": 600,
+    "peekcart-outbox-failed": 300,
+    "peekcart-cache-fallback-get": 600,
+    "peekcart-cache-fallback-evict": 0
+  },
+  "negativeControls": [
+    "wrong application/status",
+    "put operation",
+    "zero values",
+    "non-sustained breach"
+  ],
+  "replicas": [
+    "fixture-a",
+    "fixture-b"
+  ],
+  "sourceSHA": "460217ec3dd4b869f87d1199191d49a57b006b68"
+}

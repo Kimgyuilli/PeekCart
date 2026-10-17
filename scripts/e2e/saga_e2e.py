@@ -4,7 +4,8 @@
 internal:true 네트워크 **안에서** 돈다 — 호스트에서 실행하려면 앱에 호스트 포트를 열어야
 하고 그러면 격리 계약이 깨진다.
 
-구동은 **실제 HTTP 진입점**이다. Kafka 에 직접 발행하거나 outbox 에 SQL 로 INSERT 하면
+주문 시나리오 A/B/E의 구동은 **실제 HTTP 진입점**이다. C/F는 보상 요청과
+환불 원장을 주입해 환불 경계를 검증하며, F의 UNRESOLVED 소비 probe는 합성 회신이다. Kafka 에 직접 발행하거나 outbox 에 SQL 로 INSERT 하면
 컨트롤러·도메인 전이·publisher 직렬화가 통째로 우회된다 — outbox 행은 이미 직렬화된
 문자열이고 poller 는 그걸 그대로 싣기 때문이다(계획 V16).
 
@@ -12,7 +13,8 @@ usage:
   saga_e2e.py readiness
   saga_e2e.py order
   saga_e2e.py validate-order a,b,c,d
-  saga_e2e.py scenario <a|b|c|d|e>
+  saga_e2e.py scenario <a|b|c|d|e|f>
+  saga_e2e.py dlq-prepare|dlq-rewind (host coordinates Order stop/start)
   saga_e2e.py negative-control <name>   (이름은 CONTROLS 참조)
 """
 import json
@@ -69,7 +71,8 @@ EXPECTED_MIGRATIONS = {
     # V10/V8/V8/V6 = last_replay_payload_digest (구현 ④-c-2b-3a P14, ADR-0021 D1)
     # V11/V9/V9/V7 = drain 앵커 + replay 축 backfill (구현 ④-c-2b-4a P23)
     # V12/V10/V10/V8 = 발행 축 override 감사 2컬럼 (구현 ④-c-2b-4b P24, ADR-0022 D4)
-    "order": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],  # V7 = 커서 페이지네이션 인덱스 (구현 ⑥)
+    # V13 = D-071 cart product metadata (ADR-0036).
+    "order": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"],
     "product": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],  # V12 = 복구 예약 version (D-084)
     # payment V11 = 승인 원장 (D-020, ADR-0023 D2)
     "payment": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"],  # V13 = 복구/감사 원장 (D-084)
@@ -710,12 +713,120 @@ def scenario_c():
     )
 
 
-def scenario_d():
-    """D — DLQ intake. 역직렬화 불가 레코드를 업무 토픽에 넣으면 .dlq 를 거쳐 원장 1행이 된다.
+def assert_call_sequence(calls, expected):
+    methods = [call["method"] for call in sorted(calls, key=lambda call: call["seq"])]
+    if methods != expected:
+        raise AssertionError("stub call order %r != %r" % (methods, expected))
+    keys = [call["idempotencyKey"] for call in calls if call["method"] == "POST"]
+    if keys and (not all(keys) or len(set(keys)) != 1):
+        raise AssertionError("refund POST idempotency keys must be present and identical")
 
-    **중복 판정은 재발행으로 만들 수 없다** — 재발행은 offset 이 달라져 다른 좌표가 되고
-    UNIQUE 6컬럼이 새 행을 만든다(계획 V15). 여기서는 1행 + 6컬럼 non-null 까지만 본다.
-    offset rewind 를 통한 attempt_count 증가는 §9 에 미충족으로 남긴다."""
+
+def seed_refund_observers(sid, script, user_id):
+    order_id = synthetic_order_id(sid)
+    key = "e2e-%s-%s" % (script, order_id)
+    query("payment", "INSERT INTO payments (order_id,user_id,payment_key,amount,status,ready_for_payment,"
+          "method,approved_at,created_at,version) VALUES (%s,%s,%s,10000,'APPROVED',1,'E2E',NOW(6),NOW(6),0)",
+          (order_id, user_id, key))
+    query("order", "INSERT INTO order_compensations (order_id,reason,status,detected_at) "
+          "VALUES (%s,'PAID_BUT_CANCELLED','OPEN',NOW(6))", (order_id,))
+    query("product", "INSERT INTO stock_reservations (order_id,status,compensated_at,created_at) "
+          "VALUES (%s,'FAILED',NOW(6),NOW(6))", (order_id,))
+    return order_id, key
+
+
+def observe_refund_consumers(order_id, user_id, event_id, result):
+    consumed = {}
+    for service in ("order", "product", "notification"):
+        group = service + "-svc-payment-refunded-group"
+        consumed[service] = wait_for(service + " refund consumed", lambda s=service, g=group: nonzero(query(s,
+            "SELECT COUNT(*) c FROM processed_events WHERE event_id=%s AND consumer_group=%s", (event_id, g))))[0]["c"]
+    order = query("order", "SELECT status,failure_code FROM order_compensations WHERE order_id=%s", (order_id,))[0]
+    product = query("product", "SELECT refund_result,refund_failure_code FROM stock_reservations WHERE order_id=%s", (order_id,))[0]
+    notifications = query("notification", "SELECT COUNT(*) c FROM notifications WHERE user_id=%s AND type='PAYMENT_REFUNDED'", (user_id,))[0]["c"]
+    expected_order = {"SUCCEEDED": "RESOLVED", "FAILED": "REFUND_FAILED", "UNRESOLVED": "OPEN"}[result]
+    expected_product = result if result != "UNRESOLVED" else None
+    expected_notifications = 1 if result == "SUCCEEDED" else 0
+    actual = {"order": order["status"], "product": product["refund_result"], "notifications": notifications,
+              "processed": consumed}
+    expected = {"order": expected_order, "product": expected_product, "notifications": expected_notifications,
+                "processed": {"order": 1, "product": 1, "notification": 1}}
+    if actual != expected:
+        raise AssertionError("refund consumer outcome %r != %r" % (actual, expected))
+    if result == "FAILED" and (order["failure_code"] != "NOT_CANCELABLE_AMOUNT"
+                               or product["refund_failure_code"] != "NOT_CANCELABLE_AMOUNT"):
+        raise AssertionError("failed refund cause was not preserved")
+    return actual
+
+
+def scenario_f():
+    """Refund result matrix. UNRESOLVED producer absence and synthetic consumer probe are distinct."""
+    outcomes, diagnostics = {}, {}
+    for index, (label, script, result, methods) in enumerate([
+            ("success", "ok", "SUCCEEDED", ["POST"]),
+            ("failed", "4xx", "FAILED", ["POST"]),
+            ("already", "already-full", "SUCCEEDED", ["POST", "GET"]),
+            ("reconcile", "ok", "SUCCEEDED", ["GET"])]):
+        user_id = 600 + index
+        order_id, key = seed_refund_observers("f-" + label, script, user_id)
+        if label == "reconcile":
+            query("payment", "INSERT INTO payment_refunds (order_id,payment_key,user_id,amount,status,"
+                  "claimed_at,requested_at) VALUES (%s,%s,%s,10000,'CLAIMED',NOW()-INTERVAL 10 MINUTE,NOW(6))",
+                  (order_id, key, user_id))
+        else:
+            publish("order.compensation.requested", str(order_id),
+                    compensation_payload(order_id, "PAID_BUT_CANCELLED", "f-%s-%s" % (label, order_id)))
+        wait_for(label + " refund terminal", lambda oid=order_id, r=result: query("payment",
+                 "SELECT id FROM payment_refunds WHERE order_id=%s AND status=%s", (oid, r)), 360)
+        row = wait_for(label + " refund published", lambda oid=order_id:
+            (lambda r: r if r and r["status"] == "PUBLISHED" else None)(outbox_payload("payment", "payment.refunded", oid)))
+        outcomes[label] = observe_refund_consumers(order_id, user_id, envelope_event_id(row["payload"]), result)
+        calls = [c for c in stub_ledger() if c["paymentKey"] == key]
+        assert_call_sequence(calls, methods)
+        diagnostics[label] = {"order_id": order_id, "payment_key": key, "calls": calls}
+
+    # This is intentionally last: the real producer leaves an unresolved refund for reconciliation.
+    order_id, key = seed_refund_observers("f-unresolved", "transient", 604)
+    publish("order.compensation.requested", str(order_id),
+            compensation_payload(order_id, "PAID_BUT_CANCELLED", "f-unresolved-%s" % order_id))
+    wait_for("transient exhausted", lambda: query("payment",
+             "SELECT id FROM payment_refunds WHERE order_id=%s AND status='UNRESOLVED'", (order_id,)))
+    if outbox_payload("payment", "payment.refunded", order_id):
+        raise AssertionError("UNRESOLVED producer must not publish payment.refunded")
+    calls = [c for c in stub_ledger() if c["paymentKey"] == key]
+    assert_call_sequence(calls, ["POST", "POST", "POST"])
+    event_id = "f-probe-unresolved-%s" % order_id
+    publish("payment.refunded", str(order_id), {"eventId": event_id, "eventType": "payment.refunded",
+            "timestamp": "2026-10-17T00:00:00", "schemaVersion": 1,
+            "payload": {"orderId": order_id, "userId": 604, "result": "UNRESOLVED",
+                        "refundedAmount": None, "failureCode": None, "resolvedAt": None}})
+    outcomes["synthetic_unresolved"] = observe_refund_consumers(order_id, 604, event_id, "UNRESOLVED")
+    outcomes["unresolved_producer_outbox"] = 0
+    diagnostics["unresolved"] = {"order_id": order_id, "payment_key": key, "calls": calls,
+                                  "consumer_probe_event_id": event_id}
+    return {"refund_results": {"actual": outcomes}}, diagnostics
+
+
+DLQ_IDENTITY = ("id", "cluster_id", "topic_generation", "origin_topic", "origin_partition",
+                "origin_offset", "failed_consumer_group")
+DLQ_GROUP = "order-svc-dlq-group"
+
+
+def dlq_rows(marker):
+    return query("order", "SELECT id,cluster_id,topic_generation,origin_topic,origin_partition,"
+                 "origin_offset,failed_consumer_group,status,attempt_count FROM dead_letter_records "
+                 "WHERE origin_topic='payment.failed' AND payload LIKE %s", ("%" + marker + "%",))
+
+
+def assert_dlq_redelivery(before, rows):
+    if len(rows) != 1 or any(rows[0][k] != before[k] for k in DLQ_IDENTITY):
+        raise AssertionError("DLQ redelivery changed ledger row or six-part origin identity")
+    if rows[0]["attempt_count"] != 2:
+        raise AssertionError("same DLT record must increment attempt_count exactly once")
+
+
+def dlq_prepare():
+    """Inject once, locate the actual DLT record; never republish to emulate duplication."""
     sid = "d"
     from kafka import KafkaProducer
     producer = KafkaProducer(bootstrap_servers="kafka:29092",
@@ -734,7 +845,7 @@ def scenario_d():
     # origin_topic 은 DLT_ORIGINAL_TOPIC — **원본** 토픽이지 .dlq 가 아니다(DlqHeaders:42,56).
     rows = wait_for("dead_letter_records 적재 marker=%s" % marker,
                     lambda: query("order",
-                        "SELECT cluster_id, topic_generation, origin_topic, origin_partition,"
+                        "SELECT id, cluster_id, topic_generation, origin_topic, origin_partition,"
                         " origin_offset, failed_consumer_group, status, attempt_count"
                         " FROM dead_letter_records"
                         " WHERE origin_topic = 'payment.failed' AND payload LIKE %s",
@@ -749,18 +860,91 @@ def scenario_d():
                 "origin_offset", "failed_consumer_group"):
         if row[col] is None:
             raise AssertionError("식별자 %s 가 null — UNIQUE 가 poison record 를 여러 행으로 만든다" % col)
-    return (
-        {"dlq_intake": {"actual": {
-            "attempt_count": row["attempt_count"],
-            "rows": len(rows),
-        }}},
-        {
-            "marker": marker,
-            "status": row["status"],
-            "failed_consumer_group": row["failed_consumer_group"],
-            "origin_topic": row["origin_topic"],
-        },
-    )
+
+    from kafka import KafkaConsumer, TopicPartition
+    consumer = KafkaConsumer(bootstrap_servers="kafka:29092", enable_auto_commit=False)
+    try:
+        partitions = consumer.partitions_for_topic("payment.failed.dlq")
+        if not partitions:
+            raise AssertionError("payment.failed.dlq has no partitions")
+        consumer.assign([TopicPartition("payment.failed.dlq", p) for p in partitions])
+        consumer.seek_to_beginning()
+        def find_record():
+            for records in consumer.poll(timeout_ms=1000).values():
+                for record in records:
+                    headers = dict(record.headers)
+                    if (marker.encode() in record.value and
+                            headers.get("kafka_dlt-original-consumer-group", b"").decode() == row["failed_consumer_group"]):
+                        return {"topic": record.topic, "partition": record.partition, "offset": record.offset}
+            return None
+        coordinate = wait_for("actual DLT record", find_record, 30)
+    finally:
+        consumer.close()
+    save_control_state("dlq", {"marker": marker, "before": row, "coordinate": coordinate})
+
+
+def dlq_rewind():
+    """The host has stopped Order; require Empty group before committing one offset."""
+    from kafka import KafkaConsumer, TopicPartition
+    from kafka.admin import KafkaAdminClient
+    from kafka.structs import OffsetAndMetadata
+    state = load_control_state("dlq")
+    admin = KafkaAdminClient(bootstrap_servers="kafka:29092")
+    try:
+        def empty():
+            groups = admin.describe_consumer_groups([DLQ_GROUP])
+            return groups and not groups[0].members and groups[0].state == "Empty"
+        wait_for("DLQ consumer group Empty", empty, 60)
+        offsets = admin.list_consumer_group_offsets(DLQ_GROUP)
+        coordinate = state["coordinate"]
+        tp = TopicPartition(coordinate["topic"], coordinate["partition"])
+        if tp not in offsets or offsets[tp].offset <= coordinate["offset"]:
+            raise AssertionError("initial DLT record has not been committed")
+        state["committed_before"] = [{"topic": k.topic, "partition": k.partition, "offset": v.offset}
+                                     for k, v in offsets.items()]
+        consumer = KafkaConsumer(bootstrap_servers="kafka:29092", group_id=DLQ_GROUP,
+                                 enable_auto_commit=False)
+        try:
+            consumer.assign([tp])
+            consumer.commit({tp: OffsetAndMetadata(coordinate["offset"], "D-062 same-record replay")})
+        finally:
+            consumer.close()
+        after = admin.list_consumer_group_offsets(DLQ_GROUP)
+        for key, previous in offsets.items():
+            expected = coordinate["offset"] if key == tp else previous.offset
+            if key not in after or after[key].offset != expected:
+                raise AssertionError("rewind altered another partition or did not commit target")
+        state["group_empty_verified"] = True
+        state["rewound_offset"] = after[tp].offset
+        save_control_state("dlq", state)
+    finally:
+        admin.close()
+
+
+def scenario_d():
+    """Verify the restarted consumer ingested the same DLT coordinate twice, in one row."""
+    from kafka.admin import KafkaAdminClient
+    from kafka import TopicPartition
+    state = load_control_state("dlq")
+    if not state.get("group_empty_verified"):
+        raise AssertionError("missing stopped-group rewind evidence")
+    rows = wait_for("same DLT record reingested", lambda: (lambda r: r if r and
+                    r[0]["attempt_count"] >= 2 else None)(dlq_rows(state["marker"])), 90)
+    assert_dlq_redelivery(state["before"], rows)
+    check_readiness()  # real health and group assignments restored before following scenarios
+    admin = KafkaAdminClient(bootstrap_servers="kafka:29092")
+    try:
+        def resumed():
+            current = admin.list_consumer_group_offsets(DLQ_GROUP)
+            return all(TopicPartition(v["topic"], v["partition"]) in current and
+                       current[TopicPartition(v["topic"], v["partition"])].offset >= v["offset"]
+                       for v in state["committed_before"])
+        wait_for("DLQ offsets resumed", resumed, 30)
+    finally:
+        admin.close()
+    # Re-read after readiness/commit to catch extra delivery, not just an instantaneous count=2.
+    assert_dlq_redelivery(state["before"], dlq_rows(state["marker"]))
+    return {"dlq_intake": {"actual": {"attempt_count": 2, "rows": 1}}}, state
 
 
 def scenario_e():
@@ -885,7 +1069,7 @@ def scenario_e():
            "successful_stock": success_stock, "successful_confirm_calls": len(success_posts)})
 
 
-SCENARIOS = {"a": scenario_a, "b": scenario_b, "c": scenario_c, "d": scenario_d, "e": scenario_e}
+SCENARIOS = {"a": scenario_a, "b": scenario_b, "c": scenario_c, "d": scenario_d, "e": scenario_e, "f": scenario_f}
 
 
 # ------------------------------------------------------- 음성 대조군 (계획 P16)
@@ -1085,12 +1269,11 @@ CONTROLS = {
 #      내 단언을 만족시키지 못하게 한다. 이게 주된 방어다.
 #   ② **종결되지 않는 잔여를 남기는 시나리오를 맨 뒤**로 고정하고 즉시 teardown — 그
 #      잔여가 뒤 시나리오의 관측 시간창에 겹치지 않게 한다.
-SCENARIO_ORDER = ["a", "b", "c", "d", "e"]
+SCENARIO_ORDER = ["a", "b", "c", "d", "e", "f"]
 
 # 종결되지 않는 잔여(`UNRESOLVED` 환불 등)를 남기는 시나리오. 이들은 SCENARIO_ORDER 의
-# **꼬리**에 모여 있어야 한다. 결과 3종 분기(타임아웃 → UNRESOLVED)는 아직 미구현이라
-# 지금은 비어 있다 — 그 시나리오가 생기면 여기에 등록하고 순서 검사가 자리를 강제한다.
-LINGERING_SCENARIOS = []
+# **꼬리**에 모여 있어야 한다. F의 실제 UNRESOLVED 원장이 이후 대사 후보로 남는다.
+LINGERING_SCENARIOS = ["f"]
 
 
 def validate_order(requested):
@@ -1165,6 +1348,10 @@ def main(argv):
         print(__doc__)
         return 2
     cmd = argv[1]
+
+    if cmd in ("dlq-prepare", "dlq-rewind"):
+        {"dlq-prepare": dlq_prepare, "dlq-rewind": dlq_rewind}[cmd]()
+        return 0
 
     if cmd == "readiness":
         info = check_readiness()

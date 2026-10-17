@@ -485,7 +485,7 @@ jobs:
       - name: Build runner image
         run: docker compose -f docker-compose.e2e.yml -p e2e-${E2E_RUN_ID} build runner
 
-      - name: 시나리오 4종
+      - name: 시나리오 6종
         if: matrix.mode == 'scenarios'
         run: bash scripts/saga-e2e-smoke.sh
 

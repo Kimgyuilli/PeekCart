@@ -1,0 +1,138 @@
+{
+  "run1": {
+    "sourceDirectory": "/private/tmp/peakcart-d063-20261017-run1",
+    "files": [
+      {
+        "name": "manifest.json",
+        "originalSha256": "930b78869ce1482917359e59164ba10403b49e0376e38a7f77661cb4324ef608",
+        "originalBytes": 557
+      },
+      {
+        "name": "observations.jsonl.gz",
+        "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "originalBytes": 0
+      },
+      {
+        "name": "containers.log.gz",
+        "originalSha256": "594046841cdd1bf286a5e7ed12128bd97ba64b70f9f7db2f69810cd7cc54900e",
+        "originalBytes": 237804
+      },
+      {
+        "name": "startup.log",
+        "originalSha256": "2c723f3d954ffb35387516109c310b14a2198f33dcec7e3b0ca940fcf6367fdc",
+        "originalBytes": 34628
+      },
+      {
+        "name": "cleanup.log",
+        "originalSha256": "26718adf1925d2eb1fc91cd2d5c0128bde98cadb511a351186f0d9091be7f79d",
+        "originalBytes": 1037
+      },
+      {
+        "name": "execution.log",
+        "originalSha256": "73513f0514be3b0b1b7fc2d02637993184a223d6d52bc53f51365b121467db1b",
+        "originalBytes": 590
+      }
+    ],
+    "result": "FAILED",
+    "failure": "Grafana rejected 41-character UID before evaluation"
+  },
+  "run2": {
+    "sourceDirectory": "/private/tmp/peakcart-d063-20261017-run2",
+    "files": [
+      {
+        "name": "manifest.json",
+        "originalSha256": "c151d73004bd50fefed54d2b47d2ed668d1b7798c4c00b737985d4016ccfc82b",
+        "originalBytes": 41554
+      },
+      {
+        "name": "provisioned-rules.json",
+        "originalSha256": "992884eed36e6f21a6cdd1944528cd10fe5fa6fe388373a6577cfd73560033ba",
+        "originalBytes": 31349
+      },
+      {
+        "name": "negative-control-series.json",
+        "originalSha256": "e5b88dd2033befd9d4dfe11e3bdfdc3583ca0b972fc7880818d734ae7d4c5c9e",
+        "originalBytes": 8537
+      },
+      {
+        "name": "observations.jsonl.gz",
+        "originalSha256": "f3c1d121bb22e5fe1232f1c94ed3ac0d1f18ef07b4fe12b5b2690e39524cfd7a",
+        "originalBytes": 1488222
+      },
+      {
+        "name": "containers.log.gz",
+        "originalSha256": "efa9bbd2dc1dafc85726c9826605794217bbd22f62e09345f8ebfb99f14af426",
+        "originalBytes": 315779
+      },
+      {
+        "name": "startup.log",
+        "originalSha256": "f4b6d7503c2ec771a2b5dc00a1c57deed27759e500e176e8c1e4eeb133bc9925",
+        "originalBytes": 1037
+      },
+      {
+        "name": "cleanup.log",
+        "originalSha256": "944e051d56bbbc48cec192f3af2771ad2d551e924fb4cb3ff890e689a91886c7",
+        "originalBytes": 1037
+      },
+      {
+        "name": "execution.log",
+        "originalSha256": "6f47d189016470a691e4cbb840236d790c7b95c9cbfc00507b0388fab44f3b72",
+        "originalBytes": 518
+      }
+    ],
+    "result": "FAILED",
+    "failure": "Harness compared instance state to firing instead of Alerting; final recovery was not executed"
+  },
+  "run3": {
+    "sourceDirectory": "/private/tmp/peakcart-d063-20261017-run3",
+    "files": [
+      {
+        "name": "manifest.json",
+        "originalSha256": "898777f291a2c7cda1fc662abe9a64cbda16c0a36f680833444fcbd96c0809bc",
+        "originalBytes": 41552
+      },
+      {
+        "name": "provisioned-rules.json",
+        "originalSha256": "e84824f9bca0a140c8ae18a4c2835d097509e6218e03cedf3bf66f2c63baa7f5",
+        "originalBytes": 31349
+      },
+      {
+        "name": "negative-control-series.json",
+        "originalSha256": "235fbd49154b32a9d02937cf76a68841bb1aa74812361f88136972e0c5a7841a",
+        "originalBytes": 8540
+      },
+      {
+        "name": "observations.jsonl.gz",
+        "originalSha256": "816e0010cbbe7bbda392d693adc782456881f0908c5257354980a34d73e85fcc",
+        "originalBytes": 1824109
+      },
+      {
+        "name": "containers.log.gz",
+        "originalSha256": "f7aa8850ea5b25357b6d82f7fa7466ccbcb5ca71fc821ec70dca0477b39edbca",
+        "originalBytes": 339433
+      },
+      {
+        "name": "startup.log",
+        "originalSha256": "d6b3a17582dbdc9dd09527dc9bde22ee1102706066e970e9e84c880d805a5799",
+        "originalBytes": 1037
+      },
+      {
+        "name": "cleanup.log",
+        "originalSha256": "0b55432b9e04944c3ef086b5bf66fa1740b252ab91ad45cf440aa3c596fe57a7",
+        "originalBytes": 1037
+      },
+      {
+        "name": "summary.json",
+        "originalSha256": "ddf0c606ca3d446935830b7a6bdb0af9d473e799ed66f3e5314506af9cc4d8c9",
+        "originalBytes": 736
+      },
+      {
+        "name": "execution.log",
+        "originalSha256": "53354a302c121c3e89be5a5c6393465c392fedce6ef3f1d531a55ba423d954ef",
+        "originalBytes": 779
+      }
+    ],
+    "result": "PASS",
+    "failure": null
+  }
+}

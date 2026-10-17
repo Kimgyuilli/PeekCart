@@ -1,0 +1,13 @@
+{
+  "sourceSHA": "b47bd1bffe771208e17c7279bdc1ebc7ab3bbe64",
+  "sourceDirty": false,
+  "ruleFileSha256": "3c453153c77f0fca69dc15e68f74854bd34f863078658fb482b44834dd175c76",
+  "provisionedRulesSha256": "6299c44ba03e61c826a4ef315d11f96f73dc985c84d84673fa28e142731cb017",
+  "project": "peakcart-alert-1792191745",
+  "images": {
+    "prometheus": "prom/prometheus:v3.2.1",
+    "grafana": "grafana/grafana:11.6.0",
+    "fixture": "python:3.12-alpine"
+  },
+  "scope": "Local fixture evaluation only; no GKE discovery, app emission or external delivery evidence"
+}

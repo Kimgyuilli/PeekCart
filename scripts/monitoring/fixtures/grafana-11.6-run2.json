@@ -1,0 +1,1321 @@
+{
+  "source": {
+    "run": "20261017-run2",
+    "sourceSHA": "c406204c9cede0ea36c5eac0761c78c2949a4ad8",
+    "note": "Exact saved API observations; run failed before final recovery. NoData mutations in tests are synthetic negative cases."
+  },
+  "normal": {
+    "timestamp": 1792192779.644045,
+    "phase": "transient-resolved",
+    "rules": {
+      "peekcart-compensation-backlog": {
+        "state": "inactive",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Saga Compensation Backlog (\ubbf8\ud574\uc18c \ubcf4\uc0c1 \uc6d0\uc7a5)",
+              "application": "order-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning"
+            },
+            "annotations": {
+              "description": "order_compensations \uc5d0 OPEN \ub610\ub294 REFUND_FAILED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. OPEN \uc740 \ud658\ubd88 \uc694\uccad\uc774 \uc544\uc9c1 \uc885\uacb0\ub418\uc9c0 \uc54a\uc740 \uac83\uc774\uace0, REFUND_FAILED \ub294 '\ub2eb\ud614\uc9c0\ub9cc \ud574\uacb0\ub418\uc9c0 \uc54a\uc740' \uc0c1\ud0dc\ub77c \uc0ac\ub78c\uc774 \ucc98\ub9ac\ud574\uc57c \ud569\ub2c8\ub2e4(ADR-0018 D4). for=15m \uc740 \uc815\uc0c1 \ud658\ubd88 \uc655\ubcf5 \uc2dc\uac04\uc744 \ub118\uae34 \uc794\uc874\ub9cc \uc7a1\uae30 \uc704\ud55c \uac12\uc785\ub2c8\ub2e4.",
+              "summary": "PeekCart \ubbf8\ud574\uc18c \ubcf4\uc0c1 \uc6d0\uc7a5 \uc874\uc7ac \u2014 order-service"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:14:00Z",
+            "value": ""
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "order-service"
+            },
+            "value": [
+              1792192779.629,
+              "0"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:19:00Z"
+      },
+      "peekcart-dlq-backlog": {
+        "state": "inactive",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "notification-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 notification-service"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:14:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "order-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 order-service"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:14:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "payment-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 payment-service"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:14:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "product-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 product-service"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:14:00Z",
+            "value": ""
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "notification-service"
+            },
+            "value": [
+              1792192779.636,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "order-service"
+            },
+            "value": [
+              1792192779.636,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "payment-service"
+            },
+            "value": [
+              1792192779.636,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service"
+            },
+            "value": [
+              1792192779.636,
+              "0"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:19:00Z"
+      },
+      "peekcart-outbox-failed": {
+        "state": "inactive",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "notification-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 notification-service"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:14:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "order-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 order-service"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:14:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "payment-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 payment-service"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:14:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "product-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 product-service"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:14:00Z",
+            "value": ""
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "notification-service"
+            },
+            "value": [
+              1792192779.638,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "order-service"
+            },
+            "value": [
+              1792192779.638,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "payment-service"
+            },
+            "value": [
+              1792192779.638,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service"
+            },
+            "value": [
+              1792192779.638,
+              "0"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:19:00Z"
+      },
+      "peekcart-cache-fallback-get": {
+        "state": "inactive",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (get)",
+              "application": "product-service",
+              "cache": "product",
+              "grafana_folder": "PeekCart",
+              "operation": "get",
+              "severity": "warning",
+              "signal": "cache-fallback-get"
+            },
+            "annotations": {
+              "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+              "summary": "Product cache get \uc2e4\ud328 \u2014 product"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:19:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (get)",
+              "application": "product-service",
+              "cache": "productStock",
+              "grafana_folder": "PeekCart",
+              "operation": "get",
+              "severity": "warning",
+              "signal": "cache-fallback-get"
+            },
+            "annotations": {
+              "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+              "summary": "Product cache get \uc2e4\ud328 \u2014 productStock"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:19:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (get)",
+              "application": "product-service",
+              "cache": "products",
+              "grafana_folder": "PeekCart",
+              "operation": "get",
+              "severity": "warning",
+              "signal": "cache-fallback-get"
+            },
+            "annotations": {
+              "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+              "summary": "Product cache get \uc2e4\ud328 \u2014 products"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:19:00Z",
+            "value": ""
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "product"
+            },
+            "value": [
+              1792192779.64,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "products"
+            },
+            "value": [
+              1792192779.64,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "productStock"
+            },
+            "value": [
+              1792192779.64,
+              "0"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:19:00Z"
+      },
+      "peekcart-cache-fallback-evict": {
+        "state": "inactive",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (evict)",
+              "application": "product-service",
+              "cache": "product",
+              "grafana_folder": "PeekCart",
+              "operation": "evict",
+              "severity": "warning",
+              "signal": "cache-fallback-evict"
+            },
+            "annotations": {
+              "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+              "summary": "Product cache evict \uc2e4\ud328 \u2014 product"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:10:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (evict)",
+              "application": "product-service",
+              "cache": "productStock",
+              "grafana_folder": "PeekCart",
+              "operation": "evict",
+              "severity": "warning",
+              "signal": "cache-fallback-evict"
+            },
+            "annotations": {
+              "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+              "summary": "Product cache evict \uc2e4\ud328 \u2014 productStock"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:10:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (evict)",
+              "application": "product-service",
+              "cache": "products",
+              "grafana_folder": "PeekCart",
+              "operation": "evict",
+              "severity": "warning",
+              "signal": "cache-fallback-evict"
+            },
+            "annotations": {
+              "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+              "summary": "Product cache evict \uc2e4\ud328 \u2014 products"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:10:00Z",
+            "value": ""
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "product"
+            },
+            "value": [
+              1792192779.642,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "products"
+            },
+            "value": [
+              1792192779.642,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "productStock"
+            },
+            "value": [
+              1792192779.642,
+              "0"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:19:00Z"
+      }
+    }
+  },
+  "pending": {
+    "timestamp": 1792192327.582022,
+    "phase": "transient",
+    "rules": {
+      "peekcart-compensation-backlog": {
+        "state": "pending",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Saga Compensation Backlog (\ubbf8\ud574\uc18c \ubcf4\uc0c1 \uc6d0\uc7a5)",
+              "application": "order-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning"
+            },
+            "annotations": {
+              "description": "order_compensations \uc5d0 OPEN \ub610\ub294 REFUND_FAILED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. OPEN \uc740 \ud658\ubd88 \uc694\uccad\uc774 \uc544\uc9c1 \uc885\uacb0\ub418\uc9c0 \uc54a\uc740 \uac83\uc774\uace0, REFUND_FAILED \ub294 '\ub2eb\ud614\uc9c0\ub9cc \ud574\uacb0\ub418\uc9c0 \uc54a\uc740' \uc0c1\ud0dc\ub77c \uc0ac\ub78c\uc774 \ucc98\ub9ac\ud574\uc57c \ud569\ub2c8\ub2e4(ADR-0018 D4). for=15m \uc740 \uc815\uc0c1 \ud658\ubd88 \uc655\ubcf5 \uc2dc\uac04\uc744 \ub118\uae34 \uc794\uc874\ub9cc \uc7a1\uae30 \uc704\ud55c \uac12\uc785\ub2c8\ub2e4.",
+              "summary": "PeekCart \ubbf8\ud574\uc18c \ubcf4\uc0c1 \uc6d0\uc7a5 \uc874\uc7ac \u2014 order-service"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "order-service"
+            },
+            "value": [
+              1792192327.567,
+              "4"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:12:00Z"
+      },
+      "peekcart-dlq-backlog": {
+        "state": "pending",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "notification-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 notification-service"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "order-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 order-service"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "payment-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 payment-service"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "product-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 product-service"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "notification-service"
+            },
+            "value": [
+              1792192327.571,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "order-service"
+            },
+            "value": [
+              1792192327.571,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "payment-service"
+            },
+            "value": [
+              1792192327.571,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service"
+            },
+            "value": [
+              1792192327.571,
+              "2"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:12:00Z"
+      },
+      "peekcart-outbox-failed": {
+        "state": "pending",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "notification-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 notification-service"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "order-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 order-service"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "payment-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 payment-service"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "product-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 product-service"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "notification-service"
+            },
+            "value": [
+              1792192327.573,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "order-service"
+            },
+            "value": [
+              1792192327.573,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "payment-service"
+            },
+            "value": [
+              1792192327.573,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service"
+            },
+            "value": [
+              1792192327.573,
+              "2"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:12:00Z"
+      },
+      "peekcart-cache-fallback-get": {
+        "state": "pending",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (get)",
+              "application": "product-service",
+              "cache": "product",
+              "grafana_folder": "PeekCart",
+              "operation": "get",
+              "severity": "warning",
+              "signal": "cache-fallback-get"
+            },
+            "annotations": {
+              "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+              "summary": "Product cache get \uc2e4\ud328 \u2014 product"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (get)",
+              "application": "product-service",
+              "cache": "productStock",
+              "grafana_folder": "PeekCart",
+              "operation": "get",
+              "severity": "warning",
+              "signal": "cache-fallback-get"
+            },
+            "annotations": {
+              "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+              "summary": "Product cache get \uc2e4\ud328 \u2014 productStock"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (get)",
+              "application": "product-service",
+              "cache": "products",
+              "grafana_folder": "PeekCart",
+              "operation": "get",
+              "severity": "warning",
+              "signal": "cache-fallback-get"
+            },
+            "annotations": {
+              "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+              "summary": "Product cache get \uc2e4\ud328 \u2014 products"
+            },
+            "state": "Pending",
+            "activeAt": "2026-10-16T23:12:00Z",
+            "value": "1e+00"
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "product"
+            },
+            "value": [
+              1792192327.576,
+              "0.10153959038546231"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "products"
+            },
+            "value": [
+              1792192327.576,
+              "0.10153959038546231"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "productStock"
+            },
+            "value": [
+              1792192327.576,
+              "0.10153959038546231"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:12:00Z"
+      },
+      "peekcart-cache-fallback-evict": {
+        "state": "inactive",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (evict)",
+              "application": "product-service",
+              "cache": "product",
+              "grafana_folder": "PeekCart",
+              "operation": "evict",
+              "severity": "warning",
+              "signal": "cache-fallback-evict"
+            },
+            "annotations": {
+              "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+              "summary": "Product cache evict \uc2e4\ud328 \u2014 product"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:10:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (evict)",
+              "application": "product-service",
+              "cache": "productStock",
+              "grafana_folder": "PeekCart",
+              "operation": "evict",
+              "severity": "warning",
+              "signal": "cache-fallback-evict"
+            },
+            "annotations": {
+              "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+              "summary": "Product cache evict \uc2e4\ud328 \u2014 productStock"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:10:00Z",
+            "value": ""
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (evict)",
+              "application": "product-service",
+              "cache": "products",
+              "grafana_folder": "PeekCart",
+              "operation": "evict",
+              "severity": "warning",
+              "signal": "cache-fallback-evict"
+            },
+            "annotations": {
+              "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+              "summary": "Product cache evict \uc2e4\ud328 \u2014 products"
+            },
+            "state": "Normal",
+            "activeAt": "2026-10-16T23:10:00Z",
+            "value": ""
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "product"
+            },
+            "value": [
+              1792192327.578,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "products"
+            },
+            "value": [
+              1792192327.578,
+              "0"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "productStock"
+            },
+            "value": [
+              1792192327.578,
+              "0"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:12:00Z"
+      }
+    }
+  },
+  "alerting": {
+    "timestamp": 1792193864.048962,
+    "phase": "sustained",
+    "rules": {
+      "peekcart-compensation-backlog": {
+        "state": "firing",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Saga Compensation Backlog (\ubbf8\ud574\uc18c \ubcf4\uc0c1 \uc6d0\uc7a5)",
+              "application": "order-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning"
+            },
+            "annotations": {
+              "description": "order_compensations \uc5d0 OPEN \ub610\ub294 REFUND_FAILED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. OPEN \uc740 \ud658\ubd88 \uc694\uccad\uc774 \uc544\uc9c1 \uc885\uacb0\ub418\uc9c0 \uc54a\uc740 \uac83\uc774\uace0, REFUND_FAILED \ub294 '\ub2eb\ud614\uc9c0\ub9cc \ud574\uacb0\ub418\uc9c0 \uc54a\uc740' \uc0c1\ud0dc\ub77c \uc0ac\ub78c\uc774 \ucc98\ub9ac\ud574\uc57c \ud569\ub2c8\ub2e4(ADR-0018 D4). for=15m \uc740 \uc815\uc0c1 \ud658\ubd88 \uc655\ubcf5 \uc2dc\uac04\uc744 \ub118\uae34 \uc794\uc874\ub9cc \uc7a1\uae30 \uc704\ud55c \uac12\uc785\ub2c8\ub2e4.",
+              "summary": "PeekCart \ubbf8\ud574\uc18c \ubcf4\uc0c1 \uc6d0\uc7a5 \uc874\uc7ac \u2014 order-service"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:35:00Z",
+            "value": "1e+00"
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "order-service"
+            },
+            "value": [
+              1792193864.031,
+              "4"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:37:00Z"
+      },
+      "peekcart-dlq-backlog": {
+        "state": "firing",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "notification-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 notification-service"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:30:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "order-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 order-service"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:30:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "payment-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 payment-service"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:30:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+              "application": "product-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "dlq"
+            },
+            "annotations": {
+              "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+              "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 product-service"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:30:00Z",
+            "value": "1e+00"
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "notification-service"
+            },
+            "value": [
+              1792193864.035,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "order-service"
+            },
+            "value": [
+              1792193864.035,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "payment-service"
+            },
+            "value": [
+              1792193864.035,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service"
+            },
+            "value": [
+              1792193864.035,
+              "2"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:37:00Z"
+      },
+      "peekcart-outbox-failed": {
+        "state": "firing",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "notification-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 notification-service"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:25:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "order-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 order-service"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:25:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "payment-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 payment-service"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:25:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+              "application": "product-service",
+              "grafana_folder": "PeekCart",
+              "severity": "warning",
+              "signal": "outbox-publish"
+            },
+            "annotations": {
+              "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+              "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 product-service"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:25:00Z",
+            "value": "1e+00"
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "notification-service"
+            },
+            "value": [
+              1792193864.04,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "order-service"
+            },
+            "value": [
+              1792193864.04,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "payment-service"
+            },
+            "value": [
+              1792193864.04,
+              "2"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service"
+            },
+            "value": [
+              1792193864.04,
+              "2"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:37:00Z"
+      },
+      "peekcart-cache-fallback-get": {
+        "state": "firing",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (get)",
+              "application": "product-service",
+              "cache": "product",
+              "grafana_folder": "PeekCart",
+              "operation": "get",
+              "severity": "warning",
+              "signal": "cache-fallback-get"
+            },
+            "annotations": {
+              "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+              "summary": "Product cache get \uc2e4\ud328 \u2014 product"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:30:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (get)",
+              "application": "product-service",
+              "cache": "productStock",
+              "grafana_folder": "PeekCart",
+              "operation": "get",
+              "severity": "warning",
+              "signal": "cache-fallback-get"
+            },
+            "annotations": {
+              "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+              "summary": "Product cache get \uc2e4\ud328 \u2014 productStock"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:30:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (get)",
+              "application": "product-service",
+              "cache": "products",
+              "grafana_folder": "PeekCart",
+              "operation": "get",
+              "severity": "warning",
+              "signal": "cache-fallback-get"
+            },
+            "annotations": {
+              "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+              "summary": "Product cache get \uc2e4\ud328 \u2014 products"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:30:00Z",
+            "value": "1e+00"
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "product"
+            },
+            "value": [
+              1792193864.043,
+              "1.9998908779529114"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "products"
+            },
+            "value": [
+              1792193864.043,
+              "1.9998908779529114"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "productStock"
+            },
+            "value": [
+              1792193864.043,
+              "1.9998908779529114"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:37:00Z"
+      },
+      "peekcart-cache-fallback-evict": {
+        "state": "firing",
+        "alerts": [
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (evict)",
+              "application": "product-service",
+              "cache": "product",
+              "grafana_folder": "PeekCart",
+              "operation": "evict",
+              "severity": "warning",
+              "signal": "cache-fallback-evict"
+            },
+            "annotations": {
+              "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+              "summary": "Product cache evict \uc2e4\ud328 \u2014 product"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:20:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (evict)",
+              "application": "product-service",
+              "cache": "productStock",
+              "grafana_folder": "PeekCart",
+              "operation": "evict",
+              "severity": "warning",
+              "signal": "cache-fallback-evict"
+            },
+            "annotations": {
+              "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+              "summary": "Product cache evict \uc2e4\ud328 \u2014 productStock"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:20:00Z",
+            "value": "1e+00"
+          },
+          {
+            "labels": {
+              "alertname": "Product Cache Fallback (evict)",
+              "application": "product-service",
+              "cache": "products",
+              "grafana_folder": "PeekCart",
+              "operation": "evict",
+              "severity": "warning",
+              "signal": "cache-fallback-evict"
+            },
+            "annotations": {
+              "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+              "summary": "Product cache evict \uc2e4\ud328 \u2014 products"
+            },
+            "state": "Alerting",
+            "activeAt": "2026-10-16T23:20:00Z",
+            "value": "1e+00"
+          }
+        ],
+        "vector": [
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "product"
+            },
+            "value": [
+              1792193864.045,
+              "599.9672633858737"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "products"
+            },
+            "value": [
+              1792193864.045,
+              "599.9672633858737"
+            ]
+          },
+          {
+            "metric": {
+              "application": "product-service",
+              "cache": "productStock"
+            },
+            "value": [
+              1792193864.045,
+              "599.9672633858737"
+            ]
+          }
+        ],
+        "lastEvaluation": "2026-10-16T23:37:00Z"
+      }
+    }
+  }
+}

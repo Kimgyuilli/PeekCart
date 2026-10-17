@@ -171,6 +171,12 @@ PR CI에서 실제 검사한 checkout SHA와 PR head/base SHA를 각각 기록�
 
 D-069는 사용자가 DB 보호와 초과 요청 503을 승인했다. D-071의 미수신 metadata는 null을 보존하고 품목을 삭제하거나 가격 0으로 대체하지 않는 계약을 ADR-0036에 기록했다. D-063은 ADR-0015의 실제 규칙 평가를 무료 로컬 Prometheus/Grafana로 검증하는 방향이며 실제 발화·정상 복귀 증거가 있어야 완료할 수 있다. 클러스터 고유·외부 알림 전달 검증은 그 증거에 포함하지 않는다.
 
+초기 Draft 생성 시점의 기록은 다음과 같다.
+
+> 이 문단의 ADR-0036은 아직 미병합인 app lane 문서다. 로컬 `debt/product-lane`, worktree `/private/tmp/peakcart-worker-a-product`, 기준 commit `7607c0ac35525311fc9e9ab3908aa1f4acd60817`에 있다. Saga PR은 이 ADR 구현을 포함하지 않으며 consistency precheck의 참조 누락 경고를 숨기지 않는다. app 통합 전에는 원격 고정 링크를 만들지 않고, 필수 CI guard가 의존관계 불일치를 지적하면 통합 순서와 문서를 맞춘 뒤 재검증한다.
+
+후속 로컬 통합 `8928ed4a6e116855d923cb17b0f0eca0ccbca5c9`에는 app 구현과 ADR-0036·0037 및 복구 ADR-0040이 포함되어 위 참조 누락은 해소되었다. ADR-0036·0037은 Accepted다. ADR-0040은 이 로컬 통합 당시 Proposed였고, 이후 PR181의 main 검증에 따라 서버 직접 확정 조회 복구 범위만 Accepted로 전환되었다. 영구 404 신뢰 증빙과 D084 전체 완료는 여전히 미해결이다. 해당 로컬 통합 시점에는 원격 PR180에 push하지 않은 준비 상태였다. 후속 통합 head의 전체 CI·독립 검증·병합 완료 여부는 최신 audit와 PR 기록으로 확인한다.
+
 D-075는 목표 처리율·backlog 수용 기준에 대해 사용자가 보류를 선택했다. D-084는 분리된 승인자/실행자, 감사, 서버가 직접 확인한 PG 확정 결과와 예약 대사 경로로 진행한다. 신뢰할 PG 무과금 증빙 원천이 없는 영구 404 강제 해제는 미완으로 유지한다. 운영자 업로드나 해시, 시간 경과만으로 무과금을 인정하지 않는다. 따라서 D-084의 일부 경로를 구현해도 전체 부채 완료를 뜻하지 않는다.
 
 초기 main의 payment 이미지 publish가 unknown blob으로 실패해 진단 PR #179를 별도 검증 후 병합했다. 병합 SHA는 `3e1ba64c715d22b1f5a2d2635a97da17eb4ebb28`이며 main CI38981041166의 gate와 모든 publish가 성공해야 일반 부채 병합을 재개한다. PR의 조건부 publish skip은 이 증거를 대체하지 않는다. 상세한 head/base/checkout, artifact 및 실행 소유권은 audit에 보존한다.

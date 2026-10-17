@@ -1,0 +1,488 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: PeekCart Alerts
+    folder: PeekCart
+    interval: 1m
+    rules:
+      - uid: peekcart-high-error-rate
+        title: "High Error Rate (5xx > 5%)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "sum by (application)(rate(http_server_requests_seconds_count{application=~\"gateway|notification-service|order-service|payment-service|product-service|user-service\", status=~\"5..\"}[5m]))"
+              instant: false
+              range: true
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "sum by (application)(rate(http_server_requests_seconds_count{application=~\"gateway|notification-service|order-service|payment-service|product-service|user-service\"}[5m]))"
+              instant: false
+              range: true
+          - refId: C
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "($B > 0) && (($A / $B) * 100 > 5)"
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PeekCart 5xx 에러율 5% 초과 — {{ $labels.application }}"
+          description: "{{ $labels.application }} 의 최근 5분간 5xx 에러율이 5%를 초과했습니다."
+      - uid: peekcart-slow-response
+        title: "Slow API Response (p95 > 2s)"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=~\"gateway|notification-service|order-service|payment-service|product-service|user-service\", uri!~\"/actuator.*\"}[5m])) by (le, application))"
+              instant: false
+              range: true
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [2]
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PeekCart API p95 응답시간 2초 초과 — {{ $labels.application }}"
+          description: "{{ $labels.application }} 의 최근 5분간 API p95 응답시간이 2초를 초과했습니다."
+      - uid: peekcart-target-down
+        title: "Peekcart Target Down (up == 0)"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "count by (service)(up{namespace=\"peekcart\"} == 0) or on() vector(0)"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PeekCart 타겟 스크랩 실패 (up == 0) — {{ $labels.service }}"
+          description: "{{ $labels.service }} 의 타겟을 Prometheus 가 스크랩 시도했으나 실패 (네트워크, 인증, /actuator/prometheus 500 등). up 시계열은 존재하되 0. Error Rate 패널의 강제 0% 표시와 구분하는 신호."
+      - uid: peekcart-scrape-absent-notification
+        title: "Peekcart Metrics Scrape Absent — notification-service"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "absent(up{namespace=\"peekcart\", service=\"notification-service\"}) or on() vector(0)"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 2m
+        labels:
+          severity: critical
+          service: notification-service
+        annotations:
+          summary: "PeekCart up 시계열 부재 — notification-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+          description: "notification-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+      - uid: peekcart-scrape-absent-order-service
+        title: "Peekcart Metrics Scrape Absent — order-service"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "absent(up{namespace=\"peekcart\", service=\"order-service\"}) or on() vector(0)"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 2m
+        labels:
+          severity: critical
+          service: order-service
+        annotations:
+          summary: "PeekCart up 시계열 부재 — order-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+          description: "order-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+      - uid: peekcart-scrape-absent-payment-service
+        title: "Peekcart Metrics Scrape Absent — payment-service"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "absent(up{namespace=\"peekcart\", service=\"payment-service\"}) or on() vector(0)"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 2m
+        labels:
+          severity: critical
+          service: payment-service
+        annotations:
+          summary: "PeekCart up 시계열 부재 — payment-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+          description: "payment-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+      - uid: peekcart-scrape-absent-product-service
+        title: "Peekcart Metrics Scrape Absent — product-service"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "absent(up{namespace=\"peekcart\", service=\"product-service\"}) or on() vector(0)"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 2m
+        labels:
+          severity: critical
+          service: product-service
+        annotations:
+          summary: "PeekCart up 시계열 부재 — product-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+          description: "product-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+      - uid: peekcart-scrape-absent-user-service
+        title: "Peekcart Metrics Scrape Absent — user-service"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "absent(up{namespace=\"peekcart\", service=\"user-service\"}) or on() vector(0)"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 2m
+        labels:
+          severity: critical
+          service: user-service
+        annotations:
+          summary: "PeekCart up 시계열 부재 — user-service (ServiceMonitor 미매칭 / 서비스 삭제)"
+          description: "user-service 의 up 메트릭 series 부재. ServiceMonitor selector 미스매치, 서비스 삭제, Prometheus 설정 문제 등 구조적 부재. 스크랩 실패(up == 0) 는 peekcart-target-down 에서 감지." 
+      # gateway 는 도메인 서비스가 아니라 인프라 진입점이지만 scrape 부재의 의미는 같다(ADR-0024 D3).
+      # service 라벨 값이 `gateway` 가 아니라 `gateway-metrics` 인 것은 오타가 아니다 —
+      # up{service=} 는 scrape 된 **Service 의 이름**이고, 관리 포트는 별도 ClusterIP Service 가 게시한다.
+      - uid: peekcart-scrape-absent-gateway-metrics
+        title: "Peekcart Metrics Scrape Absent — gateway-metrics"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "absent(up{namespace=\"peekcart\", service=\"gateway-metrics\"}) or on() vector(0)"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 2m
+        labels:
+          severity: critical
+          service: gateway-metrics
+        annotations:
+          summary: "PeekCart up 시계열 부재 — gateway-metrics (ServiceMonitor 미매칭 / 서비스 삭제)"
+          description: "gateway 관리 포트(8081) scrape 대상인 gateway-metrics Service 의 up 메트릭 series 가 없습니다. 인증 실패·rate limit 메트릭(S9)이 통째로 수집되지 않는 상태입니다. ServiceMonitor selector 미스매치(두 라벨 논리곱), Service 삭제, Prometheus 설정 문제를 확인하십시오."
+      # --- 구현 ④-d-1 P4: 미결이 쌓이는 표면만 alert 로 둔다 ---
+      # 메트릭을 늘린다고 alert 를 그만큼 만들지 않는다. 울리지 않는 alert 는 소음이고
+      # promql-lint 의 required 집합을 그만큼 넓힌다. 예약 성공/확정/복구 같은 흐름 지표는
+      # 대시보드·조회용이고, "사람이 손대지 않으면 안 없어지는 것" 만 alert 대상이다.
+      - uid: peekcart-compensation-backlog
+        title: "Saga Compensation Backlog (미해소 보상 원장)"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              # order-service 전용 메트릭이다 — 보상 원장(order_compensations)을 order 만 소유한다.
+              # 5서비스 regex 로 걸면 없는 series 를 기다리는 alert 가 된다(ADR-0012 D1).
+              # status 를 명시 고정한다 — 나중에 상태가 추가돼도 조용히 alert 대상에 들어오지 않는다.
+              expr: "sum by (application)(saga_compensation_backlog{application=~\"order-service\", status=~\"open|refund_failed\"})"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PeekCart 미해소 보상 원장 존재 — {{ $labels.application }}"
+          description: "order_compensations 에 OPEN 또는 REFUND_FAILED 건이 남아 있습니다. OPEN 은 환불 요청이 아직 종결되지 않은 것이고, REFUND_FAILED 는 '닫혔지만 해결되지 않은' 상태라 사람이 처리해야 합니다(ADR-0018 D4). for=15m 은 정상 환불 왕복 시간을 넘긴 잔존만 잡기 위한 값입니다."
+      # D-060: 요청시각부터 15분 넘게 미결인 승인. DB 공유 replica의 age를 합산하지 않는다.
+      - uid: peekcart-payment-approval-stale
+        title: "Payment Approval Stale (승인 보호 장기 미결)"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "max by (application)(payment_approval_oldest_age_seconds{application=~\"payment-service\", status=~\"waiting_stock|ready|claimed|unresolved\"})"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 900"
+        for: 0s
+        labels:
+          severity: warning
+          signal: payment-approval
+        annotations:
+          summary: "PeekCart 승인 요청 15분 초과 미결 — {{ $labels.application }}"
+          description: "WAITING_STOCK/READY/CLAIMED/UNRESOLVED 승인 요청이 15분 넘게 남아 있습니다. age는 현재 상태 진입시각이 아닌 최초 requested_at 기준이며, 빈 상태는 0입니다. 보호 handshake의 Outbox/DLQ, 승인 dispatcher, PG 조회 reconciliation을 확인하십시오. 결과 불명 동안 예약 보호를 유지하며, 나이만으로 자동 보호 해제하거나 PG 승인을 재호출하지 마십시오."
+      - uid: peekcart-dlq-backlog
+        title: "DLQ Backlog (미결 DLQ 원장)"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              # DLQ 원장은 소비 서비스 4곳이 소유한다 — user-service 는 Kafka 소비자가 없어 제외.
+              expr: "sum by (application)(dlq_backlog{application=~\"notification-service|order-service|payment-service|product-service\"})"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 10m
+        labels:
+          severity: warning
+          signal: dlq
+        annotations:
+          summary: "PeekCart 미결 DLQ 원장 존재 — {{ $labels.application }}"
+          description: "dead_letter_records 에 OPEN/ACKED 건이 남아 있습니다. DLQ 유입은 종결이 아니라 원장의 입력이며, 재처리 여부는 사람이 판단합니다. 조치: docs/runbooks/dlq-recovery.md"
+      # --- D-030: Outbox 발행 소진은 DLQ 와 대응이 반대다 ---
+      # DLQ 는 소비 실패(데이터 수정 후 원본 토픽 재투입), 이쪽은 발행 실패(브로커 복구 후 재발행)다.
+      # 같은 규칙이나 같은 라벨로 묶으면 운영자가 문구로만 구분해야 하므로 규칙과 signal 라벨을 분리한다.
+      # FAILED 는 종착 상태다 — 자동 재시도도 retention 삭제도 없어 gauge 가 저절로 0 이 되지 않는다.
+      - uid: peekcart-outbox-failed
+        title: "Outbox Publish Exhausted (발행 소진)"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              # outbox 는 발행 서비스 4곳이 소유한다 — user-service 는 outbox 가 없어 제외.
+              expr: "sum by (application)(outbox_backlog{application=~\"notification-service|order-service|payment-service|product-service\", status=\"failed\"})"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 5m
+        labels:
+          severity: warning
+          signal: outbox-publish
+        annotations:
+          summary: "PeekCart Outbox 발행 소진 — {{ $labels.application }}"
+          description: "outbox_events 에 재시도를 소진한 FAILED 이벤트가 있습니다. 소비 측 실패(DLQ)가 아니라 발행 실패이며, 이벤트는 아직 Kafka 에 나가지 않았습니다. FAILED 는 자동 재시도가 없는 종착 상태이므로 브로커·네트워크를 복구한 뒤 재발행해야 합니다."
+      # --- 구현 ③ PR4(S9): 인증 실패 중 alert 로 올리는 것은 reuse 하나다 ---
+      # 401 은 만료 토큰 재시도 같은 기저율이 있어서 임계를 정할 근거가 아직 없다(baseline 미측정).
+      # reuse 는 다르다 — 정상 클라이언트는 무효화된 refresh token 을 다시 제시하지 않는다.
+      # 발생 자체가 사건이므로 임계가 필요 없다(ADR-0024 D3/§Consequences).
+      - uid: peekcart-token-reuse-detected
+        title: "Refresh Token Reuse Detected (탈취 의심)"
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              # 발급 owner 는 user-service 단독이다(ADR-0010) — 5서비스 regex 로 걸면 없는 series 를 기다린다.
+              expr: "sum by (application)(increase(auth_token_reuse_detected_total{application=~\"user-service\"}[5m]))"
+              instant: true
+              range: false
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              expression: "$A > 0"
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PeekCart refresh token reuse 감지 — {{ $labels.application }}"
+          description: "무효화되었거나 이미 로테이션된 refresh token 이 재제시되었습니다. 해당 family 는 전체 무효화되고 access token 은 family deny 로 차단됩니다(ADR-0013 D4). 정상 동시요청은 grace 창에서 흡수되므로, 이 카운터가 오르는 것은 탈취 또는 클라이언트 토큰 관리 결함을 뜻합니다."
+
+      - uid: peekcart-cache-fallback-get
+        title: Product Cache Fallback (get)
+        condition: B
+        data:
+        - refId: A
+          relativeTimeRange:
+            from: 300
+            to: 0
+          datasourceUid: prometheus
+          model:
+            expr: sum by (application, cache)(rate(cache_fallback_total{application=~"product-service", operation="get"}[5m]))
+            instant: true
+            range: false
+        - refId: B
+          relativeTimeRange:
+            from: 300
+            to: 0
+          datasourceUid: __expr__
+          model:
+            type: math
+            expression: $A > 0
+        for: 10m
+        labels:
+          severity: warning
+          signal: cache-fallback-get
+          operation: get
+        annotations:
+          summary: Product cache get 실패 — {{ $labels.cache }}
+          description: Redis 조회 fallback이 10분 지속되었습니다. DB 부하와 Redis 연결을 확인하십시오. docs/runbooks/redis-cache-fallback.md §3
+      - uid: peekcart-cache-fallback-evict
+        title: Product Cache Fallback (evict)
+        condition: B
+        data:
+        - refId: A
+          relativeTimeRange:
+            from: 300
+            to: 0
+          datasourceUid: prometheus
+          model:
+            expr: sum by (application, cache)(increase(cache_fallback_total{application=~"product-service", operation="evict"}[5m]))
+            instant: true
+            range: false
+        - refId: B
+          relativeTimeRange:
+            from: 300
+            to: 0
+          datasourceUid: __expr__
+          model:
+            type: math
+            expression: $A >= 1
+        for: 0s
+        labels:
+          severity: warning
+          signal: cache-fallback-evict
+          operation: evict
+        annotations:
+          summary: Product cache evict 실패 — {{ $labels.cache }}
+          description: 캐시 무효화가 실패했습니다. 상세 30분/목록 10분 stale 창을 즉시 확인하십시오. docs/runbooks/redis-cache-fallback.md §4

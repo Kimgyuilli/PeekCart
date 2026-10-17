@@ -1,6 +1,6 @@
 package com.peekcart.payment.infrastructure.kafka;
 
-import com.peekcart.global.kafka.FixedSequenceBackOff;
+import com.peekcart.global.kafka.JitteredSequenceBackOff;
 import com.peekcart.global.kafka.KafkaTopicConfigs;
 import com.peekcart.global.replay.OriginalRecordReader;
 import com.peekcart.global.kafka.MdcPayloadExtractor;
@@ -139,7 +139,7 @@ public class PaymentKafkaConfig {
             } catch (Exception e) {
                 log.warn("DLQ Slack 알림 발송 실패", e);
             }
-        }, new FixedSequenceBackOff(1_000, 5_000, 30_000));
+        }, new JitteredSequenceBackOff(0.5, 1_000, 5_000, 30_000));
     }
 
     @Bean

@@ -1,0 +1,11 @@
+2026-10-16T23:11:52Z mode=transient
+2026-10-16T23:13:22Z mode=healthy
+2026-10-16T23:19:54Z mode=sustained
+Traceback (most recent call last):
+  File "/private/tmp/peakcart-worker-b-monitoring/scripts/monitoring/verify_alerts.py", line 238, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/peakcart-worker-b-monitoring/scripts/monitoring/verify_alerts.py", line 207, in main
+    assert firing_apps == apps, (uid, firing_apps)
+           ^^^^^^^^^^^^^^^^^^^
+AssertionError: ('peekcart-compensation-backlog', set())

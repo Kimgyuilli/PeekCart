@@ -1,6 +1,9 @@
 package com.peekcart.order.domain.repository;
 
 import java.util.Optional;
+import java.util.List;
+import java.util.Collection;
+import com.peekcart.order.domain.model.ProductPriceCache;
 
 /**
  * Order 로컬 가격 캐시 리포지터리 인터페이스 (ADR-0012 CQRS).
@@ -20,5 +23,7 @@ public interface ProductPriceCacheRepository {
      * {@code product.updated} 를 캐시에 반영한다 (upsert).
      * 더 높은 {@code version} 일 때만 적용하여 역순/replay 이벤트의 과거 version 덮어쓰기를 막는다.
      */
-    void applyUpdate(Long productId, long unitPrice, long version);
+    void applyUpdate(Long productId, long unitPrice, long version, String productName, String productStatus);
+
+    List<ProductPriceCache> findAllByProductIdIn(Collection<Long> productIds);
 }

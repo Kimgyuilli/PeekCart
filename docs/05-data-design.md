@@ -118,7 +118,7 @@ erDiagram
 ### Order DB
 
 > `order_items`의 `product_name`, `unit_price`는 주문 시점 스냅샷으로 저장 (상품 가격 변경 대응)
-`cart_items`는 최신 상품 정보를 반영해야 하므로 스냅샷 컬럼을 포함하지 않습니다. 담기 시점의 상품 존재 검증은 Order 로컬 캐시(`product_price_cache`)로 하며, Product 동기 호출은 없습니다(strangler-4). **장바구니 조회 시 상품명·가격을 조합하는 기능은 아직 없습니다** — 현재 응답은 `productId`/`quantity` 만 반환합니다. 로컬 캐시가 단가만 보유하므로(§9-13) 조합에는 캐시 확장이 선행돼야 하며, 별도 task 로 분리돼 있습니다.
+`cart_items`는 최신 상품 정보를 반영해야 하므로 스냅샷 컬럼을 포함하지 않습니다. 담기 시점의 상품 존재 검증은 Order 로컬 캐시(`product_price_cache`)로 하며, Product 동기 호출은 없습니다(strangler-4). 장바구니 조회·추가·수정 응답은 로컬 캐시의 이름·단가·상태를 한 번에 조회해 조합합니다. `productName`/`unitPrice`/`productStatus`/`available`은 미수신 시 null이며 item은 유지합니다. `available`은 이벤트 시점의 상품 상태이며 실시간 재고 보장이 아닙니다. 기존 가격 전용 행의 이름·상태는 다음 더 높은 version 수신까지 null입니다 (see ADR-0036).
 >
 
 ```mermaid
@@ -169,6 +169,8 @@ erDiagram
   product_price_cache {
     bigint product_id PK
     bigint unit_price
+    string product_name
+    string product_status
     bigint source_version
     timestamp updated_at
   }
@@ -315,8 +317,11 @@ erDiagram
 
 승인 보호 후속 보강은 추가 마이그레이션 없이 `dispatch_deadline`을 신규 fence 접수 표지로 재사용한다. 신규 미결의 수동 감사는 `resolved_by`·`resolution_reason`만 기록하고 `resolved_at=NULL` 및 `UNRESOLVED`를 유지한다(see ADR-0035).
 
+### 장바구니 상품 metadata 확장 (ADR-0036)
 
-### 승인 대사 복구 원장 (see ADR-0040, Proposed)
+Order V13은 `product_price_cache.product_name VARCHAR(255) NULL`, `product_status VARCHAR(32) NULL`을 추가합니다. 가격과 metadata는 같은 `source_version` 비교로 원자 갱신하고 version은 마지막에 대입합니다. 동일/과거 version은 updated_at을 포함해 변경하지 않습니다. 기존 seed 행은 가격만 보존합니다. 앱 롤백 시 additive 컬럼은 유지합니다.
+
+### 승인 대사 복구 원장 (see ADR-0040, 서버 직접 확정 조회 범위 Accepted)
 
 - Payment V13 `approval_recoveries`: UUID id, order_id, approval generation, 복구 상태, PG 상태/원문(LONGTEXT)/SHA-256, reservation version/status, 승인자·실행자·시각을 보존한다. `(order_id, status)` 인덱스와 approval row lock으로 주문의 활성 복구를 직렬화한다.
 - Payment V13 `approval_recovery_audit`: append-only 감사 행에 recoveryId/orderId/actor/action/reason/증거 원문·해시/generation/시각을 기록한다. 유효 운영자의 거절은 별도 트랜잭션이며 증거가 없으면 빈 원문과 그 해시, generation=-1로 구분한다. 해시 자체를 PG 진위 증명으로 사용하지 않는다.

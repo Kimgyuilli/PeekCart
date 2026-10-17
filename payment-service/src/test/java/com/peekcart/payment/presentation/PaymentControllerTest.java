@@ -181,4 +181,11 @@ class PaymentControllerTest {
                         .content(payload))
                 .andExpect(status().isUnauthorized());
     }
+    @Test
+    @WithMockLoginUser
+    void invalidPathIdReturns400() throws Exception {
+        mockMvc.perform(get("/api/v1/payments/abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("SYS-003"));
+    }
 }

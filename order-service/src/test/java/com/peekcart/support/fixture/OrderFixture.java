@@ -108,7 +108,7 @@ public class OrderFixture {
     public static CartDetailDto cartDetailDto() {
         return new CartDetailDto(
                 DEFAULT_CART_ID,
-                List.of(new CartItemDto(DEFAULT_CART_ITEM_ID, DEFAULT_PRODUCT_ID, DEFAULT_QUANTITY))
+                List.of(new CartItemDto(DEFAULT_CART_ITEM_ID, DEFAULT_PRODUCT_ID, DEFAULT_QUANTITY, null, null, null, null))
         );
     }
 }
