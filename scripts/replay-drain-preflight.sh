@@ -42,11 +42,11 @@ SERVICES=(order product payment notification)
 #
 # 이 값들은 **이 스크립트가 소유한다**. 배포 절차의 값이지 앱 런타임 정책이 아니므로 앱 yml 에 둘 근거가
 # 없고(ADR-0007), 배포 도구가 런타임 설정 포맷을 파싱하면 그 포맷에 묶인다.
-# **대신 드리프트를 lint 가 잡는다** — scripts/replay-entrypoint-lint.sh 가 아래 두 값을
-# FixedSequenceBackOff 리터럴(4벌)·clock-skew-budget(4벌 yml)과 교차 대조한다.
-BACKOFF_TOTAL_SECONDS=36          # FixedSequenceBackOff(1_000, 5_000, 30_000)
+# **대신 드리프트를 lint 가 잡는다** — scripts/replay-entrypoint-lint.sh 가 아래 상한과 시도 횟수를
+# 공유 DLQ JitteredSequenceBackOff 리터럴·clock-skew-budget(4벌 yml)과 교차 대조한다.
+BACKOFF_TOTAL_SECONDS=54          # JitteredSequenceBackOff(0.5, 1_000, 5_000, 30_000)의 최대 1.5+7.5+45초
 CLOCK_SKEW_SECONDS=300            # app.idempotency.clock-skew-budget: 5m
-# 아래 둘은 **코드로 강제되지 않는 선언값**이다 — consumer handler 에 timeout 설정이 없다.
+# HANDLER_BUDGET_SECONDS는 코드로 강제되지 않는 선언값이다 — consumer handler에 timeout 설정이 없다.
 # 그래서 ⓑⓒ 의 "2회 연속 lag=0" 이 이 약점을 보완한다(제거하지는 못한다).
 ATTEMPTS=4                        # 최초 실행 + backoff 3회
 HANDLER_BUDGET_SECONDS=30
@@ -194,6 +194,14 @@ self_test() {
     run_case "ⓓ 경계 — 상한을 지나면 통과한다" 0 "" \
         "${clean/$'DB\torder\t0\t0\t-'/$'DB\torder\t0\t0\t'$((now - DRAIN_BOUND_SECONDS))}"
 
+    # 고정 경계도 검증: 선언 상한을 옛 값으로 낮추면 동적 fixture까지 같이 낮아지는 우회 방지.
+    run_case "ⓓ 옛 546초에서는 아직 막는다" 1 "[ⓓ] order" \
+        "${clean/$'DB\torder\t0\t0\t-'/$'DB\torder\t0\t0\t'$((now - 546))}"
+    run_case "ⓓ 고정 563초에서는 막는다" 1 "[ⓓ] order" \
+        "${clean/$'DB\torder\t0\t0\t-'/$'DB\torder\t0\t0\t'$((now - 563))}"
+    run_case "ⓓ 고정 564초에서는 통과한다" 0 "" \
+        "${clean/$'DB\torder\t0\t0\t-'/$'DB\torder\t0\t0\t'$((now - 564))}"
+
     run_case "수집 실패는 fail-closed 다" 1 "fail-closed" \
         "${clean}"$'ERR\tpayment\tAccess denied for user\n'
     run_case "서비스 하나의 조회가 통째로 빠지면 막는다 (누락은 통과가 아니다)" 1 "수집되지 않은 서비스" \
@@ -207,7 +215,7 @@ self_test() {
         echo "$TAG self-test 실패 $failures 건" >&2
         exit 2
     fi
-    echo "$TAG self-test OK — 판정 11종"
+    echo "$TAG self-test OK — 판정 14종"
 }
 
 # --- 수집 (클러스터 의존) ---
