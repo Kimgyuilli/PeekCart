@@ -308,3 +308,11 @@ ADR-0040은 서버가 직접 확인한 확정 PG 결과의 제한된 복구 결�
 | order-service | `sha256:c037885bcc77895ddcd934955f1ba811a2d9b132b6d4375f12a13ac50548f44e` |
 | payment-service | `sha256:07f540d9ae70a0486f6f16b14af5b6d880f7fdfcdf65ec98705a8e35ffce565a` |
 | notification-service | `sha256:efbc850bc03cadc9ac46c90974859a01b8a6a82975b19463a5b94ea3ef12efd8` |
+
+## 최종 통합 PR 검증 시작
+
+- #180 최신 head `945256b3407aa61065667c4f131a3c3efb9f14e5`, base `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`, [CI38986317120](https://github.com/Kimgyuilli/PeekCart/actions/runs/38986317120). A가 앱6건과 Saga/monitor4건을 별도 plan/audit 보존으로 통합했다. D084는 선행181의 제한된 구현과 미완 조건을 유지한다.
+- 독립 verifier의 최종 소스/본문 PASS: 실행460의 D063 대상5rule 전체 모델과 최종 head 동일, 원문23개 추적/해시 확인. 실제CI checkout와 전체 artifact 판정은 아직 대기이며 이전e417 CI통과로 대체하지 않는다. 원문 로그의 trailing whitespace는 증거 hash 보존을 위해 그대로 둔다.
+- root 기록의 docs/ADR 혼합 commit은 분류 가드가 거부했으며 우회 없이1e72c17/docs와12d096e/ADR 두 커밋으로 분리했다. main181 독립 최종 PASS와 PR181본문 readback도 완료했다.
+
+- CI38986317120 lint 실패: workflow의 E2E step 표시명이 시나리오4종→6종으로 바뀌었으나 `ci-e2e-parallel-lint.sh`의 정확 이름 lookup/음성 selftest 두 곳은4종을 유지했다. root와 독립 verifier가 job117258510616 로그로 확인했다. 실행조건을 완화하지 않고 정본 이름을 맞춘다. root는 원인 확인 후 이전run 취소 요청을 제출했으며 새 source/가드 반례/최종 전체CI로 대체한다. 무근거 재실행이나 이전 CI 성공 채택은 하지 않는다.
