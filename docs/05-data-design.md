@@ -314,3 +314,13 @@ erDiagram
 - `order_id` UNIQUE는 그대로 주문당 승인 1건을 보장한다. 새 dispatcher와 회신/timeout 처리는 원장 행 잠금을 공유한다. CLAIMED의 generation은 조회 claim마다 증가하며 과거 실행자의 확정을 거부한다.
 
 승인 보호 후속 보강은 추가 마이그레이션 없이 `dispatch_deadline`을 신규 fence 접수 표지로 재사용한다. 신규 미결의 수동 감사는 `resolved_by`·`resolution_reason`만 기록하고 `resolved_at=NULL` 및 `UNRESOLVED`를 유지한다(see ADR-0035).
+
+
+### 승인 대사 복구 원장 (see ADR-0040, Proposed)
+
+- Payment V13 `approval_recoveries`: UUID id, order_id, approval generation, 복구 상태, PG 상태/원문(LONGTEXT)/SHA-256, reservation version/status, 승인자·실행자·시각을 보존한다. `(order_id, status)` 인덱스와 approval row lock으로 주문의 활성 복구를 직렬화한다.
+- Payment V13 `approval_recovery_audit`: append-only 감사 행에 recoveryId/orderId/actor/action/reason/증거 원문·해시/generation/시각을 기록한다. 유효 운영자의 거절은 별도 트랜잭션이며 증거가 없으면 빈 원문과 그 해시, generation=-1로 구분한다. 해시 자체를 PG 진위 증명으로 사용하지 않는다.
+- Product V12 `stock_reservations.version BIGINT NOT NULL DEFAULT 0`, nullable `recovery_id VARCHAR(36)`: entity 변경은 @Version, 여섯 bulk CAS는 version 증가로 같은 snapshot 경계를 지킨다. 복구는 snapshot version/APPROVAL_HELD/fence 조건과 row lock 안에서 재고를 한 번만 복원한다. 같은 recoveryId 재전달은 재고를 다시 더하지 않는다.
+- `payment_approvals.RECOVERY_PENDING`: 자동 reconciliation claim 대상에서 제외하는 운영 실행 대기 상태다. 신규 generation으로 기존 실행자를 fence하고 Product 확인 뒤 FAILED를 확정한다. 명시적인 Product 거절의 재개도 이 상태를 유지하며 새 generation/snapshot/승인을 요구한다. 장기 미결 gauge 및 경보에는 포함한다.
+
+상태 변경·감사·업무 outbox는 같은 트랜잭션에 기록한다. 네 신규 메시지의 소비는 inbox와 같은 트랜잭션이며 일반 replay 정책은 DENY다. Product snapshot의 확인 없이 교차 DB 조회나 동기 Product HTTP로 상태를 결정하지 않는다. 업무 DDL 배포 후 소비자/replay 정책을 배포하고 마지막으로 운영 역할을 설정한다.

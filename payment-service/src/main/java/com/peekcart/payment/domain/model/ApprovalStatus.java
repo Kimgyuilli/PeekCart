@@ -35,6 +35,12 @@ public enum ApprovalStatus {
         }
     },
 
+    /** 운영 복구 결과 대기. 자동 reconciliation은 claim하지 않는다. */
+    RECOVERY_PENDING {
+        @Override
+        public boolean canTransitionTo(ApprovalStatus target) { return target == FAILED; }
+    },
+
     /** 승인 확정 (종결). */
     SUCCEEDED {
         @Override

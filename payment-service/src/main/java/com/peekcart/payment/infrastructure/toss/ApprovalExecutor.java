@@ -31,7 +31,7 @@ public class ApprovalExecutor {
      * 여기에 없는 상태(READY·IN_PROGRESS·WAITING_FOR_DEPOSIT 등)는 <b>미확정</b>이며 닫지 않는다.
      */
     private static final Set<String> TERMINAL_NEGATIVE =
-            Set.of("CANCELED", "PARTIAL_CANCELED", "ABORTED", "EXPIRED");
+            Set.of("ABORTED", "EXPIRED");
 
     private final TossPaymentClient tossPaymentClient;
 
@@ -86,7 +86,10 @@ public class ApprovalExecutor {
         if (DONE.equals(status)) {
             return toSucceeded(found.rawResponse());
         }
-        if (TERMINAL_NEGATIVE.contains(status)) {
+        // 부분 취소는 잔여 과금이 있으므로 보호 재고 해제 근거가 아니다(ADR-0040).
+        // CANCELED도 로컬 승인 금액 전체가 취소된 경우에만 확정한다.
+        if (TERMINAL_NEGATIVE.contains(status)
+                || ("CANCELED".equals(status) && found.isFullyCanceled(approval.getAmount()))) {
             return ApprovalOutcome.failed("PG_" + status, found.rawResponse());
         }
         // READY·IN_PROGRESS·WAITING_FOR_DEPOSIT·미상 — 아직 확정되지 않았다. 닫으면 뒤늦게 성립한

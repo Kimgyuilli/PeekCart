@@ -147,4 +147,22 @@ Product의 재고 보호 확인을 받은 승인만 PG를 호출한다. 접수 �
 ### 보호 승인 미결의 조회 (see ADR-0035)
 
 결제 조회 응답의 `status`는 결제 상태, nullable `approvalStatus`는 PG 승인 원장 상태다. 원장이 없으면 `approvalStatus=null`이다. `CANCELLED + UNRESOLVED`는 미과금 확정을 뜻하지 않는다.
-보호된 승인의 운영자·사유 기록은 과금 부재의 증명이 아니므로 조회 복구와 재고 보호를 유지한다. 공개 HTTP 수동 처리 API는 제공하지 않는다.
+보호된 승인의 운영자·사유 기록은 과금 부재의 증명이 아니므로 조회 복구와 재고 보호를 유지한다. 근거 없는 강제 종결 API는 제공하지 않는다.
+
+
+### 보호 승인 대사 복구 (see ADR-0040, Proposed)
+
+운영 복구는 서버가 PG에서 직접 확인한 결제키·주문·금액 일치와 확정 무과금 결과, Product 예약 snapshot, 필요 시 전액 환불 원장 대사를 요구한다. 기존 서명 내부 토큰의 ADMIN principal 중 서로 겹치지 않는 승인자·실행자 목록만 접근한다. 기본 목록은 비어 있으며 요청의 `resolvedBy`나 평문 사용자 헤더는 신원 증거가 아니다.
+
+아래 상대 경로의 prefix는 `/api/v1/payments/approval-recoveries`다. 쓰기는 `reason`(1~500자)을 필수로 받고, 응답은 `ApiResponse` 안의 id/orderId/status/generation만 제공한다. PG 원문과 paymentKey는 반환하지 않는다.
+
+| 메서드·경로 | 역할 | 계약 |
+|---|---|---|
+| POST `/orders/{orderId}` | 승인자 | PG 직접 조회 후 예약 대사 요청. 활성/완료 요청 재전송은 기존 id 반환 |
+| GET `/{id}` | 승인자 또는 실행자 | 복구 상태 조회 |
+| POST `/{id}/approve` | 승인자 | 수신한 예약 snapshot 검토 뒤 승인 |
+| POST `/{id}/execute` | 실행자 | PG 재확인·generation 재검증 후 실행 요청. 진행/완료 중복은 동일 결과와 감사만 반환 |
+| POST `/{id}/resume` | 승인자 | 명시적인 Product 거절 뒤 새 PG 대사·generation·snapshot·재승인 절차 개시 |
+| POST `/{id}/retry` | 실행자 | 응답 유실 시 PG 재확인 뒤 같은 id/generation/version 실행만 재전달 |
+
+실행 요청은 완료가 아니며 Product 해제 확인 뒤에만 COMPLETED다. 예약 변경 시 REVIEW_REQUIRED와 승인 RECOVERY_PENDING을 유지한다. 이전 generation이나 reservation version은 새 실행에 사용할 수 없다. 늦은 PG DONE은 해제하지 않고 검증된 성공 증거를 기존 승인/고아 환불 경로에 전달한다. 404·불명·부분 취소·증빙 모순·PG 결과 변경은 해제 근거가 아니다. 영구 404의 외부 PG 증빙 경로는 미지원이며 D-084 전체는 열린 상태다. 상세 운영 계약은 [복구 runbook](runbooks/approval-recovery.md)을 따른다.

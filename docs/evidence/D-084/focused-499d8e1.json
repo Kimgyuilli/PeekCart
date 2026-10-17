@@ -1,0 +1,773 @@
+{
+  "sourceSHA": "499d8e1f6ca8969b147f73808131bcd68fd1f3a5",
+  "session": 86805,
+  "result": "PASS",
+  "elapsed": "1m14s",
+  "command": "./gradlew --offline --no-parallel --no-daemon --max-workers=1 -Dorg.gradle.parallel=false :common:test --tests *DlqTopologyContractTest --tests *ReplayPolicyRegistryTest :payment-service:test --tests *ApprovalRecovery* --tests *ApprovalExecutorTest --tests *ApprovalStatusTest --tests *ApprovalFenceRecoveryIntegrationTest --tests *PaymentKafkaConfigTopicConfigContractTest :product-service:test --tests *ReservationVersionIntegrationTest --tests *StockReservationSagaIntegrationTest --tests *ProductKafkaConfigTopicConfigContractTest",
+  "seeds": {
+    "payment-service": 1792194145976,
+    "product-service": 1792194179479
+  },
+  "log": "/private/tmp/peakcart-d084-focused.log",
+  "logSha256": "9ead5023ff57b8cb4a740936f6a54726b0e873622aaeeb64db52963ef5b3373e",
+  "suites": [
+    {
+      "module": "common",
+      "name": "DlqTopology — 소유권 계약",
+      "tests": "13",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:21.749Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.126",
+      "xmlSha256": "403e2c6d1db81cb2ed26699e062b949acf7b72b52ad7302e83ac5b86d46fb79d",
+      "cases": [
+        {
+          "name": "ownsConsumption — group 이 sentinel 이면 소비 경로가 아니다",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.08"
+        },
+        {
+          "name": "모든 구독 토픽은 .dlq 로 끝난다",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.012"
+        },
+        {
+          "name": "ADR-0018 신설 토픽 3종의 .dlq 가 소유 매핑에 있다",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.002"
+        },
+        {
+          "name": "한 DLQ 토픽의 quarantine 소유자는 정확히 1곳이다",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.003"
+        },
+        {
+          "name": "소비 구독 총 27개 — 운영 코드의 @KafkaListener 수와 같다",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.002"
+        },
+        {
+          "name": "(dlqTopic, group) 조합을 두 서비스가 동시에 소유하지 않는다",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.004"
+        },
+        {
+          "name": "ownsQuarantine — group 이 판독됐으면 quarantine 대상이 아니다",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.0"
+        },
+        {
+          "name": "[1] service=ORDER",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.004"
+        },
+        {
+          "name": "[2] service=PRODUCT",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.001"
+        },
+        {
+          "name": "[3] service=PAYMENT",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.0"
+        },
+        {
+          "name": "[4] service=NOTIFICATION",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.0"
+        },
+        {
+          "name": "consumer group 은 소유 서비스의 접두사로 시작한다 — 남의 group 을 소유로 적으면 검출된다",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.001"
+        },
+        {
+          "name": "quarantine 대상은 자기가 발행하는 토픽뿐 — notification 은 발행 토픽이 0개다",
+          "classname": "com.peekcart.global.kafka.DlqTopologyContractTest",
+          "time": "0.0"
+        }
+      ]
+    },
+    {
+      "module": "common",
+      "name": "com.peekcart.global.replay.ReplayPolicyRegistryTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:21.877Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.007",
+      "xmlSha256": "6552cf2cefdabc0788233f496a67bc44e70a7691c41b6db151a5c7a5c460b16b",
+      "cases": [
+        {
+          "name": "미등록 쌍은 null 이다 — deny 정책 객체로 대체하지 않는다(선언 누락과 명시적 금지는 다르다)",
+          "classname": "com.peekcart.global.replay.ReplayPolicyRegistryTest",
+          "time": "0.002"
+        },
+        {
+          "name": "topology 의 모든 소비쌍에 정책이 정확히 하나 있고, 여분 정책이 없다",
+          "classname": "com.peekcart.global.replay.ReplayPolicyRegistryTest",
+          "time": "0.003"
+        },
+        {
+          "name": "공유 토픽은 소유자별로 갈린다 — stock.reservation.result 는 order·payment 둘 다 사전조건",
+          "classname": "com.peekcart.global.replay.ReplayPolicyRegistryTest",
+          "time": "0.0"
+        },
+        {
+          "name": "연쇄 개시 토픽은 deny 다 — order.created / payment.requested",
+          "classname": "com.peekcart.global.replay.ReplayPolicyRegistryTest",
+          "time": "0.0"
+        },
+        {
+          "name": "소비쌍은 27개다 — 토픽 수와 다르다",
+          "classname": "com.peekcart.global.replay.ReplayPolicyRegistryTest",
+          "time": "0.001"
+        },
+        {
+          "name": "eventType 은 토픽과 같은 값이어야 한다 — 불일치는 원장/원본 어긋남 신호다",
+          "classname": "com.peekcart.global.replay.ReplayPolicyRegistryTest",
+          "time": "0.0"
+        }
+      ]
+    },
+    {
+      "module": "payment-service",
+      "name": "com.peekcart.payment.application.ApprovalFenceRecoveryIntegrationTest",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:53.575Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.444",
+      "xmlSha256": "1ec006ba4b5f8ed7278b91152316b68280675504d6a86702a6fe3865fc2297e5",
+      "cases": [
+        {
+          "name": "[SAGA-APPROVAL-FENCE-CRASH]",
+          "classname": "com.peekcart.payment.application.ApprovalFenceRecoveryIntegrationTest",
+          "time": "0.176"
+        },
+        {
+          "name": "legacyManualClosureRemainsTerminal()",
+          "classname": "com.peekcart.payment.application.ApprovalFenceRecoveryIntegrationTest",
+          "time": "0.067"
+        },
+        {
+          "name": "[SAGA-APPROVAL-FENCE-PG-SUCCESS-CRASH]",
+          "classname": "com.peekcart.payment.application.ApprovalFenceRecoveryIntegrationTest",
+          "time": "0.083"
+        },
+        {
+          "name": "[SAGA-APPROVAL-FENCE-MANUAL]",
+          "classname": "com.peekcart.payment.application.ApprovalFenceRecoveryIntegrationTest",
+          "time": "0.116"
+        }
+      ]
+    },
+    {
+      "module": "payment-service",
+      "name": "com.peekcart.payment.application.ApprovalRecoveryAccessTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:54.119Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.001",
+      "xmlSha256": "4a8738633ede9f910c5c0cf7ed31507c0b8d4c31131d7b70bb52f4979d93662c",
+      "cases": [
+        {
+          "name": "overlappingRolesFailStartup()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryAccessTest",
+          "time": "0.001"
+        },
+        {
+          "name": "emptyDefaultsAndUnauthenticatedActorsCannotOperate()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryAccessTest",
+          "time": "0.0"
+        }
+      ]
+    },
+    {
+      "module": "payment-service",
+      "name": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+      "tests": "12",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:50.114Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "2.132",
+      "xmlSha256": "fcd38a675a1a88b7ffff58dd04109f13bea37716afb04bc318d221025708d469",
+      "cases": [
+        {
+          "name": "historicalFailedExecutesOnceAndCompletesOnlyAfterProductAcknowledgement()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.575"
+        },
+        {
+          "name": "lateDoneNeverReleasesAndHistoricalFailedUsesOrphanRefundPath()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.124"
+        },
+        {
+          "name": "realReconcilerWinningDuringPgQueryInvalidatesApprovedRecovery()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.157"
+        },
+        {
+          "name": "staleApprovalGenerationAndChangedPgDoNotRelease()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.118"
+        },
+        {
+          "name": "rejectedReservationKeepsProtectedApprovalAndRecordsReview()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.117"
+        },
+        {
+          "name": "recoveryWinningRejectsLateRealReconcilerFinalization()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.129"
+        },
+        {
+          "name": "concurrentExecutionHasOneGenerationOwnerAndOneOutbox()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.127"
+        },
+        {
+          "name": "lostReplyRetryKeepsSameFenceAndChangedPgBlocksRedeliveryWithAudit()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.139"
+        },
+        {
+          "name": "requestResponseLossReturnsExistingIdAndDoesNotRepublish()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.075"
+        },
+        {
+          "name": "falseResultRequiresFreshSnapshotAndApprovalAndOldGenerationCannotComplete()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.201"
+        },
+        {
+          "name": "snapshotAndResultConsumersPreservePayloadAndInboxIdempotency()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.276"
+        },
+        {
+          "name": "onlyAssignedAdminCanApproveAndExecute()",
+          "classname": "com.peekcart.payment.application.ApprovalRecoveryIntegrationTest",
+          "time": "0.086"
+        }
+      ]
+    },
+    {
+      "module": "payment-service",
+      "name": "ApprovalStatus 전이 전수 검증 (ADR-0023 D2)",
+      "tests": "10",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:55.717Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.019",
+      "xmlSha256": "c7e43a4b66e81c29ccfcff48f550249aa0f5937f677772cd3b8ef5588843ddcd",
+      "cases": [
+        {
+          "name": "UNRESOLVED 는 종결이 아니다 — 나가는 전이가 없으면 '미결로 남기지 않는다'가 깨진다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.0"
+        },
+        {
+          "name": "CLAIMED 도 종결이 아니다 — reconciliation 이 회수해야 하는 상태다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.0"
+        },
+        {
+          "name": "WAITING_STOCK 의 전이는 정본과 정확히 일치한다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.003"
+        },
+        {
+          "name": "READY 의 전이는 정본과 정확히 일치한다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.001"
+        },
+        {
+          "name": "CLAIMED 의 전이는 정본과 정확히 일치한다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.0"
+        },
+        {
+          "name": "RECOVERY_PENDING 의 전이는 정본과 정확히 일치한다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.0"
+        },
+        {
+          "name": "SUCCEEDED 의 전이는 정본과 정확히 일치한다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.0"
+        },
+        {
+          "name": "FAILED 의 전이는 정본과 정확히 일치한다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.001"
+        },
+        {
+          "name": "UNRESOLVED 의 전이는 정본과 정확히 일치한다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.0"
+        },
+        {
+          "name": "SUCCEEDED / FAILED 만 종결이다",
+          "classname": "com.peekcart.payment.domain.model.ApprovalStatusTest",
+          "time": "0.001"
+        }
+      ]
+    },
+    {
+      "module": "payment-service",
+      "name": "PaymentKafkaConfig — 전 토픽 config 계약 (ADR-0020 D4-1)",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:54.021Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.09",
+      "xmlSha256": "10e69c00356b8a4a13d31a26b340f0a3b33efa4731bf72578cd2ba39f9898462",
+      "cases": [
+        {
+          "name": "spring.kafka.admin.modify-topic-configs 가 base YAML 에 true 로 배선돼 있다",
+          "classname": "com.peekcart.payment.infrastructure.kafka.PaymentKafkaConfigTopicConfigContractTest",
+          "time": "0.008"
+        },
+        {
+          "name": "NewTopics 묶음 선언을 쓰지 않는다 — 이 수집기를 우회해 config 누락이 조용히 통과한다",
+          "classname": "com.peekcart.payment.infrastructure.kafka.PaymentKafkaConfigTopicConfigContractTest",
+          "time": "0.001"
+        },
+        {
+          "name": "업무/.dlq 가 각각 알맞은 프로필을 쓴다 — .dlq 에 업무 크기를 주면 용량 산정이 깨진다",
+          "classname": "com.peekcart.payment.infrastructure.kafka.PaymentKafkaConfigTopicConfigContractTest",
+          "time": "0.076"
+        },
+        {
+          "name": "retention.ms 는 floor.kafka-topic-retention 에서 유도된다 — 리터럴이면 floor 변경 시 갈라진다",
+          "classname": "com.peekcart.payment.infrastructure.kafka.PaymentKafkaConfigTopicConfigContractTest",
+          "time": "0.001"
+        },
+        {
+          "name": "발행 토픽과 .dlq 가 짝을 이루고, 그 목록이 실제 @Bean 과 일치한다",
+          "classname": "com.peekcart.payment.infrastructure.kafka.PaymentKafkaConfigTopicConfigContractTest",
+          "time": "0.001"
+        },
+        {
+          "name": "모든 토픽이 계약 키 7종을 갖는다 — 하나라도 빠지면 그 토픽만 브로커 기본값으로 남는다",
+          "classname": "com.peekcart.payment.infrastructure.kafka.PaymentKafkaConfigTopicConfigContractTest",
+          "time": "0.001"
+        }
+      ]
+    },
+    {
+      "module": "payment-service",
+      "name": "com.peekcart.payment.infrastructure.security.ApprovalRecoveryHttpSecurityTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:55.284Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.432",
+      "xmlSha256": "b33052961e0f5daecdffc6c8be00d5bb0ad21a8e6d495fabd2fd15dd5c3e64b0",
+      "cases": [
+        {
+          "name": "approverCannotExecuteAndExecutorCannotApprove()",
+          "classname": "com.peekcart.payment.infrastructure.security.ApprovalRecoveryHttpSecurityTest",
+          "time": "0.311"
+        },
+        {
+          "name": "roleAndAssignedIdentityAreBothRequired()",
+          "classname": "com.peekcart.payment.infrastructure.security.ApprovalRecoveryHttpSecurityTest",
+          "time": "0.08"
+        },
+        {
+          "name": "unsignedAndForgedActorsCannotCreateRecovery()",
+          "classname": "com.peekcart.payment.infrastructure.security.ApprovalRecoveryHttpSecurityTest",
+          "time": "0.04"
+        }
+      ]
+    },
+    {
+      "module": "payment-service",
+      "name": "ApprovalExecutor 단위 테스트 (ADR-0023 D3/D4/D5)",
+      "tests": "18",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:55.739Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.037",
+      "xmlSha256": "8d7501cc82d170e6c2f3306cd3d4b26d6e42c14cbcef71aad7268432340ba7fd",
+      "cases": [
+        {
+          "name": "전액 취소는 원장 금액과 정확히 일치할 때만 실패 확정한다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.015"
+        },
+        {
+          "name": "execute: ALREADY_PROCESSED 는 실패가 아니라 조회로 가른다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.002"
+        },
+        {
+          "name": "execute: 성공 시 method/approvedAt 을 파싱해 SUCCEEDED 로 확정하고 멱등키를 보낸다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "execute: 타임아웃/5xx 는 UNRESOLVED — 실패로 닫으면 성립한 과금을 미과금으로 단언하게 된다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "[1] canceledAmount=0",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.002"
+        },
+        {
+          "name": "[2] canceledAmount=1",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "[3] canceledAmount=1000000",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "approvedAt 파싱 실패는 성공을 미확정으로 되돌리지 않는다 — 현재 시각으로 대체한다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "verify: 조회 자체가 실패하면 UNRESOLVED — 진실이 확정되지 않았다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "PG status=READY 이면 닫지 않는다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "PG status=IN_PROGRESS 이면 닫지 않는다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "PG status=WAITING_FOR_DEPOSIT 이면 닫지 않는다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "PG status=SOMETHING_NEW 이면 닫지 않는다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "execute: 4xx 영구 실패는 FAILED 로 확정한다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "execute: 재시도 루프가 없다 — PG 는 정확히 1회만 호출된다(ADR-0023 D4)",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "verify: 조회만 하고 승인을 재호출하지 않는다 — 재호출은 없던 과금을 만드는 행위다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "verify: PG DONE 이면 과금 성립으로 확정한다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.001"
+        },
+        {
+          "name": "멱등키는 주문 단위로 안정적이다 — 최초 호출과 재실행이 같은 값을 써야 PG 중복 방어가 산다",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalExecutorTest",
+          "time": "0.0"
+        }
+      ]
+    },
+    {
+      "module": "payment-service",
+      "name": "com.peekcart.payment.infrastructure.toss.ApprovalRecoveryEvidenceVerifierTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:42:54.112Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.007",
+      "xmlSha256": "98e6077d3037560b535619cb0644e20fe53a7b8e9042e107857f694a06538c56",
+      "cases": [
+        {
+          "name": "rejects404PartialCancellationAndUncertainStates()",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalRecoveryEvidenceVerifierTest",
+          "time": "0.003"
+        },
+        {
+          "name": "distinguishesChargedAndProvenNegative()",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalRecoveryEvidenceVerifierTest",
+          "time": "0.001"
+        },
+        {
+          "name": "rejectsMismatchedIdentityAmountAndMissingBalance()",
+          "classname": "com.peekcart.payment.infrastructure.toss.ApprovalRecoveryEvidenceVerifierTest",
+          "time": "0.001"
+        }
+      ]
+    },
+    {
+      "module": "product-service",
+      "name": "com.peekcart.product.application.ReservationVersionIntegrationTest",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:43:24.641Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.547",
+      "xmlSha256": "dac5e45c6b3ecfb084474c49d9beb900a08e4d8b72bd912e571afbb170c58b48",
+      "cases": [
+        {
+          "name": "nativeAndJpaUpdatesEachAdvanceOnceAndNoOpDoesNotAdvance()",
+          "classname": "com.peekcart.product.application.ReservationVersionIntegrationTest",
+          "time": "0.144"
+        },
+        {
+          "name": "staleEntityCannotOverwriteNativeCasChange()",
+          "classname": "com.peekcart.product.application.ReservationVersionIntegrationTest",
+          "time": "0.096"
+        },
+        {
+          "name": "[1] path=payment-failed",
+          "classname": "com.peekcart.product.application.ReservationVersionIntegrationTest",
+          "time": "0.093"
+        },
+        {
+          "name": "[2] path=reserved-release",
+          "classname": "com.peekcart.product.application.ReservationVersionIntegrationTest",
+          "time": "0.059"
+        },
+        {
+          "name": "[3] path=confirm",
+          "classname": "com.peekcart.product.application.ReservationVersionIntegrationTest",
+          "time": "0.049"
+        },
+        {
+          "name": "[4] path=compensate",
+          "classname": "com.peekcart.product.application.ReservationVersionIntegrationTest",
+          "time": "0.052"
+        }
+      ]
+    },
+    {
+      "module": "product-service",
+      "name": "재고 예약 Saga 통합 테스트",
+      "tests": "26",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:43:21.967Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "2.393",
+      "xmlSha256": "5346b7f7acbeaf8c986cad7579dec1eca9f6f4588093e5879da87b8a5204b354",
+      "cases": [
+        {
+          "name": "successRefundAfterCompletionRestoresFencedStock()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.811"
+        },
+        {
+          "name": "consumer e2e 멱등: 동일 eventId 중복 소비는 1회만 적용 (processed_events)",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.074"
+        },
+        {
+          "name": "cancel-before-create: 취소 선도착 → tombstone → 이후 예약은 차감 skip",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.052"
+        },
+        {
+          "name": "예약 후 취소: RESERVED → RELEASED CAS + 재고 복구",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.056"
+        },
+        {
+          "name": "confirm: 예약 원장 미존재면 transient 로 보고 예외 throw (consumer 재시도)",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.033"
+        },
+        {
+          "name": "confirm 멱등: 보상 marker 가 이미 있으면 중복 보상하지 않는다",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.097"
+        },
+        {
+          "name": "확정 후 release: CONFIRMED 라 CAS 0건 → 재고 복구 안 함 (판매분 보호)",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.056"
+        },
+        {
+          "name": "confirm: RESERVED → CONFIRMED 확정 (재고 차감 유지)",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.057"
+        },
+        {
+          "name": "successRefundBeforeCompletionDoesNotResurrectOrCompensateAgain()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.102"
+        },
+        {
+          "name": "역순 race: release 가 confirm 보다 먼저(RELEASED) → confirm 은 commit-실패 보상 marker",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.086"
+        },
+        {
+          "name": "double-release: 두 번째 release 는 복구하지 않는다 (CAS 0)",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.05"
+        },
+        {
+          "name": "[SAGA-APPROVAL-HELD-LEASE]",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.074"
+        },
+        {
+          "name": "failedPaymentReleasesHeldExactlyOnce()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.074"
+        },
+        {
+          "name": "recoveryVersionFenceRestoresInventoryOnlyOnceAcrossDifferentEvents()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.09"
+        },
+        {
+          "name": "concurrentRefundAndCompletionPreserveClosureAndStock()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.059"
+        },
+        {
+          "name": "concurrentRecoveryConsumersRestoreExactlyOnce()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.062"
+        },
+        {
+          "name": "happy: 전 품목 충분 → 일괄 차감 + 원장 RESERVED + 결과 발행",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.048"
+        },
+        {
+          "name": "concurrentHoldAndReleaseHaveOneWinner()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.051"
+        },
+        {
+          "name": "recoveryConsumersPublishRepliesAndDeduplicateBothEventIdentities()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.123"
+        },
+        {
+          "name": "rollbackDoesNotLeaveProtectionWithoutResultOutbox()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.041"
+        },
+        {
+          "name": "expiredReservationCannotAcquireFenceEvenBeforeSweeper()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.044"
+        },
+        {
+          "name": "failedRefundDoesNotReleaseHeldStock()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.048"
+        },
+        {
+          "name": "동시성: confirm×2 + release×1 경합 → (CONFIRMED·복구0·보상0) 또는 (RELEASED·복구1·보상1) 한쪽으로만 수렴",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.049"
+        },
+        {
+          "name": "consumer e2e: payment.completed envelope 소비 → 원장 CONFIRMED",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.051"
+        },
+        {
+          "name": "all-or-nothing: 2번째 품목 부족 → 차감 0건 + 원장 FAILED + reserved=false",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.036"
+        },
+        {
+          "name": "releaseWinsThenApprovalIsRejected()",
+          "classname": "com.peekcart.product.application.StockReservationSagaIntegrationTest",
+          "time": "0.054"
+        }
+      ]
+    },
+    {
+      "module": "product-service",
+      "name": "ProductKafkaConfig — 전 토픽 config 계약 (ADR-0020 D4-1)",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-16T23:43:24.362Z",
+      "hostname": "KimGyuills-MacBook-Pro.local",
+      "time": "0.256",
+      "xmlSha256": "847a2192319e28971bd530b8dac2752e483b919fdcd4c8661bc3a2205f00f21d",
+      "cases": [
+        {
+          "name": "spring.kafka.admin.modify-topic-configs 가 base YAML 에 true 로 배선돼 있다",
+          "classname": "com.peekcart.product.infrastructure.kafka.ProductKafkaConfigTopicConfigContractTest",
+          "time": "0.007"
+        },
+        {
+          "name": "NewTopics 묶음 선언을 쓰지 않는다 — 이 수집기를 우회해 config 누락이 조용히 통과한다",
+          "classname": "com.peekcart.product.infrastructure.kafka.ProductKafkaConfigTopicConfigContractTest",
+          "time": "0.001"
+        },
+        {
+          "name": "업무/.dlq 가 각각 알맞은 프로필을 쓴다 — .dlq 에 업무 크기를 주면 용량 산정이 깨진다",
+          "classname": "com.peekcart.product.infrastructure.kafka.ProductKafkaConfigTopicConfigContractTest",
+          "time": "0.238"
+        },
+        {
+          "name": "retention.ms 는 floor.kafka-topic-retention 에서 유도된다 — 리터럴이면 floor 변경 시 갈라진다",
+          "classname": "com.peekcart.product.infrastructure.kafka.ProductKafkaConfigTopicConfigContractTest",
+          "time": "0.002"
+        },
+        {
+          "name": "발행 토픽과 .dlq 가 짝을 이루고, 그 목록이 실제 @Bean 과 일치한다",
+          "classname": "com.peekcart.product.infrastructure.kafka.ProductKafkaConfigTopicConfigContractTest",
+          "time": "0.002"
+        },
+        {
+          "name": "모든 토픽이 계약 키 7종을 갖는다 — 하나라도 빠지면 그 토픽만 브로커 기본값으로 남는다",
+          "classname": "com.peekcart.product.infrastructure.kafka.ProductKafkaConfigTopicConfigContractTest",
+          "time": "0.004"
+        }
+      ]
+    }
+  ],
+  "scope": "Focused local tests only; no full CI, real PG or production execution. Permanent404 recovery remains unsupported."
+}
