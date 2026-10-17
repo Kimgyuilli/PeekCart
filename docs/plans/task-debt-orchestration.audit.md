@@ -257,3 +257,20 @@ D-075는 사용자 보류. D-064/D-065/D-078은 제외·열림 유지. 현재 �
 
 - A 최종 로컬 통합 준비 head `8928ed4a6e116855d923cb17b0f0eca0ccbca5c9`: app+recovery9f+monitor460+root22. 충돌4곳(data-design/ADRindex/runner migration/lint요약)을 양계약 보존으로 해결. 독립 검토에서 실제migration13/12/13/8, 신규4topic 및 jitter0.5, ADR0036/37 Accepted와0040 Proposed, D063대상5rule 모델동일 확인. 독립 경량lint47/parser5 PASS. 원격push/최종CI는 아직 대기.
 - 이전181 CI38983263940 completed/cancelled 확인. 최신38983400228은 진행중이며 실패 없음(조회 시점). root 조회 한 건은 자동 권한 검토 시간초과로 실행되지 않았고, 허용된 읽기 전용 재시도1회로 정상 조회했다. CI 자체의 실패/재실행으로 기록하지 않는다.
+
+## Foundation 완료 기록
+
+2026-10-17 [PR177](https://github.com/Kimgyuilli/PeekCart/pull/177) 병합 SHA `850b0d448ebc6e46524aa2576545b3d55c1ff9d6`. PR head `cb58da0944fc49ee14756f307328662f8bcca39a`, base `3e1ba64c715d22b1f5a2d2635a97da17eb4ebb28`, 실제 checkout `4bde8cced2ff8b4ec43bc6a476bcda59ef4cbdbb`의 [CI38981159191](https://github.com/Kimgyuilli/PeekCart/actions/runs/38981159191)는 필수17jobs/gate와 XML229/1296tests 실패·오류·skip0, 양E2E 이미지 identity/동일SHA A–E/음성 대조군을 통과했다. 독립 verifier가 최신 head/base와 실제 checkout 부모, artifact를 대조해 PASS를 기록했다.
+
+병합 후 [main CI38982636776](https://github.com/Kimgyuilli/PeekCart/actions/runs/38982636776)는 실제 checkout850b0d4, 같은1296tests와 양E2E, gate를 포함한23jobs 및6publish 모두 성공했다. 공개 GHCR6서비스의 SHA태그/latest manifest digest와 config 일치도 독립 확인했다. root만 보호 규칙을 지켜 병합했으며 별도 codex exec 리뷰는 호출하지 않았다. 무료 조건은 공개 저장소·표준 runner·GHCR 확인 및 사용자의 artifact/cache 무료 범위 확인으로 충족했다.
+
+D083/068/080/073/077을 TASKS에서 TASKS-done으로 이동하고 PHASE5 및 각 plan/audit를 갱신했다. 개별 계획 아카이브·인덱스와 기록 커밋의 후속PR 병합은 계속 진행한다. 제품 변경의 main 검증 완료와 기록 커밋의 반영 상태를 구분한다.
+
+| 서비스 | main850b0d4 SHA/latest 공통 digest |
+|---|---|
+| gateway | `sha256:3523eb2d9294e132f3712dd0fecc8079fc21e0c47d296575aab1b9078471e810` |
+| user-service | `sha256:58147426865038aaed2d77a369033d0d08328730db89419374f6a82faf7c7d34` |
+| product-service | `sha256:2c9ada3b7040543e215a455585ce64f78248a09ca77ee64ca8810a2dc7aed81f` |
+| order-service | `sha256:605485978b8101ad98788b10212fac2f04e0e900736daffe52fd8423110bd90b` |
+| payment-service | `sha256:5a5a893515c3ad266a3812e074cd9a8e8d271e97d1d028416e0788a6349882f4` |
+| notification-service | `sha256:1e95e75894f3e4dda338eaa3e225f1c28dcdd4a33326d588dfcefcbad7afde18` |
