@@ -308,3 +308,98 @@ ADR-0040은 서버가 직접 확인한 확정 PG 결과의 제한된 복구 결�
 | order-service | `sha256:c037885bcc77895ddcd934955f1ba811a2d9b132b6d4375f12a13ac50548f44e` |
 | payment-service | `sha256:07f540d9ae70a0486f6f16b14af5b6d880f7fdfcdf65ec98705a8e35ffce565a` |
 | notification-service | `sha256:efbc850bc03cadc9ac46c90974859a01b8a6a82975b19463a5b94ea3ef12efd8` |
+
+## 최종 통합 PR 검증 시작
+
+- #180 최신 head `945256b3407aa61065667c4f131a3c3efb9f14e5`, base `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`, [CI38986317120](https://github.com/Kimgyuilli/PeekCart/actions/runs/38986317120). A가 앱6건과 Saga/monitor4건을 별도 plan/audit 보존으로 통합했다. D084는 선행181의 제한된 구현과 미완 조건을 유지한다.
+- 독립 verifier의 최종 소스/본문 PASS: 실행460의 D063 대상5rule 전체 모델과 최종 head 동일, 원문23개 추적/해시 확인. 실제CI checkout와 전체 artifact 판정은 아직 대기이며 이전e417 CI통과로 대체하지 않는다. 원문 로그의 trailing whitespace는 증거 hash 보존을 위해 그대로 둔다.
+- root 기록의 docs/ADR 혼합 commit은 분류 가드가 거부했으며 우회 없이1e72c17/docs와12d096e/ADR 두 커밋으로 분리했다. main181 독립 최종 PASS와 PR181본문 readback도 완료했다.
+
+- CI38986317120 lint 실패: workflow의 E2E step 표시명이 시나리오4종→6종으로 바뀌었으나 `ci-e2e-parallel-lint.sh`의 정확 이름 lookup/음성 selftest 두 곳은4종을 유지했다. root와 독립 verifier가 job117258510616 로그로 확인했다. 실행조건을 완화하지 않고 정본 이름을 맞춘다. root는 원인 확인 후 이전run 취소 요청을 제출했으며 새 source/가드 반례/최종 전체CI로 대체한다. 무근거 재실행이나 이전 CI 성공 채택은 하지 않는다.
+
+- 수정54bf CI38986536187에서 다음 lint REPLAY-ENTRY-006 실패. 이전 E2E 이름 가드는 통과했으나 DLQ retry를 FixedSequenceBackOff로 고정한 검사가 D076의 JitteredSequenceBackOff와 불일치했다. 추가 조사에서 preflight BACKOFF_TOTAL_SECONDS=36은 실제 jitter 최악 합54초보다18초 짧은 안전 계약 갭도 확인했다. 클래스명만 바꾸지 않고 최악상한·attempt4·drift 반례·ADR0022 사실 정정을 포함해 수정한다. root는 원인 확인 후 이전run 취소 요청, CI policy lint 전체 점검을 A에 배정했다. D065 운영개방은 계속 제외한다.
+
+- D076 수정 f1e64c5 독립 PASS: 실제 Math.round 기반 최대54초/전체564초, 비율0.5·기준1/5/30·attempt4 고정, replay lint9변이/판정14종 통과. 독립 임시복사에서 상한36 회귀 시 고정546/563초 fixture가 잘못된 조기통과를 검출했다. A의 전체 CI policy 명령은 sandbox loopback bind 제한으로 처음 중단했고, 같은 명령을 허용된 권한에서 실행해 session73911 exit0. Docker/Gradle heavy는 실행하지 않았다. 원문 명령·로그는 docs/evidence/D-076/ci-policy-{commands,local}.txt에 보존(2dde324).
+
+- 최종 수정 head `2dde3244e7419fa64a0cb52ef28a17c72c71486c`, CI38987011757: 독립 소스 PASS 및 D063 대상5rule full model이 실행460과 동일함을 재확인했다. 완료된 모듈 artifact는 XML244/1372tests 실패·오류·skip0. D067입력계약, D066실DBsort/cache, D072general_log0/advisor순서, D069동시상한·hit우회, D071실제HTTP6+metadataDB4, D0764handler retry를 대조했다. 양E2E/최종gate/checkout 전체 판정은 이 기록 시점 대기다.
+
+## PR180 병합 및 완료 기록 인계 준비
+
+- root가 정확 head2dde324/base d405 및 최종 독립 PASS를 확인해 #180을 정상 병합했다. merge `1178071e9bbffec77676fa0e2f0bee79de8eadc2`, 2026-10-17T00:53:52Z. 필수17jobs/gate, 실제checkout `e98ab23a16f733fee6bfe832e4fb298bb047484f`, XML244/1372 실패·오류·skip0, A–F 이미지identity/matrix35/음성234초, D062p0/o2 committed3→2 및 동일원장attempt2, D061F110.9초 증거를 PR본문에 기록하고 readback했다.
+- main CI38988468800은 이 기록 시점 E2E 대기다. 완료 이동 및 다음 병합은 최종 main 검증 후 수행한다. root기록f1b1914/D075보류계획과bdf0bfb/ADR0040표준상태·제한범위 분리는 독립 읽기 PASS였으며 이 후속 기록에 포함한다.
+
+| 담당 | branch | worktree | 역할/남은 조건 |
+|---|---|---|---|
+| root | debt/orchestration-records | /Users/kimgyuill/dev/projects/PeakCart | 병합·main 확인·최종 완료 기록 |
+| A | debt/foundation | /private/tmp/peakcart-worker-a | PR177 병합 완료 |
+| A | debt/product-lane | /private/tmp/peakcart-worker-a-product | 제품6건 통합 원본 |
+| A | debt/saga-evidence | /private/tmp/peakcart-worker-a-saga | PR180 병합·main 독립 검증 완료 |
+| A | debt/publish-diagnostics | /private/tmp/peakcart-publish-diagnostics | PR179 병합·main 확인 완료 |
+| B | debt/documentation | /private/tmp/peakcart-worker-b | PR178은177로 대체되어 미병합 종료 |
+| B | debt/messaging | /private/tmp/peakcart-worker-b-messaging | D076/D071 통합 원본 |
+| B | debt/monitoring | /private/tmp/peakcart-worker-b-monitoring | D063 실제 실험·증거8c57408 |
+| B | debt/approval-recovery | /private/tmp/peakcart-worker-b-recovery | PR181 제한 복구 병합·main 확인 |
+| B | debt/outbox-hold | /private/tmp/peakcart-worker-b-outbox-hold | D075 보류 문서6dfd997, 구현·실험 없음 |
+| B | debt/final-records | /private/tmp/peakcart-worker-b-final-records | root 완료 기록 전달 후 정상 PR/CI 경로 |
+| verifier | detached | /private/tmp/peakcart-verifier | 구현 미참여, 각 최신 head/base/실제checkout·artifact 검증 |
+
+전역 로컬 heavy 슬롯은 D063run3 cleanup 후 비어 있으며 새 Gradle/Docker build/통합/E2E/부하 프로세스를 시작하지 않았다. 작업자 중첩 agent는 없고 root+A+B+verifier 4명 한도를 유지했다. 기존 사용자 프로세스는 종료하지 않았다.
+
+## 최종 병합·검증·완료 기록 (2026-10-17)
+
+[PR180](https://github.com/Kimgyuilli/PeekCart/pull/180)의 head `2dde3244e7419fa64a0cb52ef28a17c72c71486c` / base `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`를 독립 검증했다. [CI38987011757](https://github.com/Kimgyuilli/PeekCart/actions/runs/38987011757)의 실제 checkout `e98ab23a16f733fee6bfe832e4fb298bb047484f` 부모와 필수17jobs/gate, XML244/1372tests 실패·오류·skip0, A–F 동일SHA·이미지 identity·matrix35·음성234초 증거를 대조했다. D061 F110.9초의 실제 호출한 PG stub의 POST/GET ledger와 UNRES 생산outbox0/합성 소비 구분, D062 DLT p0/o2 committed3→rewind2·group Empty·동일원장1행/attempt2를 확인했다. D063 실행460의 대상5rule full model은 최종head와 동일하다.
+
+root가 보호 규칙을 지켜 병합한 SHA는 `1178071e9bbffec77676fa0e2f0bee79de8eadc2`다. [main CI38988468800](https://github.com/Kimgyuilli/PeekCart/actions/runs/38988468800)는 동일 실제checkout, 23jobs/6publish SUCCESS, XML244/1372tests 실패·오류·skip0, 양E2E 이미지 identity·A–F·음성238초를 통과했다. main D70초/F120초 및 전체 job45분 제한 준수와 공개GHCR6서비스 SHA/latest manifest·config 일치를 독립 확인했다.
+
+별도 codex exec 리뷰 미호출; 구현에 참여하지 않은 독립 PR 서브에이전트 검증 PASS. 무료 조건은 공개 저장소·표준 runner·GHCR 및 사용자의 artifact/cache 확인으로 충족했다. 기존 두 lint 실패는 정확한 원인과 수정·반례를 audit에 보존했고, 이전 실패/skip/오래된 결과로 병합하지 않았다. PR의 main 전용 publish 미실행과 실제 main6publish 성공을 구분했다.
+
+이 항목의 구현·검증·병합·main 확인이 끝나 TASKS 완료 행·PHASE·개별 plan/audit와 선택 아카이브에 반영한다. 이 문서 기록의 전달은 별도 `debt/final-records` PR이 담당하며 그 PR 자체의 최종 CI·병합·main 증거는 해당 PR 본문에 이어 기록한다.
+## 최종 부채·소유권·증거 대조
+
+| ID | 작업자 | branch (debt/) | PR | 완료 증거 |
+|---|---|---|---|---|
+| D-083 | A | `foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | cleanup 오류 전파 |
+| D-068 | A | `foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | MySQL 8.0.46·실행계획 |
+| D-080 | A | `foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | 원본 성능·셔플 사실 정정 |
+| D-073 | B | `documentation→foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | 원본 CPU/PR 대조 |
+| D-077 | B | `documentation→foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | 현행 계약 문서 |
+| D-067 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | MVC 400/500 분류 |
+| D-066 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 정렬·tie-breaker·캐시 분리 |
+| D-072 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | general_log hit0/miss 양성 |
+| D-069 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | DB 상한·503·회복 |
+| D-076 | B | `messaging→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | retry jitter·drain564초 |
+| D-071 | B | `messaging→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | metadata/version·HTTP6반례 |
+| D-061 | A | `saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 실제 F·PG ledger·소비자 종착 |
+| D-062 | A | `saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 동일DLT rewind·원장1/attempt2 |
+| D-070 | B | `monitoring→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | get10m/evict0·규칙변이 |
+| D-063 | B | `monitoring→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 실제35분·15instance·최종모델동등 |
+
+모든 PR 독립 검증은 구현에 참여하지 않은 verifier가 수행했고 root만 병합했다. 각 개별 plan/audit는 원래 작업의 등급·ADR 판단·선행 의존성·검증을 보존한다. foundation은 최초 공용 기반이며 product lane은 D067→066→072→069, Saga는 D061→062, 실제 경보는 D070→063 순으로 검증했다.
+
+| 열린 항목 | 처분 | 재개 조건 |
+|---|---|---|
+| D-075 | 사용자 명시 보류, 구현·실험 미수행 | 목표 TPS의 단위·대상 경로, 최대 backlog 시간과 초과 대응 결정 |
+| D-084 | #181 안전 복구 부분 병합, 전체 미완 | 영구404에 대해 신뢰할 PG 발급 무과금 증빙 원천·형식 확인 |
+| D-064 | 사용자 제외 | 실 PG 검증 범위와 무료 조건 별도 결정 |
+| D-065 | 사용자 제외 | 운영 replay 개방 전제·GKE 검증 별도 승인 |
+| D-078 | 사용자 제외 | GKE 측정·비용·운영 조건 별도 승인 |
+
+대상16건 중14건과 조건부D063을 합한15건만 완료로 기록한다. D075/D084와 제외3건은 열린 TASKS에 남기며 계획을 아카이브하지 않는다.
+
+| 서비스 | main1178071 SHA/latest 공통 digest |
+|---|---|
+| gateway | `sha256:b43b212abff99768f4e0c8948a9deba66b41497ad88c70e4140ba87803a281eb` |
+| user-service | `sha256:9072ead9f4ff74d3ae30a872d5cde66a94568d23ca27a70333241a825faa7256` |
+| product-service | `sha256:9654db0b44a7c5ec131110501b284e0c1f92d9232daf8c3b9a882cfeec48ea2b` |
+| order-service | `sha256:0b3fa8e1adfa0e758fa500fd396ce6fe223831a0228ae16c01fae98f8b12ad71` |
+| payment-service | `sha256:402fd7089903f6493e534117e94c3744b035db4b2d06d3a01ef8427975fa4f7d` |
+| notification-service | `sha256:8d8e8fa896309e5d8d13a2d950cc1a18e6a4426acb2faa907f60b42a4fdba55c` |
+
+## 최종 기록 전달 ship 준비 (worker B, 2026-10-17)
+
+- root의 main180 독립 최종 PASS 확인 후 `debt/final-records` / `/private/tmp/peakcart-worker-b-final-records`에 기록 `4f08677`을 fast-forward 통합했다. 기준 main은 `1178071e9bbffec77676fa0e2f0bee79de8eadc2`이며 main CI `38988468800`의 검증 결과는 위 root/독립 검증 기록에 있다.
+- main 대비 변경 경로는 모두 docs 아래다. 제품 코드·설정·워크플로 변경 없음. 완료 15건, 사용자 보류 D075, 부분 구현 D084, 제외 D064/065/078의 열린 상태를 대조했다. 완료한 10개 plan/audit 20파일만 선택 archive, 인덱스105개, 활성 D075/D084/상위계획은 유지한다.
+- sync archive는 dry-run만 수행했다. 네트워크 미접속 preview의 과거 PR 미병합 표시는 실제 원격 판정으로 채택하지 않는다. digest가 D075 보류/D084 부분 상태를 목록에서 빠뜨리므로 원문 TASKS를 기준으로 확인했다.
+- ship preflight는 상위 P4(D075)/P6(D084) 두 미완으로 blocked, grade L, consistency precheck warning0, diff-check 통과다. 사용자가 승인한 완료 기록 전달 PR이며 미완 체크를 임의로 채우지 않고 Draft를 생성한다. 새 정책 결정이나 미완 항목 완료 처리는 없다.
+- 별도 codex exec 리뷰 미호출. 작성자는 이 PR의 독립 검증·병합을 수행하지 않는다. 최신 PR head/base·실제 checkout·필수 CI 검증은 독립 verifier, 최종 병합/main 확인은 root가 담당한다.
+- PR 생성 전 기록이다. 실제 URL과 이후 CI·검증·병합/main 결과는 PR 본문과 root 최종 기록으로 연결하며 현재 그 결과를 미리 통과로 표시하지 않는다.
