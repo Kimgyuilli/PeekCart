@@ -283,3 +283,5 @@ D083/068/080/073/077을 TASKS에서 TASKS-done으로 이동하고 PHASE5 및 각
 - #181 최종 독립 PASS: head `9f763181117a12a498943c09ef315ffb93e2f652` / base850b0d4, CI38983400228 실제checkout `01c9d5b6c456d92ddaa2aa9bf35ce05055477bc0` 부모 일치. 필수17jobs/gate, XML234/1336tests 실패·오류·skip0, Recovery18(새6반례 포함), 양E2E 이미지 identity/A–E 동일SHA/음성 대조군, readiness34groups/30topics 및migration12·12·13·8 확인.
 - root가 최종증거본문/ready 후 정확head 조건으로 정상병합. merge `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`, 2026-10-17T00:06:48Z. main CI https://github.com/Kimgyuilli/PeekCart/actions/runs/38984838008 진행, 다음병합보류. 본문 최종PASS/01c9증거 readback 보존확인, 이후PR181본문은root전담.
 - 이 병합은 서버가 직접 확인한 확정 PG 결과의 안전복구 부분만이다. D084 전체 및 영구404 외부 신뢰 증빙 조건은 열린 상태로 유지한다. 새API체인 증거와 기존A–E 회귀 증거를 구분한다.
+
+- D075는 사용자 명시 보류 결정을 TASKS 상태에도 반영했다. 목표 TPS·최대 backlog 수용 기준 미정이며 구현·실험을 수행하지 않았다. 완료 목록으로 이동하지 않는다.
