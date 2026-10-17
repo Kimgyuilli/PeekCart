@@ -238,3 +238,39 @@ D-075는 사용자 보류. D-064/D-065/D-078은 제외·열림 유지. 현재 �
 
 - #180 기존 e417/base3e1 CI38981330710 독립 증거 PASS(후속 통합 head의 병합 승인은 아님). 실제checkout9c0834e 부모 일치, 필수17jobs/XML1292 실패·skip0, E2E 이미지·음성 대조군 확인. D061 F에서 실제 POST/ALREADY POST→GET/reconcile GET만/transient POST3 동일key, 소비자3곳 종착 및 UNRES 생산outbox0와 합성 소비 검증 구분 확인. D062 groupEmpty, 실제DLT p0o0 committed2→0 rewind 후 같은 원장 attempt2 확인. D62초/F122초/전체job12분5초로45분 상한 이내.
 - 진단 #179는 main 배포까지 확인되어 개별 P3를 완료하고 계획을 done/로 아카이브, index90행/check통과. foundation177은 별도로 새main 검증 대기이므로 아직 완료 이동하지 않았다.
+
+- B D084 focused 실행 session86805, clean head `499d8e1f6ca8969b147f73808131bcd68fd1f3a5`, 로그 `/private/tmp/peakcart-d084-focused.log`, offline/no-parallel/no-daemon/max-workers1, seed1792194145976. common/Payment compile 통과 후 테스트 진행, 종료·cleanup까지 heavy 독점.
+- A local통합0cd0fd2는 app/Saga/root22a/main850을 무충돌 포함. b41673f에서 D061/062 audit에 기존 e417 CI의 실제checkout `9c0834e2612061f3b4ea649b759c55bd2d4e71c4`, D62초/F122초 증거를 기록했다. 해당 원본head의 P1~3 검증과 최신통합CI/병합·기록 P4 대기를 분리. 원격180은 아직e417이며 새통합push전.
+
+- D084 focused499d8e session86805 exit0/1분14초. common19/payment58/product38, 합계115tests 실패·오류·skip0. Payment seed1792194145976, Product1792194179479. 실제 MySQL 경합·historicalFAILED·4consumer/inbox·6bulkversion·서명HTTP 포함. 종료 후 소유 Testcontainers0 확인 및 슬롯반환. 전체CI/최신독립검증은 미완.
+- D063 parser `460217e` 실행 전 독립PASS: 관측 fixture3개가 run2 원문112표본의 실제 응답과 일치, 회귀5개 직접PASS. rule firing과 instance Alerting 분리, 정상은 inactive+전체Normal+존재하는0vector를 요구해 NoData/빈값/잘못된state 거부. expr/for/labels 불변. root가 B run3의 새output/project 실행 승인, 시작session 대기. run2는 발화만 확인했고 복귀 미검증 상태 유지.
+
+- D063 run3 시작 session83995, clean `460217ec3dd4b869f87d1199191d49a57b006b68`, project `peakcart-alert-1792194274`, evidence `/private/tmp/peakcart-d063-20261017-run3`와 sibling.log. 정본/provision hash는 run2와 동일. B가 종료·cleanup까지 heavy 독점.
+- D084115건 XML은 독립 대조 완료. 추가 ADR 반례(localrefund CANCELED 대사 없음/FAILED/금액 불일치/정상SUCCEEDED, historicalFAILED 원인·deadline 부적합)를 새 테스트로 보강해 DraftPR CI에서 검증한다. 현재 단일 로컬 슬롯은 D063가 사용하므로 로컬 추가 Gradle은 실행하지 않는다.
+
+- D084 Draft https://github.com/Kimgyuilli/PeekCart/pull/181, head `2ef2b7f3f23d4672418131e8f4d931f203cf484e`, base850b0d4, CI38983263940 시작. 기존115PASS/새반례6CI대기/전체D084미완/ADRProposed를 명시했다.
+- root가 PR 생성 직후 E2E prerequisite 추가 갭 발견: Product V12(및 Payment 새 DDL)와 saga_e2e EXPECTED_MIGRATIONS의 기존 집합 불일치. B가 정확한 버전 집합을 대조·정정하고 경량 검증 후 새 head로 push한다. 가드 제거/동적 허용은 금지하며 이전run이 대체되는 원인을 이 소스 수정으로 기록한다. 향후 app의 Order V13 통합도 함께 보존해야 한다.
+
+- D084 #181 최신 head `9f763181117a12a498943c09ef315ffb93e2f652`, 새 CI38983400228. 실제 migration 집합 order12/product12/payment13/notification8과 정확히 맞췄고 신규 업무4토픽 및 DLQ readiness도 추가. 독립 소스 PASS. A의 추가 읽기 조사에서 emitter 토픽/그룹·예약version 기본값·기존E/F seed·기본닫힘권한 기동에 다른 누락 없음.
+- 이전head CI38983263940은 새소스검증과 혼용하지 않으며 root가 대체 실행 취소 요청을 제출했다. 실패 우회/무근거 재실행이 아니라 명확한 prerequisite 소스 수정에 따른 대체다.
+- #181 단독은 기존 A–E 회귀이며 #180의 새F는 아직 포함하지 않는다. 새ADMIN 복구 체인의 증거는 focused 실제DB/서명HTTP/직렬화consumer·inbox 매핑이며 기존 Saga CI를 그 체인 자체 실행으로 확대하지 않는다. 향후 통합 시 Order13/Product12/Payment13 정확 집합을 보존한다.
+
+- A 최종 로컬 통합 준비 head `8928ed4a6e116855d923cb17b0f0eca0ccbca5c9`: app+recovery9f+monitor460+root22. 충돌4곳(data-design/ADRindex/runner migration/lint요약)을 양계약 보존으로 해결. 독립 검토에서 실제migration13/12/13/8, 신규4topic 및 jitter0.5, ADR0036/37 Accepted와0040 Proposed, D063대상5rule 모델동일 확인. 독립 경량lint47/parser5 PASS. 원격push/최종CI는 아직 대기.
+- 이전181 CI38983263940 completed/cancelled 확인. 최신38983400228은 진행중이며 실패 없음(조회 시점). root 조회 한 건은 자동 권한 검토 시간초과로 실행되지 않았고, 허용된 읽기 전용 재시도1회로 정상 조회했다. CI 자체의 실패/재실행으로 기록하지 않는다.
+
+## Foundation 완료 기록
+
+2026-10-17 [PR177](https://github.com/Kimgyuilli/PeekCart/pull/177) 병합 SHA `850b0d448ebc6e46524aa2576545b3d55c1ff9d6`. PR head `cb58da0944fc49ee14756f307328662f8bcca39a`, base `3e1ba64c715d22b1f5a2d2635a97da17eb4ebb28`, 실제 checkout `4bde8cced2ff8b4ec43bc6a476bcda59ef4cbdbb`의 [CI38981159191](https://github.com/Kimgyuilli/PeekCart/actions/runs/38981159191)는 필수17jobs/gate와 XML229/1296tests 실패·오류·skip0, 양E2E 이미지 identity/동일SHA A–E/음성 대조군을 통과했다. 독립 verifier가 최신 head/base와 실제 checkout 부모, artifact를 대조해 PASS를 기록했다.
+
+병합 후 [main CI38982636776](https://github.com/Kimgyuilli/PeekCart/actions/runs/38982636776)는 실제 checkout850b0d4, 같은1296tests와 양E2E, gate를 포함한23jobs 및6publish 모두 성공했다. 공개 GHCR6서비스의 SHA태그/latest manifest digest와 config 일치도 독립 확인했다. root만 보호 규칙을 지켜 병합했으며 별도 codex exec 리뷰는 호출하지 않았다. 무료 조건은 공개 저장소·표준 runner·GHCR 확인 및 사용자의 artifact/cache 무료 범위 확인으로 충족했다.
+
+D083/068/080/073/077을 TASKS에서 TASKS-done으로 이동하고 PHASE5 및 각 plan/audit를 갱신했다. 개별 계획 아카이브·인덱스와 기록 커밋의 후속PR 병합은 계속 진행한다. 제품 변경의 main 검증 완료와 기록 커밋의 반영 상태를 구분한다.
+
+| 서비스 | main850b0d4 SHA/latest 공통 digest |
+|---|---|
+| gateway | `sha256:3523eb2d9294e132f3712dd0fecc8079fc21e0c47d296575aab1b9078471e810` |
+| user-service | `sha256:58147426865038aaed2d77a369033d0d08328730db89419374f6a82faf7c7d34` |
+| product-service | `sha256:2c9ada3b7040543e215a455585ce64f78248a09ca77ee64ca8810a2dc7aed81f` |
+| order-service | `sha256:605485978b8101ad98788b10212fac2f04e0e900736daffe52fd8423110bd90b` |
+| payment-service | `sha256:5a5a893515c3ad266a3812e074cd9a8e8d271e97d1d028416e0788a6349882f4` |
+| notification-service | `sha256:1e95e75894f3e4dda338eaa3e225f1c28dcdd4a33326d588dfcefcbad7afde18` |
