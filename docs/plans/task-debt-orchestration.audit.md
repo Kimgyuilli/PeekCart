@@ -285,3 +285,26 @@ D083/068/080/073/077을 TASKS에서 TASKS-done으로 이동하고 PHASE5 및 각
 - 이 병합은 서버가 직접 확인한 확정 PG 결과의 안전복구 부분만이다. D084 전체 및 영구404 외부 신뢰 증빙 조건은 열린 상태로 유지한다. 새API체인 증거와 기존A–E 회귀 증거를 구분한다.
 
 - D075는 사용자 명시 보류 결정을 TASKS 상태에도 반영했다. 목표 TPS·최대 backlog 수용 기준 미정이며 구현·실험을 수행하지 않았다. 완료 목록으로 이동하지 않는다.
+
+## D063 실제 평가 및 원문 보존 (2026-10-17)
+
+- run3 source `460217ec3dd4b869f87d1199191d49a57b006b68`, session83995 exit0, 2099.6초/138관측. 원래 for15m·10m·5m·10m·0을 유지하고 기대15인스턴스 모두 Alerting 후 Normal 및 존재하는 0vector 복귀를 확인했다. 최초2관측의 평가 전 빈 instance는 정상복귀 증거로 사용하지 않았다.
+- 독립 verifier가 원문·provision expr/labels/for·NoData/Error 부재·음성 대조군 및 cleanup4컨테이너+network를 대조해 PASS. 전역 heavy 슬롯 반환, 소유 실행 프로세스 없음.
+- B 증거 커밋 `8c57408ebcc5c577b05c2b9cc4c426785a5cdf46`의 docs/evidence/D-063에 run1/2 실패 원인과 run3 원문·해시·digest·전이를 보존했다. 독립 검증은 추적된 원문23개의 해시/크기를 대조했다. 전체 파일 hash는 실행source460에 결속하며 후속 통합의 D084 추가 rule과 구분한다. 최종180의 대상5rule 동등성·전체CI·병합·main은 아직 대기다.
+
+## 서버 확정 조회 복구 부분 병합·검증 (2026-10-17)
+
+[PR181](https://github.com/Kimgyuilli/PeekCart/pull/181)의 head `9f763181117a12a498943c09ef315ffb93e2f652` / base `850b0d448ebc6e46524aa2576545b3d55c1ff9d6`를 독립 검증했다. [PR CI38983400228](https://github.com/Kimgyuilli/PeekCart/actions/runs/38983400228)의 실제 checkout `01c9d5b6c456d92ddaa2aa9bf35ce05055477bc0` 부모와 artifact를 대조했다. 필수17jobs/gate, XML234/1336tests 실패·오류·skip0, Recovery18(추가 반례6 포함), 양E2E A–E/이미지 identity/음성 대조군 PASS.
+
+root가 보호 규칙을 지켜 병합한 SHA는 `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`이다. [main CI38984838008](https://github.com/Kimgyuilli/PeekCart/actions/runs/38984838008)의 실제 checkout도 동일하며 23jobs/6publish, XML234/1336tests 실패·오류·skip0, 양E2E 및 공개 GHCR6서비스 SHA/latest manifest·config 일치를 독립 확인했다. 별도 codex exec 리뷰 미호출; 독립 PR 서브에이전트의 최신 head/base·실제 checkout·artifact 검증 PASS. 기존 A–E는 회귀 검증이며 새 ADMIN 분산 복구 체인 전체 E2E 실행으로 주장하지 않는다. 새 계약은 집중 실제 DB·서명 HTTP·직렬화 consumer/inbox 및 CI 반례로 검증했다.
+
+ADR-0040은 서버가 직접 확인한 확정 PG 결과의 제한된 복구 결정으로 Accepted 전환한다. 영구404에 대한 외부 신뢰 증빙 원천·형식은 미확보이므로 D084 전체는 미완이다. TASKS 열린 행과 개별 계획을 유지하며 자동 아카이브하지 않는다. 기록 커밋 자체의 후속 PR 반영은 계속 진행한다.
+
+| 서비스 | main d405 SHA/latest 공통 digest |
+|---|---|
+| gateway | `sha256:624b5b39204b085db469c8d4de3729e0818c53d5768d3876a230327b7ffd77df` |
+| user-service | `sha256:04e7e844e124ef552ce697a4ade2590cdc740c2a6c0bb88e754ecaada764562e` |
+| product-service | `sha256:5a9347996bfedb733d6ab320b153b0f1d315fc2732002c36c2e3081374bd8a65` |
+| order-service | `sha256:c037885bcc77895ddcd934955f1ba811a2d9b132b6d4375f12a13ac50548f44e` |
+| payment-service | `sha256:07f540d9ae70a0486f6f16b14af5b6d880f7fdfcdf65ec98705a8e35ffce565a` |
+| notification-service | `sha256:efbc850bc03cadc9ac46c90974859a01b8a6a82975b19463a5b94ea3ef12efd8` |

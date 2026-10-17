@@ -321,7 +321,7 @@ erDiagram
 
 Order V13은 `product_price_cache.product_name VARCHAR(255) NULL`, `product_status VARCHAR(32) NULL`을 추가합니다. 가격과 metadata는 같은 `source_version` 비교로 원자 갱신하고 version은 마지막에 대입합니다. 동일/과거 version은 updated_at을 포함해 변경하지 않습니다. 기존 seed 행은 가격만 보존합니다. 앱 롤백 시 additive 컬럼은 유지합니다.
 
-### 승인 대사 복구 원장 (see ADR-0040, Proposed)
+### 승인 대사 복구 원장 (see ADR-0040, 서버 직접 확정 조회 범위 Accepted)
 
 - Payment V13 `approval_recoveries`: UUID id, order_id, approval generation, 복구 상태, PG 상태/원문(LONGTEXT)/SHA-256, reservation version/status, 승인자·실행자·시각을 보존한다. `(order_id, status)` 인덱스와 approval row lock으로 주문의 활성 복구를 직렬화한다.
 - Payment V13 `approval_recovery_audit`: append-only 감사 행에 recoveryId/orderId/actor/action/reason/증거 원문·해시/generation/시각을 기록한다. 유효 운영자의 거절은 별도 트랜잭션이며 증거가 없으면 빈 원문과 그 해시, generation=-1로 구분한다. 해시 자체를 PG 진위 증명으로 사용하지 않는다.

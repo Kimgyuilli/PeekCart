@@ -1,11 +1,11 @@
 # ADR-0040: 보호 승인 복구의 증빙과 역할 분리
 
-- **Status**: Proposed
+- **Status**: Accepted (서버 직접 확정 조회 복구에 한정)
 - **Date**: 2026-10-17
 - **관련**: D-084, ADR-0034, ADR-0035 (서버 직접 조회 복구 승인; 영구 404 외부 증빙 미확보)
 - 배경: ADR-0035는 근거 없는 강제 FAILED를 막고 보호 재고를 유지한다. 과거 MANUALLY_RESOLVED/FAILED 및 확정 PG 결과에 대한 운영 복구는 추가 프로토콜이 필요하다.
 
-## 결정 제안
+## 결정
 
 1. **신뢰 원천**: 서버가 기존 Toss 클라이언트로 직접 조회한 응답만 자동 검증 대상으로 삼는다. paymentKey/orderId/totalAmount가 원장과 일치해야 한다. ABORTED/EXPIRED는 잔여 과금 0, CANCELED는 전액 취소 금액과 로컬 환불 원장의 일치까지 요구한다. PARTIAL_CANCELED/잔여 balance/모순/404/5xx는 보류한다. 파일 업로드·해시는 진위 검증이 아니다. 사용자는 서버 직접 확정 조회만 허용하는 권장안을 승인했다. 영구 404의 PG 발급 증빙 경로는 외부 신뢰 원천/형식 미확보로 미구현이며 D-084 전체를 열린 상태로 유지한다.
 2. **역할**: signed internal token의 authenticated ADMIN principal ID가 서로 겹치지 않는 승인자/실행자 allowlist에 있어야 한다. 요청의 resolvedBy는 신원 근거로 사용하지 않는다. 증빙 수집, 승인, 실행, 거부 사유를 별도 불변 감사 행으로 남긴다. 같은 사람이 승인과 실행할 수 없다.
@@ -25,7 +25,7 @@
 ## 미해결
 
 - 영구 404에 대한 신뢰 가능한 PG 발급 무과금 증빙 원천/형식.
-- 제한된 서버 조회 복구는 구현 및 로컬 집중 검증을 마쳤다. 추가 반례의 CI 검증, 필수 전체 gate와 독립 최종 검증은 대기하므로 Proposed를 유지한다.
+- 제한된 서버 조회 복구는 PR #181로 병합되었고 PR/main 전체 gate·추가 반례·독립 검증을 통과했다. 영구404 증빙 복구는 이 수용 범위에 포함하지 않는다.
 
 
 ## 구현된 프로토콜
@@ -50,3 +50,7 @@
 - 유효 운영자의 거절은 별도 REQUIRES_NEW 감사 트랜잭션으로 남긴다. 원문이 없는 거절은 빈 증거와 그 해시, generation=-1로 구분한다. 업무 변경 롤백이 거절 감사까지 없애지 않는다.
 - 명시적인 Product false 결과인 REVIEW_REQUIRED만 `resume`으로 새 PG 대사·새 generation·새 snapshot·재승인 절차에 들어간다. approval은 계속 RECOVERY_PENDING으로 자동 claim을 차단한다. 기존 version은 증가하므로 오래된 명령이 새 예약 상태를 해제하지 못한다.
 - 응답 유실은 `retry`가 동일 recoveryId/generation/version payload를 새 outbox로 재전달한다. 새로운 PG 대사 결과가 같은 확정 부정일 때만 허용한다. DONE/불명/모순이면 재전달 없이 보호를 유지한다. 이는 일반 DLQ replay DENY를 우회하는 임의 발행 기능이 아니다.
+
+## Update Log
+
+- 2026-10-17, PR #181 / `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`: 구현·PR/main CI38983400228/38984838008 및 독립 검증 완료에 따라 제한된 서버 직접 확정 조회 결정을 Accepted로 전환했다. 영구404 외부 신뢰 증빙은 미해결이며 D084 전체 완료를 뜻하지 않는다.

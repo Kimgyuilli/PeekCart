@@ -5,6 +5,15 @@
 
 ---
 
+
+## 서버 확정 조회 복구 부분 병합·검증 (2026-10-17)
+
+[PR181](https://github.com/Kimgyuilli/PeekCart/pull/181)의 head `9f763181117a12a498943c09ef315ffb93e2f652` / base `850b0d448ebc6e46524aa2576545b3d55c1ff9d6`를 독립 검증했다. [PR CI38983400228](https://github.com/Kimgyuilli/PeekCart/actions/runs/38983400228)의 실제 checkout `01c9d5b6c456d92ddaa2aa9bf35ce05055477bc0` 부모와 artifact를 대조했다. 필수17jobs/gate, XML234/1336tests 실패·오류·skip0, Recovery18(추가 반례6 포함), 양E2E A–E/이미지 identity/음성 대조군 PASS.
+
+root가 보호 규칙을 지켜 병합한 SHA는 `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`이다. [main CI38984838008](https://github.com/Kimgyuilli/PeekCart/actions/runs/38984838008)의 실제 checkout도 동일하며 23jobs/6publish, XML234/1336tests 실패·오류·skip0, 양E2E 및 공개 GHCR6서비스 SHA/latest manifest·config 일치를 독립 확인했다. 별도 codex exec 리뷰 미호출; 독립 PR 서브에이전트의 최신 head/base·실제 checkout·artifact 검증 PASS. 기존 A–E는 회귀 검증이며 새 ADMIN 분산 복구 체인 전체 E2E 실행으로 주장하지 않는다. 새 계약은 집중 실제 DB·서명 HTTP·직렬화 consumer/inbox 및 CI 반례로 검증했다.
+
+ADR-0040은 서버가 직접 확인한 확정 PG 결과의 제한된 복구 결정으로 Accepted 전환한다. 영구404에 대한 외부 신뢰 증빙 원천·형식은 미확보이므로 D084 전체는 미완이다. TASKS 열린 행과 개별 계획을 유지하며 자동 아카이브하지 않는다. 기록 커밋 자체의 후속 PR 반영은 계속 진행한다.
+
 ## 부채 기반·문서 5건 완료 (2026-10-17, [#177](https://github.com/Kimgyuilli/PeekCart/pull/177))
 
 - D-083: 토픽 부재만 생략하고 timeout·권한 오류·중단을 전파한다. 집중 회귀 4건과 전체 CI를 확인했다.
