@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/private/tmp/peakcart-worker-b-monitoring/scripts/monitoring/verify_alerts.py", line 238, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/peakcart-worker-b-monitoring/scripts/monitoring/verify_alerts.py", line 119, in main
+    wait_api(grafana + '/api/health')
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/peakcart-worker-b-monitoring/scripts/monitoring/verify_alerts.py", line 106, in wait_api
+    raise AssertionError('API startup timed out: ' + url)
+AssertionError: API startup timed out: http://127.0.0.1:60446/api/health
