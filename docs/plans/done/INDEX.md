@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 95개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 105개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d002-bc-session](./task-d002-bc-session.md) | D-002 잔여 3축 측정 세션 (b' / c + a 천장 분리) | [#119](https://github.com/Kimgyuilli/PeakCart/pull/119) | 2026-10-17 | 있음 |
 | [task-d032-integration-test-container-singleton](./task-d032-integration-test-container-singleton.md) | D-032 — 통합 테스트 컨테이너 모듈 싱글톤 전환 (order-service) | [#138](https://github.com/Kimgyuilli/PeakCart/pull/138) | 2026-10-17 | 있음 |
 
-## 기타 (33)
+## 기타 (43)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -110,9 +110,19 @@
 | [D-059](./D-059.md) | 환불 처리 중 응답의 재시도 분류 | [#174](https://github.com/Kimgyuilli/PeakCart/pull/174) | 2026-10-14 |  |
 | [D-060](./D-060.md) | 승인과 예약 lease 회수 사이의 fence | [#175](https://github.com/Kimgyuilli/PeakCart/pull/175) | 2026-10-14 | 있음 |
 | [D-060-followup](./D-060-followup.md) | D-060 followup — PR #175 기반 보호 승인 복구 보강 | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
+| [D-061](./D-061.md) | D-061 환불 결과와 호출 순서 E2E | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
+| [D-062](./D-062.md) | D-062 동일 DLT 좌표 재소비 E2E | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
+| [D-063](./D-063.md) | 무료 로컬 실제 Grafana/Prometheus alert 평가 | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
+| [D-066](./D-066.md) | D-066 상품 정렬과 캐시 키 | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
+| [D-067](./D-067.md) | D-067 요청 타입 및 메서드 검증 오류 응답 | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
 | [D-068](./D-068.md) | D-068 MySQL 패치 버전 고정 | [#177](https://github.com/Kimgyuilli/PeakCart/pull/177) | 2026-10-17 | 있음 |
+| [D-069](./D-069.md) | D-069 상품 cache miss의 DB 진입 제한 | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
+| [D-070](./D-070.md) | cache fallback 자동 alert | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
+| [D-071](./D-071.md) | 장바구니 상품 read model 조합 | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
+| [D-072](./D-072.md) | D-072 캐시 hit의 MySQL 세션 명령 제거 | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
 | [D-073](./D-073.md) | 원본 측정·코드 이력 정정 | [#177](https://github.com/Kimgyuilli/PeakCart/pull/177) | 2026-10-17 | 있음 |
 | [D-074](./D-074.md) | ADR-0027 Alternative A 제목 정정 | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 |  |
+| [D-076](./D-076.md) | Kafka 오류 핸들러 jitter 일관성 | [#180](https://github.com/Kimgyuilli/PeakCart/pull/180) | 2026-10-17 | 있음 |
 | [D-077](./D-077.md) | 현재 재고 동시성과 비동기 취소 설명 | [#177](https://github.com/Kimgyuilli/PeakCart/pull/177) | 2026-10-17 | 있음 |
 | [D-079](./D-079.md) | 측정 overlay 기본 렌더 복구 | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
 | [D-080](./D-080.md) | D-080 통합 테스트 기동 비용 서술 정정 | [#177](https://github.com/Kimgyuilli/PeakCart/pull/177) | 2026-10-17 | 있음 |

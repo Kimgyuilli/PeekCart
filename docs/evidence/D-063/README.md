@@ -45,3 +45,7 @@ manifest의 `local-fixture` 사용자/암호는 이 loopback 실험만을 위한
 ## 검증하지 않은 범위
 
 GKE ServiceMonitor discovery, ConfigMap sidecar 전달, namespace/network routing, 실제 앱 메트릭 방출, 운영 장애, 외부 Slack/PagerDuty 전달과 GKE 바이너리 동등성은 검증하지 않았다. `environment-equivalence.md`는 실행 전 동등성 판단이다. `independent-pre-execution-review.md`는 실행 전 검토 이력과 후속 run3 실제 원문 독립 검증을 각각 구분해 보존한다. 초기 baseline 첫 두 표본은 평가 전 빈 alert 인스턴스였으며, baseline 마지막과 최종 복귀 표본에서 strict Normal을 확인했다. 138개 모두가 Normal이었다는 의미가 아니다.
+
+## 최종 통합 증거 연결
+
+실행460의 대상5rule full parsed model과 최종 PR180 head2dde324를 독립 재대조해 완전 일치를 확인했다. PR CI38987011757 및 main1178071의 CI38988468800은 전체 gate를 통과했다. 전체 파일 hash 동일성이나 D084 RECOVERY_PENDING 알림 실제 평가로 확대하지 않는다. 상세 병합·검증 증거는 `docs/plans/done/D-063.audit.md`에 있다.

@@ -6,6 +6,50 @@
 ---
 
 
+## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
+
+## 최종 부채·소유권·증거 대조
+
+| ID | 작업자 | branch (debt/) | PR | 완료 증거 |
+|---|---|---|---|---|
+| D-083 | A | `foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | cleanup 오류 전파 |
+| D-068 | A | `foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | MySQL 8.0.46·실행계획 |
+| D-080 | A | `foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | 원본 성능·셔플 사실 정정 |
+| D-073 | B | `documentation→foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | 원본 CPU/PR 대조 |
+| D-077 | B | `documentation→foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | 현행 계약 문서 |
+| D-067 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | MVC 400/500 분류 |
+| D-066 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 정렬·tie-breaker·캐시 분리 |
+| D-072 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | general_log hit0/miss 양성 |
+| D-069 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | DB 상한·503·회복 |
+| D-076 | B | `messaging→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | retry jitter·drain564초 |
+| D-071 | B | `messaging→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | metadata/version·HTTP6반례 |
+| D-061 | A | `saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 실제 F·PG ledger·소비자 종착 |
+| D-062 | A | `saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 동일DLT rewind·원장1/attempt2 |
+| D-070 | B | `monitoring→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | get10m/evict0·규칙변이 |
+| D-063 | B | `monitoring→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 실제35분·15instance·최종모델동등 |
+
+모든 PR 독립 검증은 구현에 참여하지 않은 verifier가 수행했고 root만 병합했다. 각 개별 plan/audit는 원래 작업의 등급·ADR 판단·선행 의존성·검증을 보존한다. foundation은 최초 공용 기반이며 product lane은 D067→066→072→069, Saga는 D061→062, 실제 경보는 D070→063 순으로 검증했다.
+
+| 열린 항목 | 처분 | 재개 조건 |
+|---|---|---|
+| D-075 | 사용자 명시 보류, 구현·실험 미수행 | 목표 TPS의 단위·대상 경로, 최대 backlog 시간과 초과 대응 결정 |
+| D-084 | #181 안전 복구 부분 병합, 전체 미완 | 영구404에 대해 신뢰할 PG 발급 무과금 증빙 원천·형식 확인 |
+| D-064 | 사용자 제외 | 실 PG 검증 범위와 무료 조건 별도 결정 |
+| D-065 | 사용자 제외 | 운영 replay 개방 전제·GKE 검증 별도 승인 |
+| D-078 | 사용자 제외 | GKE 측정·비용·운영 조건 별도 승인 |
+
+대상16건 중14건과 조건부D063을 합한15건만 완료로 기록한다. D075/D084와 제외3건은 열린 TASKS에 남기며 계획을 아카이브하지 않는다.
+
+## 최종 병합·검증·완료 기록 (2026-10-17)
+
+[PR180](https://github.com/Kimgyuilli/PeekCart/pull/180)의 head `2dde3244e7419fa64a0cb52ef28a17c72c71486c` / base `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`를 독립 검증했다. [CI38987011757](https://github.com/Kimgyuilli/PeekCart/actions/runs/38987011757)의 실제 checkout `e98ab23a16f733fee6bfe832e4fb298bb047484f` 부모와 필수17jobs/gate, XML244/1372tests 실패·오류·skip0, A–F 동일SHA·이미지 identity·matrix35·음성234초 증거를 대조했다. D061 F110.9초의 실제 호출한 PG stub의 POST/GET ledger와 UNRES 생산outbox0/합성 소비 구분, D062 DLT p0/o2 committed3→rewind2·group Empty·동일원장1행/attempt2를 확인했다. D063 실행460의 대상5rule full model은 최종head와 동일하다.
+
+root가 보호 규칙을 지켜 병합한 SHA는 `1178071e9bbffec77676fa0e2f0bee79de8eadc2`다. [main CI38988468800](https://github.com/Kimgyuilli/PeekCart/actions/runs/38988468800)는 동일 실제checkout, 23jobs/6publish SUCCESS, XML244/1372tests 실패·오류·skip0, 양E2E 이미지 identity·A–F·음성238초를 통과했다. main D70초/F120초 및 전체 job45분 제한 준수와 공개GHCR6서비스 SHA/latest manifest·config 일치를 독립 확인했다.
+
+별도 codex exec 리뷰 미호출; 구현에 참여하지 않은 독립 PR 서브에이전트 검증 PASS. 무료 조건은 공개 저장소·표준 runner·GHCR 및 사용자의 artifact/cache 확인으로 충족했다. 기존 두 lint 실패는 정확한 원인과 수정·반례를 audit에 보존했고, 이전 실패/skip/오래된 결과로 병합하지 않았다. PR의 main 전용 publish 미실행과 실제 main6publish 성공을 구분했다.
+
+이 항목의 구현·검증·병합·main 확인이 끝나 TASKS 완료 행·PHASE·개별 plan/audit와 선택 아카이브에 반영한다. 이 문서 기록의 전달은 별도 `debt/final-records` PR이 담당하며 그 PR 자체의 최종 CI·병합·main 증거는 해당 PR 본문에 이어 기록한다.
+
 ## 서버 확정 조회 복구 부분 병합·검증 (2026-10-17)
 
 [PR181](https://github.com/Kimgyuilli/PeekCart/pull/181)의 head `9f763181117a12a498943c09ef315ffb93e2f652` / base `850b0d448ebc6e46524aa2576545b3d55c1ff9d6`를 독립 검증했다. [PR CI38983400228](https://github.com/Kimgyuilli/PeekCart/actions/runs/38983400228)의 실제 checkout `01c9d5b6c456d92ddaa2aa9bf35ce05055477bc0` 부모와 artifact를 대조했다. 필수17jobs/gate, XML234/1336tests 실패·오류·skip0, Recovery18(추가 반례6 포함), 양E2E A–E/이미지 identity/음성 대조군 PASS.
@@ -265,6 +309,8 @@ DLQ 적재량 메트릭은 이미 있었고, 앱의 Slack 직접 발송은 notif
 
 미충족: contact point / notification policy provisioning(ADR 판단 대상), Outbox FAILED 재발행 runbook,
 notification-service 웹훅의 사용자·운영 알림 혼재, 실제 스택 alert 발화 시험(GKE 세션 필요).
+
+2026-10-17 후속: D063/PR180에서 무료 로컬 실제 Prometheus/Grafana 평가의 동등성을 확인하고 원래 for의 발화·정상복귀를 검증했다. GKE 발견·sidecar·실앱방출·외부 알림 전달은 검증하지 않았으며 위 문장은 당시 미충족 이력이다.
 
 ## e2e 만 잡던 결함 3건의 JVM 단언 (D-047, [#154](https://github.com/Kimgyuilli/PeekCart/pull/154), 2026-09-28)
 

@@ -135,12 +135,12 @@ PR CI에서 실제 검사한 checkout SHA와 PR head/base SHA를 각각 기록�
 
 - [x] P1. 실행 전 무료 조건·원격 접근·branch protection·하드웨어·잔여 프로세스 확인, root/worker/verifier 역할과 worktree·CI/로컬 큐 마련.
 - [x] P2. 개별 D- 계획을 순차 수립하고 공용 기반 D-083/068/080 및 정정 D-073/077 처리.
-- [ ] P3. API/상품/장바구니 D-067/066/072/069/071 처리. 정책·ADR 결정과 반례 검증 포함.
+- [x] P3. API/상품/장바구니 D-067/066/072/069/071 처리. 정책·ADR 결정과 반례 검증 포함.
 - [ ] P4. 메시징/처리율 D-076/075 및 saga E2E D-061/062 처리.
-- [ ] P5. D-070과 무료 동등성 확인 후 D-063 처리. 충족 불가 시 제외 이유·잔여 조건 기록.
+- [x] P5. D-070과 무료 동등성 확인 후 D-063 처리. 충족 불가 시 제외 이유·잔여 조건 기록.
 - [ ] P6. D-084 ADR·복구 정책 확정 후 구현·실제 DB 경합 및 CI 스택 검증. 운영/실 PG 실행은 하지 않음.
-- [ ] P7. 각 PR의 최신 코드 CI/독립 검증→root 직렬 병합→main 확인→done/아카이브/인덱스 기록을 완료.
-- [ ] P8. 대상 16건과 조건부 1건의 처분을 대조하고, 제외 3건 및 새로 발견한 비용/증거 차단 항목을 열린 상태로 최종 보고.
+- [x] P7. 완료 대상 제품 PR의 최신 CI/독립 검증→root 직렬 병합→main 확인→done/선택 아카이브/인덱스 기록 작성. 기록 전달 PR 자체의 검증·병합·main 결과는 해당 PR 본문으로 추적한다.
+- [x] P8. 대상16건·조건부1건의 처분을 대조하고 제외3건·보류/증거 차단2건을 열린 상태로 보고 자료에 기록했다. 최종 기록 전달 결과는 해당 PR과 최종 응답으로 보고한다.
 
 체크박스는 실행 완료 증거가 충족될 때만 체크한다. 현재 진행 상황과 차단은 audit의 2026-10-17 실행 절을 따른다.
 
@@ -180,3 +180,49 @@ D-069는 사용자가 DB 보호와 초과 요청 503을 승인했다. D-071의 �
 D-075는 목표 처리율·backlog 수용 기준에 대해 사용자가 보류를 선택했다. D-084는 분리된 승인자/실행자, 감사, 서버가 직접 확인한 PG 확정 결과와 예약 대사 경로로 진행한다. 신뢰할 PG 무과금 증빙 원천이 없는 영구 404 강제 해제는 미완으로 유지한다. 운영자 업로드나 해시, 시간 경과만으로 무과금을 인정하지 않는다. 따라서 D-084의 일부 경로를 구현해도 전체 부채 완료를 뜻하지 않는다.
 
 초기 main의 payment 이미지 publish가 unknown blob으로 실패해 진단 PR #179를 별도 검증 후 병합했다. 병합 SHA는 `3e1ba64c715d22b1f5a2d2635a97da17eb4ebb28`이며 main CI38981041166의 gate와 모든 publish가 성공해야 일반 부채 병합을 재개한다. PR의 조건부 publish skip은 이 증거를 대체하지 않는다. 상세한 head/base/checkout, artifact 및 실행 소유권은 audit에 보존한다.
+
+## 실행 처분 (2026-10-17)
+
+P4는 D076/D061/D062 완료, D075 사용자 보류로 전체 미완이다. P6는 서버 직접 확정 PG 복구를 #181로 부분 병합했지만 영구404 외부 증빙 조건 때문에 D084 전체 미완이다. 이 상위 계획과 D075/D084는 아카이브하지 않는다. 최종 기록 PR의 전달 전에는 그 PR의 병합·CI 완료를 주장하지 않는다.
+
+## 최종 부채·소유권·증거 대조
+
+| ID | 작업자 | branch (debt/) | PR | 완료 증거 |
+|---|---|---|---|---|
+| D-083 | A | `foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | cleanup 오류 전파 |
+| D-068 | A | `foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | MySQL 8.0.46·실행계획 |
+| D-080 | A | `foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | 원본 성능·셔플 사실 정정 |
+| D-073 | B | `documentation→foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | 원본 CPU/PR 대조 |
+| D-077 | B | `documentation→foundation` | [#177](https://github.com/Kimgyuilli/PeekCart/pull/177) | 현행 계약 문서 |
+| D-067 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | MVC 400/500 분류 |
+| D-066 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 정렬·tie-breaker·캐시 분리 |
+| D-072 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | general_log hit0/miss 양성 |
+| D-069 | A | `product-lane→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | DB 상한·503·회복 |
+| D-076 | B | `messaging→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | retry jitter·drain564초 |
+| D-071 | B | `messaging→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | metadata/version·HTTP6반례 |
+| D-061 | A | `saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 실제 F·PG ledger·소비자 종착 |
+| D-062 | A | `saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 동일DLT rewind·원장1/attempt2 |
+| D-070 | B | `monitoring→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | get10m/evict0·규칙변이 |
+| D-063 | B | `monitoring→saga-evidence` | [#180](https://github.com/Kimgyuilli/PeekCart/pull/180) | 실제35분·15instance·최종모델동등 |
+
+모든 PR 독립 검증은 구현에 참여하지 않은 verifier가 수행했고 root만 병합했다. 각 개별 plan/audit는 원래 작업의 등급·ADR 판단·선행 의존성·검증을 보존한다. foundation은 최초 공용 기반이며 product lane은 D067→066→072→069, Saga는 D061→062, 실제 경보는 D070→063 순으로 검증했다.
+
+| 열린 항목 | 처분 | 재개 조건 |
+|---|---|---|
+| D-075 | 사용자 명시 보류, 구현·실험 미수행 | 목표 TPS의 단위·대상 경로, 최대 backlog 시간과 초과 대응 결정 |
+| D-084 | #181 안전 복구 부분 병합, 전체 미완 | 영구404에 대해 신뢰할 PG 발급 무과금 증빙 원천·형식 확인 |
+| D-064 | 사용자 제외 | 실 PG 검증 범위와 무료 조건 별도 결정 |
+| D-065 | 사용자 제외 | 운영 replay 개방 전제·GKE 검증 별도 승인 |
+| D-078 | 사용자 제외 | GKE 측정·비용·운영 조건 별도 승인 |
+
+대상16건 중14건과 조건부D063을 합한15건만 완료로 기록한다. D075/D084와 제외3건은 열린 TASKS에 남기며 계획을 아카이브하지 않는다.
+
+## 최종 병합·검증·완료 기록 (2026-10-17)
+
+[PR180](https://github.com/Kimgyuilli/PeekCart/pull/180)의 head `2dde3244e7419fa64a0cb52ef28a17c72c71486c` / base `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`를 독립 검증했다. [CI38987011757](https://github.com/Kimgyuilli/PeekCart/actions/runs/38987011757)의 실제 checkout `e98ab23a16f733fee6bfe832e4fb298bb047484f` 부모와 필수17jobs/gate, XML244/1372tests 실패·오류·skip0, A–F 동일SHA·이미지 identity·matrix35·음성234초 증거를 대조했다. D061 F110.9초의 실제 호출한 PG stub의 POST/GET ledger와 UNRES 생산outbox0/합성 소비 구분, D062 DLT p0/o2 committed3→rewind2·group Empty·동일원장1행/attempt2를 확인했다. D063 실행460의 대상5rule full model은 최종head와 동일하다.
+
+root가 보호 규칙을 지켜 병합한 SHA는 `1178071e9bbffec77676fa0e2f0bee79de8eadc2`다. [main CI38988468800](https://github.com/Kimgyuilli/PeekCart/actions/runs/38988468800)는 동일 실제checkout, 23jobs/6publish SUCCESS, XML244/1372tests 실패·오류·skip0, 양E2E 이미지 identity·A–F·음성238초를 통과했다. main D70초/F120초 및 전체 job45분 제한 준수와 공개GHCR6서비스 SHA/latest manifest·config 일치를 독립 확인했다.
+
+별도 codex exec 리뷰 미호출; 구현에 참여하지 않은 독립 PR 서브에이전트 검증 PASS. 무료 조건은 공개 저장소·표준 runner·GHCR 및 사용자의 artifact/cache 확인으로 충족했다. 기존 두 lint 실패는 정확한 원인과 수정·반례를 audit에 보존했고, 이전 실패/skip/오래된 결과로 병합하지 않았다. PR의 main 전용 publish 미실행과 실제 main6publish 성공을 구분했다.
+
+이 항목의 구현·검증·병합·main 확인이 끝나 TASKS 완료 행·PHASE·개별 plan/audit와 선택 아카이브에 반영한다. 이 문서 기록의 전달은 별도 `debt/final-records` PR이 담당하며 그 PR 자체의 최종 CI·병합·main 증거는 해당 PR 본문에 이어 기록한다.

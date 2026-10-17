@@ -3396,3 +3396,7 @@ Phase 4 의 잔여가 아니라 다음 작업의 후보다 — 단계 경계를 
   `7cadfa0` 당시 `OrderCommandService` 바깥 트랜잭션이 Facade를 호출했다.
 
 [원본 세션·git·코드와 대조한 근거](evidence/d073-source-corrections.md).
+
+## 2026-10-17 후속 부채 해소 연결
+
+[PR180](https://github.com/Kimgyuilli/PeekCart/pull/180)과 main1178071 검증으로 이전 미충족 중 환불 결과·호출 순서 E2E(D061), 동일 DLT 재소비(D062), 실제 알림 평가(D063), 상품 정렬/캐시 경계·장애 DB 보호(D066/069/072), 요청 타입 오류(D067), 장바구니 상품 조합(D071), Kafka jitter(D076), cache 경보(D070)를 해소했다. 당시 기록은 보존하며 최종 증거는 PHASE5와 각 done 계획/audit에 있다. 상품 목록은 여전히 offset 방식이며 커서 전환을 수행하지 않았다. GKE 성능·실 PG·운영 replay 개방은 D078/064/065로 열린 상태다.
