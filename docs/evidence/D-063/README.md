@@ -44,4 +44,4 @@ manifest의 `local-fixture` 사용자/암호는 이 loopback 실험만을 위한
 
 ## 검증하지 않은 범위
 
-GKE ServiceMonitor discovery, ConfigMap sidecar 전달, namespace/network routing, 실제 앱 메트릭 방출, 운영 장애, 외부 Slack/PagerDuty 전달과 GKE 바이너리 동등성은 검증하지 않았다. `environment-equivalence.md`와 `independent-pre-execution-review.md`는 실행 전 독립 판단을 보존하며 실제 실행 결과와 구분한다.
+GKE ServiceMonitor discovery, ConfigMap sidecar 전달, namespace/network routing, 실제 앱 메트릭 방출, 운영 장애, 외부 Slack/PagerDuty 전달과 GKE 바이너리 동등성은 검증하지 않았다. `environment-equivalence.md`는 실행 전 동등성 판단이다. `independent-pre-execution-review.md`는 실행 전 검토 이력과 후속 run3 실제 원문 독립 검증을 각각 구분해 보존한다. 초기 baseline 첫 두 표본은 평가 전 빈 alert 인스턴스였으며, baseline 마지막과 최종 복귀 표본에서 strict Normal을 확인했다. 138개 모두가 Normal이었다는 의미가 아니다.
