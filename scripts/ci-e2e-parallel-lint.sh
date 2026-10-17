@@ -42,7 +42,7 @@ def validate(doc):
 
     steps = {step.get("name"): step for step in job.get("steps", [])}
     required = {
-        "시나리오 4종": ("scenarios", "bash scripts/saga-e2e-smoke.sh"),
+        "시나리오 6종": ("scenarios", "bash scripts/saga-e2e-smoke.sh"),
         "음성 대조군": ("negative-control", "bash scripts/saga-e2e-smoke.sh --negative-control"),
         "saga contract matrix gate (structure + e2e evidence)":
             ("scenarios", "bash scripts/saga-contract-matrix-lint.sh --e2e-evidence"),
@@ -78,7 +78,7 @@ if sys.argv[2] == "--self-test":
     mutations = {
         "대조군 모드 삭제": lambda d: d["jobs"]["e2e"]["strategy"]["matrix"].update(mode=["scenarios"]),
         "대조군 명령 삭제": lambda d: step(d, "음성 대조군").update(run="true"),
-        "모드 조건 삭제": lambda d: step(d, "시나리오 4종").pop("if"),
+        "모드 조건 삭제": lambda d: step(d, "시나리오 6종").pop("if"),
         "이미지 의존 삭제": lambda d: d["jobs"]["e2e"].update(needs=[]),
         "게이트 대기 추가": lambda d: d["jobs"]["e2e"].update(needs=["images", "gate"]),
         "증적 게이트 삭제": lambda d: step(d, "saga contract matrix gate (structure + e2e evidence)").update(run="true"),
