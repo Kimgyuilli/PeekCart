@@ -1,0 +1,968 @@
+{
+  "peekcart-compensation-backlog": [
+    {
+      "labels": {
+        "alertname": "Saga Compensation Backlog (\ubbf8\ud574\uc18c \ubcf4\uc0c1 \uc6d0\uc7a5)",
+        "application": "order-service",
+        "grafana_folder": "PeekCart",
+        "severity": "warning"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194566.345504,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195832.186738,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196012.9920719,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    }
+  ],
+  "peekcart-dlq-backlog": [
+    {
+      "labels": {
+        "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+        "application": "notification-service",
+        "grafana_folder": "PeekCart",
+        "severity": "warning",
+        "signal": "dlq"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194566.345504,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195530.743642,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196012.9920719,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+        "application": "order-service",
+        "grafana_folder": "PeekCart",
+        "severity": "warning",
+        "signal": "dlq"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194566.345504,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195530.743642,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196012.9920719,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+        "application": "payment-service",
+        "grafana_folder": "PeekCart",
+        "severity": "warning",
+        "signal": "dlq"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194566.345504,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195530.743642,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196012.9920719,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+        "application": "product-service",
+        "grafana_folder": "PeekCart",
+        "severity": "warning",
+        "signal": "dlq"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194566.345504,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195530.743642,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196012.9920719,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    }
+  ],
+  "peekcart-outbox-failed": [
+    {
+      "labels": {
+        "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+        "application": "notification-service",
+        "grafana_folder": "PeekCart",
+        "severity": "warning",
+        "signal": "outbox-publish"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194566.345504,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195229.5315468,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196012.9920719,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+        "application": "order-service",
+        "grafana_folder": "PeekCart",
+        "severity": "warning",
+        "signal": "outbox-publish"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194566.345504,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195229.5315468,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196012.9920719,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+        "application": "payment-service",
+        "grafana_folder": "PeekCart",
+        "severity": "warning",
+        "signal": "outbox-publish"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194566.345504,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195229.5315468,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196012.9920719,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+        "application": "product-service",
+        "grafana_folder": "PeekCart",
+        "severity": "warning",
+        "signal": "outbox-publish"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194566.345504,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195229.5315468,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196012.9920719,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    }
+  ],
+  "peekcart-cache-fallback-get": [
+    {
+      "labels": {
+        "alertname": "Product Cache Fallback (get)",
+        "application": "product-service",
+        "cache": "product",
+        "grafana_folder": "PeekCart",
+        "operation": "get",
+        "severity": "warning",
+        "signal": "cache-fallback-get"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194807.406539,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195530.743642,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196314.111257,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "Product Cache Fallback (get)",
+        "application": "product-service",
+        "cache": "productStock",
+        "grafana_folder": "PeekCart",
+        "operation": "get",
+        "severity": "warning",
+        "signal": "cache-fallback-get"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194807.406539,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195530.743642,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196314.111257,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "Product Cache Fallback (get)",
+        "application": "product-service",
+        "cache": "products",
+        "grafana_folder": "PeekCart",
+        "operation": "get",
+        "severity": "warning",
+        "signal": "cache-fallback-get"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194445.8582,
+          "phase": "transient",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792194807.406539,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Pending"
+        },
+        {
+          "timestamp": 1792195530.743642,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196314.111257,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    }
+  ],
+  "peekcart-cache-fallback-evict": [
+    {
+      "labels": {
+        "alertname": "Product Cache Fallback (evict)",
+        "application": "product-service",
+        "cache": "product",
+        "grafana_folder": "PeekCart",
+        "operation": "evict",
+        "severity": "warning",
+        "signal": "cache-fallback-evict"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196314.111257,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "Product Cache Fallback (evict)",
+        "application": "product-service",
+        "cache": "productStock",
+        "grafana_folder": "PeekCart",
+        "operation": "evict",
+        "severity": "warning",
+        "signal": "cache-fallback-evict"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196314.111257,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    },
+    {
+      "labels": {
+        "alertname": "Product Cache Fallback (evict)",
+        "application": "product-service",
+        "cache": "products",
+        "grafana_folder": "PeekCart",
+        "operation": "evict",
+        "severity": "warning",
+        "signal": "cache-fallback-evict"
+      },
+      "transitions": [
+        {
+          "timestamp": 1792194325.421175,
+          "phase": "baseline",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194415.747371,
+          "phase": "transient",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194506.0507882,
+          "phase": "transient-resolved",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194897.7684531,
+          "phase": "sustained",
+          "state": "Normal"
+        },
+        {
+          "timestamp": 1792194927.9346292,
+          "phase": "sustained",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792195982.872001,
+          "phase": "resolved",
+          "state": "Alerting"
+        },
+        {
+          "timestamp": 1792196314.111257,
+          "phase": "resolved",
+          "state": "Normal"
+        }
+      ],
+      "lastObserved": {
+        "timestamp": 1792196359.328656,
+        "phase": "resolved",
+        "state": "Normal"
+      }
+    }
+  ]
+}

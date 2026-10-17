@@ -1,0 +1,1201 @@
+{
+  "sourceSHA": "460217ec3dd4b869f87d1199191d49a57b006b68",
+  "sourceDirty": false,
+  "ruleFileSha256": "b8effdda5853605f47bc9b13db2c9006bdaf35893c06a5c72bdc99266c38a09e",
+  "provisionedRulesSha256": "757f36e3e81c672e135ef0d072997e3e2ea43008569f7bdbb803149273b8630a",
+  "project": "peakcart-alert-1792194274",
+  "images": {
+    "prometheus": "prom/prometheus:v3.2.1",
+    "grafana": "grafana/grafana:11.6.0",
+    "fixture": "python:3.12-alpine"
+  },
+  "scope": "Local fixture evaluation only; no GKE discovery, app emission or external delivery evidence",
+  "prometheus": {
+    "status": "success",
+    "data": {
+      "version": "3.2.1",
+      "revision": "804c49d58f3f3784c77c9c8ec17c9062092cae27",
+      "branch": "HEAD",
+      "buildUser": "root@42fd9529152a",
+      "buildDate": "20250226-09:22:47",
+      "goVersion": "go1.23.6"
+    }
+  },
+  "grafana": {
+    "database": "ok",
+    "version": "11.6.0",
+    "commit": "d2fdff9ee4d75c74bfd3a97c18a0b8e4d029f06e"
+  },
+  "containers": [
+    {
+      "Id": "1d1b381468e2bfe63716d6add529c1a828e6b5ec0c378586d02242be16b44e3d",
+      "Created": "2026-10-16T23:44:35.125244803Z",
+      "Path": "python",
+      "Args": [
+        "/fixture/fixture_exporter.py"
+      ],
+      "State": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 9292,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-16T23:44:35.302219012Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "Image": "sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4",
+      "ResolvConfPath": "/var/lib/docker/containers/1d1b381468e2bfe63716d6add529c1a828e6b5ec0c378586d02242be16b44e3d/resolv.conf",
+      "HostnamePath": "/var/lib/docker/containers/1d1b381468e2bfe63716d6add529c1a828e6b5ec0c378586d02242be16b44e3d/hostname",
+      "HostsPath": "/var/lib/docker/containers/1d1b381468e2bfe63716d6add529c1a828e6b5ec0c378586d02242be16b44e3d/hosts",
+      "LogPath": "/var/lib/docker/containers/1d1b381468e2bfe63716d6add529c1a828e6b5ec0c378586d02242be16b44e3d/1d1b381468e2bfe63716d6add529c1a828e6b5ec0c378586d02242be16b44e3d-json.log",
+      "Name": "/peakcart-alert-1792194274-fixture-a-1",
+      "RestartCount": 0,
+      "Driver": "overlayfs",
+      "Platform": "linux",
+      "MountLabel": "",
+      "ProcessLabel": "",
+      "AppArmorProfile": "",
+      "ExecIDs": null,
+      "HostConfig": {
+        "Binds": [
+          "/private/tmp/peakcart-d063-20261017-run3:/fixture:ro"
+        ],
+        "ContainerIDFile": "",
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {}
+        },
+        "NetworkMode": "peakcart-alert-1792194274_default",
+        "PortBindings": {},
+        "RestartPolicy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "AutoRemove": false,
+        "VolumeDriver": "",
+        "VolumesFrom": null,
+        "ConsoleSize": [
+          0,
+          0
+        ],
+        "CapAdd": null,
+        "CapDrop": null,
+        "CgroupnsMode": "private",
+        "Dns": null,
+        "DnsOptions": null,
+        "DnsSearch": null,
+        "ExtraHosts": [],
+        "GroupAdd": null,
+        "IpcMode": "private",
+        "Cgroup": "",
+        "Links": null,
+        "OomScoreAdj": 0,
+        "PidMode": "",
+        "Privileged": false,
+        "PublishAllPorts": false,
+        "ReadonlyRootfs": false,
+        "SecurityOpt": null,
+        "UTSMode": "",
+        "UsernsMode": "",
+        "ShmSize": 67108864,
+        "Runtime": "runc",
+        "Isolation": "",
+        "CpuShares": 0,
+        "Memory": 0,
+        "NanoCpus": 0,
+        "CgroupParent": "",
+        "BlkioWeight": 0,
+        "BlkioWeightDevice": null,
+        "BlkioDeviceReadBps": null,
+        "BlkioDeviceWriteBps": null,
+        "BlkioDeviceReadIOps": null,
+        "BlkioDeviceWriteIOps": null,
+        "CpuPeriod": 0,
+        "CpuQuota": 0,
+        "CpuRealtimePeriod": 0,
+        "CpuRealtimeRuntime": 0,
+        "CpusetCpus": "",
+        "CpusetMems": "",
+        "Devices": null,
+        "DeviceCgroupRules": null,
+        "DeviceRequests": null,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "MemorySwappiness": null,
+        "OomKillDisable": null,
+        "PidsLimit": null,
+        "Ulimits": null,
+        "CpuCount": 0,
+        "CpuPercent": 0,
+        "IOMaximumIOps": 0,
+        "IOMaximumBandwidth": 0,
+        "MaskedPaths": [
+          "/proc/acpi",
+          "/proc/asound",
+          "/proc/interrupts",
+          "/proc/kcore",
+          "/proc/keys",
+          "/proc/latency_stats",
+          "/proc/sched_debug",
+          "/proc/scsi",
+          "/proc/timer_list",
+          "/proc/timer_stats",
+          "/sys/devices/virtual/powercap",
+          "/sys/firmware"
+        ],
+        "ReadonlyPaths": [
+          "/proc/bus",
+          "/proc/fs",
+          "/proc/irq",
+          "/proc/sys",
+          "/proc/sysrq-trigger"
+        ]
+      },
+      "Storage": {
+        "RootFS": {
+          "Snapshot": {
+            "Name": "overlayfs"
+          }
+        }
+      },
+      "Mounts": [
+        {
+          "Type": "bind",
+          "Source": "/private/tmp/peakcart-d063-20261017-run3",
+          "Destination": "/fixture",
+          "Mode": "ro",
+          "RW": false,
+          "Propagation": "rprivate"
+        }
+      ],
+      "Config": {
+        "Hostname": "1d1b381468e2",
+        "Domainname": "",
+        "User": "",
+        "AttachStdin": false,
+        "AttachStdout": true,
+        "AttachStderr": true,
+        "Tty": false,
+        "OpenStdin": false,
+        "StdinOnce": false,
+        "Env": [
+          "FIXTURE_INSTANCE=fixture-a",
+          "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "LANG=C.UTF-8",
+          "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+          "PYTHON_VERSION=3.12.15",
+          "PYTHON_SHA256=c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a"
+        ],
+        "Cmd": [
+          "python",
+          "/fixture/fixture_exporter.py"
+        ],
+        "Image": "python:3.12-alpine",
+        "Volumes": null,
+        "WorkingDir": "/",
+        "Entrypoint": null,
+        "Labels": {
+          "com.docker.compose.config-hash": "2dc94bd0937cfa2e63b00d4db65125870aa72baca69173775dd8eb872437819e",
+          "com.docker.compose.container-number": "1",
+          "com.docker.compose.depends_on": "",
+          "com.docker.compose.image": "sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4",
+          "com.docker.compose.oneoff": "False",
+          "com.docker.compose.project": "peakcart-alert-1792194274",
+          "com.docker.compose.project.config_files": "/private/tmp/peakcart-d063-20261017-run3/compose.yml",
+          "com.docker.compose.project.working_dir": "/private/tmp/peakcart-d063-20261017-run3",
+          "com.docker.compose.service": "fixture-a",
+          "com.docker.compose.version": "5.1.0"
+        },
+        "StopTimeout": 1
+      },
+      "NetworkSettings": {
+        "SandboxID": "d5c5d2e2444ca3368ad81b009252a33c4c74ed398333f0e183aa15134fae679d",
+        "SandboxKey": "/var/run/docker/netns/d5c5d2e2444c",
+        "Ports": {},
+        "Networks": {
+          "peakcart-alert-1792194274_default": {
+            "IPAMConfig": null,
+            "Links": null,
+            "Aliases": [
+              "peakcart-alert-1792194274-fixture-a-1",
+              "fixture-a"
+            ],
+            "DriverOpts": null,
+            "GwPriority": 0,
+            "NetworkID": "d5e89611c9cf317aee6549c89911d7bd36690faf707b9eba3958a6ffccea1032",
+            "EndpointID": "69e008eed10e974ee2bb8763f3ff7bcd456b3733ce16e80af08e918ee19c2853",
+            "Gateway": "172.23.0.1",
+            "IPAddress": "172.23.0.5",
+            "MacAddress": "e2:6f:c1:e0:ac:0f",
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "DNSNames": [
+              "peakcart-alert-1792194274-fixture-a-1",
+              "fixture-a",
+              "1d1b381468e2"
+            ]
+          }
+        }
+      },
+      "ImageManifestDescriptor": {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:a4ccdf11e73bd3f74e07f95e63f1b003467bb16cb77e942ddf45476c2cb8467c",
+        "size": 1737,
+        "annotations": {
+          "com.docker.official-images.bashbrew.arch": "arm64v8",
+          "org.opencontainers.image.base.digest": "sha256:260479a1cfaf304c4c20da7f8405d3ce313513dcd534bb743257bdd2fe0f3e2d",
+          "org.opencontainers.image.base.name": "alpine:3.24",
+          "org.opencontainers.image.created": "2026-10-01T21:47:36Z",
+          "org.opencontainers.image.revision": "2a3b794c223ab067d122719541cdd54a068732a5",
+          "org.opencontainers.image.source": "https://github.com/docker-library/python.git#2a3b794c223ab067d122719541cdd54a068732a5:3.12/alpine3.24",
+          "org.opencontainers.image.url": "https://hub.docker.com/_/python",
+          "org.opencontainers.image.version": "3.12.15-alpine3.24"
+        },
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux",
+          "variant": "v8"
+        }
+      }
+    },
+    {
+      "Id": "df704bb2e1dd9464c63a6c541ee5d9bf58d544aeb75491936a44d82eb5445ffb",
+      "Created": "2026-10-16T23:44:35.12693622Z",
+      "Path": "python",
+      "Args": [
+        "/fixture/fixture_exporter.py"
+      ],
+      "State": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 9291,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-16T23:44:35.307435553Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "Image": "sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4",
+      "ResolvConfPath": "/var/lib/docker/containers/df704bb2e1dd9464c63a6c541ee5d9bf58d544aeb75491936a44d82eb5445ffb/resolv.conf",
+      "HostnamePath": "/var/lib/docker/containers/df704bb2e1dd9464c63a6c541ee5d9bf58d544aeb75491936a44d82eb5445ffb/hostname",
+      "HostsPath": "/var/lib/docker/containers/df704bb2e1dd9464c63a6c541ee5d9bf58d544aeb75491936a44d82eb5445ffb/hosts",
+      "LogPath": "/var/lib/docker/containers/df704bb2e1dd9464c63a6c541ee5d9bf58d544aeb75491936a44d82eb5445ffb/df704bb2e1dd9464c63a6c541ee5d9bf58d544aeb75491936a44d82eb5445ffb-json.log",
+      "Name": "/peakcart-alert-1792194274-fixture-b-1",
+      "RestartCount": 0,
+      "Driver": "overlayfs",
+      "Platform": "linux",
+      "MountLabel": "",
+      "ProcessLabel": "",
+      "AppArmorProfile": "",
+      "ExecIDs": null,
+      "HostConfig": {
+        "Binds": [
+          "/private/tmp/peakcart-d063-20261017-run3:/fixture:ro"
+        ],
+        "ContainerIDFile": "",
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {}
+        },
+        "NetworkMode": "peakcart-alert-1792194274_default",
+        "PortBindings": {},
+        "RestartPolicy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "AutoRemove": false,
+        "VolumeDriver": "",
+        "VolumesFrom": null,
+        "ConsoleSize": [
+          0,
+          0
+        ],
+        "CapAdd": null,
+        "CapDrop": null,
+        "CgroupnsMode": "private",
+        "Dns": null,
+        "DnsOptions": null,
+        "DnsSearch": null,
+        "ExtraHosts": [],
+        "GroupAdd": null,
+        "IpcMode": "private",
+        "Cgroup": "",
+        "Links": null,
+        "OomScoreAdj": 0,
+        "PidMode": "",
+        "Privileged": false,
+        "PublishAllPorts": false,
+        "ReadonlyRootfs": false,
+        "SecurityOpt": null,
+        "UTSMode": "",
+        "UsernsMode": "",
+        "ShmSize": 67108864,
+        "Runtime": "runc",
+        "Isolation": "",
+        "CpuShares": 0,
+        "Memory": 0,
+        "NanoCpus": 0,
+        "CgroupParent": "",
+        "BlkioWeight": 0,
+        "BlkioWeightDevice": null,
+        "BlkioDeviceReadBps": null,
+        "BlkioDeviceWriteBps": null,
+        "BlkioDeviceReadIOps": null,
+        "BlkioDeviceWriteIOps": null,
+        "CpuPeriod": 0,
+        "CpuQuota": 0,
+        "CpuRealtimePeriod": 0,
+        "CpuRealtimeRuntime": 0,
+        "CpusetCpus": "",
+        "CpusetMems": "",
+        "Devices": null,
+        "DeviceCgroupRules": null,
+        "DeviceRequests": null,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "MemorySwappiness": null,
+        "OomKillDisable": null,
+        "PidsLimit": null,
+        "Ulimits": null,
+        "CpuCount": 0,
+        "CpuPercent": 0,
+        "IOMaximumIOps": 0,
+        "IOMaximumBandwidth": 0,
+        "MaskedPaths": [
+          "/proc/acpi",
+          "/proc/asound",
+          "/proc/interrupts",
+          "/proc/kcore",
+          "/proc/keys",
+          "/proc/latency_stats",
+          "/proc/sched_debug",
+          "/proc/scsi",
+          "/proc/timer_list",
+          "/proc/timer_stats",
+          "/sys/devices/virtual/powercap",
+          "/sys/firmware"
+        ],
+        "ReadonlyPaths": [
+          "/proc/bus",
+          "/proc/fs",
+          "/proc/irq",
+          "/proc/sys",
+          "/proc/sysrq-trigger"
+        ]
+      },
+      "Storage": {
+        "RootFS": {
+          "Snapshot": {
+            "Name": "overlayfs"
+          }
+        }
+      },
+      "Mounts": [
+        {
+          "Type": "bind",
+          "Source": "/private/tmp/peakcart-d063-20261017-run3",
+          "Destination": "/fixture",
+          "Mode": "ro",
+          "RW": false,
+          "Propagation": "rprivate"
+        }
+      ],
+      "Config": {
+        "Hostname": "df704bb2e1dd",
+        "Domainname": "",
+        "User": "",
+        "AttachStdin": false,
+        "AttachStdout": true,
+        "AttachStderr": true,
+        "Tty": false,
+        "OpenStdin": false,
+        "StdinOnce": false,
+        "Env": [
+          "FIXTURE_INSTANCE=fixture-b",
+          "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "LANG=C.UTF-8",
+          "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+          "PYTHON_VERSION=3.12.15",
+          "PYTHON_SHA256=c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a"
+        ],
+        "Cmd": [
+          "python",
+          "/fixture/fixture_exporter.py"
+        ],
+        "Image": "python:3.12-alpine",
+        "Volumes": null,
+        "WorkingDir": "/",
+        "Entrypoint": null,
+        "Labels": {
+          "com.docker.compose.config-hash": "d2bdd5cf6928b4445b3b63dcefb05c0f13b2eb8af0558d7541ebae55117ef6e3",
+          "com.docker.compose.container-number": "1",
+          "com.docker.compose.depends_on": "",
+          "com.docker.compose.image": "sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4",
+          "com.docker.compose.oneoff": "False",
+          "com.docker.compose.project": "peakcart-alert-1792194274",
+          "com.docker.compose.project.config_files": "/private/tmp/peakcart-d063-20261017-run3/compose.yml",
+          "com.docker.compose.project.working_dir": "/private/tmp/peakcart-d063-20261017-run3",
+          "com.docker.compose.service": "fixture-b",
+          "com.docker.compose.version": "5.1.0"
+        },
+        "StopTimeout": 1
+      },
+      "NetworkSettings": {
+        "SandboxID": "a513798ea82f7c7bc3792e3c3aac22b55f257f2983347db647ad9c3965969b67",
+        "SandboxKey": "/var/run/docker/netns/a513798ea82f",
+        "Ports": {},
+        "Networks": {
+          "peakcart-alert-1792194274_default": {
+            "IPAMConfig": null,
+            "Links": null,
+            "Aliases": [
+              "peakcart-alert-1792194274-fixture-b-1",
+              "fixture-b"
+            ],
+            "DriverOpts": null,
+            "GwPriority": 0,
+            "NetworkID": "d5e89611c9cf317aee6549c89911d7bd36690faf707b9eba3958a6ffccea1032",
+            "EndpointID": "f9ab8dec63732986a3106da29388de6c03550f77de0a86fd1e866c61411b8044",
+            "Gateway": "172.23.0.1",
+            "IPAddress": "172.23.0.4",
+            "MacAddress": "c6:63:03:d2:b2:b2",
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "DNSNames": [
+              "peakcart-alert-1792194274-fixture-b-1",
+              "fixture-b",
+              "df704bb2e1dd"
+            ]
+          }
+        }
+      },
+      "ImageManifestDescriptor": {
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "digest": "sha256:a4ccdf11e73bd3f74e07f95e63f1b003467bb16cb77e942ddf45476c2cb8467c",
+        "size": 1737,
+        "annotations": {
+          "com.docker.official-images.bashbrew.arch": "arm64v8",
+          "org.opencontainers.image.base.digest": "sha256:260479a1cfaf304c4c20da7f8405d3ce313513dcd534bb743257bdd2fe0f3e2d",
+          "org.opencontainers.image.base.name": "alpine:3.24",
+          "org.opencontainers.image.created": "2026-10-01T21:47:36Z",
+          "org.opencontainers.image.revision": "2a3b794c223ab067d122719541cdd54a068732a5",
+          "org.opencontainers.image.source": "https://github.com/docker-library/python.git#2a3b794c223ab067d122719541cdd54a068732a5:3.12/alpine3.24",
+          "org.opencontainers.image.url": "https://hub.docker.com/_/python",
+          "org.opencontainers.image.version": "3.12.15-alpine3.24"
+        },
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux",
+          "variant": "v8"
+        }
+      }
+    },
+    {
+      "Id": "16b4f93a6af4038fe408a8eb4b7477bf7eeb52ed06004d04bdbf22aef058fb9b",
+      "Created": "2026-10-16T23:44:35.120067262Z",
+      "Path": "/run.sh",
+      "Args": [],
+      "State": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 9290,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-16T23:44:35.309577928Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "Image": "sha256:62d2b9d20a19714ebfe48d1bb405086081bc602aa053e28cf6d73c7537640dfb",
+      "ResolvConfPath": "/var/lib/docker/containers/16b4f93a6af4038fe408a8eb4b7477bf7eeb52ed06004d04bdbf22aef058fb9b/resolv.conf",
+      "HostnamePath": "/var/lib/docker/containers/16b4f93a6af4038fe408a8eb4b7477bf7eeb52ed06004d04bdbf22aef058fb9b/hostname",
+      "HostsPath": "/var/lib/docker/containers/16b4f93a6af4038fe408a8eb4b7477bf7eeb52ed06004d04bdbf22aef058fb9b/hosts",
+      "LogPath": "/var/lib/docker/containers/16b4f93a6af4038fe408a8eb4b7477bf7eeb52ed06004d04bdbf22aef058fb9b/16b4f93a6af4038fe408a8eb4b7477bf7eeb52ed06004d04bdbf22aef058fb9b-json.log",
+      "Name": "/peakcart-alert-1792194274-grafana-1",
+      "RestartCount": 0,
+      "Driver": "overlayfs",
+      "Platform": "linux",
+      "MountLabel": "",
+      "ProcessLabel": "",
+      "AppArmorProfile": "",
+      "ExecIDs": null,
+      "HostConfig": {
+        "Binds": [
+          "/private/tmp/peakcart-d063-20261017-run3/provisioning:/etc/grafana/provisioning:ro"
+        ],
+        "ContainerIDFile": "",
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {}
+        },
+        "NetworkMode": "peakcart-alert-1792194274_default",
+        "PortBindings": {
+          "3000/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": ""
+            }
+          ]
+        },
+        "RestartPolicy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "AutoRemove": false,
+        "VolumeDriver": "",
+        "VolumesFrom": null,
+        "ConsoleSize": [
+          0,
+          0
+        ],
+        "CapAdd": null,
+        "CapDrop": null,
+        "CgroupnsMode": "private",
+        "Dns": null,
+        "DnsOptions": null,
+        "DnsSearch": null,
+        "ExtraHosts": [],
+        "GroupAdd": null,
+        "IpcMode": "private",
+        "Cgroup": "",
+        "Links": null,
+        "OomScoreAdj": 0,
+        "PidMode": "",
+        "Privileged": false,
+        "PublishAllPorts": false,
+        "ReadonlyRootfs": false,
+        "SecurityOpt": null,
+        "UTSMode": "",
+        "UsernsMode": "",
+        "ShmSize": 67108864,
+        "Runtime": "runc",
+        "Isolation": "",
+        "CpuShares": 0,
+        "Memory": 0,
+        "NanoCpus": 0,
+        "CgroupParent": "",
+        "BlkioWeight": 0,
+        "BlkioWeightDevice": null,
+        "BlkioDeviceReadBps": null,
+        "BlkioDeviceWriteBps": null,
+        "BlkioDeviceReadIOps": null,
+        "BlkioDeviceWriteIOps": null,
+        "CpuPeriod": 0,
+        "CpuQuota": 0,
+        "CpuRealtimePeriod": 0,
+        "CpuRealtimeRuntime": 0,
+        "CpusetCpus": "",
+        "CpusetMems": "",
+        "Devices": null,
+        "DeviceCgroupRules": null,
+        "DeviceRequests": null,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "MemorySwappiness": null,
+        "OomKillDisable": null,
+        "PidsLimit": null,
+        "Ulimits": null,
+        "CpuCount": 0,
+        "CpuPercent": 0,
+        "IOMaximumIOps": 0,
+        "IOMaximumBandwidth": 0,
+        "MaskedPaths": [
+          "/proc/acpi",
+          "/proc/asound",
+          "/proc/interrupts",
+          "/proc/kcore",
+          "/proc/keys",
+          "/proc/latency_stats",
+          "/proc/sched_debug",
+          "/proc/scsi",
+          "/proc/timer_list",
+          "/proc/timer_stats",
+          "/sys/devices/virtual/powercap",
+          "/sys/firmware"
+        ],
+        "ReadonlyPaths": [
+          "/proc/bus",
+          "/proc/fs",
+          "/proc/irq",
+          "/proc/sys",
+          "/proc/sysrq-trigger"
+        ]
+      },
+      "Storage": {
+        "RootFS": {
+          "Snapshot": {
+            "Name": "overlayfs"
+          }
+        }
+      },
+      "Mounts": [
+        {
+          "Type": "bind",
+          "Source": "/private/tmp/peakcart-d063-20261017-run3/provisioning",
+          "Destination": "/etc/grafana/provisioning",
+          "Mode": "ro",
+          "RW": false,
+          "Propagation": "rprivate"
+        }
+      ],
+      "Config": {
+        "Hostname": "16b4f93a6af4",
+        "Domainname": "",
+        "User": "472",
+        "AttachStdin": false,
+        "AttachStdout": true,
+        "AttachStderr": true,
+        "ExposedPorts": {
+          "3000/tcp": {}
+        },
+        "Tty": false,
+        "OpenStdin": false,
+        "StdinOnce": false,
+        "Env": [
+          "GF_ANALYTICS_REPORTING_ENABLED=false",
+          "GF_ANALYTICS_CHECK_FOR_UPDATES=false",
+          "GF_UNIFIED_ALERTING_ENABLED=true",
+          "GF_SECURITY_ADMIN_USER=local-fixture",
+          "GF_SECURITY_ADMIN_PASSWORD=local-fixture",
+          "PATH=/usr/share/grafana/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "GF_PATHS_CONFIG=/etc/grafana/grafana.ini",
+          "GF_PATHS_DATA=/var/lib/grafana",
+          "GF_PATHS_HOME=/usr/share/grafana",
+          "GF_PATHS_LOGS=/var/log/grafana",
+          "GF_PATHS_PLUGINS=/var/lib/grafana/plugins",
+          "GF_PATHS_PROVISIONING=/etc/grafana/provisioning"
+        ],
+        "Cmd": null,
+        "Image": "grafana/grafana:11.6.0",
+        "Volumes": null,
+        "WorkingDir": "/usr/share/grafana",
+        "Entrypoint": [
+          "/run.sh"
+        ],
+        "Labels": {
+          "com.docker.compose.config-hash": "2036607e01eb71ba2e06ea5325859e1467c4d487e73e00f1edd29cc188b690ef",
+          "com.docker.compose.container-number": "1",
+          "com.docker.compose.depends_on": "",
+          "com.docker.compose.image": "sha256:62d2b9d20a19714ebfe48d1bb405086081bc602aa053e28cf6d73c7537640dfb",
+          "com.docker.compose.oneoff": "False",
+          "com.docker.compose.project": "peakcart-alert-1792194274",
+          "com.docker.compose.project.config_files": "/private/tmp/peakcart-d063-20261017-run3/compose.yml",
+          "com.docker.compose.project.working_dir": "/private/tmp/peakcart-d063-20261017-run3",
+          "com.docker.compose.service": "grafana",
+          "com.docker.compose.version": "5.1.0",
+          "maintainer": "Grafana Labs <hello@grafana.com>",
+          "org.opencontainers.image.source": "https://github.com/grafana/grafana"
+        },
+        "StopTimeout": 1
+      },
+      "NetworkSettings": {
+        "SandboxID": "0765d365002730cdd84509f6a0568ddbc6e0f9c624c20a63754f95a6d9132ddf",
+        "SandboxKey": "/var/run/docker/netns/0765d3650027",
+        "Ports": {
+          "3000/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "50786"
+            }
+          ]
+        },
+        "Networks": {
+          "peakcart-alert-1792194274_default": {
+            "IPAMConfig": null,
+            "Links": null,
+            "Aliases": [
+              "peakcart-alert-1792194274-grafana-1",
+              "grafana"
+            ],
+            "DriverOpts": null,
+            "GwPriority": 0,
+            "NetworkID": "d5e89611c9cf317aee6549c89911d7bd36690faf707b9eba3958a6ffccea1032",
+            "EndpointID": "7c0dba91966263cd049770b2a7f8badc8874ba5312590e20432965670fb29b04",
+            "Gateway": "172.23.0.1",
+            "IPAddress": "172.23.0.2",
+            "MacAddress": "e6:93:b3:3f:dd:22",
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "DNSNames": [
+              "peakcart-alert-1792194274-grafana-1",
+              "grafana",
+              "16b4f93a6af4"
+            ]
+          }
+        }
+      },
+      "ImageManifestDescriptor": {
+        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+        "digest": "sha256:c5bb8837eb70910907d8df3a11d0c489bd9e0f761cb67261e8d7d6af0724ddf3",
+        "size": 2411,
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux"
+        }
+      }
+    },
+    {
+      "Id": "b834fd6869be4edd11a4d384fdf85682f8e728c5b84406908c091dda086bd9e6",
+      "Created": "2026-10-16T23:44:35.12050322Z",
+      "Path": "/bin/prometheus",
+      "Args": [
+        "--config.file=/etc/prometheus/prometheus.yml",
+        "--storage.tsdb.path=/prometheus"
+      ],
+      "State": {
+        "Status": "running",
+        "Running": true,
+        "Paused": false,
+        "Restarting": false,
+        "OOMKilled": false,
+        "Dead": false,
+        "Pid": 9307,
+        "ExitCode": 0,
+        "Error": "",
+        "StartedAt": "2026-10-16T23:44:35.305967137Z",
+        "FinishedAt": "0001-01-01T00:00:00Z"
+      },
+      "Image": "sha256:6927e0919a144aa7616fd0137d4816816d42f6b816de3af269ab065250859a62",
+      "ResolvConfPath": "/var/lib/docker/containers/b834fd6869be4edd11a4d384fdf85682f8e728c5b84406908c091dda086bd9e6/resolv.conf",
+      "HostnamePath": "/var/lib/docker/containers/b834fd6869be4edd11a4d384fdf85682f8e728c5b84406908c091dda086bd9e6/hostname",
+      "HostsPath": "/var/lib/docker/containers/b834fd6869be4edd11a4d384fdf85682f8e728c5b84406908c091dda086bd9e6/hosts",
+      "LogPath": "/var/lib/docker/containers/b834fd6869be4edd11a4d384fdf85682f8e728c5b84406908c091dda086bd9e6/b834fd6869be4edd11a4d384fdf85682f8e728c5b84406908c091dda086bd9e6-json.log",
+      "Name": "/peakcart-alert-1792194274-prometheus-1",
+      "RestartCount": 0,
+      "Driver": "overlayfs",
+      "Platform": "linux",
+      "MountLabel": "",
+      "ProcessLabel": "",
+      "AppArmorProfile": "",
+      "ExecIDs": null,
+      "HostConfig": {
+        "Binds": [
+          "/private/tmp/peakcart-d063-20261017-run3/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+        ],
+        "ContainerIDFile": "",
+        "LogConfig": {
+          "Type": "json-file",
+          "Config": {}
+        },
+        "NetworkMode": "peakcart-alert-1792194274_default",
+        "PortBindings": {
+          "9090/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": ""
+            }
+          ]
+        },
+        "RestartPolicy": {
+          "Name": "no",
+          "MaximumRetryCount": 0
+        },
+        "AutoRemove": false,
+        "VolumeDriver": "",
+        "VolumesFrom": null,
+        "ConsoleSize": [
+          0,
+          0
+        ],
+        "CapAdd": null,
+        "CapDrop": null,
+        "CgroupnsMode": "private",
+        "Dns": null,
+        "DnsOptions": null,
+        "DnsSearch": null,
+        "ExtraHosts": [],
+        "GroupAdd": null,
+        "IpcMode": "private",
+        "Cgroup": "",
+        "Links": null,
+        "OomScoreAdj": 0,
+        "PidMode": "",
+        "Privileged": false,
+        "PublishAllPorts": false,
+        "ReadonlyRootfs": false,
+        "SecurityOpt": null,
+        "UTSMode": "",
+        "UsernsMode": "",
+        "ShmSize": 67108864,
+        "Runtime": "runc",
+        "Isolation": "",
+        "CpuShares": 0,
+        "Memory": 0,
+        "NanoCpus": 0,
+        "CgroupParent": "",
+        "BlkioWeight": 0,
+        "BlkioWeightDevice": null,
+        "BlkioDeviceReadBps": null,
+        "BlkioDeviceWriteBps": null,
+        "BlkioDeviceReadIOps": null,
+        "BlkioDeviceWriteIOps": null,
+        "CpuPeriod": 0,
+        "CpuQuota": 0,
+        "CpuRealtimePeriod": 0,
+        "CpuRealtimeRuntime": 0,
+        "CpusetCpus": "",
+        "CpusetMems": "",
+        "Devices": null,
+        "DeviceCgroupRules": null,
+        "DeviceRequests": null,
+        "MemoryReservation": 0,
+        "MemorySwap": 0,
+        "MemorySwappiness": null,
+        "OomKillDisable": null,
+        "PidsLimit": null,
+        "Ulimits": null,
+        "CpuCount": 0,
+        "CpuPercent": 0,
+        "IOMaximumIOps": 0,
+        "IOMaximumBandwidth": 0,
+        "MaskedPaths": [
+          "/proc/acpi",
+          "/proc/asound",
+          "/proc/interrupts",
+          "/proc/kcore",
+          "/proc/keys",
+          "/proc/latency_stats",
+          "/proc/sched_debug",
+          "/proc/scsi",
+          "/proc/timer_list",
+          "/proc/timer_stats",
+          "/sys/devices/virtual/powercap",
+          "/sys/firmware"
+        ],
+        "ReadonlyPaths": [
+          "/proc/bus",
+          "/proc/fs",
+          "/proc/irq",
+          "/proc/sys",
+          "/proc/sysrq-trigger"
+        ]
+      },
+      "Storage": {
+        "RootFS": {
+          "Snapshot": {
+            "Name": "overlayfs"
+          }
+        }
+      },
+      "Mounts": [
+        {
+          "Type": "bind",
+          "Source": "/private/tmp/peakcart-d063-20261017-run3/prometheus.yml",
+          "Destination": "/etc/prometheus/prometheus.yml",
+          "Mode": "ro",
+          "RW": false,
+          "Propagation": "rprivate"
+        },
+        {
+          "Type": "volume",
+          "Name": "bdbef9f6cb58e3c1b649bab1746ab823787802907848235bcb3c37905cb9c3f4",
+          "Source": "/var/lib/docker/volumes/bdbef9f6cb58e3c1b649bab1746ab823787802907848235bcb3c37905cb9c3f4/_data",
+          "Destination": "/prometheus",
+          "Driver": "local",
+          "Mode": "",
+          "RW": true,
+          "Propagation": ""
+        }
+      ],
+      "Config": {
+        "Hostname": "b834fd6869be",
+        "Domainname": "",
+        "User": "nobody",
+        "AttachStdin": false,
+        "AttachStdout": true,
+        "AttachStderr": true,
+        "ExposedPorts": {
+          "9090/tcp": {}
+        },
+        "Tty": false,
+        "OpenStdin": false,
+        "StdinOnce": false,
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ],
+        "Cmd": [
+          "--config.file=/etc/prometheus/prometheus.yml",
+          "--storage.tsdb.path=/prometheus"
+        ],
+        "Image": "prom/prometheus:v3.2.1",
+        "Volumes": {
+          "/prometheus": {}
+        },
+        "WorkingDir": "/prometheus",
+        "Entrypoint": [
+          "/bin/prometheus"
+        ],
+        "Labels": {
+          "com.docker.compose.config-hash": "6a5344efee4c5ba12d9b52b3beef321825e90892db6d9b9bfb15661bec4e57d6",
+          "com.docker.compose.container-number": "1",
+          "com.docker.compose.depends_on": "",
+          "com.docker.compose.image": "sha256:6927e0919a144aa7616fd0137d4816816d42f6b816de3af269ab065250859a62",
+          "com.docker.compose.oneoff": "False",
+          "com.docker.compose.project": "peakcart-alert-1792194274",
+          "com.docker.compose.project.config_files": "/private/tmp/peakcart-d063-20261017-run3/compose.yml",
+          "com.docker.compose.project.working_dir": "/private/tmp/peakcart-d063-20261017-run3",
+          "com.docker.compose.service": "prometheus",
+          "com.docker.compose.version": "5.1.0",
+          "maintainer": "The Prometheus Authors <prometheus-developers@googlegroups.com>",
+          "org.opencontainers.image.source": "https://github.com/prometheus/prometheus"
+        },
+        "StopTimeout": 1
+      },
+      "NetworkSettings": {
+        "SandboxID": "108b92ff3ae717bdbe2cf4ab5a944afde3f31a77740fb86c4c29c96bdfa7622f",
+        "SandboxKey": "/var/run/docker/netns/108b92ff3ae7",
+        "Ports": {
+          "9090/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "50788"
+            }
+          ]
+        },
+        "Networks": {
+          "peakcart-alert-1792194274_default": {
+            "IPAMConfig": null,
+            "Links": null,
+            "Aliases": [
+              "peakcart-alert-1792194274-prometheus-1",
+              "prometheus"
+            ],
+            "DriverOpts": null,
+            "GwPriority": 0,
+            "NetworkID": "d5e89611c9cf317aee6549c89911d7bd36690faf707b9eba3958a6ffccea1032",
+            "EndpointID": "81dd79f3da665b0ce3e9c494f10fbb2d56247dc842a45158a808ea5907b70bb6",
+            "Gateway": "172.23.0.1",
+            "IPAddress": "172.23.0.3",
+            "MacAddress": "aa:72:09:06:c0:69",
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "DNSNames": [
+              "peakcart-alert-1792194274-prometheus-1",
+              "prometheus",
+              "b834fd6869be"
+            ]
+          }
+        }
+      },
+      "ImageManifestDescriptor": {
+        "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+        "digest": "sha256:641f5faf625e3c667e2fb75b89a8a1dbc59a564f982f725fffb314f9293ab150",
+        "size": 2407,
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux",
+          "variant": "v8"
+        }
+      }
+    }
+  ],
+  "imageIdentity": [
+    {
+      "Id": "sha256:6927e0919a144aa7616fd0137d4816816d42f6b816de3af269ab065250859a62",
+      "RepoTags": [
+        "prom/prometheus:v3.2.1"
+      ],
+      "RepoDigests": [
+        "prom/prometheus@sha256:6927e0919a144aa7616fd0137d4816816d42f6b816de3af269ab065250859a62"
+      ],
+      "Comment": "buildkit.dockerfile.v0",
+      "Created": "2025-02-26T09:46:20.334229466Z",
+      "Author": "The Prometheus Authors <prometheus-developers@googlegroups.com>",
+      "Config": {
+        "User": "nobody",
+        "ExposedPorts": {
+          "9090/tcp": {}
+        },
+        "Env": [
+          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ],
+        "Entrypoint": [
+          "/bin/prometheus"
+        ],
+        "Cmd": [
+          "--config.file=/etc/prometheus/prometheus.yml",
+          "--storage.tsdb.path=/prometheus"
+        ],
+        "Volumes": {
+          "/prometheus": {}
+        },
+        "WorkingDir": "/prometheus",
+        "Labels": {
+          "maintainer": "The Prometheus Authors <prometheus-developers@googlegroups.com>",
+          "org.opencontainers.image.source": "https://github.com/prometheus/prometheus"
+        },
+        "ArgsEscaped": true
+      },
+      "Architecture": "arm64",
+      "Variant": "v8",
+      "Os": "linux",
+      "Size": 110911218,
+      "RootFS": {
+        "Type": "layers",
+        "Layers": [
+          "sha256:f86c5e3025ef242a9f99615cced414b5e2a53617e1801df106da49b1c9d2cf4b",
+          "sha256:e6d95b69894403f1739c442253dfd4cf6a44efc260155dc00be1004c9000704c",
+          "sha256:f2571deb7e84d26463ae95ceb2ad18327c7b59dfe4e2b6895f40533bbff8b248",
+          "sha256:c279910c8c13e41b54a73c4ce4c68bf42cdc36e9d148c3fbfcbfda5f77ac82a8",
+          "sha256:71601a9d7c92a7ef5c61c0f4d0b1fedcca7d3f78b63d3453540c6a1d6c39136a",
+          "sha256:dda464b3522251409168e44c2753cf4a5ac09ade42549ed9f43c169f514d2b89",
+          "sha256:8319be402cda35eaca32c96b07bb0d823af2d4a12d669253c8d9a3850e407d75",
+          "sha256:343d37d9f94acaf502741c412f33e9e6ebf98d559866f72c892e5a93a724b66e",
+          "sha256:02ad11ee534de3454f1db8a0434ae7820ac0ea227c7085d8c20d643b991b4a5c",
+          "sha256:67bdf5faf5cd313fbd7c1188a3c2d078f9a88cf46b8342cdba3c470269e88f4d"
+        ]
+      },
+      "Metadata": {
+        "LastTagTime": "2026-10-16T23:02:55.350592799Z"
+      },
+      "Descriptor": {
+        "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+        "digest": "sha256:6927e0919a144aa7616fd0137d4816816d42f6b816de3af269ab065250859a62",
+        "size": 1728
+      },
+      "Identity": {
+        "Pull": [
+          {
+            "Repository": "docker.io/prom/prometheus"
+          }
+        ]
+      }
+    },
+    {
+      "Id": "sha256:62d2b9d20a19714ebfe48d1bb405086081bc602aa053e28cf6d73c7537640dfb",
+      "RepoTags": [
+        "grafana/grafana:11.6.0"
+      ],
+      "RepoDigests": [
+        "grafana/grafana@sha256:62d2b9d20a19714ebfe48d1bb405086081bc602aa053e28cf6d73c7537640dfb"
+      ],
+      "Comment": "buildkit.dockerfile.v0",
+      "Created": "2025-03-21T14:06:40.646966531Z",
+      "Config": {
+        "User": "472",
+        "ExposedPorts": {
+          "3000/tcp": {}
+        },
+        "Env": [
+          "PATH=/usr/share/grafana/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "GF_PATHS_CONFIG=/etc/grafana/grafana.ini",
+          "GF_PATHS_DATA=/var/lib/grafana",
+          "GF_PATHS_HOME=/usr/share/grafana",
+          "GF_PATHS_LOGS=/var/log/grafana",
+          "GF_PATHS_PLUGINS=/var/lib/grafana/plugins",
+          "GF_PATHS_PROVISIONING=/etc/grafana/provisioning"
+        ],
+        "Entrypoint": [
+          "/run.sh"
+        ],
+        "WorkingDir": "/usr/share/grafana",
+        "Labels": {
+          "maintainer": "Grafana Labs <hello@grafana.com>",
+          "org.opencontainers.image.source": "https://github.com/grafana/grafana"
+        }
+      },
+      "Architecture": "arm64",
+      "Os": "linux",
+      "Size": 166804600,
+      "RootFS": {
+        "Type": "layers",
+        "Layers": [
+          "sha256:a16e98724c05975ee8c40d8fe389c3481373d34ab20a1cf52ea2accc43f71f4c",
+          "sha256:0b659b9e6c2f4d9e1bfb5b1d76e7091a86c2c475f3f8f795a973d6e76a66b24b",
+          "sha256:48e5e6d788e3f2da05595ca9caa4357f2eb277ee03d73b0d9685d1c231ca2244",
+          "sha256:d4d1c9eb733f1535f10c4aff9cbe1ac77d4668bbf5689a82b600d9224a88fd96",
+          "sha256:e8100a5fac42bce1f6a65dc893d6c9886c0c940f83e4bfca9fc6007cd6ef365d",
+          "sha256:1b80f725dc6c150dcf4645e0074d1b12adaf186e78f1e1133195585596528b3a",
+          "sha256:72e56c8d6bc15df6efa854df2190cf54eb09b83af79b121716b1f7712ce266db",
+          "sha256:e0bb1df1b31ee22ecbc09a10c6d0b51f88bf687ce80287ccffd03c3c4217c871",
+          "sha256:75635fbaf150f542b781b0d80b3ae1ea84f81a16f1d89bf313535ed24c2a4592",
+          "sha256:9af58014236b74969b9ea564f8ee6fa355caf4aad4b70c1710345d30b83766c7"
+        ]
+      },
+      "Metadata": {
+        "LastTagTime": "2026-10-16T23:02:56.718263175Z"
+      },
+      "Descriptor": {
+        "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+        "digest": "sha256:62d2b9d20a19714ebfe48d1bb405086081bc602aa053e28cf6d73c7537640dfb",
+        "size": 1079
+      },
+      "Identity": {
+        "Pull": [
+          {
+            "Repository": "docker.io/grafana/grafana"
+          }
+        ]
+      }
+    },
+    {
+      "Id": "sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4",
+      "RepoTags": [
+        "python:3.12-alpine"
+      ],
+      "RepoDigests": [
+        "python@sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4"
+      ],
+      "Comment": "buildkit.dockerfile.v0",
+      "Created": "2026-10-01T21:54:25.19054797Z",
+      "Config": {
+        "Env": [
+          "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "LANG=C.UTF-8",
+          "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+          "PYTHON_VERSION=3.12.15",
+          "PYTHON_SHA256=c2c4321961fab0fb999d66e0cecf521c2ab3994c7992873ea99e306c1094fd5a"
+        ],
+        "Cmd": [
+          "python3"
+        ],
+        "WorkingDir": "/"
+      },
+      "Architecture": "arm64",
+      "Variant": "v8",
+      "Os": "linux",
+      "Size": 21423636,
+      "RootFS": {
+        "Type": "layers",
+        "Layers": [
+          "sha256:1b349a3334531b575b01d409540dd8aca14ef29abddacd50f36643d7c949db4b",
+          "sha256:7c4312dd8e7ffa37c352b878b1a14c3659ed0c3f737df462b1bd37cbb5463055",
+          "sha256:c92ff27b24b0713204817adb1002bb990498903c608bf0b307e3cb75ca30d09c",
+          "sha256:1bde858851e91b11ae837cedfb5c8597755f1204e1d33b3b6d89547fbbdfeb3a"
+        ]
+      },
+      "Metadata": {
+        "LastTagTime": "2026-10-16T19:48:35.436001216Z"
+      },
+      "Descriptor": {
+        "mediaType": "application/vnd.oci.image.index.v1+json",
+        "digest": "sha256:1b668429b3511ab407d8e00648891631b0b1a4d7e15e3ca70f38ab5b91ad4ab4",
+        "size": 10301
+      },
+      "Identity": {
+        "Pull": [
+          {
+            "Repository": "docker.io/library/python"
+          }
+        ]
+      }
+    }
+  ]
+}
