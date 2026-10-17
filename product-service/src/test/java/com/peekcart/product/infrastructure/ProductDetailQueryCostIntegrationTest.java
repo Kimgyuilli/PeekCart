@@ -19,18 +19,21 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.TestPropertySource;
 
+import java.sql.DriverManager;
+import java.sql.Connection;
+import org.springframework.aop.framework.Advised;
+import org.springframework.cache.interceptor.CacheInterceptor;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
+import com.peekcart.product.application.ProductCacheService;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * D-026 — 상품 상세/목록의 <b>캐시 적중 시 DB 왕복 수</b>를 고정하는 계약 테스트.
  *
- * <p><b>왜 이 축인가.</b> D-002a GKE 세션(증적 {@code d002a-gke-20260916-0030.md})에서 포화 기준
- * 캐시 배속이 detail ×1.23 ↔ list ×2.02 로 갈렸다. 증적은 원인을 두 개로 적었으나
- * ({@code @Transactional(readOnly=true)} 개방 + 재고 DB 조회) 그중 트랜잭션 개방은
- * <b>차이를 설명하지 못한다</b> — {@code ProductQueryService} 는 클래스 레벨 선언이라
- * {@code getProducts} 에도 똑같이 걸리는데 list 는 그 상태로 ×2.02 를 냈다. 게다가
- * {@code open-in-view: false} + Hibernate 지연 커넥션 획득이라 <b>쿼리가 0이면 물리 커넥션을
- * 잡지 않는다</b>. 남는 차이는 <b>재고 SELECT 1회</b>뿐이고, 이 테스트가 그것을 숫자로 고정한다.
+ * <p>Hibernate Statistics는 prepared statement만 세며 세션의 SET/COMMIT 명령은 보지 못한다.
+ * D-072는 서버 general_log를 추가해 cache hit의 모든 MySQL 명령이 0인지 확인한다.
+ * 기존 GKE 배속 차이의 인과는 이 로컬 계약으로 확정하지 않는다(ADR-0037).
  *
  * <p><b>false-green 차단.</b> 기존 {@code ProductCacheIntegrationTest.getProduct_cacheHit} 은
  * 캐시 엔트리 존재와 {@code id}/{@code name} 일치만 보므로 <b>재고가 어디서 왔는지 묻지 않는다</b> —
@@ -54,6 +57,9 @@ class ProductDetailQueryCostIntegrationTest extends AbstractIntegrationTest {
     private static final PageRequest DEFAULT_PAGE = PageRequest.of(0, 10);
 
     @Autowired ProductQueryService queryService;
+    @Autowired ProductCacheService cacheService;
+    @Autowired @org.springframework.beans.factory.annotation.Qualifier("productReadBulkheadAdvisor")
+    org.springframework.aop.Advisor bulkheadAdvisor;
     @Autowired ProductCommandService commandService;
     @Autowired CacheManager cacheManager;
 
@@ -92,7 +98,6 @@ class ProductDetailQueryCostIntegrationTest extends AbstractIntegrationTest {
                 .as("""
                         상세 조회는 캐시 적중 시 DB 를 건드리지 않아야 한다 (ADR-0026 D2).
                         1 이 나오면 재고를 여전히 매 호출 DB 에서 읽고 있다는 뜻이고,
-                        그것이 detail 배속(×1.23)을 list(×2.02)의 절반으로 만든 값이다 (D-026).
                         수정 전 기준선은 detail=1 / list=0 이었다.""")
                 .isZero();
     }
@@ -121,5 +126,63 @@ class ProductDetailQueryCostIntegrationTest extends AbstractIntegrationTest {
         long before = statistics.getPrepareStatementCount();
         action.run();
         return statistics.getPrepareStatementCount() - before;
+    }
+    @Test
+    void cacheAdviceWrapsTransactionAdvice() {
+        var advisors = ((Advised) cacheService).getAdvisors();
+        int cacheIndex = -1;
+        int transactionIndex = -1;
+        int bulkheadIndex = -1;
+        for (int i = 0; i < advisors.length; i++) {
+            if (advisors[i].getAdvice() instanceof CacheInterceptor) cacheIndex = i;
+            if (advisors[i] == bulkheadAdvisor) bulkheadIndex = i;
+            if (advisors[i].getAdvice() instanceof TransactionInterceptor) transactionIndex = i;
+        }
+        assertThat(cacheIndex).isNotNegative().isLessThan(bulkheadIndex);
+        assertThat(bulkheadIndex).isLessThan(transactionIndex);
+    }
+
+    @Test
+    void serverCommandsAreZeroForHitsAndPresentForMisses() throws Exception {
+        queryService.getProduct(productId);
+        queryService.getProducts(null, DEFAULT_PAGE);
+        assertThat(countServerCommands(() -> {
+            queryService.getProduct(productId);
+            queryService.getProducts(null, DEFAULT_PAGE);
+        })).as("cache hit must send no SELECT, SET, COMMIT or other server command").isZero();
+        cleanCaches(cacheManager);
+        assertThat(countServerCommands(() -> queryService.getProduct(productId)))
+                .as("positive control: cache miss must execute real DB commands").isPositive();
+    }
+
+    private long countServerCommands(Runnable action) throws Exception {
+        try (Connection observer = DriverManager.getConnection(SharedContainers.MYSQL.getJdbcUrl(),
+                "root", SharedContainers.MYSQL.getPassword());
+             var statement = observer.createStatement()) {
+            String originalOutput;
+            boolean originalEnabled;
+            try (var settings = statement.executeQuery("SELECT @@GLOBAL.log_output, @@GLOBAL.general_log")) {
+                settings.next();
+                originalOutput = settings.getString(1);
+                originalEnabled = settings.getBoolean(2);
+            }
+            try {
+                statement.execute("SET GLOBAL general_log = OFF");
+                statement.execute("SET GLOBAL log_output = 'TABLE'");
+                statement.execute("TRUNCATE TABLE mysql.general_log");
+                statement.execute("SET GLOBAL general_log = ON");
+                action.run();
+                statement.execute("SET GLOBAL general_log = OFF");
+                try (var count = statement.executeQuery("SELECT COUNT(*) FROM mysql.general_log "
+                        + "WHERE thread_id <> CONNECTION_ID()")) {
+                    count.next();
+                    return count.getLong(1);
+                }
+            } finally {
+                statement.execute("SET GLOBAL general_log = OFF");
+                statement.execute("SET GLOBAL log_output = '" + originalOutput + "'");
+                statement.execute("SET GLOBAL general_log = " + (originalEnabled ? "ON" : "OFF"));
+            }
+        }
     }
 }

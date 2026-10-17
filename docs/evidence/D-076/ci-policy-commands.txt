@@ -1,0 +1,86 @@
+set -euo pipefail
+bash scripts/kustomize-namespace-lint.sh
+# D-043: gate 는 lint/test/guards/images/e2e 전체의 최종 판정자다.
+bash scripts/ci-release-gate-lint.sh
+bash scripts/ci-release-gate-lint.sh --self-test
+bash scripts/ci-image-identity.sh --self-test
+# D-033: 시나리오와 음성 대조군을 병렬로 돌리되 PR 에서 둘 다 필수로 유지한다.
+bash scripts/ci-e2e-parallel-lint.sh
+bash scripts/ci-e2e-parallel-lint.sh --self-test
+# D-032: 통합 테스트가 컨테이너를 직접 선언하지 못하게 한다(ADR-0028).
+# 규약을 코드로 강제하지 않으면 새 테스트가 관행대로 @Container 를 선언하고,
+# 그 클래스만 조용히 컨테이너를 다시 띄운다 — CI 는 초록이고 테스트 시간만 우상향한다.
+# 실측으로 그 비용이 클래스당 약 31초였다.
+bash scripts/mysql-image-lint.sh
+bash scripts/mysql-image-lint.sh --self-test
+bash scripts/integration-test-container-lint.sh
+bash scripts/integration-test-container-lint.sh --self-test
+# D-056: 스케줄러 풀이 4라 cron/fixedRate 잡이 자기 자신과 겹칠 수 있다(D-024).
+# 모든 @Scheduled 에 @SchedulerLock 이나 exempt 표기가 있고 fixedRate 가 0건인지 강제한다.
+bash scripts/scheduler-lock-contract-lint.sh
+# D-056: /plan·/work 의 리뷰 렌더러가 빈 응답·items:null·빈 배열을 서로 다른 결과로 내는지.
+# V9(실제 리뷰 이력 회귀)는 .cache 가 없는 CI 에서 skip 되고 실패로 세지 않는다.
+bash scripts/codex-review-render-selftest.sh
+bash scripts/image-contract-lint.sh
+bash scripts/gateway-exposure-lint.sh
+# 조작 입력 29종에서 실제로 실패하는지 — lint 자체가 vacuous-green 으로 썩는 것을 막는다.
+# PR4: gateway-metrics(관리 포트 scrape Service) 삭제·포트 오지정·LB 승격·selector 드리프트 포함.
+bash scripts/gateway-exposure-lint.sh --self-test
+# HPA 가 소유하는 replicas 를 매니페스트가 다시 뺏지 않는지(구현 ③ PR3d-b-2 클러스터 세션).
+# base 에 replicas 가 남아 있으면 apply 마다 HPA 가 올려둔 수가 깎여 가용 Pod 가
+# minReplicas 아래로 떨어진다 — 렌더는 이걸 전부 통과시키고, 주석으로도 막히지 않았다.
+bash scripts/hpa-replicas-ownership-lint.sh
+bash scripts/hpa-replicas-ownership-lint.sh --self-test
+# NetworkPolicy backend ingress 제한(PR3c) — 0개 선택·peer 누락·egress 혼입 차단.
+bash scripts/networkpolicy-contract-lint.sh
+bash scripts/networkpolicy-contract-lint.sh --self-test
+# 내부 토큰 키 도메인 분리(ADR-0017 D3) — Gateway 공개키가 User JWKS 설정에 섞이면 실패.
+# kid 가 아니라 SPKI fingerprint 로 비교해 "같은 키를 다른 kid 로" 우회를 막는다.
+bash scripts/internal-key-ownership-lint.sh
+bash scripts/internal-key-ownership-lint.sh --self-test
+# 개인키 소유 경계(ADR-0013 D2 · ADR-0017 D2) — 렌더된 **모든 Pod 생성 종류**에서
+# gateway/user 개인키가 서로의 워크로드나 제3의 Job/CronJob/DaemonSet/Pod 로 새지 않는지.
+# exposure-lint 가 gateway 한 워크로드의 표면을 보는 반면, 이건 반대로 "누가 그 키를
+# 가져갔나" 를 본다 — 검사 대상 집합이 다르다.
+bash scripts/workload-key-ownership-lint.sh
+bash scripts/workload-key-ownership-lint.sh --self-test
+# settings.gradle include ↔ Dockerfile COPY 정합 — 모듈 추가 시 COPY 누락으로
+# gradle 은 그린인데 이미지 빌드만 깨지는 실패를 build 잡에서 미리 잡는다(#80 회귀).
+bash scripts/dockerfile-module-sync-lint.sh
+bash scripts/dockerfile-module-sync-lint.sh --self-test
+# DLQ 원장은 DB-per-service 라 4개 DB 에 같은 테이블을 둔다(④-c-2a). 한 서비스에서만
+# 컬럼을 고치면 runbook 조회 절차가 그 서비스에서만 깨지고, 운영자가 그 DB 를 볼 때까지
+# 드러나지 않는다. UNIQUE 6컬럼과 식별자 NOT NULL 도 함께 강제한다 —
+# nullable 이면 MySQL UNIQUE 가 같은 poison record 를 여러 행으로 만든다.
+bash scripts/dead-letter-schema-parity-lint.sh
+bash scripts/dead-letter-schema-parity-lint.sh --self-test
+bash scripts/replay-entrypoint-lint.sh
+# drain 상한은 preflight 스크립트가 소유한다(ADR-0022 D2) — 그 대가로 backoff/clock-skew 와
+# 갈라질 수 있고, 갈라지면 drain 이 **조기 통과**한다. 드리프트 검사와 그 자기검증.
+bash scripts/replay-entrypoint-lint.sh --self-test
+# drain 판정 자체의 fixture 검증(계획 V-37). 수집은 클러스터가 필요하지만 판정은 순수 함수다.
+bash scripts/replay-drain-preflight.sh --self-test
+# 마이그레이션이 **부여되지 않은 권한**을 요구하면 실제 스택에서만 부팅이 깨진다 —
+# Testcontainers 는 root 로 돌아 그 차이를 보지 못한다(PR #105 에서 실제로 났다).
+bash scripts/migration-grant-lint.sh
+bash scripts/migration-grant-lint.sh --self-test
+# PG stub 이 본문을 실제로 읽는지 — 못 읽으면 confirm script 가 통째로
+# 죽은 채 e2e 가 통과한다(D-020 에서 실제로 그랬다). 30분 e2e 대신 여기서 잡는다.
+python3 scripts/e2e/pg-stub/stub.py --self-test
+bash scripts/servicemonitor-selector-lint.sh
+# PR4: 이 lint 는 음성 대조군이 없어 canonical 집합(6)을 넓히는 변경이 vacuous-green 이
+# 될 수 있었다 — SM 삭제/추가·selector 오타·endpoint port 오타·과대매칭 6종.
+bash scripts/servicemonitor-selector-lint.sh --self-test
+bash scripts/observability-ssot-lint.sh
+bash scripts/observability-promql-lint.sh
+# 구현 ④-d-1 P5 + PR4: alert 라벨/식 계약과 dashboard 변수 집합이 조작 입력에서
+# 실제로 실패하는지 19종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
+# 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, outbox FAILED 삭제/status 변조, dashboard 드리프트 3종.
+bash scripts/observability-promql-lint.sh --self-test
+# PR3c sweep — 단일 'peekcart' 관측성 식별자(application/service) 잔존 0 강제.
+# escaped-quote(JSON/embedded-yaml) + 형제 라벨(service) 양쪽 매치(PLAN-BLINDSPOTS B11).
+# uid/tags 의 peekcart-* 브랜드 문자열은 라벨 값(="peekcart")이 아니므로 매치 대상 외.
+if grep -rnE '(application|service)=\\?"peekcart"|application: ?peekcart|service: ?peekcart' k8s/monitoring scripts; then
+  echo "::error::단일 'peekcart' 관측성 라벨 값 잔존 — per-service 로 전환 필요 (ADR-0015)"
+  exit 1
+fi

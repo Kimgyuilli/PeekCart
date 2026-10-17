@@ -1,0 +1,352 @@
+{
+  "dlq_backlog{application=\"user-service\"}": {
+    "status": "success",
+    "data": {
+      "resultType": "vector",
+      "result": [
+        {
+          "metric": {
+            "__name__": "dlq_backlog",
+            "application": "user-service",
+            "instance": "fixture-b",
+            "job": "fixture"
+          },
+          "value": [
+            1792194415.671,
+            "99"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "dlq_backlog",
+            "application": "user-service",
+            "instance": "fixture-a",
+            "job": "fixture"
+          },
+          "value": [
+            1792194415.671,
+            "99"
+          ]
+        }
+      ]
+    }
+  },
+  "outbox_backlog{status=\"pending\"}": {
+    "status": "success",
+    "data": {
+      "resultType": "vector",
+      "result": [
+        {
+          "metric": {
+            "__name__": "outbox_backlog",
+            "application": "notification-service",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "status": "pending"
+          },
+          "value": [
+            1792194415.678,
+            "99"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "outbox_backlog",
+            "application": "order-service",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "status": "pending"
+          },
+          "value": [
+            1792194415.678,
+            "99"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "outbox_backlog",
+            "application": "payment-service",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "status": "pending"
+          },
+          "value": [
+            1792194415.678,
+            "99"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "outbox_backlog",
+            "application": "product-service",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "status": "pending"
+          },
+          "value": [
+            1792194415.678,
+            "99"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "outbox_backlog",
+            "application": "notification-service",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "status": "pending"
+          },
+          "value": [
+            1792194415.678,
+            "99"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "outbox_backlog",
+            "application": "order-service",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "status": "pending"
+          },
+          "value": [
+            1792194415.678,
+            "99"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "outbox_backlog",
+            "application": "payment-service",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "status": "pending"
+          },
+          "value": [
+            1792194415.678,
+            "99"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "outbox_backlog",
+            "application": "product-service",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "status": "pending"
+          },
+          "value": [
+            1792194415.678,
+            "99"
+          ]
+        }
+      ]
+    }
+  },
+  "saga_compensation_backlog{status=\"resolved\"}": {
+    "status": "success",
+    "data": {
+      "resultType": "vector",
+      "result": [
+        {
+          "metric": {
+            "__name__": "saga_compensation_backlog",
+            "application": "order-service",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "status": "resolved"
+          },
+          "value": [
+            1792194415.681,
+            "99"
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "saga_compensation_backlog",
+            "application": "order-service",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "status": "resolved"
+          },
+          "value": [
+            1792194415.681,
+            "99"
+          ]
+        }
+      ]
+    }
+  },
+  "rate(cache_fallback_total{operation=\"put\"}[5m])": {
+    "status": "success",
+    "data": {
+      "resultType": "vector",
+      "result": [
+        {
+          "metric": {
+            "application": "product-service",
+            "cache": "product",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "operation": "put"
+          },
+          "value": [
+            1792194415.684,
+            "1.3612875856686841"
+          ]
+        },
+        {
+          "metric": {
+            "application": "product-service",
+            "cache": "products",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "operation": "put"
+          },
+          "value": [
+            1792194415.684,
+            "1.3612875856686841"
+          ]
+        },
+        {
+          "metric": {
+            "application": "product-service",
+            "cache": "productStock",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "operation": "put"
+          },
+          "value": [
+            1792194415.684,
+            "1.3612875856686841"
+          ]
+        },
+        {
+          "metric": {
+            "application": "product-service",
+            "cache": "product",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "operation": "put"
+          },
+          "value": [
+            1792194415.684,
+            "1.3347839508461476"
+          ]
+        },
+        {
+          "metric": {
+            "application": "product-service",
+            "cache": "products",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "operation": "put"
+          },
+          "value": [
+            1792194415.684,
+            "1.3347839508461476"
+          ]
+        },
+        {
+          "metric": {
+            "application": "product-service",
+            "cache": "productStock",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "operation": "put"
+          },
+          "value": [
+            1792194415.684,
+            "1.3347839508461476"
+          ]
+        }
+      ]
+    }
+  },
+  "rate(cache_fallback_total{application=\"order-service\",operation=\"get\"}[5m])": {
+    "status": "success",
+    "data": {
+      "resultType": "vector",
+      "result": [
+        {
+          "metric": {
+            "application": "order-service",
+            "cache": "product",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "operation": "get"
+          },
+          "value": [
+            1792194415.688,
+            "1.3613275873156403"
+          ]
+        },
+        {
+          "metric": {
+            "application": "order-service",
+            "cache": "products",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "operation": "get"
+          },
+          "value": [
+            1792194415.688,
+            "1.3613275873156403"
+          ]
+        },
+        {
+          "metric": {
+            "application": "order-service",
+            "cache": "productStock",
+            "instance": "fixture-b",
+            "job": "fixture",
+            "operation": "get"
+          },
+          "value": [
+            1792194415.688,
+            "1.3613275873156403"
+          ]
+        },
+        {
+          "metric": {
+            "application": "order-service",
+            "cache": "product",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "operation": "get"
+          },
+          "value": [
+            1792194415.688,
+            "1.3348239500079102"
+          ]
+        },
+        {
+          "metric": {
+            "application": "order-service",
+            "cache": "products",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "operation": "get"
+          },
+          "value": [
+            1792194415.688,
+            "1.3348239500079102"
+          ]
+        },
+        {
+          "metric": {
+            "application": "order-service",
+            "cache": "productStock",
+            "instance": "fixture-a",
+            "job": "fixture",
+            "operation": "get"
+          },
+          "value": [
+            1792194415.688,
+            "1.3348239500079102"
+          ]
+        }
+      ]
+    }
+  }
+}

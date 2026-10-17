@@ -72,11 +72,12 @@ REQUIRED_IDS = {
     # 스케줄러 배선 (계획 P17)
     "SAGA-SCHEDULER-WIRING-ORDER",
     "SAGA-SCHEDULER-WIRING-PRODUCT",
-    # E2E 시나리오 4종
+    # E2E 시나리오
     "SAGA-E2E-PAYMENT-FAILED-CONVERGE",
     "SAGA-E2E-RESERVATION-FAILED",
     "SAGA-E2E-REFUND-CHAIN",
     "SAGA-E2E-DLQ-INTAKE",
+    "SAGA-E2E-REFUND-RESULTS",
 }
 
 # ---- e2e expected 의 **필수 관측 키** 정본 (계획 N4 의 확장) ------------------
@@ -85,6 +86,7 @@ REQUIRED_IDS = {
 # --structure 도 --e2e-evidence 도 통과하면서 payment_status·refund_status·outbox 계약이
 # 사라진다(diff 리뷰 #1). "무엇을 관측해야 하는가" 도 매트릭스 밖에 있어야 한다.
 REQUIRED_E2E_KEYS = {
+    "SAGA-E2E-REFUND-RESULTS": {"success", "failed", "already", "reconcile", "synthetic_unresolved", "unresolved_producer_outbox"},
     "SAGA-APPROVAL-LEASE-RACE": {"held_during_unknown", "stock_while_cancelled", "stock_restored", "confirm_calls", "lookup_observed"},
     "SAGA-E2E-PAYMENT-FAILED-CONVERGE": {
         "cancel_reason", "order_status", "payment_status",

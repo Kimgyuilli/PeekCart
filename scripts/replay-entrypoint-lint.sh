@@ -74,7 +74,8 @@ done
 drift_check() {
     local root="${1:-.}"
     python3 - "$root" <<'PYEOF'
-import os, re, sys
+import math, os, re, sys
+from decimal import Decimal, InvalidOperation
 
 root = sys.argv[1]
 services = ["order", "product", "payment", "notification"]
@@ -94,6 +95,7 @@ def constant(name):
 
 declared_backoff = constant("BACKOFF_TOTAL_SECONDS")
 declared_skew = constant("CLOCK_SKEW_SECONDS")
+declared_attempts = constant("ATTEMPTS")
 if declared_backoff is None or declared_skew is None:
     problems.append("[REPLAY-ENTRY-006] preflight 에서 상한 상수를 읽지 못했다 "
                     "(BACKOFF_TOTAL_SECONDS / CLOCK_SKEW_SECONDS)")
@@ -106,16 +108,27 @@ try:
 except OSError:
     body = None
     problems.append("[REPLAY-ENTRY-006] peekcart-common-messaging: DeadLetterKafkaConfig.java 가 없다")
-m = re.search(r"FixedSequenceBackOff\(([^)]*)\)", body) if body is not None else None
-if body is not None and not m:
-    problems.append("[REPLAY-ENTRY-006] peekcart-common-messaging: FixedSequenceBackOff 리터럴을 찾지 못했다")
-if m:
-    millis = [int(v.strip().replace("_", "")) for v in m.group(1).split(",") if v.strip()]
-    total = sum(millis) // 1000
-    if declared_backoff is not None and total != declared_backoff:
-        problems.append(
-            "[REPLAY-ENTRY-006] peekcart-common-messaging: backoff 합 %ds 가 preflight 의 "
-            "BACKOFF_TOTAL_SECONDS=%ds 와 다르다 — drain 이 조기 통과한다" % (total, declared_backoff))
+# D-076: exact runtime policy and drain upper bound must move together.
+# Jitter uses Math.round(nextDouble(base-spread, base+spread)); although the
+# floating endpoint is exclusive, rounding can reach it (1500/7500/45000ms).
+matches = re.findall(r"new\s+JitteredSequenceBackOff\(([^)]*)\)", body or "")
+if len(matches) != 1:
+    problems.append("[REPLAY-ENTRY-006] shared DLQ JitteredSequenceBackOff 리터럴이 정확히 한 개가 아니다")
+else:
+    try:
+        args = [v.strip().replace("_", "") for v in matches[0].split(",")]
+        ratio = Decimal(args[0])
+        millis = [int(v) for v in args[1:]]
+        if ratio != Decimal("0.5") or millis != [1000, 5000, 30000]:
+            problems.append("[REPLAY-ENTRY-006] jitter 정책은 0.5 및 기준 1/5/30초여야 한다")
+        total = math.ceil(sum(math.ceil(Decimal(v) * (1 + ratio)) for v in millis) / 1000)
+        if total != declared_backoff:
+            problems.append("[REPLAY-ENTRY-006] backoff 최대 합 %ds != BACKOFF_TOTAL_SECONDS=%s — drain 조기 통과 위험"
+                            % (total, declared_backoff))
+        if declared_attempts != len(millis) + 1 or declared_attempts != 4:
+            problems.append("[REPLAY-ENTRY-006] ATTEMPTS는 최초 실행과 재시도 3회를 합한 4여야 한다")
+    except (ValueError, InvalidOperation, IndexError):
+        problems.append("[REPLAY-ENTRY-006] jitter 비율/간격 리터럴 해석 실패")
 
 for service in services:
     yml = os.path.join(root, "%s-service/src/main/resources/application.yml" % service)
@@ -173,9 +186,9 @@ if [[ "${1:-}" == "--self-test" ]]; then
     }
 
     expect "무변조 baseline 은 green" 0 ""
-    sed -i.bak 's/FixedSequenceBackOff(1_000, 5_000, 30_000)/FixedSequenceBackOff(1_000, 5_000, 60_000)/' \
+    sed -i.bak 's/JitteredSequenceBackOff(0.5, 1_000, 5_000, 30_000)/JitteredSequenceBackOff(0.5, 1_000, 5_000, 60_000)/' \
         "$tmp/$cfg_dir/DeadLetterKafkaConfig.java"
-    expect "backoff 를 늘리면 red" 1 "backoff 합"
+    expect "backoff 를 늘리면 red" 1 "backoff 최대 합"
     cp "$tmp/$cfg_dir/DeadLetterKafkaConfig.java.bak" "$tmp/$cfg_dir/DeadLetterKafkaConfig.java"
 
     sed -i.bak 's/clock-skew-budget: 5m/clock-skew-budget: 9m/' \
@@ -184,8 +197,21 @@ if [[ "${1:-}" == "--self-test" ]]; then
     cp "$tmp/payment-service/src/main/resources/application.yml.bak" \
        "$tmp/payment-service/src/main/resources/application.yml"
 
-    sed -i.bak 's/^BACKOFF_TOTAL_SECONDS=36/BACKOFF_TOTAL_SECONDS=99/' "$tmp/scripts/replay-drain-preflight.sh"
-    expect "preflight 상한만 바꿔도 red (드리프트는 양방향이다)" 1 "backoff 합"
+    sed -i.bak 's/^BACKOFF_TOTAL_SECONDS=54/BACKOFF_TOTAL_SECONDS=99/' "$tmp/scripts/replay-drain-preflight.sh"
+    expect "preflight 상한만 바꿔도 red (드리프트는 양방향이다)" 1 "backoff 최대 합"
+    cp "$tmp/scripts/replay-drain-preflight.sh.bak" "$tmp/scripts/replay-drain-preflight.sh"
+
+    for mutant in '0.8, 1_000, 5_000, 30_000' '0.5, 1_000, 5_000' '0.5, 1_000, 5_000, 30_000, 1_000'; do
+        cp "$cfg_dir/DeadLetterKafkaConfig.java" "$tmp/$cfg_dir/DeadLetterKafkaConfig.java"
+        sed -i.bak "s/0.5, 1_000, 5_000, 30_000/$mutant/" "$tmp/$cfg_dir/DeadLetterKafkaConfig.java"
+        expect "jitter 비율/재시도 횟수 변이 $mutant" 1 "jitter 정책"
+    done
+    cp "$cfg_dir/DeadLetterKafkaConfig.java" "$tmp/$cfg_dir/DeadLetterKafkaConfig.java"
+    sed -i.bak 's/^ATTEMPTS=4/ATTEMPTS=3/' "$tmp/scripts/replay-drain-preflight.sh"
+    expect "선언 시도 횟수 감소" 1 "ATTEMPTS"
+    cp "$tmp/scripts/replay-drain-preflight.sh.bak" "$tmp/scripts/replay-drain-preflight.sh"
+    sed -i.bak 's/^BACKOFF_TOTAL_SECONDS=54/BACKOFF_TOTAL_SECONDS=36/' "$tmp/scripts/replay-drain-preflight.sh"
+    expect "기존 36초 상한 회귀" 1 "backoff 최대 합"
     cp "$tmp/scripts/replay-drain-preflight.sh.bak" "$tmp/scripts/replay-drain-preflight.sh"
 
     rm "$tmp/scripts/replay-drain-preflight.sh"
@@ -195,7 +221,7 @@ if [[ "${1:-}" == "--self-test" ]]; then
         echo "replay-entrypoint-lint self-test FAILED (${failures}건)" >&2
         exit 2
     fi
-    echo "replay-entrypoint-lint self-test OK — 드리프트 4종"
+    echo "replay-entrypoint-lint self-test OK — 드리프트 9종"
     exit 0
 fi
 

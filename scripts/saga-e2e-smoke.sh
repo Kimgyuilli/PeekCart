@@ -5,7 +5,7 @@
 # 시나리오 본체는 runner 컨테이너 안의 saga_e2e.py 다(internal 네트워크 안에서만 DB·Kafka·앱에 닿는다).
 #
 # 사용:
-#   bash scripts/saga-e2e-smoke.sh                 # 전체 (readiness + 시나리오 5종)
+#   bash scripts/saga-e2e-smoke.sh                 # 전체 (readiness + 시나리오 6종)
 #   bash scripts/saga-e2e-smoke.sh --scenarios a,b # 일부만
 #   bash scripts/saga-e2e-smoke.sh --keep          # 실패 조사용으로 스택 유지
 #   bash scripts/saga-e2e-smoke.sh --self-test     # 순서 계약 검사만 (스택 불필요)
@@ -15,7 +15,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 COMPOSE_FILE="docker-compose.e2e.yml"
-SCENARIOS="a,b,c,d,e"
+SCENARIOS="a,b,c,d,e,f"
 KEEP=0
 
 SELF_TEST=0
@@ -102,10 +102,51 @@ check_control("대조군: 지점 없는 타임아웃", lambda: raise_(m.Timeout(
 check_control("대조군: 타임아웃 아닌 단언 실패", lambda: raise_(AssertionError("x")), False)
 check_control("대조군: 결함이 검사에 안 닿음(성공)", lambda: None, False)
 
+# Real lingering F must remain last, and ledger/identity assertions need negative probes.
+if m.LINGERING_SCENARIOS != ["f"]:
+    print("  FAIL [실제 F lingering 등록 누락]")
+    fails += 1
+check("실제 F 뒤에 E 금지", ["f", "e"], False)
+check("실제 F 꼬리", ["e", "f"], True)
+
+def check_assertion(name, fn, should_pass):
+    global fails
+    try:
+        fn()
+        passed = True
+    except AssertionError:
+        passed = False
+    if passed != should_pass:
+        print("  FAIL [%s]" % name)
+        fails += 1
+    else:
+        print("  ok   [%s]" % name)
+
+calls = [{"seq": 1, "method": "POST", "idempotencyKey": "stable"},
+         {"seq": 2, "method": "GET", "idempotencyKey": None}]
+check_assertion("POST GET 순서", lambda: m.assert_call_sequence(calls, ["POST", "GET"]), True)
+check_assertion("GET POST 오인 금지", lambda: m.assert_call_sequence(calls, ["GET", "POST"]), False)
+check_assertion("POST 누락 금지", lambda: m.assert_call_sequence(calls[1:], ["POST", "GET"]), False)
+check_assertion("POST 추가 금지", lambda: m.assert_call_sequence(calls + [calls[0]], ["POST", "GET"]), False)
+check_assertion("멱등키 누락 금지", lambda: m.assert_call_sequence(
+    [dict(calls[0], idempotencyKey=None)], ["POST"]), False)
+check_assertion("멱등키 변경 금지", lambda: m.assert_call_sequence(
+    [calls[0], dict(calls[0], seq=2, idempotencyKey="other")], ["POST", "POST"]), False)
+before = dict(zip(m.DLQ_IDENTITY, [1, "cluster", 1, "payment.failed", 0, 12, "order-group"]))
+before["attempt_count"] = 1
+redelivered = dict(before, attempt_count=2)
+check_assertion("DLT 같은 원장", lambda: m.assert_dlq_redelivery(before, [redelivered]), True)
+check_assertion("DLT attempt1 금지", lambda: m.assert_dlq_redelivery(before, [before]), False)
+check_assertion("DLT attempt3 금지", lambda: m.assert_dlq_redelivery(before, [dict(before, attempt_count=3)]), False)
+check_assertion("DLT 중복 행 금지", lambda: m.assert_dlq_redelivery(before, [redelivered, redelivered]), False)
+for field in m.DLQ_IDENTITY:
+    check_assertion("DLT 식별 변경: " + field, lambda f=field: m.assert_dlq_redelivery(
+        before, [dict(redelivered, **{f: "different"})]), False)
+
 if fails:
     print("self-test 실패 %d건" % fails)
     sys.exit(1)
-print("self-test 통과 (14종)")
+print("self-test 통과 (순서·의도된 실패·환불 호출·DLT 동일 좌표)")
 PY_ORDER_SELFTEST
 fi
 
@@ -201,6 +242,10 @@ stop_watchdog() {
 teardown() {
   local rc=$?
   stop_watchdog
+  if [[ -e "$OUT_DIR/d-order-stopped" ]]; then
+    dc start order-service >/dev/null 2>&1 || true
+    rm -f "$OUT_DIR/d-order-stopped"
+  fi
   collect
   if [[ $KEEP -eq 1 ]]; then
     echo "[--keep] 스택을 유지한다. 정리: docker compose -f $COMPOSE_FILE -p $PROJECT down -v --remove-orphans"
@@ -318,7 +363,7 @@ run_in_runner() {
 if [[ $NEGATIVE_CONTROL -eq 1 ]]; then
   # ---------------------------------------------------------------- 음성 대조군
   #
-  # **통과하는 검사는 그것이 무엇을 잡을 수 있는지 말해주지 않는다.** 시나리오 5종이 전부
+  # **통과하는 검사는 그것이 무엇을 잡을 수 있는지 말해주지 않는다.** 시나리오 6종이 전부
   # 초록인 상태는 "saga 가 돈다" 와 "단언이 vacuous 하다" 를 구별하지 못한다. 그래서 결함을
   # 일부러 주입하고 **해당 검사가 실패하는지**를 매 CI 에서 확인한다.
   nc_fails=0
@@ -513,12 +558,30 @@ run_fence_scenario() {
   wait "$runner_pid"
 }
 
+# Stop only the owning consumer process; restore it even if rewind fails.
+run_dlq_scenario() {
+  local rc=0
+  run_in_runner "python3 /work/e2e/saga_e2e.py dlq-prepare" || return $?
+  : > "$OUT_DIR/d-order-stopped"
+  dc stop order-service || return $?
+  run_in_runner "python3 /work/e2e/saga_e2e.py dlq-rewind" || rc=$?
+  dc start order-service || return $?
+  rm -f "$OUT_DIR/d-order-stopped"
+  [[ "$rc" -eq 0 ]] || return "$rc"
+  run_in_runner "python3 /work/e2e/saga_e2e.py scenario d"
+}
+
 IFS=',' read -ra LIST <<< "$SCENARIOS"
 for s in "${LIST[@]}"; do
   echo "== 시나리오 $s =="
   # **재시도하지 않는다** — 상태 단언은 한 번에 성립해야 한다(계획 P19).
-  if [[ "$s" == "e" ]]; then
+  if [[ "$s" == "d" ]]; then
+    with_budget "${E2E_BUDGET_DLQ:-480}" "scenario:$s" run_dlq_scenario
+  elif [[ "$s" == "e" ]]; then
     with_budget "${E2E_BUDGET_FENCE:-600}" "scenario:$s" run_fence_scenario
+  elif [[ "$s" == "f" ]]; then
+    with_budget "${E2E_BUDGET_REFUNDS:-600}" "scenario:$s" \
+      run_in_runner "python3 /work/e2e/saga_e2e.py scenario f"
   else
     with_budget "$BUDGET_SCENARIO" "scenario:$s" \
       run_in_runner "python3 /work/e2e/saga_e2e.py scenario $s"

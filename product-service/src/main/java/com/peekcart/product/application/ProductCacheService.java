@@ -79,9 +79,8 @@ public class ProductCacheService {
      * @param pageable   페이징 정보
      * @return 캐시 직렬화 가능한 페이지 래퍼
      */
-    // Sort 미지원 — Controller에서 고정 정렬만 사용 (@PageableDefault)
     @Cacheable(cacheNames = CacheConfig.PRODUCT_LIST_CACHE,
-            key = "'list:' + #categoryId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
+            key = "'list:' + #categoryId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
     public CachedPage<ProductListDto> getProductList(Long categoryId, Pageable pageable) {
         Page<Product> page;
         if (categoryId != null) {

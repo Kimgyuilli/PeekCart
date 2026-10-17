@@ -28,7 +28,7 @@ class ProductQueryServiceTest {
 
     @Mock ProductCacheService productCacheService;
 
-    private final Pageable pageable = PageRequest.of(0, 10);
+    private final Pageable pageable = PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("id"));
 
     // ── getProducts ───────────────────────────────────────────────────────────
 
@@ -77,5 +77,28 @@ class ProductQueryServiceTest {
         // 재고를 리포지터리가 아니라 캐시 서비스에서 받는다는 것이 이 테스트의 계약이다 —
         // 여기로 되돌아가면 상세의 DB 왕복이 되살아난다(D-026).
         then(productCacheService).should().getStock(ProductFixture.DEFAULT_PRODUCT_ID);
+    }
+    @Test
+    void normalizationAddsStableIdAndRejectsUnknownOrDuplicateFields() {
+        assertThat(ProductQueryService.normalizePage(PageRequest.of(0, 10)).getSort().toString())
+                .isEqualTo("id: ASC");
+        assertThat(ProductQueryService.normalizePage(PageRequest.of(0, 10,
+                org.springframework.data.domain.Sort.by("price").descending())).getSort().toString())
+                .isEqualTo("price: DESC,id: ASC");
+        for (String property : new String[]{"noSuchField", "category.name", "description"}) {
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> productQueryService.getProducts(null,
+                    PageRequest.of(0, 10, org.springframework.data.domain.Sort.by(property))))
+                    .isInstanceOf(com.peekcart.product.domain.exception.ProductException.class);
+        }
+        for (var sort : List.of(
+                org.springframework.data.domain.Sort.by("price", "price"),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.asc("name").ignoreCase()),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.asc("name").nullsFirst()),
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.asc("name").nullsLast()))) {
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> productQueryService.getProducts(null,
+                    PageRequest.of(0, 10, sort)))
+                    .isInstanceOf(com.peekcart.product.domain.exception.ProductException.class);
+        }
+        org.mockito.Mockito.verifyNoInteractions(productCacheService);
     }
 }

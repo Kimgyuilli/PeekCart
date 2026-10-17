@@ -5,6 +5,29 @@
 
 ---
 
+
+## 서버 확정 조회 복구 부분 병합·검증 (2026-10-17)
+
+[PR181](https://github.com/Kimgyuilli/PeekCart/pull/181)의 head `9f763181117a12a498943c09ef315ffb93e2f652` / base `850b0d448ebc6e46524aa2576545b3d55c1ff9d6`를 독립 검증했다. [PR CI38983400228](https://github.com/Kimgyuilli/PeekCart/actions/runs/38983400228)의 실제 checkout `01c9d5b6c456d92ddaa2aa9bf35ce05055477bc0` 부모와 artifact를 대조했다. 필수17jobs/gate, XML234/1336tests 실패·오류·skip0, Recovery18(추가 반례6 포함), 양E2E A–E/이미지 identity/음성 대조군 PASS.
+
+root가 보호 규칙을 지켜 병합한 SHA는 `d405cfabfbe03ecf4b06a32ef2e6a400e7b29988`이다. [main CI38984838008](https://github.com/Kimgyuilli/PeekCart/actions/runs/38984838008)의 실제 checkout도 동일하며 23jobs/6publish, XML234/1336tests 실패·오류·skip0, 양E2E 및 공개 GHCR6서비스 SHA/latest manifest·config 일치를 독립 확인했다. 별도 codex exec 리뷰 미호출; 독립 PR 서브에이전트의 최신 head/base·실제 checkout·artifact 검증 PASS. 기존 A–E는 회귀 검증이며 새 ADMIN 분산 복구 체인 전체 E2E 실행으로 주장하지 않는다. 새 계약은 집중 실제 DB·서명 HTTP·직렬화 consumer/inbox 및 CI 반례로 검증했다.
+
+ADR-0040은 서버가 직접 확인한 확정 PG 결과의 제한된 복구 결정으로 Accepted 전환한다. 영구404에 대한 외부 신뢰 증빙 원천·형식은 미확보이므로 D084 전체는 미완이다. TASKS 열린 행과 개별 계획을 유지하며 자동 아카이브하지 않는다. 기록 커밋 자체의 후속 PR 반영은 계속 진행한다.
+
+## 부채 기반·문서 5건 완료 (2026-10-17, [#177](https://github.com/Kimgyuilli/PeekCart/pull/177))
+
+- D-083: 토픽 부재만 생략하고 timeout·권한 오류·중단을 전파한다. 집중 회귀 4건과 전체 CI를 확인했다.
+- D-068: MySQL 실행 선언 5곳을 8.0.46으로 정합화했다. drift 반례 27건과 실제 실행계획 4건 및 전체 CI를 확인했다. 실제 k8s 배포는 범위 밖이다.
+- D-080: 원본 XML·로그·jstack·바이트코드로 기동/종료 비용과 객체 기반 캐시 키를 정정했다. 셔플 이전 결함4 실패를 원문 및 PR138에 보존 정정했다.
+- D-073: CPU 표본과 처리량 런, 코드 호출 체인과 PR119/120 이력을 원본 대조해 정정했다. 블로그28편은 이미 정확해 외부 수정하지 않았다.
+- D-077: 현재 낙관락·jitter 재시도·비동기 예약 해제 계약으로 Layer1·swagger·주석을 맞췄다.
+
+2026-10-17 [PR177](https://github.com/Kimgyuilli/PeekCart/pull/177) 병합 SHA `850b0d448ebc6e46524aa2576545b3d55c1ff9d6`. PR head `cb58da0944fc49ee14756f307328662f8bcca39a`, base `3e1ba64c715d22b1f5a2d2635a97da17eb4ebb28`, 실제 checkout `4bde8cced2ff8b4ec43bc6a476bcda59ef4cbdbb`의 [CI38981159191](https://github.com/Kimgyuilli/PeekCart/actions/runs/38981159191)는 필수17jobs/gate와 XML229/1296tests 실패·오류·skip0, 양E2E 이미지 identity/동일SHA A–E/음성 대조군을 통과했다. 독립 verifier가 최신 head/base와 실제 checkout 부모, artifact를 대조해 PASS를 기록했다.
+
+병합 후 [main CI38982636776](https://github.com/Kimgyuilli/PeekCart/actions/runs/38982636776)는 실제 checkout850b0d4, 같은1296tests와 양E2E, gate를 포함한23jobs 및6publish 모두 성공했다. 공개 GHCR6서비스의 SHA태그/latest manifest digest와 config 일치도 독립 확인했다. root만 보호 규칙을 지켜 병합했으며 별도 codex exec 리뷰는 호출하지 않았다. 무료 조건은 공개 저장소·표준 runner·GHCR 확인 및 사용자의 artifact/cache 무료 범위 확인으로 충족했다.
+
+기존 ADR-0025/0027/0028의 결정은 유지하고 사실 정정만 Update Log에 추기했다. #175/#176의 완료 계획6건과 진단 #179도 실제 병합·main 검증을 확인해 아카이브했다. 이전 절의 PR 대기 문구는 당시 기록이며 이번 확인으로 갱신한다. D-064/065/078은 제외·열림, D-075는 사용자 보류, D-084와 나머지 검증 대기 항목은 완료로 처리하지 않았다.
+
 ## D-060 완료 ([#175](https://github.com/Kimgyuilli/PeekCart/pull/175), 2026-10-14)
 
 HTTP 202로 승인 접수 후 Product의 예약 보호 회신을 받아 PG를 호출한다. 일반 취소·만료 회수는 보호된 예약을 해제하지 않고 확정 실패 또는 성공 환불로 재고를 복구한다 (see ADR-0034).

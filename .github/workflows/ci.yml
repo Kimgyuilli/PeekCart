@@ -437,7 +437,7 @@ jobs:
           if-no-files-found: error
 
   # cross-service saga E2E (계획 P12·P16·P18·P19).
-  # 시나리오 4종 + 음성 대조군을 별도 러너에서 병렬로 돌린다.
+  # 시나리오 6종 + 음성 대조군을 별도 러너에서 병렬로 돌린다.
   # 두 매트릭스 항목 모두 PR 과 push 에서 필수이며 각자 cold start 스택을 소유한다.
   e2e:
     needs: images
@@ -485,7 +485,7 @@ jobs:
       - name: Build runner image
         run: docker compose -f docker-compose.e2e.yml -p e2e-${E2E_RUN_ID} build runner
 
-      - name: 시나리오 4종
+      - name: 시나리오 6종
         if: matrix.mode == 'scenarios'
         run: bash scripts/saga-e2e-smoke.sh
 

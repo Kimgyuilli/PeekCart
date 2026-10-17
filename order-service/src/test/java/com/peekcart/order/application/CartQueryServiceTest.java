@@ -21,6 +21,13 @@ class CartQueryServiceTest {
 
     @InjectMocks CartQueryService cartQueryService;
     @Mock CartRepository cartRepository;
+    @Mock CartDetailReader cartDetailReader;
+
+    @org.junit.jupiter.api.BeforeEach
+    void composeCartResponse() {
+        org.mockito.Mockito.lenient().when(cartDetailReader.read(org.mockito.ArgumentMatchers.any()))
+                .thenAnswer(invocation -> CartDetailDto.from(invocation.getArgument(0)));
+    }
 
     @Test
     @DisplayName("getCart: 장바구니가 있으면 CartDetailDto를 반환한다")

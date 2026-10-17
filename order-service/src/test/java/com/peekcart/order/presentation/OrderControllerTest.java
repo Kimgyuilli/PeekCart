@@ -292,4 +292,11 @@ class OrderControllerTest {
         mockMvc.perform(post("/api/v1/orders/{id}/cancel", 1L))
                 .andExpect(status().isBadRequest());
     }
+    @Test
+    @WithMockLoginUser
+    void invalidPathIdReturns400() throws Exception {
+        mockMvc.perform(get("/api/v1/orders/abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("SYS-003"));
+    }
 }

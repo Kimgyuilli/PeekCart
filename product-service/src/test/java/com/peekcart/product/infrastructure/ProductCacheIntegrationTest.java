@@ -18,6 +18,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import java.util.List;
 
 import com.peekcart.product.application.dto.UpdateProductCommand;
 import com.peekcart.support.SharedContainers;
@@ -25,6 +27,7 @@ import com.peekcart.support.SharedContainers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.flyway.locations=classpath:db/migration"
@@ -34,8 +37,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ProductCacheIntegrationTest extends AbstractIntegrationTest {
 
     private static final PageRequest DEFAULT_PAGE = PageRequest.of(0, 10);
-    private static final String LIST_CACHE_KEY = "list:null:0:10";
+    private static final String LIST_CACHE_KEY = "list:null:0:10:id: ASC";
 
+    @Autowired org.springframework.test.web.servlet.MockMvc mockMvc;
     @Autowired ProductQueryService queryService;
     @Autowired ProductCommandService commandService;
     @Autowired CacheManager cacheManager;
@@ -137,5 +141,45 @@ class ProductCacheIntegrationTest extends AbstractIntegrationTest {
 
         Page<ProductListDto> refreshed = queryService.getProducts(null, DEFAULT_PAGE);
         assertThat(refreshed.getTotalElements()).isEqualTo(2);
+    }
+    @Test
+    void everyAllowedSortHasIndependentCacheAndStablePageBoundaries() {
+        commandService.update(productId, new UpdateProductCommand(categoryId, "B", "설명", 300L, null));
+        Long second = commandService.create(new CreateProductCommand(categoryId, "A", "설명", 100L, null, 1)).id();
+        Long third = commandService.create(new CreateProductCommand(categoryId, "C", "설명", 200L, null, 1)).id();
+        Long fourth = commandService.create(new CreateProductCommand(categoryId, "A", "설명", 200L, null, 1)).id();
+        var defaultIds = List.of(productId, second, third, fourth);
+        record Case(Sort sort, List<Long> ids) {}
+        var cases = List.of(
+                new Case(Sort.by("id"), defaultIds),
+                new Case(Sort.by("id").descending(), List.of(fourth, third, second, productId)),
+                new Case(Sort.by("price"), List.of(second, third, fourth, productId)),
+                new Case(Sort.by("price").descending(), List.of(productId, third, fourth, second)),
+                new Case(Sort.by("name"), List.of(second, fourth, productId, third)),
+                new Case(Sort.by("name").descending(), List.of(third, productId, second, fourth)));
+        for (Case item : cases) {
+            for (boolean sortedFirst : new boolean[]{true, false}) {
+                cleanCaches(cacheManager);
+                var sortedPage = PageRequest.of(0, 10, item.sort());
+                if (sortedFirst) queryService.getProducts(null, sortedPage);
+                else queryService.getProducts(null, DEFAULT_PAGE);
+                assertThat(queryService.getProducts(null, DEFAULT_PAGE).getContent())
+                        .extracting(ProductListDto::id).containsExactlyElementsOf(defaultIds);
+                assertThat(queryService.getProducts(null, sortedPage).getContent())
+                        .extracting(ProductListDto::id).containsExactlyElementsOf(item.ids());
+                for (int page = 0; page < 2; page++) {
+                    assertThat(queryService.getProducts(null, PageRequest.of(page, 2, item.sort())).getContent())
+                            .extracting(ProductListDto::id)
+                            .containsExactlyElementsOf(item.ids().subList(page * 2, page * 2 + 2));
+                }
+            }
+        }
+    }
+    @Test
+    void invalidSortIsBadRequestBeforeDatabaseQuery() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/products")
+                        .param("sort", "noSuchField,desc"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.code").value("SYS-003"));
     }
 }

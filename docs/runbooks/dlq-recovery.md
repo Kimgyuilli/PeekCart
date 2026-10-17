@@ -325,7 +325,7 @@ replay-aware poller 만 올바르게 발행한다 — 구 poller 는 그 행의 
    | ⓐ | `outbox_events` 에 `record_kind='REPLAY' AND status='PENDING'` 인 행이 0 |
    | ⓐ' | `dead_letter_records.publication_status='REQUESTED'` 인 행이 0 |
    | ⓑⓒ | 표적 group + `.dlq` intake group 의 lag 가 **2회 연속** 0 |
-   | ⓓ | 마지막 `last_replay_settled_at` 이후 상한(기본 546s)이 지났다 |
+   | ⓓ | 마지막 `last_replay_settled_at` 이후 상한(기본 564s, jitter 최대 합54초 반영; ADR-0022 Update Log)이 지났다 |
 
    - ⓐ' 가 줄지 않으면 §6.4 의 `publication-unknown` 으로 교착을 먼저 푼다.
    - **DB·브로커 접속 실패는 통과가 아니라 차단**이다(fail-closed).

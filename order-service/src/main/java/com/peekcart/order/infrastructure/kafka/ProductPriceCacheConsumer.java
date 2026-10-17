@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
  * 멱등: {@code processed_events} 로 중복 이벤트를 1회만 적용한다.
  * 순서: 파티션 키=productId 로 정상 경로는 per-partition in-order 이며, replay/재정렬은
  * {@code source_version < version} 비교로 과거 version 덮어쓰기를 막는다.
- * Order 는 payload 중 {@code price}/{@code version} 만 소비한다(나머지 필드 무시).
+ * Order 는 가격·이름·상태를 같은 version으로 반영한다 (ADR-0036).
  * <p>
  * {@code processed_events} retention 은 {@code product.updated} topic retention·DLQ replay 창
  * 이상이어야 한다(ADR-0012 D5) — 공유 retention 정책을 따른다.
@@ -43,8 +43,13 @@ public class ProductPriceCacheConsumer {
             Long productId = payload.get("productId").asLong();
             long price = payload.get("price").asLong();
             long version = payload.get("version").asLong();
-            priceCacheRepository.applyUpdate(productId, price, version);
+            priceCacheRepository.applyUpdate(productId, price, version,
+                    nullableText(payload, "name"), nullableText(payload, "status"));
             log.debug("가격 캐시 갱신 — productId={}, version={}", productId, version);
         });
+    }
+    private static String nullableText(JsonNode payload, String field) {
+        JsonNode value = payload.get(field);
+        return value == null || value.isNull() ? null : value.asText();
     }
 }
