@@ -163,3 +163,9 @@ kill-switch 를 열어도 부를 수 없으므로 ④ 가 종결되지 않는다
 - `PUBLISH_UNKNOWN` 전이 후 **재claim 이 거부되고 종결은 허용**되며, outbox 행이 남아 있으면 전이 자체가 거부됨 (V-39)
 - ADMIN 만 게이트웨이 경유로 진입점에 도달하고, rewrite 가 다른 actuator 엔드포인트로 새지 않음 (V-40)
 - 상한 상수가 `FixedSequenceBackOff`·`clock-skew-budget` 과 갈라지면 lint 가 실패 (V-41)
+
+
+## Update Log
+
+- 2026-10-17, D-076: 공유 DLQ backoff가 `JitteredSequenceBackOff(0.5, 1_000, 5_000, 30_000)`로 변경되어 위 D2의 당시 고정 지연 합36초는 현재 상한이 아니다. 실제 구현은 `Math.round(nextDouble(base-spread, base+spread))`이므로 배타적인 실수 상단도 반올림으로 1500/7500/45000ms에 도달할 수 있다. 보수적 합계 상한은54초다. preflight 명명 상수는54초, 최초실행 포함 attempts4로 정합화해 전체 기본 drain 상한은564초(54+4×30+30+300+60)다.
+- 기존 D2의 상한 소유권·handlerBudget 선언의 한계·lag2회관측·fail-closed 조건은 유지한다. drift guard는 공유 jitter 비율0.5/기준1·5·30초/시도4회/최대합계와 clock-skew 설정을 함께 확인한다. 비율·간격·횟수·옛36초 회귀는 거절한다. D-065 운영 replay 실행은 여전히 범위 밖이며 이 정정은 그 실험 완료를 뜻하지 않는다.
