@@ -327,16 +327,17 @@ PYEOF
 import copy, os, sys, yaml
 src, tmp = sys.argv[1:]
 original = yaml.safe_load(open(src))
-for mutation in ("deleted", "status", "metric", "sum", "threshold", "pending", "condition", "zero", "reference"):
+for mutation in ("deleted", "status", "recovery_status", "metric", "sum", "threshold", "pending", "condition", "zero", "reference"):
     doc = copy.deepcopy(original)
     inner = yaml.safe_load(doc["data"]["alerts.yaml"])
     rules = inner["groups"][0]["rules"]
     rule = next(r for r in rules if r["uid"] == "peekcart-payment-approval-stale")
     if mutation == "deleted":
         rules.remove(rule)
-    elif mutation in ("status", "metric", "sum", "zero"):
+    elif mutation in ("status", "recovery_status", "metric", "sum", "zero"):
         model = next(d["model"] for d in rule["data"] if d["refId"] == "A")
         if mutation == "status": model["expr"] = model["expr"].replace("waiting_stock|", "")
+        elif mutation == "recovery_status": model["expr"] = model["expr"].replace("|recovery_pending", "")
         elif mutation == "metric": model["expr"] = model["expr"].replace("payment_approval_oldest_age_seconds", "payment_approval_backlog")
         elif mutation == "sum": model["expr"] = model["expr"].replace("max by", "sum by")
         else: model["expr"] = "0 * " + model["expr"]
@@ -348,7 +349,7 @@ for mutation in ("deleted", "status", "metric", "sum", "threshold", "pending", "
     doc["data"]["alerts.yaml"] = yaml.dump(inner, allow_unicode=True, sort_keys=False)
     yaml.dump(doc, open(os.path.join(tmp, "approval-" + mutation + ".yml"), "w"), allow_unicode=True, sort_keys=False)
 PYEOF
-    for mutation in deleted status metric sum threshold pending condition zero reference; do
+    for mutation in deleted status recovery_status metric sum threshold pending condition zero reference; do
         run_case "승인 장기 미결 $mutation 변이" "$ST_TMP/approval-$mutation.yml"
     done
 
@@ -412,7 +413,7 @@ PYEOF
     if [[ "$ST_FAIL" -ne 0 ]]; then
         exit 1
     fi
-    echo "observability-promql-lint self-test 28종 통과 (기존 19 + 승인 장기 미결 9)"
+    echo "observability-promql-lint self-test 29종 통과 (기존 19 + 승인 장기 미결/복구 10)"
     exit 0
 fi
 
@@ -475,7 +476,7 @@ METRIC_ALERT_CONTRACTS = {
         "metric": "payment_approval_oldest_age_seconds",
         "apps": {"payment-service"},
         "expr": 'max by (application)(payment_approval_oldest_age_seconds'
-                '{application=~"payment-service", status=~"waiting_stock|ready|claimed|unresolved"})',
+                '{application=~"payment-service", status=~"waiting_stock|ready|claimed|unresolved|recovery_pending"})',
         "condition": "$A > 900",
         "for": "0s",
     },

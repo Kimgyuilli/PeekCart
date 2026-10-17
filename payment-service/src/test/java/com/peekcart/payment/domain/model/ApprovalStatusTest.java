@@ -22,6 +22,7 @@ class ApprovalStatusTest {
                     ApprovalStatus.UNRESOLVED, ApprovalStatus.CLAIMED),
             ApprovalStatus.UNRESOLVED, Set.of(ApprovalStatus.SUCCEEDED, ApprovalStatus.FAILED,
                     ApprovalStatus.CLAIMED),
+            ApprovalStatus.RECOVERY_PENDING, Set.of(ApprovalStatus.FAILED),
             ApprovalStatus.SUCCEEDED, Set.of(),
             ApprovalStatus.FAILED, Set.of()
     ));

@@ -58,4 +58,5 @@
 | [0033](./0033-shared-messaging-module.md) | Outbox · 멱등성 · DLQ 원장 실행 세트의 공유 모듈 승격 (`peekcart-common-messaging` · 스키마는 서비스 소유 유지) | Accepted | Phase 5 | 02 |
 | [0034](./0034-approval-reservation-fence.md) | 비동기 결제 승인과 재고 예약 fence | Accepted | Phase 5 | 02, 03, 04, 05 |
 | [0035](./0035-protected-approval-manual-handoff.md) | 보호된 승인 미결의 운영 인수와 상태 조회 | Accepted | Phase 5 | 03, 04, 05, 06 |
+| [0040](./0040-protected-approval-recovery.md) | 보호 승인 대사 복구 — PG 직접 증빙·역할 분리·예약 version·감사 | Proposed | Phase 5 | 03, 05 |
 <!-- INDEX:END -->

@@ -79,6 +79,14 @@ public class PaymentOutboxEventPublisher {
         saveOutboxEvent(PAYMENT_REFUNDED, refund.getOrderId().toString(), payload);
     }
 
+    public void publishRecoveryRequested(com.peekcart.global.outbox.dto.ApprovalRecoveryRequestPayload payload) {
+        saveOutboxEvent("payment.approval-recovery.requested", payload.orderId().toString(), payload);
+    }
+
+    public void publishRecoveryExecute(com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload payload) {
+        saveOutboxEvent("payment.approval-recovery.execute", payload.orderId().toString(), payload);
+    }
+
     private void saveOutboxEvent(String eventType, String aggregateId, Object payload) {
         MdcSnapshot.Snapshot mdc = MdcSnapshot.current();
         OutboxEvent outboxEvent = OutboxEvent.create(AGGREGATE_TYPE, aggregateId, eventType,

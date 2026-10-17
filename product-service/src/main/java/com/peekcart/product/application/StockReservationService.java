@@ -258,6 +258,40 @@ public class StockReservationService {
         }
     }
 
+    public void snapshotForRecovery(com.peekcart.global.outbox.dto.ApprovalRecoveryRequestPayload request) {
+        StockReservation reservation = reservationRepository.findByOrderIdForUpdate(request.orderId()).orElse(null);
+        publisher.publishApprovalRecoverySnapshot(new com.peekcart.global.outbox.dto.ApprovalRecoverySnapshotPayload(
+                request.recoveryId(), request.orderId(), request.generation(),
+                reservation == null ? "ABSENT" : reservation.getStatus().name(),
+                reservation == null ? -1 : reservation.getVersion(),
+                reservation != null && reservation.isApprovalFenced(),
+                reservation == null ? null : reservation.getRefundResult()));
+    }
+
+    public void executeRecovery(com.peekcart.global.outbox.dto.ApprovalRecoveryExecutePayload request) {
+        StockReservation reservation = reservationRepository.findByOrderIdForUpdate(request.orderId()).orElse(null);
+        boolean released = false;
+        if (reservation != null) {
+            if (request.recoveryId().equals(reservation.getRecoveryId())
+                    && reservation.getStatus() == ReservationStatus.RELEASED) {
+                released = true;
+            } else if (reservation.getVersion() == request.reservationVersion()
+                    && reservation.getStatus() == ReservationStatus.RELEASED && reservation.isApprovalFenced()) {
+                // 정상 경로로 이미 해제된 예약은 재고를 다시 더하지 않는다.
+                released = true;
+            } else if (reservation.releaseForRecovery(request.recoveryId(), request.reservationVersion())) {
+                for (ReservedItemPayload item : fromJson(reservation.getItems())) {
+                    inventoryService.restoreStock(item.productId(), item.quantity());
+                }
+                sagaMetrics.reservationReleased();
+                released = true;
+            }
+        }
+        publisher.publishApprovalRecoveryResult(new com.peekcart.global.outbox.dto.ApprovalRecoveryResultPayload(
+                request.recoveryId(), request.orderId(), request.generation(), released,
+                released ? null : "RESERVATION_CHANGED"));
+    }
+
     private boolean tryReleaseReserved(Long orderId) {
         int updated = reservationRepository.markReleasedIfReserved(orderId);
         if (updated != 1) {

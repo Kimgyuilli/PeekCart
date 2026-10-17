@@ -55,6 +55,26 @@ public class ProductKafkaConfig {
     }
 
     @Bean
+    public NewTopic stockApprovalRecoverySnapshotTopic() {
+        return TopicBuilder.name("stock.approval-recovery.snapshot").partitions(3).replicas(1).configs(businessConfigs()).build();
+    }
+
+    @Bean
+    public NewTopic stockApprovalRecoverySnapshotDlqTopic() {
+        return TopicBuilder.name("stock.approval-recovery.snapshot.dlq").partitions(1).replicas(1).configs(dlqConfigs()).build();
+    }
+
+    @Bean
+    public NewTopic stockApprovalRecoveryResultTopic() {
+        return TopicBuilder.name("stock.approval-recovery.result").partitions(3).replicas(1).configs(businessConfigs()).build();
+    }
+
+    @Bean
+    public NewTopic stockApprovalRecoveryResultDlqTopic() {
+        return TopicBuilder.name("stock.approval-recovery.result.dlq").partitions(1).replicas(1).configs(dlqConfigs()).build();
+    }
+
+    @Bean
     public NewTopic stockApprovalResultTopic() {
         return TopicBuilder.name("stock.approval.result").partitions(3).replicas(1).configs(businessConfigs()).build();
     }

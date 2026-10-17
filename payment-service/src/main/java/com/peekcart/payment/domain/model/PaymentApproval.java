@@ -165,6 +165,33 @@ public class PaymentApproval {
         this.attempts += attemptsDelta;
     }
 
+    public boolean isRecoveryEligible() {
+        return dispatchDeadline != null && (status == ApprovalStatus.RECOVERY_PENDING || status == ApprovalStatus.UNRESOLVED
+                || status == ApprovalStatus.FAILED && "MANUALLY_RESOLVED".equals(failureCode));
+    }
+
+    public void restartRecovery(long expectedGeneration) {
+        if (status != ApprovalStatus.RECOVERY_PENDING || generation != expectedGeneration) throw new PaymentException(ErrorCode.PAY_004);
+        generation++;
+    }
+
+    /** 승인된 generation을 실행 직전에 fence하고 자동 reconciler 대상에서 제거한다. */
+    public void beginRecovery(long expectedGeneration) {
+        if (!isRecoveryEligible() || generation != expectedGeneration) throw new PaymentException(ErrorCode.PAY_004);
+        status = ApprovalStatus.RECOVERY_PENDING;
+        generation++;
+        resolvedAt = null;
+    }
+
+    /** 과거 잘못 닫힌 보호 승인에서 PG DONE이 확인되면 기존 성공/환불 경로로 넘긴다. */
+    public void resumeHistoricalForReconcile(long expectedGeneration) {
+        if (!isRecoveryEligible() || generation != expectedGeneration) throw new PaymentException(ErrorCode.PAY_004);
+        status = ApprovalStatus.CLAIMED;
+        generation++;
+        claimedAt = LocalDateTime.now();
+        resolvedAt = null;
+    }
+
     /** 이 확정 시도가 현재 소유권(generation)에 해당하는가. 아니면 만료된 owner 의 뒤늦은 확정이다. */
     public boolean ownsGeneration(long generation) {
         return this.generation == generation;

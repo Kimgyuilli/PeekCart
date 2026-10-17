@@ -48,6 +48,8 @@ BUSINESS_TOPICS = [
     "order.created", "order.cancelled", "order.compensation.requested",
     "payment.requested", "payment.completed", "payment.failed", "payment.refunded",
     "product.updated", "stock.reservation.result", "stock.compensation.requested", "stock.approval.result",
+    "payment.approval-recovery.requested", "payment.approval-recovery.execute",
+    "stock.approval-recovery.snapshot", "stock.approval-recovery.result",
 ]
 
 # DLQ listener readiness (계획 P5 ②). DlqTopology 의 group 은 '실패한 업무 consumer' 의
@@ -68,9 +70,9 @@ EXPECTED_MIGRATIONS = {
     # V11/V9/V9/V7 = drain 앵커 + replay 축 backfill (구현 ④-c-2b-4a P23)
     # V12/V10/V10/V8 = 발행 축 override 감사 2컬럼 (구현 ④-c-2b-4b P24, ADR-0022 D4)
     "order": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],  # V7 = 커서 페이지네이션 인덱스 (구현 ⑥)
-    "product": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"],
+    "product": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],  # V12 = 복구 예약 version (D-084)
     # payment V11 = 승인 원장 (D-020, ADR-0023 D2)
-    "payment": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+    "payment": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13"],  # V13 = 복구/감사 원장 (D-084)
     "notification": ["1", "2", "3", "4", "5", "6", "7", "8"],
 }
 
@@ -227,7 +229,7 @@ def check_readiness(skip_health=False, group_deadline=180):
         actual = set(admin.list_topics())
         return expected_topics.issubset(actual)
 
-    wait_for("업무 토픽 10 + .dlq", topics_ready, 120)
+    wait_for("업무 토픽 15 + .dlq", topics_ready, 120)
     result["topics"] = len(expected_topics)
 
     # (5) consumer group — 존재가 아니라 **active member ≥ 1 이고 할당 partition ≥ 1**.

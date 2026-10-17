@@ -25,36 +25,36 @@ public interface StockReservationJpaRepository extends JpaRepository<StockReserv
     Optional<StockReservation> findByOrderIdForUpdate(@Param("orderId") Long orderId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query(value = "UPDATE stock_reservations SET status = 'APPROVAL_HELD', approval_fenced = TRUE "
+    @Query(value = "UPDATE stock_reservations SET version = version + 1, status = 'APPROVAL_HELD', approval_fenced = TRUE "
             + "WHERE order_id = :orderId AND status = 'RESERVED' AND expires_at > :now", nativeQuery = true)
     int holdForApproval(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query(value = "UPDATE stock_reservations SET status = 'RELEASED', released_at = :now "
+    @Query(value = "UPDATE stock_reservations SET version = version + 1, status = 'RELEASED', released_at = :now "
             + "WHERE order_id = :orderId AND status IN ('RESERVED', 'APPROVAL_HELD')", nativeQuery = true)
     int releaseAfterPaymentFailed(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query(value = "UPDATE stock_reservations SET status = 'RELEASED', released_at = :now "
+    @Query(value = "UPDATE stock_reservations SET version = version + 1, status = 'RELEASED', released_at = :now "
             + "WHERE order_id = :orderId AND approval_fenced = TRUE AND refund_result = 'SUCCEEDED' "
             + "AND status IN ('APPROVAL_HELD', 'CONFIRMED')", nativeQuery = true)
     int releaseAfterRefund(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE StockReservation r SET r.status = com.peekcart.product.domain.model.ReservationStatus.RELEASED, "
+    @Query("UPDATE StockReservation r SET r.version = r.version + 1, r.status = com.peekcart.product.domain.model.ReservationStatus.RELEASED, "
             + "r.releasedAt = :now WHERE r.orderId = :orderId "
             + "AND r.status = com.peekcart.product.domain.model.ReservationStatus.RESERVED")
     int markReleasedIfReserved(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE StockReservation r SET r.status = com.peekcart.product.domain.model.ReservationStatus.CONFIRMED, "
+    @Query("UPDATE StockReservation r SET r.version = r.version + 1, r.status = com.peekcart.product.domain.model.ReservationStatus.CONFIRMED, "
             + "r.confirmedAt = :now WHERE r.orderId = :orderId "
             + "AND r.status IN (com.peekcart.product.domain.model.ReservationStatus.RESERVED, "
             + "com.peekcart.product.domain.model.ReservationStatus.APPROVAL_HELD)")
     int markConfirmedIfReserved(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE StockReservation r SET r.compensatedAt = :now "
+    @Query("UPDATE StockReservation r SET r.version = r.version + 1, r.compensatedAt = :now "
             + "WHERE r.orderId = :orderId AND r.compensatedAt IS NULL")
     int markCompensatedIfAbsent(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
 

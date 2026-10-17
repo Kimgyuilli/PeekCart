@@ -142,6 +142,30 @@ class ApprovalExecutorTest {
         assertThat(executor.verify(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.UNRESOLVED);
     }
 
+    @ParameterizedTest
+    @ValueSource(longs = {0, 1, 1000000})
+    @DisplayName("부분 취소는 취소 합계와 무관하게 보호 승인을 닫지 않는다")
+    void partialCancellationNeverReleasesProtectedApproval(long canceledAmount) {
+        given(tossPaymentClient.find(anyString()))
+                .willReturn(Optional.of(new TossPaymentSnapshot("PARTIAL_CANCELED", canceledAmount, "{}")));
+
+        assertThat(executor.verify(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.UNRESOLVED);
+        then(tossPaymentClient).should(never()).confirm(any(), any(), anyLong(), any());
+    }
+
+    @Test
+    @DisplayName("전액 취소는 원장 금액과 정확히 일치할 때만 실패 확정한다")
+    void canceledRequiresExactFullAmount() {
+        for (long amount : new long[]{0, approval.getAmount() - 1, approval.getAmount() + 1}) {
+            given(tossPaymentClient.find(anyString()))
+                    .willReturn(Optional.of(new TossPaymentSnapshot("CANCELED", amount, "{}")));
+            assertThat(executor.verify(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.UNRESOLVED);
+        }
+        given(tossPaymentClient.find(anyString()))
+                .willReturn(Optional.of(new TossPaymentSnapshot("CANCELED", approval.getAmount(), "{}")));
+        assertThat(executor.verify(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.FAILED);
+    }
+
     @Test
     @DisplayName("verify: 조회 자체가 실패하면 UNRESOLVED — 진실이 확정되지 않았다")
     void verify_queryFailure_isUnresolved() {

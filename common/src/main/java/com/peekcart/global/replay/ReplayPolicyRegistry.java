@@ -75,6 +75,10 @@ public final class ReplayPolicyRegistry {
         put(PeekcartService.PRODUCT, "payment.refunded", allow("product/payment.refunded"));
 
         // --- payment 원장 (6쌍) ---
+        put(PeekcartService.PRODUCT, "payment.approval-recovery.requested", deny("product/approval-recovery-request"));
+        put(PeekcartService.PRODUCT, "payment.approval-recovery.execute", deny("product/approval-recovery-execute"));
+        put(PeekcartService.PAYMENT, "stock.approval-recovery.snapshot", deny("payment/approval-recovery-snapshot"));
+        put(PeekcartService.PAYMENT, "stock.approval-recovery.result", deny("payment/approval-recovery-result"));
         put(PeekcartService.PAYMENT, "stock.approval.result", deny("payment/stock.approval.result"));
         put(PeekcartService.PAYMENT, "order.created", deny("payment/order.created"));
         put(PeekcartService.PAYMENT, "order.cancelled", allow("payment/order.cancelled"));
