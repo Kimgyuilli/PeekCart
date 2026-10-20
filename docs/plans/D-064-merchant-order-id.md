@@ -42,6 +42,8 @@ PLAN-BLINDSPOTS B1/B4/B7/B10/B12를 확인했다. beginApproval/insertWaitingIfA
 
 - [x] P7. 저장소 E2E A/E의 준비·승인 호출과 PG stub의 영속 identity 응답을 새 계약으로 전환하고 양음 self-test 및 실제 E2E를 검증한다.
 
+- [x] P8. 기존 product 동시 예약 CI 실패의 원본 XML·seed를 보존하고 worker 예외·트랜잭션·save/barrier phase 진단을 추가한다. 원래 기준을 유지한 재현 결과와 미확정 원인을 기록하고 명시적 음성 대조로 진단·cleanup을 검증한다. 최종 CI·독립 검토는 merge 전 별도 필수다.
+
 ## 4. 검증 방법
 
 | 작업 | 실패 주입과 판정 |
@@ -55,13 +57,16 @@ PLAN-BLINDSPOTS B1/B4/B7/B10/B12를 확인했다. beginApproval/insertWaitingIfA
 
 ## 5. 완료 조건과 미해결
 
-P1~P7 로컬 구현 및 검증을 완료하고 최종 SHA/PR을 전달한다. 실제 PG 승인·취소·조회, 외부 webhook 수신, 운영 checkout 소비자의 전환 및 혼합 배포 차단은 수행하지 않는다. 따라서 이 변경만으로 D-064 전체 완료를 주장하지 않는다. TASKS·PHASE5·마스터 계획은 주 작업자가 소유한다. docs/06은 13-3만 수정하며 다른 작업자의 E2E 13-1을 건드리지 않는다.
+P1~P8 로컬 구현 및 검증을 완료하고 최종 SHA/PR을 전달한다. 실제 PG 승인·취소·조회, 외부 webhook 수신, 운영 checkout 소비자의 전환 및 혼합 배포 차단은 수행하지 않는다. 따라서 이 변경만으로 D-064 전체 완료를 주장하지 않는다. TASKS·PHASE5·마스터 계획은 주 작업자가 소유한다. docs/06은 13-3만 수정하며 다른 작업자의 E2E 13-1을 건드리지 않는다.
 
 공식 계약: [Toss 코어 API](https://docs.tosspayments.com/reference)의 orderId는 허용 문자로 된 6~64자 문자열이며 결제 요청에서 생성한 값을 저장하고 유지한다. 2026-10-21 직접 확인했다.
 
 
 ## 로컬 검증 결과
 
-집중 6개 클래스 58개, 실제 MySQL 44개를 통과했다. PR #193의 고정 head `6886c19`를 merge한 뒤 controller 28개, 실제 MySQL webhook 10개와 merchant 6개를 다시 통과했다. migration은 세션 임시 테이블의 대표 legacy 행으로 비재작성을 확인했고 전체 application schema는 Flyway 기동으로 검증했다. 실제 PG·운영 전환·전체 CI·최종 독립 검토는 미수행 또는 대기다. 초안 PR은 #193에 의존하며 #193 merge 후 실제 main을 다시 반영한다.
+집중 6개 클래스 58개, 실제 MySQL 44개를 통과했다. PR #193의 고정 head `6886c19`를 merge한 뒤 controller 28개, 실제 MySQL webhook 10개와 merchant 6개를 다시 통과했다. migration은 세션 임시 테이블의 대표 legacy 행으로 비재작성을 확인했고 전체 application schema는 Flyway 기동으로 검증했다. 실제 PG·운영 전환은 미수행이며 최종 head의 전체 CI·독립 검토는 대기다. #193 실제 merge인 main `a7ffa11`을 `aa33234`로 반영했다. 기존 merchant authored patch는 byte-identical이고 이후 product 테스트 진단만 별도 보완했다.
 
 독립 검토의 E2E P1 보완 후 소스 `bb944c3`에서 smoke 59개 및 PG stub 41개(9+32)를 통과했다. 같은 commit에서 정상 Dockerfile로 만든 4개 이미지로 실제 Compose A/E가 통과했다. E는 runner 298.7초로 기존 300초 예산에 근접했고 전체 A~F/음성 대조 및 최종 head 검토는 CI에서 계속 확인한다.
+
+
+기존 product CI 실패는 같은 seed 전체 suite에서 barrier timeout으로 재현했지만 SQL/Java 대기 원인은 확정하지 못했다. 확장 진단의 단독 및 전체 product 234개는 통과했다. 참여자 한 명을 억제한 음성 대조는 기존 30초 기준에서 실패하며 5초 snapshot·원인 출력·cleanup을 검증했고 원본 파일 hash로 복구했다. 이 결과는 merchant 결함을 고쳤다는 증거가 아니며, 원인 분석 잔여는 D-078 관련 후속으로 추적한다. 최종 CI와 독립 검토가 이 잔여의 처분을 판단한다.

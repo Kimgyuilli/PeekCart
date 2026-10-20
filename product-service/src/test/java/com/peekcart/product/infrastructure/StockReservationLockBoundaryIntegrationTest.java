@@ -23,7 +23,12 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
@@ -83,11 +88,17 @@ class StockReservationLockBoundaryIntegrationTest extends AbstractIntegrationTes
 
     /** "읽기 완료 ~ 커밋 전" 구간에 스레드를 모으는 배리어. null 이면 비활성. */
     private volatile CyclicBarrier preCommitBarrier;
+    private final ConcurrentHashMap<Long, String> phases = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedQueue<String> phaseHistory = new ConcurrentLinkedQueue<>();
+    private long startedNanos;
 
     @BeforeEach
     void setUp() {
         cleanDatabase();
         preCommitBarrier = null;
+        phases.clear();
+        phaseHistory.clear();
+        startedNanos = System.nanoTime();
 
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();
@@ -104,10 +115,15 @@ class StockReservationLockBoundaryIntegrationTest extends AbstractIntegrationTes
 
         doAnswer(invocation -> {
             StockReservation saved = invocation.getArgument(0);
+            phase(saved.getOrderId(), "before repository save");
             Object result = invocation.callRealMethod();
+            phase(saved.getOrderId(), "after repository save");
             CyclicBarrier barrier = preCommitBarrier;
             if (barrier != null && saved.getStatus() == ReservationStatus.RESERVED) {
+                phase(saved.getOrderId(), "waiting pre-commit barrier identity=" + System.identityHashCode(barrier)
+                        + "; waiting=" + barrier.getNumberWaiting() + "; broken=" + barrier.isBroken());
                 barrier.await(BARRIER_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                phase(saved.getOrderId(), "passed pre-commit barrier");
             }
             return result;
         }).when(reservationRepository).save(any(StockReservation.class));
@@ -123,11 +139,13 @@ class StockReservationLockBoundaryIntegrationTest extends AbstractIntegrationTes
     @Test
     @DisplayName("동시 예약은 낙관락으로 수렴한다 — 오버셀링 0, 충돌은 재시도 대상")
     void concurrentReservations_convergeByOptimisticLock() throws Exception {
-        preCommitBarrier = new CyclicBarrier(CONCURRENT_ORDERS);
+        preCommitBarrier = new CyclicBarrier(CONCURRENT_ORDERS,
+                () -> phase(-1, "barrier generation completed"));
 
         AtomicInteger succeeded = new AtomicInteger();
         AtomicInteger optimisticConflicts = new AtomicInteger();
         AtomicInteger unclassified = new AtomicInteger();
+        ConcurrentLinkedQueue<String> unexpectedFailures = new ConcurrentLinkedQueue<>();
 
         CountDownLatch done = new CountDownLatch(CONCURRENT_ORDERS);
         ExecutorService executor = Executors.newFixedThreadPool(CONCURRENT_ORDERS);
@@ -135,26 +153,60 @@ class StockReservationLockBoundaryIntegrationTest extends AbstractIntegrationTes
             long orderId = 1000L + i;
             executor.submit(() -> {
                 try {
+                    phase(orderId, "entering consumer");
                     consumer.handleOrderCreated(orderCreatedMessage("evt-" + orderId, orderId, 1));
+                    phase(orderId, "consumer committed");
                     succeeded.incrementAndGet();
                 } catch (Throwable t) {
                     if (isOptimisticLockFailure(t)) {
                         optimisticConflicts.incrementAndGet();
                     } else {
                         unclassified.incrementAndGet();
+                        StringWriter trace = new StringWriter();
+                        t.printStackTrace(new PrintWriter(trace));
+                        unexpectedFailures.add("orderId=" + orderId + ", last=" + phases.get(orderId) + "\n" + trace);
                     }
                 } finally {
                     done.countDown();
                 }
             });
         }
-        assertThat(done.await(BARRIER_TIMEOUT_SECONDS + 30L, TimeUnit.SECONDS)).isTrue();
-        executor.shutdownNow();
+        try {
+            if (!done.await(5, TimeUnit.SECONDS)) {
+                var inspector = new org.springframework.jdbc.core.JdbcTemplate(
+                        new org.springframework.jdbc.datasource.DriverManagerDataSource(
+                                SharedContainers.MYSQL.getJdbcUrl(), "root", SharedContainers.MYSQL.getPassword()));
+                System.out.println("RESERVATION_DIAGNOSTIC history=" + phaseHistory);
+                System.out.println("RESERVATION_DIAGNOSTIC locks=" + inspector.queryForList("""
+                        SELECT r.OBJECT_NAME, r.INDEX_NAME, r.LOCK_TYPE, r.LOCK_MODE,
+                               r.LOCK_DATA, r.THREAD_ID AS requesting_thread,
+                               b.THREAD_ID AS blocking_thread
+                        FROM performance_schema.data_lock_waits w
+                        JOIN performance_schema.data_locks r ON r.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID
+                        JOIN performance_schema.data_locks b ON b.ENGINE_LOCK_ID=w.BLOCKING_ENGINE_LOCK_ID
+                        """));
+                System.out.println("RESERVATION_DIAGNOSTIC transactions=" + inspector.queryForList(
+                        "SELECT trx_id,trx_state,trx_started,trx_wait_started,trx_query FROM information_schema.INNODB_TRX"));
+                for (var thread : java.lang.management.ManagementFactory.getThreadMXBean()
+                        .dumpAllThreads(true, true)) {
+                    if (thread.getThreadName().startsWith("pool-")) {
+                        System.out.println("RESERVATION_DIAGNOSTIC thread=" + thread
+                                + "; fullStack=" + java.util.Arrays.toString(thread.getStackTrace()));
+                    }
+                }
+                assertThat(done.await(BARRIER_TIMEOUT_SECONDS + 25L, TimeUnit.SECONDS))
+                        .as("worker completion; history=%s; unexpected=%s", phaseHistory, unexpectedFailures).isTrue();
+            }
+        } finally {
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS))
+                    .as("worker cleanup; phases=%s", phases).isTrue();
+        }
 
+        assertThat(unclassified.get()).as("분류되지 않은 예외; history=%s; causes=%s", phaseHistory, unexpectedFailures).isZero();
         assertThat(optimisticConflicts.get())
                 .as("동시 커밋 중 하나만 통과하므로 나머지는 충돌로 떨어진다 — 이것이 설계된 동작이다")
                 .isGreaterThanOrEqualTo(1);
-        assertThat(unclassified.get()).as("분류되지 않은 예외").isZero();
         assertThat(succeeded.get() + optimisticConflicts.get()).isEqualTo(CONCURRENT_ORDERS);
 
         EntityManager em = emf.createEntityManager();
@@ -192,6 +244,16 @@ class StockReservationLockBoundaryIntegrationTest extends AbstractIntegrationTes
                 .as("차감 후 복구가 정상 동작 — 락 없이")
                 .isEqualTo(INITIAL_STOCK);
         em.close();
+    }
+
+    private void phase(long orderId, String step) {
+        String observation = "elapsedMs=" + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedNanos)
+                + "; orderId=" + orderId + "; " + step + "; thread=" + Thread.currentThread().getName()
+                + "; txActive=" + TransactionSynchronizationManager.isActualTransactionActive()
+                + "; txReadOnly=" + TransactionSynchronizationManager.isCurrentTransactionReadOnly()
+                + "; txName=" + TransactionSynchronizationManager.getCurrentTransactionName();
+        phases.put(orderId, observation);
+        phaseHistory.add(observation);
     }
 
     private String orderCreatedMessage(String eventId, long orderId, int quantity) {
