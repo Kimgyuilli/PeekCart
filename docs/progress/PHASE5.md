@@ -31,6 +31,12 @@
 
 [최신 PR CI39474405548](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474405548)가 통과한 뒤 정상 병합한 SHA는 `af60cd6d9dceac541b6f457062093df70753f3ce`다. [main CI39476821899](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476821899)는 E2E·gate와 여섯 publish를 포함해 성공했다. 완료 행은 상태 외 본문과 전체 ID 다중집합·유일성을 확인해 이동했다.
 
+### D-090 경보 실행 계약 검사 완료
+
+[PR186](https://github.com/Kimgyuilli/PeekCart/pull/186) 최종 head `789d13c9be36651ec0f243a28c6a55b308a890a6`은 Outbox 경보의 condition/refId, 평가 모델, for, 라벨, isPaused, instant/range 설정을 검사한다. 실제 운영 경보 규칙은 변경하지 않았다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/186#issuecomment-6298523288)는 최신 main 통합 후 작성 patch 동일성을 확인하고, 61개 경보 변이와 정상 대조·gate·matrix·ship 검증을 직접 실행했다.
+
+[PR CI39476990835](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476990835) 통과 후 정상 병합 SHA는 `545e5dc0bf64505f2bdb117f5d5248b85f17310f`다. [main CI39479945969](https://github.com/Kimgyuilli/PeekCart/actions/runs/39479945969)는 모든 검사와 여섯 publish가 성공했다. 상태 외 본문 보존과 전체 ID 다중집합·유일성을 확인해 완료 행을 이동했다.
+
 ## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
 
 ## 최종 부채·소유권·증거 대조
