@@ -72,7 +72,7 @@
 | POST | `/api/v1/orders/{id}/cancel` | 주문 취소 | O |
 | POST | `/api/v1/payments/confirm` | 비동기 결제 승인 접수 (202) | O |
 | GET | `/api/v1/payments/{orderId}` | 결제 내역 조회 | O |
-| POST | `/api/v1/payments/webhook` | Toss 웹훅 수신 | X (서명 검증) |
+| POST | `/api/v1/payments/webhook` | 일반 결제 상태 알림의 제한된 조회 가속 접수 | X (비신뢰 신호, ADR-0041) |
 | GET | `/api/v1/notifications` | 알림 내역 조회 | O |
 
 ---
@@ -133,7 +133,7 @@
 
 - **입력값 검증**: Bean Validation(`@NotBlank`, `@Min`, `@Email` 등) 활용, Controller DTO 레벨에서 유효성 검사
 - **Rate Limiting**: Spring Cloud Gateway에서 API별 요청 제한 (기본: 분당 60회, 로그인 시도: 분당 10회)
-- **웹훅 서명 검증**: Toss Payments 웹훅 수신 시 요청 헤더의 서명을 Secret Key로 HMAC 검증 → 위변조 방지
+- **일반 결제 웹훅**: 16KiB 이하의 `PAYMENT_STATUS_CHANGED` 중첩 `data.paymentKey`와 알려진 status만 접수한다. 알려진 UNRESOLVED 승인에 원장당 한 번의 조회 가속을 허용하며, 중복·미등록·진행 중·종결 건은 아무 상태도 바꾸지 않는다. payload는 결제 증빙이 아니고 확정은 서버 PG 조회가 담당한다(see ADR-0041).
 
 ### 7-6. 로깅 및 분산 트레이싱
 
