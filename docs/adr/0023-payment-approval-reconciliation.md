@@ -3,6 +3,7 @@
 - **Status**: Partially Superseded by [ADR-0034](./0034-approval-reservation-fence.md)
 - **후속 범위**: ADR-0035는 D5의 수동 FAILED 종결을 legacy 원장에 한정한다. 신규 보호 승인은 감사 후 조회 복구를 유지한다.
   - D1/D2/D4/D8의 동기 접수·직접 CLAIMED·즉시 응답 부분은 비동기 접수/재고 보호/dispatcher 계약으로 대체. 조회 전용 reconciliation은 유지.
+- **후속 범위**: [ADR-0041](./0041-untrusted-payment-webhook-hints.md)은 C4/D7의 일반 결제 HMAC 가정과 수신 로그 정책을 제한된 비신뢰 힌트로 대체한다. PG 조회만으로 확정하는 규칙은 유지한다.
 - **Date**: 2026-09-14
 - **Deciders**: 프로젝트 오너
 - **관련 Phase**: Phase 4 (MSA 분리) — 개발 부채 D-020
