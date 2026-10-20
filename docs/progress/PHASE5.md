@@ -5,6 +5,19 @@
 
 ---
 
+## 무료 범위 부채 병렬 실행 재개 (2026-10-21)
+
+이번 사용자 승인은 아래 2026-10-17 기록의 D-064·D-065·D-078 전체 제외와 D-075 분석 보류를 대체한다. 세 항목의 무료 로컬 구현·검증을 진행하고 실제 PG·운영 표본·GKE 증거는 별도로 남긴다. D-075는 무료 병목 분석과 정책에 독립적인 수정이 승인됐으며, 목표 TPS·최대 backlog·초과 대응 정책은 아직 결정되지 않았다. D-084 영구404의 신뢰할 PG 증빙 원천·형식도 미확보다.
+
+현재 범위·담당·검증 SHA·대기 조건은 [실행 계획](../plans/task-debt-20261021.md)에서 관리한다. 구현 담당자가 자기 worktree에서 작업하고, 구현하지 않은 리뷰 에이전트가 정확한 head를 검토한다. root가 순서를 승인한 뒤 담당자가 보호 규칙을 지켜 직렬 병합하며, 다음 병합 전 실제 main CI와 여섯 publish 결과를 확인한다. 운영 배포는 포함하지 않는다.
+
+### D-085 릴리스 gate 의미 검증 완료
+
+[PR185](https://github.com/Kimgyuilli/PeekCart/pull/185)의 head `d588914b30c89e02ecc70438cc210ced9f239f01`은 gate 조건의 실패 전파 의미와 step `continue-on-error` 우회를 검증한다. 독립 리뷰는 [대상 SHA와 실행 결과](https://github.com/Kimgyuilli/PeekCart/pull/185#issuecomment-6297405146)를 기록했으며, 55개 결함 변이·6개 정상 대조·6개 parser 검증과 원본이 놓치는 결함의 재현 근거를 대조했다. [PR CI39469123095](https://github.com/Kimgyuilli/PeekCart/actions/runs/39469123095)가 성공했다.
+
+정상 병합 SHA는 `0e40b6acd2ffc3266fdca2caa1cb67131da8be34`이며, [main CI39471537474](https://github.com/Kimgyuilli/PeekCart/actions/runs/39471537474)는 E2E·gate 및 여섯 publish를 포함해 성공했다. 완료 행은 본문을 보존해 TASKS-done으로 이동했다. 이 완료 기록 자체의 PR 전달·검증은 실행 계획의 기록 브랜치에서 계속 진행한다.
+
+
 
 ## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
 
