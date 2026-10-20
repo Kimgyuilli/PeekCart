@@ -1,0 +1,4 @@
+--- a/product-service/src/test/java/com/peekcart/product/infrastructure/ProductCacheFallbackIntegrationTest.java
++++ b/product-service/src/test/java/com/peekcart/product/infrastructure/ProductCacheFallbackIntegrationTest.java
+@@ -84,0 +85 @@
++        "spring.data.redis.timeout=1s",
