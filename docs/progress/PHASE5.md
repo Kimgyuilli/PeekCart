@@ -196,7 +196,9 @@ SQL 은 체크섬이 주석 줄까지 포함해 제외했다(flyway-core 12.4.0 
 
 2026-10-21 D-096 사실 정정: #168 직전 `7e83ee3`의 32개 공유 후보 중 31개만 네 벌 byte 동일했다.
 `OutboxEventStatus`는 `BACKFILL` 유무에 따라 order·product와 payment·notification 두 집합이다. 원본 소스의
-서비스별 `global` 파일 수는 35/35/35/34이며, `DeadLetterConsumer`·`DeadLetterQuarantineConsumer`·
+outbox·idempotency·deadletter·`ShedLockConfig` 조사 범위의 서비스별 파일 수는 35/35/35/34다. 이는 전체 `global` Java
+파일 수가 아니다. 전체 수는 35/35/37/34이며 product에만 `ProductCacheConfig`와 `ResilientCacheErrorHandler`가 추가된다.
+`DeadLetterConsumer`·`DeadLetterQuarantineConsumer`·
 `LedgerOwnerConfig`는 서비스 고유다(notification에는 quarantine consumer가 없다). BACKFILL migration은
 order V5와 product V4다. 당시 Java parity lint는 deadletter 16개, outbox 8개, enum 두 집합을 검사했고,
 idempotency 6개와 `ShedLockConfig`까지 byte 동일성을 강제하지 않았다. 상세 근거는 D-049 계획 addendum과
