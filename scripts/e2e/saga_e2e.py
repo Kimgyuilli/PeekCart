@@ -172,6 +172,13 @@ def wait_for(desc, fn, deadline=None, stage=None):
 
 # ----------------------------------------------------------------- readiness
 
+def assert_migration_versions(service, applied):
+    expected = sorted(EXPECTED_MIGRATIONS[service])
+    if sorted(applied) != expected:
+        raise AssertionError("%s: migration 버전 집합 불일치 — 적용 %s / 기대 %s"
+                             % (service, sorted(applied), expected))
+
+
 def check_readiness(skip_health=False, group_deadline=180):
     from kafka import KafkaAdminClient
     from kafka.errors import KafkaError
@@ -200,10 +207,7 @@ def check_readiness(skip_health=False, group_deadline=180):
         # 시나리오가 그 스키마를 우연히 안 건드리면 끝까지 드러나지 않는다.
         # 개수 비교도 부족하다 — 버전 집합을 정확히 대조한다.
         applied = sorted(str(r["version"]) for r in rows if r["version"] is not None)
-        expected = sorted(EXPECTED_MIGRATIONS[svc])
-        if applied != expected:
-            raise AssertionError("%s: migration 버전 집합 불일치 — 적용 %s / 기대 %s"
-                                 % (svc, applied, expected))
+        assert_migration_versions(svc, applied)
         flyway[svc] = applied
     result["flyway_applied"] = flyway
 

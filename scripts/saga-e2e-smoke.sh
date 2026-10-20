@@ -53,15 +53,6 @@ def check(name, requested, want_ok):
 
 
 print("saga-e2e-smoke 순서 계약 self-test")
-from pathlib import Path
-for service in m.SERVICES:
-    versions = sorted(p.name.split("__", 1)[0][1:] for p in
-                      Path(service + "-service/src/main/resources/db/migration").glob("V*__*.sql"))
-    if versions != sorted(m.EXPECTED_MIGRATIONS[service]):
-        print("  FAIL [migration manifest " + service + "]", versions)
-        fails += 1
-    else:
-        print("  ok   [migration manifest " + service + "]")
 check("정본 전체 순서", m.SCENARIO_ORDER, True)
 check("부분집합(순서 유지)", ["a", "c"], True)
 check("빈 목록", [], True)
@@ -130,6 +121,18 @@ def check_assertion(name, fn, should_pass):
         fails += 1
     else:
         print("  ok   [%s]" % name)
+
+# 실제 SQL 파일을 독립 기대값으로 사용하고, 네 서비스 모두 누락/추가/대체를 거절한다.
+from pathlib import Path
+for service in m.SERVICES:
+    versions = sorted(p.name.split("__", 1)[0][1:] for p in
+                      Path(service + "-service/src/main/resources/db/migration").glob("V*__*.sql"))
+    check_assertion("migration manifest " + service,
+                    lambda: m.assert_migration_versions(service, versions), True)
+    for label, changed in [("missing", versions[:-1]), ("extra", versions + ["999999"]),
+                           ("replaced", versions[:-1] + ["999999"])]:
+        check_assertion("migration " + service + " " + label,
+                        lambda: m.assert_migration_versions(service, changed), False)
 
 calls = [{"seq": 1, "method": "POST", "idempotencyKey": "stable"},
          {"seq": 2, "method": "GET", "idempotencyKey": None}]
