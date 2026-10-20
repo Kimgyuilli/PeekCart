@@ -76,3 +76,13 @@
 - root는 제한된 진단을 최종 테스트에 유지하고 최초 실패·미확정 원인·이후 통과를 구분하도록 승인했다. product 원인 분석 잔여는 D-078 관련 후속이며 merchant 제품 결함 해결로 표시하지 않는다. 새로운 head의 전체 CI와 독립 검토는 대기다.
 
 - 최종 product 진단 소스는 `c27602b` test commit에 분리했다. merchant 기존 코드·E2E와 main 통합은 `aa33234`이며, 진단 소스는 위 234개 통과 및 음성 대조 후 원복 hash와 같다. ship preflight, grade L, consistency, migration/container lint, PR writing 및 diff 검사를 통과했다. PR #196에 push하여 최종 전체 CI 및 순차 독립 검토를 요청한다. merge는 승인되지 않았으며 draft를 유지한다.
+
+
+## 2026-10-21 독립 검토 P2: 진단 연결의 유한 대기
+
+- `3bec8ae` 독립 검토에서 새 inspector의 DB 연결/읽기/SQL 실행에 timeout이 없고, 진단 예외가 worker 원인 단언을 가릴 수 있다는 P2를 확인했다. 진단 datasource에 Connector/J connectTimeout/socketTimeout 각 2000ms와 JDBC queryTimeout 1초를 명시하고 DB·스레드 관찰 오류를 각각 보존하는 best-effort 경로로 바꿨다. worker 완료는 시작 시 고정한 60초 deadline의 남은 시간만 기다리며 원래 30초 barrier·낙관락/재고 기준은 유지한다.
+- 집중 4개는 세션 22305, 37초 exit 0으로 통과했다. 실제 MySQL `SELECT SLEEP(10)`은 QueryTimeoutException으로 종료했고 테스트 1.363초였다. 로컬 test 소유 ServerSocket이 TCP 연결을 받고 MySQL handshake를 보내지 않는 대조는 SocketTimeoutException으로 종료했고 2.049초였다. connectTimeout은 설정값을 검사했으며 실제 TCP 연결 지연을 실측했다고 주장하지 않는다. XML `/private/tmp/d064-product-bounded-diagnostic.xml` 보존.
+- worker 1004 불참과 진단 SQL의 존재하지 않는 테이블을 함께 임시 주입했다. 세션 28546, 1분3초 exit 1, test 30.576초로 예상대로 실패했다. 실제 BadSqlGrammar 진단 오류를 기록한 뒤 ThreadMXBean 관찰과 원래 NEGATIVE_CONTROL/Timeout/BrokenBarrier 및 worker 오류 단언에 도달했다. XML `/private/tmp/d064-product-bounded-negative.xml`, snapshot `/private/tmp/d064-product-bounded-negative-snapshot.txt` 보존. 이 대조도 최초 비주입 실패의 원인 설명은 아니다.
+- 주입을 제거한 파일 hash `083784f244e6bdb7c7348a7be420d7f61c6be6aa3928fd590e51ea698c4ad19c`를 확인한 뒤 원 seed 전체 product를 실행했다. 세션 23687, 1분22초 exit 0, 실제 236개/실패 0/오류 0/skip 0이었다(`/private/tmp/d064-product-bounded-full.log`, 해당 클래스 XML `/private/tmp/d064-product-bounded-full.xml`). Ryuk 정리 뒤 기존 momens 3개만 확인하고 heavy slot을 반환했다.
+- 이 소스를 test commit `aef4201`에 기록한 뒤 실제 #198 main `ec677b376ff69b1e77c43abf4a073722a58c786f`를 정상 merge했다(`dc30479`). 전체 authored diff `a7ffa11..aef4201`과 `ec677b..dc30479`는 byte-identical, SHA256 `54b1c0ca2f7d53775384a71211c7bd4679eea7cf773c4f9cea4292b2fa76ae14`다. test 파일 hash도 위와 같다. #198의 별도 cache fallback test/doc 변경은 최종 전체 CI에서 통합 검증하며, 236개 로컬 결과는 이 merge 전 증거다.
+- 최초 timeout 원인은 여전히 미확정이고 D-078 관련 잔여를 유지한다. P2 보완과 main 통합을 포함한 최종 head 독립 재검토·전체 CI가 필요하며 merge는 승인되지 않았다.

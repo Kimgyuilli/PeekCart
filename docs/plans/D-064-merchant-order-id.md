@@ -70,3 +70,6 @@ P1~P8 로컬 구현 및 검증을 완료하고 최종 SHA/PR을 전달한다. �
 
 
 기존 product CI 실패는 같은 seed 전체 suite에서 barrier timeout으로 재현했지만 SQL/Java 대기 원인은 확정하지 못했다. 확장 진단의 단독 및 전체 product 234개는 통과했다. 참여자 한 명을 억제한 음성 대조는 기존 30초 기준에서 실패하며 5초 snapshot·원인 출력·cleanup을 검증했고 원본 파일 hash로 복구했다. 이 결과는 merchant 결함을 고쳤다는 증거가 아니며, 원인 분석 잔여는 D-078 관련 후속으로 추적한다. 최종 CI와 독립 검토가 이 잔여의 처분을 판단한다.
+
+
+독립 검토 P2에 따라 진단 DB 연결·읽기·SQL 실행도 유한 timeout으로 바꾸고 관찰 오류가 worker 판정을 가리지 않도록 했다. 실제 무응답 소켓·느린 SQL을 포함한 4개 집중 검사 및 진단 SQL 실패/참여자 누락 음성 대조를 검증했다. 원 seed 전체 product는 236개 통과했다. 이후 실제 main `ec677b3`을 `dc30479`로 통합했고 전체 authored patch와 해당 test 파일의 byte-identical을 확인했다. 최종 CI·재검토는 대기이며 최초 비주입 timeout 원인 해소를 주장하지 않는다.
