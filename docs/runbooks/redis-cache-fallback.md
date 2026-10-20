@@ -54,6 +54,19 @@ sum by (cache, result) (rate(cache_gets_total[5m]))
 **상세 조회는 캐시를 둘 탄다.** 무응답 Redis 구간에서 상세의 타임아웃 예산은 목록의 2배
 (4×500ms = 2s)다 — 상세만 유독 느리다는 신고는 이 구조 때문일 수 있다(ADR-0026 Consequences).
 
+### 유한 조회 상한의 실패 해석
+
+`ProductCacheFallbackIntegrationTest` V3의 3500ms bound는 전체 상세 조회의 wall-clock 상한이다.
+실패가 timeout 설정 변경만을 뜻하지 않는다. 테스트가 함께 남기는 `elapsed`, Lettuce client의
+`commandTimeout`, `product`/`productStock` get·put fallback 증가분을 먼저 확인한다.
+
+1. `commandTimeout`을 base의 500ms 및 실제 배포 설정과 대조한다. 설정값은 client 구성의 관측이며 각 연산이 그 시간을 전부 소비했다는 증거는 아니다.
+2. 네 경로의 fallback 증가분을 확인한다. 이는 경로별 실패 처리 횟수이며 예외 원인이나 지연 기여 시간을 분해하지 않는다.
+3. timeout이 그대로여도 DB 조회 지연·JVM 정지·테스트 runner 경합·기타 측정 구간 지연으로 같은 상한이 깨질 수 있다. 관련 로그/메트릭을 함께 본다.
+
+인위 지연 probe와 timeout 변경 probe는 원인이 다른 두 실패가 같은 bound를 깨뜨릴 수 있음을 확인한다.
+실제 부하 전체를 재현한 결과나 원인을 자동 확정하는 진단으로 해석하지 않는다. 실패를 없애려고 bound만 늘리지 않는다.
+
 ### 2.1 자동 alert와 보조 수동 감시
 
 `k8s/monitoring/shared/grafana-alerts.yml`의 `peekcart-cache-fallback-get`은 get rate가
@@ -79,7 +92,7 @@ put은 아래 수동 감시를 유지합니다. 실제 series 기반 발화/해�
 
 1. Redis 파드/컨테이너 상태 확인 → 재기동
 2. 네트워크 경로 확인 — **연결 거부**(포트 닫힘)와 **무응답**(연결은 되는데 응답 없음)은 다른 문제다.
-   무응답은 `spring.data.redis.timeout: 500ms` 로 유계화돼 있어 요청당 최대 ~1s(get+put) 지연으로 끝난다
+   `spring.data.redis.timeout: 500ms`는 각 Redis 명령의 대기 예산이다. 상세의 두 캐시 get·put 4회 예산은 2s이며 DB/JVM 등 전체 요청의 다른 지연은 별도다. 위 유한 조회 상한의 실패 해석을 함께 따른다
 3. 복구되면 `cache_gets_total` 의 hit 이 다시 오르는지 확인
 4. 그 다음 **§4 로 간다** — 복구했다고 끝이 아니다
 
