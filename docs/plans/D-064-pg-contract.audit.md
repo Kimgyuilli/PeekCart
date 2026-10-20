@@ -19,3 +19,11 @@
 - 테스트 종료 후 `docker ps --filter label=org.testcontainers=true` 결과 0개. 다른 컨테이너를 중지하지 않았다. 실행 슬롯을 주 작업자에게 반환했다.
 - integration-test-container lint 및 self-test 56/56, migration-grant lint, diff check 통과. 전체 JVM/필수 CI와 최종 커밋 독립 검토는 대기 중이다.
 - 새 파일까지 포함한 최종 payment-service 소스/테스트/설정 snapshot SHA256: `b11f43de343c3f87059a8193c717da5f81cdb1f2565d9471e380c94363182dd5`. focused 테스트 이후 production 코드 변경은 없고 rollback 주입만 최종 통합 테스트 전에 수정했다.
+
+## 2026-10-21 /ship 실행
+
+- 초안 PR: https://github.com/Kimgyuilli/PeekCart/pull/193 (branch `debt/d064-pg-contract`).
+- main `be535c5`를 merge commit `aad5a2b`로 반영했다. main 변경은 harness이며 위에서 검증한 payment-service 파일 변경은 없다.
+- 코드 `02233ca`, 테스트 `5174e78`, 설정 `38ce748`, ADR `d86d375`, 문서 `e16224f`로 분리했다. 각 명시적 staged category check와 최종 ship preflight, grade L, consistency precheck, commit/PR title/body writing lint, diff check를 통과했다.
+- 완료 문서: 본 계획·감사, ADR-0041과 index, 기존 ADR-0023의 적용 범위 안내, 요구사항과 13-3 결제 테스트 시나리오를 갱신했다. 공유 TASKS·진행 문서·마스터 계획은 주 작업자가 별도로 관리하며 본 PR에서 변경하지 않았다.
+- 별도 Codex 리뷰 미호출. 전체 필수 GitHub Actions와 최종 커밋 독립 검토는 대기 중이다. 실제 PG·외부 webhook 수신 미검증 및 후속 merchant-order ID 계약 때문에 D-064 전체는 부분 완료로 유지한다.
