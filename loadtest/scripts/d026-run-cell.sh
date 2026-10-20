@@ -113,16 +113,25 @@ fi
 
 # ── 4) counter 사전 스냅샷 (절대값 아니라 **차분**을 쓴다 — 지적 #5) ──────────
 prom() { kubectl -n "$NS" exec "$POD" -- curl -s localhost:8080/actuator/prometheus 2>/dev/null; }
-# 캐시 **이름별**로 나눈다. 합산하면 products(상품) 와 productStock(재고) 가 섞여
+# 캐시 **이름별**로 나눈다. product(상세)·products(목록)·productStock(재고)를 합산하면
 # D-026 이 만든 재고 캐시의 miss 율을 못 본다 — 이 세션이 물어보는 바로 그 숫자다.
-cachegets() { prom | grep '^cache_gets_total' | grep "name=\"$2\"" | grep "result=\"$1\"" \
-                | awk '{s+=$NF} END{print s+0}'; }
+cachegets() {
+  local snapshot
+  snapshot=$(prom) || { printf 'unavailable\n'; return; }
+  printf '%s\n' "$snapshot" | awk -v name="$2" -v result="$1" '
+    /^cache_gets_total[{]/ && $0 ~ ("[{,]name=\"" name "\"[,}]") && $0 ~ ("[{,]result=\"" result "\"[,}]") {
+      n++
+      if ($NF !~ /^[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$/ || $NF + 0 != int($NF + 0)) bad=1
+      s+=$NF
+    }
+    END { if (!n || bad) print "unavailable"; else printf "%.0f\n", s }'
+}
 throttled() { kubectl -n "$NS" exec "$1" -- cat /sys/fs/cgroup/cpu.stat 2>/dev/null \
                 | awk '/throttled_usec/{print $2}'; }
 usage_usec() { kubectl -n "$NS" exec "$1" -- cat /sys/fs/cgroup/cpu.stat 2>/dev/null \
                 | awk '/^usage_usec/{print $2}'; }
 
-for C in products productStock; do
+for C in product products productStock; do
   meta "hit_before_${C}"  "$(cachegets hit  "$C")"
   meta "miss_before_${C}" "$(cachegets miss "$C")"
 done
@@ -142,7 +151,7 @@ gcloud compute scp "$LOADGEN:/tmp/${CELL}.json" "$OUTDIR/${CELL}.json" \
   --zone "$ZONE" --tunnel-through-iap --quiet >/dev/null 2>&1
 
 # ── 6) counter 사후 스냅샷 ────────────────────────────────────────────────────
-for C in products productStock; do
+for C in product products productStock; do
   meta "hit_after_${C}"  "$(cachegets hit  "$C")"
   meta "miss_after_${C}" "$(cachegets miss "$C")"
 done
