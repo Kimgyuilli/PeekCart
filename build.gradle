@@ -97,53 +97,69 @@ tasks.register('assertNoServiceProjectDeps') {
 }
 
 // ===== 중복 FQCN / JwtProvider 잔존 검출 (ADR-0014) =====
-// 부팅 가능한 앱(root, notification-service)의 classpath 구성 모듈에서 com/peekcart/global/** 동일 FQCN 이
-// 두 모듈에 중복 존재하면(classpath 우선순위로 sign/verify 오로딩 위험) 빌드 실패. JwtProvider 잔존도 금지.
-// (idempotency 복제는 root↔notification 이 서로 다른 앱이라 같은 classpath 에 공존하지 않음 → 위반 아님)
+// 활성 bootJar 앱의 main 출력과 실제 runtimeClasspath 에서 선택된 프로젝트 artifact만 검사한다.
+// 같은 앱의 global 동일 FQCN 이 두 모듈에 있으면 실패한다. JwtProvider 잔존도 금지.
+// 외부 jar 와 global 밖 패키지는 검사 대상이 아니다.
 tasks.register('assertNoDuplicateGlobalFqcn') {
 	group = 'verification'
-	description = '앱 classpath 내 com/peekcart/global/** 중복 FQCN + JwtProvider 잔존 검출 (게이트 i).'
-	// 동적 구성 — *-service 모듈을 자동 포함해 새 서비스 모듈이 가드에서 누락되지 않게 한다.
-	def commonDeps = [':common', ':peekcart-common-auth', ':peekcart-common-observability', ':peekcart-common-messaging']
-	dependsOn(([':classes'] + commonDeps.collect { "${it}:classes" }))
-	dependsOn { subprojects.findAll { it.name.endsWith('-service') }.collect { "${it.path}:classes" } }
+	description = '앱 runtime 프로젝트의 com/peekcart/global/** 중복 FQCN + JwtProvider 잔존 검출 (게이트 i).'
+	def apps = {
+		rootProject.subprojects.findAll { it.tasks.findByName('bootJar')?.enabled }
+	}
+	def projectArtifacts = { app ->
+		app.configurations.runtimeClasspath.incoming.artifactView {
+			componentFilter { it instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier }
+		}.artifacts
+	}
+	// artifactFiles는 선택된 variant의 producer task도 포함하므로 검사 전에 내부 jar를 생성한다.
+	dependsOn { apps().collect { app -> [app.tasks.named('classes'), projectArtifacts(app).artifactFiles] } }
+
 	doLast {
-		def apps = ['root-app': [':'] + commonDeps]
-		subprojects.findAll { it.name.endsWith('-service') }.each { svc ->
-			apps[svc.name] = [svc.path] + commonDeps
-		}
+		def appProjects = apps()
 		def violations = []
-		apps.each { appName, projectPaths ->
+		appProjects.each { app ->
 			Map<String, List<String>> fqcnToModules = [:].withDefault { [] }
-			projectPaths.each { pp ->
-				def proj = project(pp)
-				proj.sourceSets.main.output.classesDirs.each { dir ->
-					def base = new File(dir, 'com/peekcart/global')
+			def record = { String path, String module ->
+				if (path.startsWith('com/peekcart/global/') && path.endsWith('.class')) {
+					def fqcn = path.replace('/', '.').replaceAll(/\.class$/, '')
+					fqcnToModules[fqcn] << module
+				}
+			}
+			def locations = app.sourceSets.main.output.classesDirs.collect { [file: it, module: app.path] }
+			locations.addAll(projectArtifacts(app).artifacts.collect {
+				[file: it.file, module: it.id.componentIdentifier.projectPath]
+			})
+			locations.each { location ->
+				def artifact = location.file
+				if (artifact.isDirectory()) {
+					def base = new File(artifact, 'com/peekcart/global')
 					if (base.exists()) {
 						base.eachFileRecurse { f ->
 							if (f.name.endsWith('.class')) {
-								def rel = dir.toPath().relativize(f.toPath()).toString()
-								def fqcn = rel.replace(File.separator, '.').replaceAll(/\.class$/, '')
-								fqcnToModules[fqcn] << proj.path
+								record(artifact.toPath().relativize(f.toPath()).toString().replace(File.separator, '/'), location.module)
 							}
 						}
+					}
+				} else if (artifact.isFile()) {
+					new java.util.zip.ZipFile(artifact).withCloseable { jar ->
+						jar.entries().each { entry -> record(entry.name, location.module) }
 					}
 				}
 			}
 			fqcnToModules.keySet().findAll { it.contains('JwtProvider') }.each {
-				violations << "[${appName}] 금지된 JwtProvider 잔존: ${it}".toString()
+				violations << "[${app.name}] 금지된 JwtProvider 잔존: ${it}".toString()
 			}
 			fqcnToModules.each { fqcn, modules ->
 				def distinct = modules.unique()
 				if (distinct.size() > 1) {
-					violations << "[${appName}] 중복 FQCN ${fqcn} in ${distinct}".toString()
+					violations << "[${app.name}] 중복 FQCN ${fqcn} in ${distinct}".toString()
 				}
 			}
 		}
 		if (!violations.isEmpty()) {
 			throw new GradleException("게이트 i 위반 (중복 FQCN / JwtProvider 잔존):\n  " + violations.join('\n  '))
 		}
-		println "assertNoDuplicateGlobalFqcn: OK (${apps.keySet().join('·')} classpath 중복 FQCN/JwtProvider 없음)"
+		println "assertNoDuplicateGlobalFqcn: OK (${appProjects*.name.join('·')} runtime 프로젝트 global 중복 FQCN/JwtProvider 없음)"
 	}
 }
 
