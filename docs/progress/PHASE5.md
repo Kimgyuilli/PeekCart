@@ -19,6 +19,12 @@
 
 
 
+### D-105 ship 재개 조회 실패 구분 완료
+
+[PR184](https://github.com/Kimgyuilli/PeekCart/pull/184)의 최종 head `a5d483561648adac67610e9c886c4a636f4c3b50`은 원격·로컬 조회 실패와 정상적인 부재를 구분해 `unknown`/실패를 반환한다. 독립 [최종 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/184#issuecomment-6297728123)는 변경 없는 작성 patch를 확인하고 18개 복구 검사와 gate 반례를 직접 재실행했다. 기존 62개 Bats는 변경 없는 코드의 이전 검증 근거이며 새로 재실행했다고 주장하지 않는다. [최신 PR CI39471735530](https://github.com/Kimgyuilli/PeekCart/actions/runs/39471735530)는 성공했다.
+
+정상 병합 SHA `be535c57ced11acfcbe9a24a349ddb6ad2055d8a`의 [main CI39474188286](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474188286)는 모든 검사와 여섯 publish가 성공했다. TASKS 완료 행 이동은 상태 외 본문 보존, 전체 ID 다중집합 동일성 및 유일성을 확인했다.
+
 ## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
 
 ## 최종 부채·소유권·증거 대조
