@@ -13,6 +13,8 @@ public interface PaymentJpaRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findByOrderId(Long orderId);
 
+    Optional<Payment> findByPaymentKey(String paymentKey);
+
     /**
      * replay 적격성 판정용 <b>비관적 잠금</b> 조회.
      *
