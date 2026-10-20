@@ -40,6 +40,8 @@ PLAN-BLINDSPOTS B1/B4/B7/B10/B12를 확인했다. beginApproval/insertWaitingIfA
 - [x] P5. 실제 MySQL에서 migration legacy 유지, 신규/반복/동시 prepare, 중복 승인 및 불일치 rollback을 검증한다. HTTP fixture로 동일 ID 전달과 mismatched 응답의 비종결을 검증한다.
 - [x] P6. API·데이터·결제 테스트 문서와 감사 기록을 갱신하고 lint·분류 커밋·초안 PR 본문을 준비한다. 전체 CI와 최종 커밋 독립 검토 후에만 주 작업자가 merge한다.
 
+- [ ] P7. 저장소 E2E A/E의 준비·승인 호출과 PG stub의 영속 identity 응답을 새 계약으로 전환하고 양음 self-test 및 실제 E2E를 검증한다.
+
 ## 4. 검증 방법
 
 | 작업 | 실패 주입과 판정 |

@@ -36,3 +36,9 @@
 - 최종 검증된 소스/테스트는 `7c31e6d`의 내용이다. 이후 커밋은 계획·감사 문서뿐이다. 테스트 보완 전 코드는 `87ed489`, 테스트는 `b000065`, 계약 문서는 `8e6bd93`으로 분리했다.
 - ship preflight, grade L, consistency precheck, 명시적 staged category, commit/PR title/body writing lint 및 diff check 통과. 별도 Codex 리뷰 미호출. 전체 필수 CI와 세션 독립 검토는 대기다.
 - 완료 문서는 ADR-0042/index 및 03/05/06의 승인받은 영역과 본 계획·감사에 반영했다. TASKS·진행 문서·마스터 계획은 주 작업자가 소유한다. 실제 PG·외부 webhook 수신·운영 checkout 전환은 미검증이며 D-064는 부분 완료다.
+
+## 2026-10-21 독립 검토 P1: E2E 소비자 누락
+
+- 독립 검토자가 #196 `651044a`에서 저장소 E2E 승인 3곳이 prepare/pgOrderId 없이 새 결제를 접수하는 오류를 확인했다. PG stub 성공 응답에는 totalAmount가 없고 fence 조회에는 identity가 없어 신규 검증에서 종결할 수 없었다. 기존 로컬 JVM 검증을 전체 E2E 통과로 확대 해석하지 않는다.
+- 범위를 P7로 확장했다. A/E의 모든 실제 승인 호출은 소유자 prepare 응답을 거쳐 동일 PG ID를 전달하며, stub 호출 원장의 ID/금액까지 대조한다. stub은 최초 confirm의 identity를 저장하고 재요청 불일치·타입/길이 오류를 거절한다. 승인 없는 기존 합성 환불 script 의미는 유지한다.
+- prepare helper의 양음 대조 10개와 PG stub의 기존 chunked 9개 및 확장 HTTP 계약 32개를 통과했다. 기존 CI stub.py --self-test 진입점에서도 확장 검증을 호출한다. 실제 E2E 및 수정 head 독립 재검토는 아직 대기다.
