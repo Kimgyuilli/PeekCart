@@ -40,6 +40,14 @@ public class PaymentApproval {
     @Column(name = "order_id", nullable = false, unique = true)
     private Long orderId;
 
+    /** 접수 시 고정한 PG 주문 식별자. 기존 NULL 원장은 숫자 계약을 유지한다. */
+    @Column(name = "pg_order_id", length = 64, updatable = false)
+    private String pgOrderId;
+
+    public String effectivePgOrderId() {
+        return pgOrderId != null ? pgOrderId : orderId.toString();
+    }
+
     @Column(name = "payment_key", nullable = false, length = 255)
     private String paymentKey;
 

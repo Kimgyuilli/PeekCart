@@ -23,7 +23,7 @@ public interface PaymentApprovalRepository {
      *
      * @return 1 = 이번 호출이 fence 를 획득 · 0 = 이미 존재(중복 승인 시도)
      */
-    int insertWaitingIfAbsent(Long orderId, String paymentKey, Long userId, long amount, LocalDateTime now, LocalDateTime deadline);
+    int insertWaitingIfAbsent(Long orderId, String paymentKey, String pgOrderId, Long userId, long amount, LocalDateTime now, LocalDateTime deadline);
 
     List<Long> findDispatchCandidates(LocalDateTime now, int limit);
 

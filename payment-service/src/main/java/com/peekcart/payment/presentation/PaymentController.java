@@ -1,5 +1,7 @@
 package com.peekcart.payment.presentation;
 
+import com.peekcart.payment.application.dto.PaymentCheckoutDto;
+
 import com.peekcart.global.auth.CurrentUser;
 import com.peekcart.global.auth.LoginUser;
 import com.peekcart.global.response.ApiResponse;
@@ -35,6 +37,14 @@ public class PaymentController {
     private final WebhookService webhookService;
     private final ObjectMapper objectMapper;
 
+    /** 클라이언트는 반환된 pgOrderId를 PG 인증과 confirm 양쪽에 그대로 사용한다. */
+    @Operation(summary = "결제 준비", description = "소유자의 신규 결제에 저장된 PG 주문 식별자와 금액을 조회한다.")
+    @PostMapping("/{orderId}/prepare")
+    public ResponseEntity<ApiResponse<PaymentCheckoutDto>> preparePayment(
+            @CurrentUser LoginUser loginUser, @PathVariable Long orderId) {
+        return ResponseEntity.ok(ApiResponse.of(paymentQueryService.preparePayment(loginUser.userId(), orderId)));
+    }
+
     /** 승인 접수(202). 결과는 GET /api/v1/payments/{orderId}로 조회한다 (ADR-0034). */
     @Operation(summary = "결제 승인 접수", description = "재고 보호 확인 후 비동기 승인한다. 결과는 결제 조회로 확인한다.")
     @PostMapping("/confirm")
@@ -43,7 +53,7 @@ public class PaymentController {
             @Valid @RequestBody ConfirmPaymentRequest request
     ) {
         ConfirmPaymentCommand command = new ConfirmPaymentCommand(
-                request.paymentKey(), request.orderId(), request.amount());
+                request.paymentKey(), request.orderId(), request.amount(), request.pgOrderId());
         PaymentDetailDto result = paymentCommandService.confirmPayment(loginUser.userId(), command);
         return ResponseEntity.accepted()
                 .location(URI.create("/api/v1/payments/" + result.orderId()))
