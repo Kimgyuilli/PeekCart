@@ -46,7 +46,7 @@ class ApprovalFenceRecoveryIntegrationTest extends AbstractIntegrationTest {
 
     private com.peekcart.payment.domain.model.PaymentApproval request() {
         return service.beginApproval(PaymentFixture.DEFAULT_USER_ID, ORDER,
-                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_AMOUNT);
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
     }
 
     @Test
@@ -102,8 +102,8 @@ class ApprovalFenceRecoveryIntegrationTest extends AbstractIntegrationTest {
         var builder = org.springframework.web.client.RestClient.builder();
         var server = org.springframework.test.web.client.MockRestServiceServer.bindTo(builder).build();
         String done = "{\"paymentKey\":\"" + pending.getPaymentKey()
-                + "\",\"orderId\":\"" + ORDER + "\",\"status\":\"DONE\",\"method\":\"CARD\","
-                + "\"approvedAt\":\"2026-10-17T00:00:00+09:00\"}";
+                + "\",\"orderId\":\"" + PaymentFixture.DEFAULT_PG_ORDER_ID + "\",\"status\":\"DONE\",\"method\":\"CARD\","
+                + "\"totalAmount\":" + PaymentFixture.DEFAULT_AMOUNT + ",\"approvedAt\":\"2026-10-17T00:00:00+09:00\"}";
         server.expect(org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo("http://pg/payments/confirm"))
                 .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.method(org.springframework.http.HttpMethod.POST))
                 .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess(done, org.springframework.http.MediaType.APPLICATION_JSON));
@@ -111,7 +111,7 @@ class ApprovalFenceRecoveryIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.method(org.springframework.http.HttpMethod.GET))
                 .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess(done, org.springframework.http.MediaType.APPLICATION_JSON));
         var pg = new ApprovalExecutor(new com.peekcart.payment.infrastructure.toss.TossPaymentClient(
-                "test", "http://pg", builder, new com.fasterxml.jackson.databind.ObjectMapper()));
+                "test", "http://pg", builder, new com.fasterxml.jackson.databind.ObjectMapper()), new com.fasterxml.jackson.databind.ObjectMapper());
         assertThat(pg.execute(claimed).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.SUCCEEDED);
         // Process disappears here: no finalize, DB still CLAIMED, PG has accepted payment.
         assertThat(payments.findByOrderId(ORDER).orElseThrow().getStatus()).isEqualTo(PaymentStatus.PENDING);
@@ -143,7 +143,7 @@ class ApprovalFenceRecoveryIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(org.springframework.test.web.client.match.MockRestRequestMatchers.method(org.springframework.http.HttpMethod.GET))
                 .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withStatus(org.springframework.http.HttpStatus.NOT_FOUND));
         var pg = new ApprovalExecutor(new com.peekcart.payment.infrastructure.toss.TossPaymentClient(
-                "test", "http://pg", builder, new com.fasterxml.jackson.databind.ObjectMapper()));
+                "test", "http://pg", builder, new com.fasterxml.jackson.databind.ObjectMapper()), new com.fasterxml.jackson.databind.ObjectMapper());
         var result = pg.verify(reclaimed);
         service.finalizeApproval(ORDER, reclaimed.getGeneration(), result.outcome(), result.attempts());
         server.verify();
