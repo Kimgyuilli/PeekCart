@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
- * 취소된 주문에 결제 완료가 도착하는 경로의 종결 검증 (GW-2 #2·#5).
+ * 취소된 주문에 결제 완료가 도착하는 경로의 종결 검증.
  *
  * <p>낙관 락 경쟁에서 취소가 이기면 결제 완료 소비는 {@code CANCELLED} 를 읽게 된다. 이때
  * (1) {@code ORD-003} 으로 던져 DLQ 로 가지 않고 (2) <b>영속</b> 보상 원장이 남으며
@@ -73,7 +73,7 @@ class OrderPaidButCancelledIntegrationTest extends AbstractIntegrationTest {
         assertThat(found).isPresent();
         assertThat(found.get().getStatus()).isEqualTo(CompensationStatus.OPEN);
         assertThat(currentStatus(orderId)).isEqualTo(OrderStatus.CANCELLED);
-        // 계측 배선 검증 (구현 ④-d-1) — 이 단언이 없으면 consumer 에서 계측 호출을 지워도 통과한다.
+        // 계측 배선 검증 — 이 단언이 없으면 consumer 에서 계측 호출을 지워도 통과한다.
         assertThat(compensationDetectedCount()).isEqualTo(before + 1);
     }
 

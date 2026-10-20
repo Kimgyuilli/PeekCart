@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Order 스케줄러 <b>정책값</b> 계약 (계획 P17 · ADR-0007).
+ * Order 스케줄러 <b>정책값</b> 계약 (ADR-0007).
  *
  * <p>{@link OrderSchedulerWiringIntegrationTest} 가 "잡이 실제로 돈다" 를 보는 반면 여기서는
  * <b>어떤 값으로 도는가</b>를 고정한다. 배선 테스트는 결정성을 위해 주기를 짧게 덮으므로

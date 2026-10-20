@@ -62,7 +62,7 @@ class PaymentEventConsumerTest {
         runIdempotent();
     }
 
-    /** 구 메시지 형태(items·reason 부재) — 하위호환 대조군 (계획 P5·P6). */
+    /** 구 메시지 형태(items·reason 부재) — 하위호환 대조군. */
     private void stubOrderCancelled() {
         ObjectNode root = om.createObjectNode();
         root.put("eventId", "evt-oc-1");

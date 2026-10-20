@@ -18,11 +18,11 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * runbook 리허설 (계획 ④-c-2a §6 P12).
+ * runbook 리허설.
  *
  * <p><b>운영 진입점만 사용한다.</b> 직접 SQL 로 상태를 바꾸면 {@link DeadLetterRecord#discard} 의
- * "사유 필수" 가드와 전이 규칙이 우회되므로, 그런 리허설은 "SQL 이 돌았다" 만 증명하는 false-green 이다
- * (3R #7). 여기서는 runbook §4 가 지시하는 것과 <b>같은 진입점</b>({@link DeadLetterEndpoint})을 호출한다.
+ * "사유 필수" 가드와 전이 규칙이 우회되므로, 그런 리허설은 "SQL 이 돌았다" 만 증명하는 false-green 이다.
+ * 여기서는 docs/runbooks/dlq-recovery.md §4 가 지시하는 것과 <b>같은 진입점</b>({@link DeadLetterEndpoint})을 호출한다.
  *
  * <p>검증 대상은 runbook §4 의 절차 전체다: 적재({@code OPEN}) → 확인({@code ACKED}) →
  * 폐기({@code DISCARDED}), 각 단계의 DB 상태와 감사 필드.
@@ -126,7 +126,7 @@ class DeadLetterRunbookRehearsalTest extends AbstractIntegrationTest {
         recorder.record(origin(5, 500L));
         Long id = repository.findAll().get(0).getId();
 
-        // ④-c-2b-1 이 resolve 를 실제 action 으로 만들었으므로 예시를 교체한다 — 여기서 필요한 것은
+        // resolve 는 유효한 action 이므로 알 수 없는 action 의 예가 아니다 — 여기서 필요한 것은
         // "매핑되지 않은 문자열이 조용히 no-op 되지 않는다" 이고, resolve 는 더 이상 그 예가 아니다.
         assertThat(endpoint.transition(id, "delete", "ops", "x")).containsKey("error");
         assertThat(endpoint.transition(999_999L, "acknowledge", "ops", null)).containsKey("error");

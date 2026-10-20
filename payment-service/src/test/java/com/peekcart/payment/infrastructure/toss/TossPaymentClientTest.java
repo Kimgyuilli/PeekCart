@@ -28,7 +28,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 /**
- * Toss 취소/조회 계약 테스트 (계획 P5).
+ * Toss 취소/조회 계약 테스트.
  *
  * <p>실 API 는 승인된 실거래가 있어야 호출할 수 있어 검증 불가다(ADR-0018 Consequences).
  * 여기서 고정하는 것은 <b>우리 쪽 계약</b> — 오류 분류와 멱등키 전송이다.

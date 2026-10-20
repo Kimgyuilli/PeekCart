@@ -38,7 +38,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.reset;
 
 /**
- * replay 재실패의 <b>원자 상관</b>과 <b>재개방</b> 회귀 (구현 ④-c-2b-3b P15·P16 · ADR-0021 §D1).
+ * replay 재실패의 <b>원자 상관</b>과 <b>재개방</b> 회귀 (ADR-0021 §D1).
  *
  * <p><b>이 테스트의 성질은 하나다</b>: 대조 predicate 를 <b>하나 제거하면 정확히 그 행만</b> red 다.
  * 그래서 {@code axisXxx} 테스트들은 각각 <b>정확히 한 입력만</b> 바꾼다 — 두 축을 동시에 흔들면
@@ -49,8 +49,8 @@ import static org.mockito.Mockito.reset;
  * 빠뜨려도 행 존재·backlog 단언은 전부 green 이고 "root 행은 자기 id 를 가진다" 계약만 조용히 깨진다.
  * 그래서 <b>{@code root_record_id == 자기 id}</b> 를 음성 공통 단언에 넣는다.
  *
- * <p><b>앵커는 fixture 로 심는다</b> — 앵커를 쓰는 실제 주체(replay 진입점)는 ④-c-2b-4 P21 이고
- * 아직 없다. 진입점→발행→재실패→상관 전 구간을 한 번 도는 것은 V-35 가 2b-4 에서 맡는다.
+ * <p><b>앵커는 fixture 로 심는다</b> — 이 테스트는 상관 predicate 를 분리해 검증한다.
+ * 진입점→발행→재실패→상관 관통은 {@code DlqReplayEntrypointIntegrationTest} 가 맡는다.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -63,7 +63,7 @@ class DlqReplayCorrelationIntegrationTest extends AbstractIntegrationTest {
 
     /**
      * Slack 문구를 <b>종류별로</b> 세기 위한 스텁. no-op mock 으로는 "상관된 자식에 신규 미결 알림이
-     * 나갔다" 를 볼 수 없다 — 그게 P15-g-2 가 막으려는 것이다.
+     * 나갔다" 를 볼 수 없다 — 상관된 자식을 새 미결 사건으로 잘못 알리는 회귀를 잡는다.
      */
     /** afterCommit callback 을 실패시키기 위한 스위치. 전파되면 이미 커밋된 이벤트가 재처리된다. */
     static final class FailingSlack {
@@ -79,7 +79,7 @@ class DlqReplayCorrelationIntegrationTest extends AbstractIntegrationTest {
             return message -> {
                 if (FailingSlack.armed) {
                     // afterCommit callback 안에서 터진다. 전파되면 이미 커밋된 이벤트를 listener 가
-                    // 재처리한다 — ④-d-1 3R #2 의 전례라 격리 여부를 실제로 시험한다.
+                    // 재처리할 수 있으므로 callback 실패의 격리 여부를 실제로 시험한다.
                     throw new IllegalStateException("Slack 발송 실패 주입");
                 }
                 MESSAGES.add(message);
@@ -530,7 +530,7 @@ class DlqReplayCorrelationIntegrationTest extends AbstractIntegrationTest {
         @Test
         @DisplayName("rollback 되면 상관 Counter 가 올라가지 않는다 — 트랜잭션 안에서 세면 red")
         void rollbackLeavesNoCounterDelta() {
-            // ④-d-1 3R #1 이 정확히 이 결함이었다. CommitAwareMetrics 를 쓰지 않고 트랜잭션 안에서
+            // CommitAwareMetrics 를 쓰지 않고 트랜잭션 안에서
             // 올리면 rollback 된 상관까지 세면서 green 이 된다.
             seedRootWithAnchor(PAYLOAD);
             meterRegistry.clear();
@@ -696,7 +696,7 @@ class DlqReplayCorrelationIntegrationTest extends AbstractIntegrationTest {
         return seedRootWithAnchor(payload, r -> {});
     }
 
-    /** root 를 적재하고 replay 앵커를 심는다. 앵커 writer 는 2b-4 P21 이므로 여기서는 fixture 다. */
+    /** root 를 적재하고 replay 앵커를 심는다. 앵커 writer 인 replay 진입점을 거치지 않으므로 여기서는 fixture 다. */
     private DeadLetterRecord seedRootWithAnchor(String payload, java.util.function.Consumer<RootSpec> customizer) {
         RootSpec spec = new RootSpec(payload);
         customizer.accept(spec);

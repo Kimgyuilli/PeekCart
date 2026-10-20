@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * order saga 메트릭 (계획 ④-d-1 §5 P2).
+ * order saga 메트릭.
  *
  * <p>타임아웃 3종이 {@code reason} 으로 <b>구분되는지</b>를 본다 — 한 값으로 합치면 어느 잡이
  * 도는지 알 수 없고, 그러면 "취소가 늘었다" 까지만 알고 원인은 다시 로그를 읽어야 한다.
