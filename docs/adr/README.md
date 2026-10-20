@@ -61,4 +61,5 @@
 | [0036](./0036-cart-product-read-model.md) | 장바구니의 로컬 상품 정보 조합 | Accepted | Phase 5 | 03, 05 |
 | [0037](./0037-product-read-cache-boundaries.md) | 상품 목록 정렬과 캐시 조회의 DB 진입 경계 | Accepted | Phase 5 | 03, 04 |
 | [0040](./0040-protected-approval-recovery.md) | 보호 승인 대사 복구 — PG 직접 증빙·역할 분리·예약 version·감사 | Accepted | Phase 5 | 03, 05 |
+| [0041](./0041-untrusted-payment-webhook-hints.md) | 일반 결제 웹훅의 제한된 비신뢰 신호 접수 | Accepted | Phase 5 | 03, 06 |
 <!-- INDEX:END -->

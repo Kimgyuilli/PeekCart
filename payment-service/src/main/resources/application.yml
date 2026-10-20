@@ -177,7 +177,6 @@ slack:
 toss:
   payments:
     secret-key: ${TOSS_SECRET_KEY:test_sk_placeholder}
-    webhook-secret: ${TOSS_WEBHOOK_SECRET:test_webhook_secret_placeholder}
     # [ADR-0007] base-url 은 환경마다 갈리는 연결 정보다(운영 실 PG · 로컬 · E2E stub).
     # 기본값은 secret-key 와 같은 패턴의 **도달 불가 sentinel** — discard 포트(9)라 설정 누락이
     # 조용히 실 PG 로 나가지 않는다. 운영값은 application-k8s.yml 이 기본값으로 선언한다.
