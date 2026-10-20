@@ -1,10 +1,8 @@
 package com.peekcart.payment.domain.repository;
 
-import com.peekcart.payment.domain.model.WebhookLog;
+import java.time.LocalDateTime;
 
 public interface WebhookLogRepository {
-
-    WebhookLog save(WebhookLog webhookLog);
-
-    boolean existsByIdempotencyKey(String idempotencyKey);
+    /** 1 for the first admitted hint, 0 for its duplicate. All fields are bounded before admission. */
+    int insertIfAbsent(String paymentKey, String eventType, String idempotencyKey, String payload, LocalDateTime now);
 }

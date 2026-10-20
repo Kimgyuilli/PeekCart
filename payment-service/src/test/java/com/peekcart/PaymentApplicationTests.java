@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * payment-service 독립 컨텍스트 부팅 스모크 (Payment peel PR-b 성공 기준 고정 — root app 해체 이후 마지막 서비스).
  *
  * <p>Toss 프로퍼티는 별도 stub 없이 {@code application.yml} 의 placeholder 로 주입된다 — 누락 시 부팅 실패하도록 둔다
- * ({@code TossPaymentClient}/{@code WebhookService} 의 {@code @Value} 필수성 고정). 그 외:
+ * ({@code TossPaymentClient} 의 {@code @Value} 필수성 고정). 그 외:
  * <ul>
  *   <li>ADR-0017 — common-auth 내부 토큰 검증 스택({@link InternalTokenVerifier}·{@link InternalGatewayPublicKeyRegistry})이 기동(Gateway 공개키 배선 fail-fast).</li>
  *   <li>{@link SecurityFilterChain} 정확히 1개({@code PaymentSecurityConfig}, ADR-0014 D1).</li>

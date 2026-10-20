@@ -169,6 +169,9 @@ public class TossPaymentClient {
         if (ALREADY_PROCESSED.equals(code)) {
             return TossOutcome.alreadyProcessed(body);
         }
+        if (status.value() == 409 && IDEMPOTENT_REQUEST_PROCESSING.equals(code)) {
+            return TossOutcome.transient_(code, body);
+        }
         if (status.is5xxServerError() || status.value() == 429) {
             return TossOutcome.transient_(code, body);
         }
