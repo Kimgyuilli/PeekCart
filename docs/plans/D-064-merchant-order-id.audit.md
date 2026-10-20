@@ -28,3 +28,11 @@
 - WebhookAdmissionIntegrationTest가 새 서비스 인자·executor constructor 및 저장된 PG ID를 사용하도록 조정했다. 중간 IN_PROGRESS HTTP fixture도 실제 identity 필드를 포함하도록 보완했다.
 - `./gradlew :payment-service:test --tests '*WebhookAdmissionIntegrationTest' --tests '*PaymentControllerTest' --tests '*MerchantOrderIdentityIntegrationTest' --no-daemon --no-parallel --max-workers=1` 통과(34초): controller 28, webhook 실제 MySQL 10, merchant 실제 MySQL 6. 로그 `/private/tmp/d064-merchant-merged.log`, 세션 76658 종료. 테스트 컨테이너 0개 확인 후 heavy slot 반환.
 - 최종 migration-grant/integration-container lint, consistency precheck, PR 제목·본문 writing lint 및 diff check 통과. 전체 필수 CI와 독립 검토는 대기다.
+
+## 2026-10-21 /ship 실행
+
+- 초안 PR: https://github.com/Kimgyuilli/PeekCart/pull/196 (branch `debt/d064-merchant-order-id`, target main).
+- 선행 PR #193의 head `6886c19`에 의존한다. merchant delta는 이 head와 비교하며 #193 merge 이후 실제 main 반영·최종 검토·전체 CI 확인이 필요하다.
+- 최종 검증된 소스/테스트는 `7c31e6d`의 내용이다. 이후 커밋은 계획·감사 문서뿐이다. 테스트 보완 전 코드는 `87ed489`, 테스트는 `b000065`, 계약 문서는 `8e6bd93`으로 분리했다.
+- ship preflight, grade L, consistency precheck, 명시적 staged category, commit/PR title/body writing lint 및 diff check 통과. 별도 Codex 리뷰 미호출. 전체 필수 CI와 세션 독립 검토는 대기다.
+- 완료 문서는 ADR-0042/index 및 03/05/06의 승인받은 영역과 본 계획·감사에 반영했다. TASKS·진행 문서·마스터 계획은 주 작업자가 소유한다. 실제 PG·외부 webhook 수신·운영 checkout 전환은 미검증이며 D-064는 부분 완료다.
