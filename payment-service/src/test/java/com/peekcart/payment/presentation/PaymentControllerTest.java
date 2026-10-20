@@ -53,7 +53,7 @@ class PaymentControllerTest {
                 .willReturn(PaymentFixture.approvedPaymentDetailDto());
 
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(
-                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT);
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
 
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,7 +72,7 @@ class PaymentControllerTest {
                 .willReturn(PaymentFixture.failedPaymentDetailDto());
 
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(
-                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT);
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
 
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -90,7 +90,7 @@ class PaymentControllerTest {
                 .willReturn(PaymentFixture.pendingPaymentDetailDto());
 
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(
-                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT);
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
 
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -105,12 +105,35 @@ class PaymentControllerTest {
     @DisplayName("POST /confirm: paymentKey가 빈 문자열이면 400을 반환한다")
     void confirmPayment_blankPaymentKey_returns400() throws Exception {
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(
-                "", PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT);
+                "", PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
 
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockLoginUser
+    void prepareReturnsCanonicalIdAndServerAmount() throws Exception {
+        given(paymentQueryService.preparePayment(1L, 1L)).willReturn(
+                new com.peekcart.payment.application.dto.PaymentCheckoutDto(1L, PaymentFixture.DEFAULT_PG_ORDER_ID, 100000));
+        mockMvc.perform(post("/api/v1/payments/1/prepare"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.pgOrderId").value(PaymentFixture.DEFAULT_PG_ORDER_ID))
+                .andExpect(jsonPath("$.data.amount").value(100000));
+    }
+
+    @Test
+    @WithMockLoginUser
+    void malformedPgOrderIdIsRejectedBeforeAdmission() throws Exception {
+        for (String id : new String[]{"1", "pc invalid", "a".repeat(65)}) {
+            var request = new ConfirmPaymentRequest("key", 1L, 100000, id);
+            mockMvc.perform(post("/api/v1/payments/confirm").contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+        org.mockito.Mockito.verifyNoInteractions(paymentCommandService);
     }
 
     // ── GET /api/v1/payments/{orderId} ──
@@ -132,7 +155,7 @@ class PaymentControllerTest {
     @WithMockLoginUser
     void cancelledPaymentStillExposesUnresolvedApproval() throws Exception {
         var dto = new com.peekcart.payment.application.dto.PaymentDetailDto(
-                1L, PaymentFixture.DEFAULT_ORDER_ID, "key", 1000L, "CANCELLED", "UNRESOLVED",
+                1L, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_PG_ORDER_ID, "key", 1000L, "CANCELLED", "UNRESOLVED",
                 null, null, java.time.LocalDateTime.now());
         given(paymentQueryService.getPaymentByOrderId(1L, PaymentFixture.DEFAULT_ORDER_ID)).willReturn(dto);
         mockMvc.perform(get("/api/v1/payments/{orderId}", PaymentFixture.DEFAULT_ORDER_ID))
