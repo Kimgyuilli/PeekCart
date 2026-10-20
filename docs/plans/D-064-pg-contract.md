@@ -63,3 +63,9 @@ grade: L
 
 - focused 3개 클래스 통과, 실제 MySQL WebhookAdmissionIntegrationTest 10/10 통과. integration-test-container lint/self-test 56개, migration-grant lint, diff 검사 통과.
 - 전체 필수 CI는 draft PR에서 실행하며 성공 전 병합하지 않는다. 실제 PG와 외부 웹훅 수신은 미검증이다.
+
+## 2026-10-21 무료 계약 범위 병합 후 확인
+
+최종 head `184c19cfcc696c6758fee9bbde27568e50b80ce0`의 [PR193](https://github.com/Kimgyuilli/PeekCart/pull/193)은 [최신 CI39480119984](https://github.com/Kimgyuilli/PeekCart/actions/runs/39480119984)와 [독립 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/193#issuecomment-6298901536)를 통과했다. 초기 head6886c19에서 직접 실행한 86개 테스트는 작성 patch 불변을 확인해 재사용했으며 최신 SHA에서 다시 실행했다고 주장하지 않는다. 최신 필수 CI는 별도로 전체 실행했다.
+
+정상 병합 SHA `a7ffa11f24be2bd281d8952ac5fc5d351fb6119c`의 [main CI39483390397](https://github.com/Kimgyuilli/PeekCart/actions/runs/39483390397)는 모든 검사와 여섯 publish가 성공했다. 본 무료 계약 보정의 구현·검증·리뷰·병합·main 확인은 끝났지만, D-064 전체는 실 PG·외부 수신 미검증 및 후속 주문 ID 계약 검증 때문에 부분 완료다. TASKS 상태와 PHASE5 기록은 root 기록 PR에서 전달한다.

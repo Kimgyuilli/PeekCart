@@ -37,6 +37,12 @@
 
 [PR CI39476990835](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476990835) 통과 후 정상 병합 SHA는 `545e5dc0bf64505f2bdb117f5d5248b85f17310f`다. [main CI39479945969](https://github.com/Kimgyuilli/PeekCart/actions/runs/39479945969)는 모든 검사와 여섯 publish가 성공했다. 상태 외 본문 보존과 전체 ID 다중집합·유일성을 확인해 완료 행을 이동했다.
 
+### D-064 웹훅·409 무료 계약 보정 부분 병합
+
+[PR193](https://github.com/Kimgyuilli/PeekCart/pull/193) 최종 head `184c19cfcc696c6758fee9bbde27568e50b80ce0`은 일반 PAYMENT_STATUS_CHANGED를 제한된 비신뢰 hint로 접수하고, 알려진 미결 원장에만 원자적인 중복 방지·조회 가속을 적용한다. 최종 결제 판단은 서버 PG 조회만 신뢰한다. 승인 409의 IDEMPOTENT_REQUEST_PROCESSING은 미결·조회 전용 처리로 분류한다. [초기 독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/193#issuecomment-6298254459)는 실제 MySQL 동시성·rollback을 포함한 86개 테스트를 실행했고, [최신 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/193#issuecomment-6298901536)는 작성 patch 불변과 최신 main 통합·경량 검사를 확인했다.
+
+[최신 PR CI39480119984](https://github.com/Kimgyuilli/PeekCart/actions/runs/39480119984) 성공 후 정상 병합 SHA는 `a7ffa11f24be2bd281d8952ac5fc5d351fb6119c`다. [main CI39483390397](https://github.com/Kimgyuilli/PeekCart/actions/runs/39483390397)는 모든 검사와 여섯 publish가 성공했다. 실제 PG·외부 웹훅 전달은 미검증이고 사용자 승인된 새 주문 ID 계약은 PR196에서 검증 중이므로 D-064는 열린 부분 완료로 유지한다. 운영 배포나 결제·환불은 실행하지 않았다.
+
 ## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
 
 ## 최종 부채·소유권·증거 대조
