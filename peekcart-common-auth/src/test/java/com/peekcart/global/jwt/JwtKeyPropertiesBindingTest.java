@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 사용자 토큰 공개키 설정이 <b>k8s ConfigMap 의 인덱스 env</b> 로 덮어써지는지 검증한다
  * (ADR-0013 D1/D2). {@code InternalTokenPropertiesBindingTest} 의 User 키 도메인 판이다.
  *
- * <p><b>왜 이 테스트가 필요한가</b>: 구현 ③ PR3d-b-2 클러스터 세션에서 user-service 는 Secret
+ * <p><b>왜 이 테스트가 필요한가</b>: 키 회전 시 user-service 가 Secret
  * Manager 로 <b>새 개인키</b>를 받았는데 공개키는 이미지에 베이크된 dev 키 그대로였다. 발급은 새 키로
  * 하고 JWKS 는 옛 키를 게시해 모듈러스가 어긋났고, 그 결과 자기가 발급한 토큰을 gateway 가 검증하지
  * 못했다. 내부 토큰 도메인에는 ConfigMap 인덱스 env seam 이 있었는데 User 도메인에는 없었던 탓이다.

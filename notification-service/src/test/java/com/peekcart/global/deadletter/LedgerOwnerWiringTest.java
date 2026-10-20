@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 이 서비스의 원장 소유자 <b>배선</b> (계획 ④-c-2b-3b P15-f).
+ * 이 서비스의 원장 소유자 <b>배선</b>.
  *
  * <p><b>이 테스트가 없으면 아무도 이 값을 보지 않는다.</b> {@code LedgerOwnerConfig} 는 서비스마다
  * 값이 달라 공유 모듈에 두지 않고 서비스마다 선언한다(ADR-0033 D1). 컴파일러도 lint 도 그 값을 보지

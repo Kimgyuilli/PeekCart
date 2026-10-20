@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * k8s 프로파일의 <b>연결 정보 소유권</b>을 고정한다 (ADR-0007 · 구현 ③ PR3b P25).
+ * k8s 프로파일의 <b>연결 정보 소유권</b>을 고정한다 (ADR-0007).
  *
  * <p>왜 필요한가: 기본 테스트는 {@code application-k8s.yml} 을 로드하지 않는다(CI 는 오히려
  * {@code SPRING_PROFILES_ACTIVE=test}). 그래서 프로파일 키가 오타이거나 파일째 비활성이어도
@@ -93,7 +93,7 @@ class K8sProfileConnectionPropertiesTest {
     void routeUrisResolveUnderK8sProfile() {
         Map<String, String> uriByRouteId = routeUris();
 
-        // 업무 9 + DLQ 관리자 라우트 8(4서비스 × 요약/전이, ④-c-2b-4b P27).
+        // 업무 9 + DLQ 관리자 라우트 8(4서비스 × 요약/전이).
         // **개수를 고정한다** — 라우트를 더하면서 이 테스트를 지나치면 신규 라우트의 placeholder 해석이
         // 아무 데서도 검사되지 않는다.
         assertThat(uriByRouteId).hasSize(17);
@@ -154,7 +154,7 @@ class K8sProfileConnectionPropertiesTest {
                     .containsEntry("order-orders", "http://sentinel-order:9")
                     .containsEntry("payment", "http://sentinel-payment:9")
                     .containsEntry("notification", "http://sentinel-notification:9")
-                    // DLQ 관리자 라우트도 같은 upstream 키를 따른다 (④-c-2b-4b P27).
+                    // DLQ 관리자 라우트도 같은 upstream 키를 따른다.
                     // 여기가 sentinel 을 따르지 않으면 라우트가 옛 placeholder 이름으로 되돌아간 것이다.
                     .containsEntry("order-deadletter-admin-summary", "http://sentinel-order:9")
                     .containsEntry("order-deadletter-admin-transition", "http://sentinel-order:9")

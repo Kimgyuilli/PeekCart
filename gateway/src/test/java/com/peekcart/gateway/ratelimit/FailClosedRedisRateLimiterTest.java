@@ -20,7 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * fail-closed rate limiter 계약 회귀 (ADR-0013 D3 · GW-2 c2:3/c3:1).
+ * fail-closed rate limiter 계약 회귀 (ADR-0013 D3).
  *
  * <p>핵심: <b>Redis 장애를 통과로 바꾸지 않는다</b>. SCG 기본 {@code RedisRateLimiter} 는 오류를 삼키고
  * {@code allowed=true} 를 반환해 장애 시 rate limit 이 통째로 사라지는데, 그 동작을 여기서 배제한다.

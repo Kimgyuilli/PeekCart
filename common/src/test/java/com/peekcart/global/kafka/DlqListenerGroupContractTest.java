@@ -8,7 +8,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * DLQ listener group 상수 ↔ {@link PeekcartService} 정본 정합 (계획 P5 · diff 리뷰 2R #3).
+ * DLQ listener group 상수 ↔ {@link PeekcartService} 정본 정합.
  *
  * <p>{@code @KafkaListener} 의 {@code groupId} 는 컴파일 상수여야 해서 {@link DlqTopology} 에
  * {@code String} 상수를 둘 수밖에 없다. 그런데 group 문자열의 <b>정본은 {@link PeekcartService}</b> 다
