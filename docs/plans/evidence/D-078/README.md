@@ -14,7 +14,7 @@
 | uncollected_runs | 이름별 네 키가 모두 없는 역사적 metadata 런 |
 | hitrate_runs | valid 중 hit+miss가 양수인 런. 0/0은 계수에만 유효 |
 
-valid=0이면 `미수집`, 유효한 계수의 합이 모두 0이면 적중률만 `분모0`이다. invalid와 역사적 미수집은 각각 표의 수와 경고로 구분한다. runner의 이름별 capture는 scrape 실패·series 부재·오염을 문자열 `unavailable`로 TSV에 기록한다. collector는 이를 invalid로 제외하며 0으로 바꾸지 않는다.
+valid=0이면 `미수집`, 유효한 계수의 합이 모두 0이면 적중률만 `분모0`이다. invalid와 역사적 미수집은 각각 표의 수와 경고로 구분한다. runner는 Python 3을 사전 확인하고 이름별 counter를 표준 Decimal로 정확히 해석한다. 각 값과 합계는 IEEE double의 최대 유한값 이하이며 정수여야 한다. 1e-999나 긴 소수를 binary float로 반올림하지 않는다. runner의 이름별 capture는 scrape 실패·series 부재·오염을 문자열 `unavailable`로 TSV에 기록한다. collector는 이를 invalid로 제외하며 0으로 바꾸지 않는다.
 
 기존 **합산** capture의 `awk s+0`, 합산 분모 0의 처리, gate 의미는 이번 변경에 포함하지 않았다. 이름별 fail-closed 처리가 기존 합산의 신뢰성까지 보증하지 않는다. 이름별 표본을 제외해도 독립적인 기존 합산 표·gate를 지우지 않는다.
 

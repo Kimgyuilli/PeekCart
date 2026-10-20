@@ -9,6 +9,6 @@ test_partial_coverage_counts_only_valid_named_samples (__main__.CacheCollectorFi
 test_zero_denominator_and_mixed_activity_counts (__main__.CacheCollectorFixtureTest.test_zero_denominator_and_mixed_activity_counts) ... ok
 
 ----------------------------------------------------------------------
-Ran 9 tests in 0.728s
+Ran 9 tests in 1.723s
 
 OK

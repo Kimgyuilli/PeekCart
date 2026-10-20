@@ -12,7 +12,7 @@ MUTANTS = [
     ('capture-omits-product', 'd026-run-cell.sh',
      'for C in product products productStock; do', 'for C in products productStock; do', 2),
     ('missing-scrape-becomes-zero', 'd026-run-cell.sh',
-     'if (!n || bad)', 'if (bad)', 1),
+     'if not count: raise ValueError("missing")', 'if False: raise ValueError("missing")', 1),
     ('historical-absence-becomes-zero', 'd026-collect.py',
      'return None, None  # Historical metadata did not collect this cache name.',
      'return {"hit": 0, "miss": 0, "hitrate": 0}, None', 1),
