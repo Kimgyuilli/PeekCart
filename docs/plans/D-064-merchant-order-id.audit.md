@@ -20,3 +20,11 @@
 - 인바운드 재확인으로 기존 dispatcher 통합 fixture가 생성된 임의 ID 대신 상수를 쓰는 점을 찾아 저장 ID를 사용하도록 수정했다. ApprovalDispatchIntegrationTest 8개 통과(30초), 로그 `/private/tmp/d064-merchant-dispatch.log`.
 - 해당 실행은 모두 `./gradlew :payment-service:test --tests '<위 클래스 이름>' --no-daemon --no-parallel --max-workers=1`로 필요한 클래스를 선택했다. 테스트 소유 컨테이너 종료 후 `docker ps --filter label=org.testcontainers=true` 0개 확인. heavy slot 반환.
 - 전체 새 파일 포함 소스·테스트 snapshot SHA256: `a3ad40e945734c4684d16eebfe362d9ae4e7053f2734299a39a8b7e769efd7aa`. 웹훅 PR #193 통합 전 로컬 검증이다.
+
+## 2026-10-21 선행 PR 통합 검증
+
+- 주 작업자의 지시에 따라 PR #193의 고정 head `6886c19ce634a57b27c0f3aadc355dc019dfb774`를 merge commit `0f33db7`로 반영했다. 선행 브랜치는 수정하지 않았다. ADR index의 두 추가 행 충돌은 0041/0042를 모두 유지해 해결했다.
+- 실제 merge commit이 여러 기존 분류를 포함하므로 기본 mixed hook이 거절했다. 이미 분류별 커밋된 선행 작업의 merge에 문서화된 `HPX_ALLOW_MIXED=1`을 사용했다. 새 구현 커밋은 분류별로 유지했다.
+- WebhookAdmissionIntegrationTest가 새 서비스 인자·executor constructor 및 저장된 PG ID를 사용하도록 조정했다. 중간 IN_PROGRESS HTTP fixture도 실제 identity 필드를 포함하도록 보완했다.
+- `./gradlew :payment-service:test --tests '*WebhookAdmissionIntegrationTest' --tests '*PaymentControllerTest' --tests '*MerchantOrderIdentityIntegrationTest' --no-daemon --no-parallel --max-workers=1` 통과(34초): controller 28, webhook 실제 MySQL 10, merchant 실제 MySQL 6. 로그 `/private/tmp/d064-merchant-merged.log`, 세션 76658 종료. 테스트 컨테이너 0개 확인 후 heavy slot 반환.
+- 최종 migration-grant/integration-container lint, consistency precheck, PR 제목·본문 writing lint 및 diff check 통과. 전체 필수 CI와 독립 검토는 대기다.

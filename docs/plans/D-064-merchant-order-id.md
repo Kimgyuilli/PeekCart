@@ -33,12 +33,12 @@ PLAN-BLINDSPOTS B1/B4/B7/B10/B12를 확인했다. beginApproval/insertWaitingIfA
 
 ## 3. 작업 항목
 
-- [ ] P1. ADR-0042에 사용자 결정, 생성·snapshot·legacy·배포 계약과 대안을 기록한다.
-- [ ] P2. nullable V14 migration, Payment immutable pgOrderId, PaymentApproval snapshot 및 native insert를 구현한다.
-- [ ] P3. owner 검증 prepare API와 pgOrderId 응답·confirm 정확 일치를 구현한다. 기존 금액·상태·재고·중복 fence를 유지한다.
-- [ ] P4. 최초 confirm·정기 조회·운영 복구에 동일 snapshot을 사용하고 PG identity mismatch를 UNRESOLVED/증적 거절로 처리한다.
-- [ ] P5. 실제 MySQL에서 migration legacy 유지, 신규/반복/동시 prepare, 중복 승인 및 불일치 rollback을 검증한다. HTTP fixture로 동일 ID 전달과 mismatched 응답의 비종결을 검증한다.
-- [ ] P6. API·데이터·결제 테스트 문서와 감사 기록을 갱신하고 lint·분류 커밋·초안 PR을 완료한다. 전체 CI와 최종 커밋 독립 검토 후에만 주 작업자가 merge한다.
+- [x] P1. ADR-0042에 사용자 결정, 생성·snapshot·legacy·배포 계약과 대안을 기록한다.
+- [x] P2. nullable V14 migration, Payment immutable pgOrderId, PaymentApproval snapshot 및 native insert를 구현한다.
+- [x] P3. owner 검증 prepare API와 pgOrderId 응답·confirm 정확 일치를 구현한다. 기존 금액·상태·재고·중복 fence를 유지한다.
+- [x] P4. 최초 confirm·정기 조회·운영 복구에 동일 snapshot을 사용하고 PG identity mismatch를 UNRESOLVED/증적 거절로 처리한다.
+- [x] P5. 실제 MySQL에서 migration legacy 유지, 신규/반복/동시 prepare, 중복 승인 및 불일치 rollback을 검증한다. HTTP fixture로 동일 ID 전달과 mismatched 응답의 비종결을 검증한다.
+- [x] P6. API·데이터·결제 테스트 문서와 감사 기록을 갱신하고 lint·분류 커밋·초안 PR 본문을 준비한다. 전체 CI와 최종 커밋 독립 검토 후에만 주 작업자가 merge한다.
 
 ## 4. 검증 방법
 
@@ -55,3 +55,8 @@ PLAN-BLINDSPOTS B1/B4/B7/B10/B12를 확인했다. beginApproval/insertWaitingIfA
 P1~P6 로컬 구현 및 검증을 완료하고 최종 SHA/PR을 전달한다. 실제 PG 승인·취소·조회, 외부 webhook 수신, 운영 checkout 소비자의 전환 및 혼합 배포 차단은 수행하지 않는다. 따라서 이 변경만으로 D-064 전체 완료를 주장하지 않는다. TASKS·PHASE5·마스터 계획은 주 작업자가 소유한다. docs/06은 13-3만 수정하며 다른 작업자의 E2E 13-1을 건드리지 않는다.
 
 공식 계약: [Toss 코어 API](https://docs.tosspayments.com/reference)의 orderId는 허용 문자로 된 6~64자 문자열이며 결제 요청에서 생성한 값을 저장하고 유지한다. 2026-10-21 직접 확인했다.
+
+
+## 로컬 검증 결과
+
+집중 6개 클래스 58개, 실제 MySQL 44개를 통과했다. PR #193의 고정 head `6886c19`를 merge한 뒤 controller 28개, 실제 MySQL webhook 10개와 merchant 6개를 다시 통과했다. migration은 세션 임시 테이블의 대표 legacy 행으로 비재작성을 확인했고 전체 application schema는 Flyway 기동으로 검증했다. 실제 PG·운영 전환·전체 CI·최종 독립 검토는 미수행 또는 대기다. 초안 PR은 #193에 의존하며 #193 merge 후 실제 main을 다시 반영한다.
