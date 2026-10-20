@@ -19,6 +19,7 @@ usage:
 """
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -392,6 +393,31 @@ def outbox_payload(service, event_type, aggregate_id):
     return rows[0] if rows else None
 
 
+def prepare_confirmation(user_id, order_id, payment_key, expected_amount):
+    """인증 전에 받은 PG ID를 그대로 confirm에 전달한다 (ADR-0042)."""
+    _, response = http("payment", "POST", "/api/v1/payments/%s/prepare" % order_id,
+                       user_id=user_id, expect=200)
+    checkout = response.get("data", {})
+    if not isinstance(checkout, dict):
+        raise AssertionError("checkout response is not an object")
+    pg_order_id = checkout.get("pgOrderId")
+    if (checkout.get("orderId") != order_id or type(checkout.get("amount")) is not int
+            or checkout["amount"] != expected_amount or not isinstance(pg_order_id, str)
+            or not re.fullmatch(r"[A-Za-z0-9_-]{6,64}", pg_order_id)):
+        raise AssertionError("checkout identity/amount mismatch: %r" % checkout)
+    return {"paymentKey": payment_key, "orderId": order_id,
+            "pgOrderId": pg_order_id, "amount": checkout["amount"]}
+
+
+def assert_confirm_identity(calls, expected):
+    """PG가 받은 값도 prepare와 일치해야 한다. 내부 숫자를 보내는 회귀를 잡는다."""
+    posts = [c for c in calls if c["method"] == "POST"]
+    if len(posts) != 1 or any(posts[0].get(field) != value for field, value in {
+            "paymentKey": expected["paymentKey"], "orderId": expected["pgOrderId"],
+            "amount": expected["amount"]}.items()):
+        raise AssertionError("PG confirm identity mismatch: %r" % posts)
+
+
 # ----------------------------------------------------------------- 시나리오
 
 def scenario_a():
@@ -421,8 +447,9 @@ def scenario_a():
                  "AND status = 'PENDING'", (order_id,)))
 
     payment_key = "e2e-cfail-%s-%s" % (sid, order_id)
+    confirmation = prepare_confirmation(user_id, order_id, payment_key, 20000)
     status, body = http("payment", "POST", "/api/v1/payments/confirm",
-                        {"paymentKey": payment_key, "orderId": order_id, "amount": 20000},
+                        confirmation,
                         user_id=user_id)
     if status != 202:
         raise AssertionError("비동기 승인 접수가 거절됐다 — status=%r body=%r" % (status, body))
@@ -432,6 +459,8 @@ def scenario_a():
         "payments FAILED", lambda: query("payment",
             "SELECT status FROM payments WHERE order_id = %s AND status = 'FAILED'", (order_id,))
     )[0]["status"]
+
+    assert_confirm_identity([c for c in stub_ledger() if c["paymentKey"] == payment_key], confirmation)
 
     evidence["order_status"] = wait_for(
         "orders CANCELLED", lambda: query("order",
@@ -957,8 +986,9 @@ def scenario_e():
     wait_for("payment ready", lambda: query("payment",
              "SELECT id FROM payments WHERE order_id=%s AND ready_for_payment=1", (order_id,)))
     key = "e2e-fence-%s" % order_id
+    confirmation = prepare_confirmation(user_id, order_id, key, 20000)
     http("payment", "POST", "/api/v1/payments/confirm",
-         {"paymentKey": key, "orderId": order_id, "amount": 20000}, user_id=user_id, expect=202)
+         confirmation, user_id=user_id, expect=202)
     wait_for("approval unresolved", lambda: query("payment",
              "SELECT id FROM payment_approvals WHERE order_id=%s AND status='UNRESOLVED'", (order_id,)))
     protected = query("product", "SELECT status, approval_fenced FROM stock_reservations WHERE order_id=%s", (order_id,))[0]
@@ -1031,6 +1061,7 @@ def scenario_e():
     calls = [c for c in stub_ledger() if c["paymentKey"] == key]
     posts = [c for c in calls if c["method"] == "POST"]
     gets = [c for c in calls if c["method"] == "GET"]
+    assert_confirm_identity(calls, confirmation)
     if restored != 5 or len(posts) != 1 or not gets or posts[0]["idempotencyKey"] != "approve-%s" % order_id:
         raise AssertionError("fence 종결/호출 계약 위반: stock=%s calls=%r" % (restored, calls))
     # 별도 정상 주문은 HTTP 상태조회로 승인 완료를 확인하고 실제 예약 확정까지 본다.
@@ -1042,8 +1073,9 @@ def scenario_e():
              "SELECT id FROM payments WHERE order_id=%s AND ready_for_payment=1", (success_order,)))
     success_key = "e2e-ok-%s" % success_order
     headers = {}
+    success_confirmation = prepare_confirmation(user_id, success_order, success_key, 20000)
     http("payment", "POST", "/api/v1/payments/confirm",
-         {"paymentKey": success_key, "orderId": success_order, "amount": 20000},
+         success_confirmation,
          user_id=user_id, expect=202, response_headers=headers)
     location = next((v for k, v in headers.items() if k.lower() == "location"), None)
     if location != "/api/v1/payments/%s" % success_order:
@@ -1056,6 +1088,7 @@ def scenario_e():
              "SELECT id FROM stock_reservations WHERE order_id=%s AND status='CONFIRMED' AND approval_fenced=1", (success_order,)))
     success_stock = query("product", "SELECT stock FROM inventories WHERE product_id=%s", (success_product,))[0]["stock"]
     success_posts = [c for c in stub_ledger() if c["paymentKey"] == success_key and c["method"] == "POST"]
+    assert_confirm_identity(success_posts, success_confirmation)
     if success_stock != 3 or len(success_posts) != 1:
         raise AssertionError("승인 성공 재고/PG 호출 불일치")
     return ({"approval_reservation_fence": {"actual": {
