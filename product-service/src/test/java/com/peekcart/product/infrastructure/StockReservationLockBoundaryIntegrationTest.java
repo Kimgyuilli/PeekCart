@@ -20,6 +20,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +30,10 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.SocketTimeoutException;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -37,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -149,6 +157,8 @@ class StockReservationLockBoundaryIntegrationTest extends AbstractIntegrationTes
 
         CountDownLatch done = new CountDownLatch(CONCURRENT_ORDERS);
         ExecutorService executor = Executors.newFixedThreadPool(CONCURRENT_ORDERS);
+        long completionDeadline = System.nanoTime()
+                + TimeUnit.SECONDS.toNanos(BARRIER_TIMEOUT_SECONDS + 30L);
         for (int i = 0; i < CONCURRENT_ORDERS; i++) {
             long orderId = 1000L + i;
             executor.submit(() -> {
@@ -173,28 +183,8 @@ class StockReservationLockBoundaryIntegrationTest extends AbstractIntegrationTes
         }
         try {
             if (!done.await(5, TimeUnit.SECONDS)) {
-                var inspector = new org.springframework.jdbc.core.JdbcTemplate(
-                        new org.springframework.jdbc.datasource.DriverManagerDataSource(
-                                SharedContainers.MYSQL.getJdbcUrl(), "root", SharedContainers.MYSQL.getPassword()));
-                System.out.println("RESERVATION_DIAGNOSTIC history=" + phaseHistory);
-                System.out.println("RESERVATION_DIAGNOSTIC locks=" + inspector.queryForList("""
-                        SELECT r.OBJECT_NAME, r.INDEX_NAME, r.LOCK_TYPE, r.LOCK_MODE,
-                               r.LOCK_DATA, r.THREAD_ID AS requesting_thread,
-                               b.THREAD_ID AS blocking_thread
-                        FROM performance_schema.data_lock_waits w
-                        JOIN performance_schema.data_locks r ON r.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID
-                        JOIN performance_schema.data_locks b ON b.ENGINE_LOCK_ID=w.BLOCKING_ENGINE_LOCK_ID
-                        """));
-                System.out.println("RESERVATION_DIAGNOSTIC transactions=" + inspector.queryForList(
-                        "SELECT trx_id,trx_state,trx_started,trx_wait_started,trx_query FROM information_schema.INNODB_TRX"));
-                for (var thread : java.lang.management.ManagementFactory.getThreadMXBean()
-                        .dumpAllThreads(true, true)) {
-                    if (thread.getThreadName().startsWith("pool-")) {
-                        System.out.println("RESERVATION_DIAGNOSTIC thread=" + thread
-                                + "; fullStack=" + java.util.Arrays.toString(thread.getStackTrace()));
-                    }
-                }
-                assertThat(done.await(BARRIER_TIMEOUT_SECONDS + 25L, TimeUnit.SECONDS))
+                captureDiagnostics();
+                assertThat(done.await(Math.max(0, completionDeadline - System.nanoTime()), TimeUnit.NANOSECONDS))
                         .as("worker completion; history=%s; unexpected=%s", phaseHistory, unexpectedFailures).isTrue();
             }
         } finally {
@@ -244,6 +234,93 @@ class StockReservationLockBoundaryIntegrationTest extends AbstractIntegrationTes
                 .as("차감 후 복구가 정상 동작 — 락 없이")
                 .isEqualTo(INITIAL_STOCK);
         em.close();
+    }
+
+    @Test
+    void diagnosticSocketReadHasFiniteTimeout() throws Exception {
+        var inspector = lockInspector("jdbc:mysql://127.0.0.1:1/unused");
+        var properties = ((DriverManagerDataSource) inspector.getDataSource()).getConnectionProperties();
+        assertThat(properties.getProperty("connectTimeout")).isEqualTo("2000");
+        assertThat(properties.getProperty("socketTimeout")).isEqualTo("2000");
+        try (var server = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
+            var release = new CountDownLatch(1);
+            var serverPool = Executors.newSingleThreadExecutor();
+            serverPool.submit(() -> {
+                try (var socket = server.accept()) {
+                    release.await(10, TimeUnit.SECONDS); // Accept TCP but send no MySQL handshake.
+                }
+                return null;
+            });
+            long started = System.nanoTime();
+            try {
+                var stalled = lockInspector("jdbc:mysql://127.0.0.1:" + server.getLocalPort() + "/unused");
+                assertThatThrownBy(() -> stalled.queryForObject("SELECT 1", Integer.class))
+                        .hasRootCauseInstanceOf(SocketTimeoutException.class);
+                assertThat(System.nanoTime() - started).isLessThan(TimeUnit.SECONDS.toNanos(10));
+            } finally {
+                release.countDown();
+                server.close();
+                serverPool.shutdownNow();
+                assertThat(serverPool.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
+            }
+        }
+    }
+
+    @Test
+    void diagnosticQueryHasFiniteTimeout() {
+        var inspector = lockInspector(SharedContainers.MYSQL.getJdbcUrl());
+        assertThat(inspector.getQueryTimeout()).isEqualTo(1);
+        long started = System.nanoTime();
+        assertThatThrownBy(() -> inspector.execute("SELECT SLEEP(10)"))
+                .isInstanceOf(QueryTimeoutException.class);
+        assertThat(System.nanoTime() - started).isLessThan(TimeUnit.SECONDS.toNanos(10));
+    }
+
+    private JdbcTemplate lockInspector(String jdbcUrl) {
+        var dataSource = new DriverManagerDataSource(jdbcUrl, "root", SharedContainers.MYSQL.getPassword());
+        var connectionProperties = new Properties();
+        connectionProperties.setProperty("connectTimeout", "2000");
+        connectionProperties.setProperty("socketTimeout", "2000");
+        dataSource.setConnectionProperties(connectionProperties);
+        var inspector = new JdbcTemplate(dataSource);
+        inspector.setQueryTimeout(1);
+        return inspector;
+    }
+
+    private void captureDiagnostics() {
+        System.out.println("RESERVATION_DIAGNOSTIC history=" + phaseHistory);
+        try {
+            var inspector = lockInspector(SharedContainers.MYSQL.getJdbcUrl());
+            System.out.println("RESERVATION_DIAGNOSTIC locks=" + inspector.queryForList("""
+                    SELECT r.OBJECT_NAME, r.INDEX_NAME, r.LOCK_TYPE, r.LOCK_MODE,
+                           r.LOCK_DATA, r.THREAD_ID AS requesting_thread,
+                           b.THREAD_ID AS blocking_thread
+                    FROM performance_schema.data_lock_waits w
+                    JOIN performance_schema.data_locks r ON r.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID
+                    JOIN performance_schema.data_locks b ON b.ENGINE_LOCK_ID=w.BLOCKING_ENGINE_LOCK_ID
+                    """));
+            System.out.println("RESERVATION_DIAGNOSTIC transactions=" + inspector.queryForList(
+                    "SELECT trx_id,trx_state,trx_started,trx_wait_started,trx_query FROM information_schema.INNODB_TRX"));
+        } catch (RuntimeException failure) {
+            diagnosticFailure("database", failure);
+        }
+        try {
+            for (var thread : java.lang.management.ManagementFactory.getThreadMXBean().dumpAllThreads(true, true)) {
+                if (thread.getThreadName().startsWith("pool-")) {
+                    System.out.println("RESERVATION_DIAGNOSTIC thread=" + thread
+                            + "; fullStack=" + java.util.Arrays.toString(thread.getStackTrace()));
+                }
+            }
+        } catch (RuntimeException failure) {
+            diagnosticFailure("threads", failure);
+        }
+    }
+
+    private void diagnosticFailure(String surface, RuntimeException failure) {
+        StringWriter trace = new StringWriter();
+        failure.printStackTrace(new PrintWriter(trace));
+        phase(-1, "diagnostic " + surface + " failed: " + trace);
+        System.out.println("RESERVATION_DIAGNOSTIC " + surface + " failed: " + trace);
     }
 
     private void phase(long orderId, String step) {
