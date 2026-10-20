@@ -182,4 +182,4 @@ Notification 행을 개정하도록 명시), 구현 ④-c-2b-2 P9 가 그 테이
 - 당시 원문: ADR 도입 커밋 `264f07a`의 부모 `691b223799ddea60ff18015112a84cfb045b013e`에서 [Phase 4 DB 분리 L174-382](https://github.com/Kimgyuilli/PeekCart/blob/691b223799ddea60ff18015112a84cfb045b013e/docs/05-data-design.md#L174-L382), [Product DB L216-245](https://github.com/Kimgyuilli/PeekCart/blob/691b223799ddea60ff18015112a84cfb045b013e/docs/05-data-design.md#L216-L245), [Notification DB L362-382](https://github.com/Kimgyuilli/PeekCart/blob/691b223799ddea60ff18015112a84cfb045b013e/docs/05-data-design.md#L362-L382)을 직접 대조했다.
 - 현재 위치: [서비스별 DB 분리](../05-data-design.md#phase-4--서비스별-db-분리-msa), [Product DB](../05-data-design.md#product-db), [Notification DB](../05-data-design.md#notification-db), [현재 배포·모듈 구조](../02-architecture.md#12-패키지-구조). C1의 루트 Flyway 경로도 당시 단일 DB 위치이며 현재 이력은 각 서비스 모듈의 `src/main/resources/db/migration/`에 있다. 재고·결제 모델의 후속 변경은 상단의 Partially Superseded 안내를 따른다.
 
-**커밋**: D-101 `fix(adr): 역사 참조 탐색 경로 보강` 커밋(자기 해시는 후속 문서 커밋에서 기록).
+**커밋**: `c8155a65299e13b0631c2cacaeed5eac20ebff6b` — `fix(adr): 역사 참조 탐색 경로 보강` (자기 참조를 피하기 위해 후속 커밋에서 기록).
