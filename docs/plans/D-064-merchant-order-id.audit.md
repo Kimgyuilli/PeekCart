@@ -54,3 +54,25 @@
 - readiness 통과, A 27.1초, E 298.7초. host durations는 A 29초/E 301초(프로세스 준비·감시 포함)이며 E가 기존 300초 예산에 근접했다. 시간 정책은 바꾸지 않았다. A는 CANCELLED/FAILED 및 재고 복원을 확인했다. E는 실제 sweeper와 Payment JVM 재시작 동안 HELD를 보존하고, 승인 POST 1회·재시작 뒤 GET·실패 확정 후 재고 반환을 확인했다. 별도 성공 주문은 APPROVED/SUCCEEDED 및 CONFIRMED 예약에 도달했다. 세 승인 모두 prepare에서 받은 canonical ID와 stub 원장을 대조했다.
 - E2E 진단 중 읽기 전용 SQL의 잘못된 attempt_count 컬럼명 조회는 실패했고 실제 schema의 generation/claimed_at로 바로잡았다. fixture 데이터는 수정하지 않았다. cleanup 뒤 실행 컨테이너는 기존 momens 3개뿐이었고 heavy slot을 반환했다.
 - 이후 변경은 본 계획·감사 문서뿐이다. 로컬 A/E 결과를 B/C/D/F·음성 대조 또는 실제 PG 검증으로 확대하지 않는다. 최종 pushed head의 필수 전체 CI와 독립 재검토는 대기다.
+
+## 2026-10-21 actual main 통합 및 product CI 실패 조사
+
+- #193을 승인받아 head `184c19c`에서 정상 merge했다. 실제 main merge는 `a7ffa11f24be2bd281d8952ac5fc5d351fb6119c`, main CI는 39483390397이다. merchant branch에 이를 정상 merge한 head는 `aa33234`다. 기존 merchant 전체 authored diff `6886c19..5030e31`과 `a7ffa11..aa33234`는 byte-identical이며 SHA256 `8d20a619c5e4cf44a9fdd44e3ca0fd23021c4c1ba97661cf20cba5f2bb4cd647`이다.
+- #196 head `5030e31`의 CI 39480677850은 product 234개 중 StockReservationLockBoundaryIntegrationTest의 동시 예약 1개가 실패했고 gate가 실패를 전파했다. E2E 시나리오·음성 대조는 통과했지만 전체 CI 통과로 주장하지 않는다.
+- 원본 log `/private/tmp/d064-merchant-ci39480677850-failed.log`, artifact `/private/tmp/pr196-product-failure-artifact`를 보존했다. XML의 실패는 optimisticConflicts=0이며 실행 30.088초, seed `1792523372921`이다. 기존 test의 barrier는 30초다. 각 worker Throwable을 버리고 optimistic count를 먼저 단언했기 때문에 실제 원인은 artifact에 없다. 시간 일치만으로 barrier 원인을 확정하지 않는다.
+- merchant authored 변경은 product code/test/config를 건드리지 않았고 공유 ErrorCode에는 PAY-014/015만 추가했다. 기존 테스트 자체의 문제인지 환경 경합인지는 추가 증거가 필요하다.
+- 승인받은 진단 보완은 repository 실제 save 전후·barrier 도달/통과와 transaction 상태 및 unexpected Throwable 전체 stack을 보존하고, 원인 단언을 먼저 수행하며 finally에서 worker 종료를 기다린다. barrier/optimistic/stock 기준은 바꾸지 않는다. 원 seed full product suite는 아래와 같이 재현됐으며 최종 CI는 아직 대기다.
+
+- `./gradlew :product-service:test -PtestSeed=1792523372921 --no-daemon --no-parallel --max-workers=1`은 1분44초 뒤 같은 테스트가 실패했다(세션 68702, `/private/tmp/d064-product-seed-diagnostic.log`). 이번에는 order 1004의 TimeoutException 1개와 다른 네 worker의 BrokenBarrierException을 보존했다. 다섯 worker의 마지막 phase는 barrier 대기이며 txActive=true였으나, 마지막 map은 동시 도착 증거가 아니다. 첫 timeout 뒤 나머지가 늦게 도착한 경우도 구분해야 한다.
+- 최초 CI XML SHA256 `8d2854e9570e4f8ed9ba7c08ef0eeb117e6491e330a04c3d472a584965f96b20`, 첫 로컬 재현 XML은 `/private/tmp/d064-product-diagnostic-first.xml` SHA256 `a186813d57c631105d8e2e135c732d2d9948275ade5783bb446a23ea707c15f3`로 별도 보존했다. 테스트 컨테이너 종료 후 기존 momens 3개만 확인하고 heavy slot을 반환했다.
+- root가 승인한 다음 관찰은 원래 동기화 위치와 30초 제한을 유지하며 elapsed history·barrier identity/대기수/generation, timeout 전 MySQL lock wait/transaction 및 ThreadMXBean monitor owner/full stack을 수집한다. DB 또는 Java 잠금 원인은 아직 미확정이며 관찰 실행은 대기다.
+
+- 같은 관찰 patch로 targeted 실행(세션 63881, `/private/tmp/d064-product-observation.log`)은 33초, 테스트 1개 0.593초로 통과했다. 이어 원 seed full product(세션 46439, `/private/tmp/d064-product-observation-full.log`)는 1분9초, 234개/실패 0/skip 0으로 통과했다. 해당 클래스는 2개 0.198초였다. 각각 XML을 `/private/tmp/d064-product-observation-targeted.xml`, `/private/tmp/d064-product-observation-full.xml`로 보존했다.
+- 두 실행 모두 5초 전에 완료되어 MySQL/ThreadMXBean snapshot 분기는 실행되지 않았다. 이 통과를 최초 CI/로컬 timeout 원인 해결로 해석하지 않는다. 단독과 전체 suite에서 관찰 patch의 컴파일·정상경로를 확인했으며, timeout 당시 SQL/Java 잠금 원인은 미확정이다. 근거 없이 barrier 위치·제한·재고/낙관락 기준을 바꾸지 않았다. 종료 후 테스트 컨테이너 0개, 기존 momens 3개만 확인하고 heavy slot을 반환했다.
+
+- root 승인으로 명시적 진단 음성 대조를 수행했다. worker 1004만 실제 consumer 진입 전에 `NEGATIVE_CONTROL withheld barrier participant` 예외를 내도록 임시 주입했고 나머지 4개는 실제 경로와 원래 30초 barrier를 유지했다. targeted 동일 명령은 세션 34166, 1분3초 exit 1, test 30.529초로 예상대로 실패했다(`/private/tmp/d064-product-diagnostic-negative.log`).
+- 5초 분기가 실제 실행되어 SQL locks=[] 및 RUNNING transaction 4개, 같은 barrier identity 1390486136에 도달한 4개 worker의 TIMED_WAITING/CyclicBarrier stack과 불참 worker를 기록했다. 원인 출력에는 주입 예외와 TimeoutException/BrokenBarrierException이 포함됐다. XML `/private/tmp/d064-product-diagnostic-negative.xml`, 전체 snapshot `/private/tmp/d064-product-diagnostic-negative-snapshot.txt` 보존. 이는 진단 경로 검증이며 최초 실패의 원인 증거가 아니다.
+- 주입 코드를 제거하고 원본 Java 파일 SHA256 `b429efbaabb10a30b06c87c59d84df9b0b2f28b1e35633e0e154551dfc87da38` 일치를 확인했다. 이는 앞서 234개 통과한 파일과 동일하다. executor finally 종료 및 테스트 컨테이너 정리를 확인했고 기존 momens 3개를 유지한 채 heavy slot을 반환했다.
+- root는 제한된 진단을 최종 테스트에 유지하고 최초 실패·미확정 원인·이후 통과를 구분하도록 승인했다. product 원인 분석 잔여는 D-078 관련 후속이며 merchant 제품 결함 해결로 표시하지 않는다. 새로운 head의 전체 CI와 독립 검토는 대기다.
+
+- 최종 product 진단 소스는 `c27602b` test commit에 분리했다. merchant 기존 코드·E2E와 main 통합은 `aa33234`이며, 진단 소스는 위 234개 통과 및 음성 대조 후 원복 hash와 같다. ship preflight, grade L, consistency, migration/container lint, PR writing 및 diff 검사를 통과했다. PR #196에 push하여 최종 전체 CI 및 순차 독립 검토를 요청한다. merge는 승인되지 않았으며 draft를 유지한다.
