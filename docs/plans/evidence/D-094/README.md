@@ -32,3 +32,9 @@ SPRING_PROFILES_ACTIVE=test ./gradlew :product-service:test --tests 'com.peekcar
 baseline과 restored의 테스트 source SHA-256은 모두 `f30b7a2cd8d107d4cf9b716cbf690eb0dace1003e88b108cd2c802715a31113f`다. 임시 mutation 두 개는 모두 제거했고 배포 설정의 500ms 및 3500ms bound는 바꾸지 않았다. 실제 부하, DB/JVM별 시간 기여, production 원인을 이 결과로 확정하지 않는다.
 
 저장 patch는 임시 소스 복사본에 적용해 실제 실행한 두 mutation의 source SHA-256을 정확히 재현하는지 확인했다. 이 artifact 확인을 위해 Gradle timing probe를 반복하지 않았다.
+
+## 원본 XML 보존
+
+각 실행의 원본 XML byte를 변경하지 않고 gzip으로 보존했다: [baseline](baseline.xml.gz), [delay](delay-1800ms.xml.gz), [timeout](timeout-1s.xml.gz), [restored](restored.xml.gz). [SHA-256 manifest](xml-sha256.json)는 압축 전·후 해시와 크기를 모두 기록한다. `gzip -dc <file.xml.gz> | shasum -a 256`으로 원본 해시를 확인할 수 있다. 로컬 `/private/tmp/d094-results`의 XML과 압축 해제 byte 일치를 검사했다.
+
+XML의 stdout/stderr와 failure를 확인했으며 fixture 외 비밀번호·token·credential은 없었다. 로그에는 로컬 hostname, Docker socket 경로, 임시 container ID와 localhost port 등 실행 환경 metadata가 포함되어 있다. 전체 Gradle 로그는 저장하지 않는다. 이 추가는 증거 보존이며 테스트를 재실행하지 않았다.
