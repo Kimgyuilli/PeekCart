@@ -70,3 +70,11 @@
 
 - 최종 PR196 head `6b2b534e8c512868a1330a3aaa8399c5ea84ca7a`를 정상 merge한 기준은 `63ce6bf`다. 통합 전 전체 source snapshot은 여전히 `caf2f011...`과 일치했고, 통합 뒤 D065 소유 writer/migration/test/script 12개를 각 파일 SHA256으로 대조해 모두 불변임을 확인했다(`/private/tmp/d065-owned-tested-source.json`). 상위 product test/doc 변경은 최종 전체 CI에서 확인한다. D065 제품 코드는 `f4a0b25`, 테스트 `8a06507`, E2E 기대 목록 `3f4ea2b`로 분리했다.
 - 일시 경로만으로 증거가 사라지지 않도록 [증거 묶음](evidence/D-065-lineage-writer/README.md)에 당시 SQL prototype, 최종 SQL/restart 로그, 최종 집중 실행 로그 및 신규 JPA 15개 원본 XML과 해시를 보존했다. 역사적 no-op prototype가 최종 판정 계약이 아님을 명시했다.
+
+
+## 2026-10-21 /ship 실행
+
+- 초안 PR: https://github.com/Kimgyuilli/PeekCart/pull/201, branch `debt/d065-lineage-writer`, target main. 선행 #196 최종 `6b2b534`에 의존하며 실제 merge 뒤 main 재통합·최종 독립 검토·전체 CI가 필요하다.
+- ADR은 구현 전에 `564edc0`, 기술 전제 보완은 `f6214ee`로 기록했다. 제품 writer는 `f4a0b25`, 테스트는 `8a06507`, E2E 기대 목록은 `3f4ea2b`, 문서·원본 증거는 `3c0a4bb`로 분리했다. 검증한 source와 코드 commit의 byte 변경은 없다.
+- ship preflight, grade L, consistency, explicit staged category, PR title/body writing 및 diff 검사를 통과했다. 별도 Codex 리뷰 미호출. 세션 독립 검토와 전체 필수 CI는 대기다. ADR/index·05/06 승인 영역과 계획·감사는 갱신했으며 TASKS·진행·마스터 계획은 root 소유다.
+- merge는 승인되지 않았고 draft를 유지한다. 전체 D-065 및 NOT NULL contract·signed gateway·운영 증적은 미완으로 남긴다.
