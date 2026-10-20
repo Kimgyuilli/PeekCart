@@ -466,6 +466,22 @@ P1~P8(P3b 포함)이 전부 체크되고, V-1~V-8 이 통과하며, V-7 의 실�
 예상된 결과이고, ADR-0028 의 "19분 → 약 16분" 예측이 빗나간 것은 §V-7 실측 에 기록했다.
 이 전환의 값어치는 CI 벽시계가 아니라 로컬 반복 비용과 확장성이다.
 
+### 2026-10-21 D-086 원본 run 재대조
+
+위 V-7 해석의 두 문장을 정정한다. PR #138 run [35753591828](https://github.com/Kimgyuilli/PeakCart/actions/runs/35753591828)
+에서 order test 는 16:40:20Z 에 끝났고 gate 는 16:40:24Z 에 시작해 16:40:41Z 에 끝났다.
+e2e 는 16:40:35Z 에 끝나 gate 보다 6초 빨랐다. 해당 run 의 workflow revision(`703fe73`)에서
+gate 는 `[test, guards]` 를, e2e 는 `images` 를 기다렸다. 이 기록은 당시 DAG 만 설명하며
+현재의 all-input gate 계약을 설명하지 않는다. `test(order) → historical gate` 경로가 e2e 보다
+6초 늦게 끝나 두 경로는 거의 동률이므로, test 가 이미 critical path 밖이었다는 기존 설명은
+사실과 다르다.
+
+다음 비교 run [35976903613](https://github.com/Kimgyuilli/PeakCart/actions/runs/35976903613)의
+order-service 이미지 로그는 GHA cache manifest 를 가져왔고 11개 이전 레이어가 `CACHED` 였다.
+이후 `COPY order-service/build.gradle` 의 입력 변경 뒤 dependency 단계가 28.8초, `bootJar` 가
+약 34초 걸렸다. PR #138 이 해당 파일에 27줄을 추가했다. 따라서 1.9분→3.4분 증가는 완전한
+GHA cache miss 로 설명되지 않으며, 증거는 파일 변경 뒤 부분 재빌드를 가리킨다.
+
 
 ## 2026-10-17 D-080 사실 정정
 
