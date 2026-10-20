@@ -181,7 +181,7 @@ SQL 은 migration 체크섬 근거를 확인하며 범위 밖으로 뒀다(당�
 미충족: `src/test` 주석은 범위 밖이라 그대로다. 검사 스크립트는 로컬에만 있어 재발 방지 장치가 없다. 새 계획 식별자가
 주석에 다시 쌓이면 CI lint 로 상시화한다.
 
-사실 보정(D-100, 2026-10-21): 위 기록의 `flyway-core 12.4.0`은 D-050 작업 때 실제 프로젝트에서 해석한 버전이 아니었다. #169 직전 `42030ff` 및 현재 payment `runtimeClasspath`의 버전은 `11.7.2`다. 11.7.2와 12.4.0의 `ChecksumCalculator` jar 실험은 동일한 입력별 checksum을 냈다. 구현은 `readLine()`의 줄 텍스트를 UTF-8 CRC32에 넣으므로 주석 텍스트 및 공백-only 줄 변경은 checksum을 바꾸고, 빈 줄·LF/CRLF·마지막 개행 차이는 바꾸지 않았다. 이는 isolated `StringResource` calculator 실험이며 데이터베이스의 `flyway validate`를 실행한 결과가 아니다. 따라서 migration SQL을 제외한 D-050 범위 결론은 유지되지만, 기존 DB에서 validate가 실패했다는 주장은 이 실험으로 확정하지 않는다. 상세 근거는 [D-050 계획의 D-100 사실 보정](../plans/done/D-050.md#d-100-사실-보정)에 기록했다.
+사실 보정(D-100, 2026-10-21): 위 기록의 `flyway-core 12.4.0`은 D-050 작업 때 실제 프로젝트에서 해석한 버전이 아니었다. #169 직전 `42030ff` 및 기준 코드 `be535c57`의 payment `runtimeClasspath`의 버전은 `11.7.2`다. 11.7.2와 12.4.0의 `ChecksumCalculator` jar 실험은 동일한 입력별 checksum을 냈다. 구현은 `readLine()`의 줄 텍스트를 UTF-8 CRC32에 넣으며, 8개 입력 실험에서 주석 텍스트 및 공백-only 줄 변경은 checksum을 바꿨고, 빈 줄·LF/CRLF·마지막 개행 차이는 바꾸지 않았다. 이는 isolated `StringResource` calculator 실험이며 데이터베이스의 `flyway validate`를 실행한 결과가 아니다. 따라서 migration SQL을 제외한 D-050 범위 결론은 유지되지만, 기존 DB에서 validate가 실패했다는 주장은 이 실험으로 확정하지 않는다. 상세 근거는 [D-050 계획의 D-100 사실 보정](../plans/done/D-050.md#d-100-사실-보정)에 기록했다.
 
 ## outbox·멱등성·DLQ 원장 실행 세트의 공유 모듈 승격 (D-049, ADR-0033, [#168](https://github.com/Kimgyuilli/PeekCart/pull/168), 2026-09-29)
 
