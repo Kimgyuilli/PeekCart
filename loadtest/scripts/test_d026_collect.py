@@ -150,7 +150,8 @@ class CacheCollectorFixtureTest(unittest.TestCase):
                 ('cache_gets_total{cache_name="product",result="hit"} 9\n', 0, 'unavailable'),
                 ('cache_gets_total{name="product",result="hit"} 12\n', 1, 'unavailable'),
                 *[(f'cache_gets_total{{name="product",result="hit"}} {bad}\n', 0, 'unavailable')
-                  for bad in ('NaN', '+Inf', '-1', '1.5', 'wrong')]]:
+                  for bad in ('NaN', '+Inf', '-1', '1.5', 'wrong', '1e-999',
+                              '0.99999999999999999999', '1.00000000000000000001', '1e999')]]:
             with self.subTest(body=body, status=status):
                 with tempfile.TemporaryDirectory(prefix='d078-scrape-') as directory:
                     fixture = Path(directory) / 'prometheus.txt'
@@ -163,6 +164,14 @@ class CacheCollectorFixtureTest(unittest.TestCase):
                     result = subprocess.run(['bash', '-c', script], text=True,
                                             capture_output=True, check=True)
                 self.assertEqual(result.stdout, f'hit_after_product\t{expected}\n')
+                # Use the actual serialized value as collector input as well.
+                m = named(metadata(), 'product', 0, 0, 0, 4)
+                key, value = result.stdout.rstrip('\n').split('\t', 1)
+                m[key] = value
+                _, rows = self.collect([('mysqlA-detail-cacheon-r1', m, 460)])
+                row = rows['A', 'detail', 'ON', 'product']
+                self.assertEqual(row['valid_runs'], '0' if expected == 'unavailable' else '1')
+                self.assertEqual(row['invalid_runs'], '1' if expected == 'unavailable' else '0')
 
     def test_legacy_gate_outcomes_remain_explicit(self):
         runs = []

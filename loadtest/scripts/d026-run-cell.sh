@@ -24,6 +24,8 @@
 
 set -uo pipefail
 
+command -v python3 >/dev/null 2>&1 || { echo "이름별 counter 검증에 python3 필요" >&2; exit 1; }
+
 NS=peekcart
 EP="${EP:?EP=detail|list 필요}"
 CACHE="${CACHE:?CACHE=on|off 필요}"
@@ -118,13 +120,37 @@ prom() { kubectl -n "$NS" exec "$POD" -- curl -s localhost:8080/actuator/prometh
 cachegets() {
   local snapshot
   snapshot=$(prom) || { printf 'unavailable\n'; return; }
-  printf '%s\n' "$snapshot" | awk -v name="$2" -v result="$1" '
-    /^cache_gets_total[{]/ && $0 ~ ("[{,]name=\"" name "\"[,}]") && $0 ~ ("[{,]result=\"" result "\"[,}]") {
-      n++
-      if ($NF !~ /^[0-9]+([.][0-9]+)?([eE][+-]?[0-9]+)?$/ || $NF + 0 != int($NF + 0)) bad=1
-      s+=$NF
-    }
-    END { if (!n || bad) print "unavailable"; else printf "%.0f\n", s }'
+  # Decimal 검증 전에 awk의 부동소수 반올림을 거치지 않는다.
+  printf '%s\n' "$snapshot" | python3 -c '
+import re
+import sys
+from decimal import Decimal, InvalidOperation
+
+name, result = sys.argv[1:]
+maximum = Decimal(str(sys.float_info.max))
+count = total = 0
+try:
+    for line in sys.stdin:
+        if not line.startswith("cache_gets_total{"): continue
+        labels, separator, sample = line.partition("}")
+        if not re.search(r"(?:[{,])name=\"" + re.escape(name) + r"\"(?:,|$)", labels): continue
+        if not re.search(r"(?:[{,])result=\"" + re.escape(result) + r"\"(?:,|$)", labels): continue
+        fields = sample.split()
+        if not separator or len(fields) != 1: raise ValueError("sample")
+        raw = fields[0]
+        if not re.fullmatch(r"[+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", raw):
+            raise ValueError("number")
+        value = Decimal(raw)
+        if not value.is_finite() or value > maximum or value != value.to_integral_value():
+            raise ValueError("counter")
+        count += 1
+        total += int(value)
+        if total > maximum: raise ValueError("sum")
+    if not count: raise ValueError("missing")
+    print(total)
+except (InvalidOperation, ValueError, OverflowError):
+    print("unavailable")
+' "$2" "$1"
 }
 throttled() { kubectl -n "$NS" exec "$1" -- cat /sys/fs/cgroup/cpu.stat 2>/dev/null \
                 | awk '/throttled_usec/{print $2}'; }
