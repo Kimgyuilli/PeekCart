@@ -35,7 +35,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * user-service 보안 통합 회귀 — Gateway 서명 내부 토큰 전환(ADR-0017 · PR3d).
+ * user-service 보안 통합 회귀 — Gateway 서명 내부 토큰 전환(ADR-0017).
  * Gateway 가 자기 개인키로 서명한 {@code X-Internal-Auth} 만 인증 근거이며, 평문 {@code X-User-*} 와
  * 사용자 {@code Authorization} 은 신원으로 취급하지 않는다(ADR-0014 D2-c exit).
  * <ul>
@@ -163,7 +163,7 @@ class UserSecurityIntegrationTest {
         SecurityFilterChain chain = securityFilterChains.values().iterator().next();
         long tokenFilterCount = chain.getFilters().stream()
                 .filter(f -> f instanceof InternalTokenAuthenticationFilter).count();
-        // MdcFilter 보존은 configurer 동등성의 일부 — 누락 시 traceId/userId MDC 가 조용히 사라진다(PR3c review #6).
+        // MdcFilter 보존은 configurer 동등성의 일부 — 누락 시 traceId/userId MDC 가 조용히 사라진다.
         long mdcFilterCount = chain.getFilters().stream()
                 .filter(f -> f instanceof MdcFilter).count();
         assertThat(tokenFilterCount).isEqualTo(1);
@@ -179,7 +179,7 @@ class UserSecurityIntegrationTest {
                 .isNotEmpty();
 
         // 고정 fixture 키 하나만 대조하면, 내부 레지스트리에 *다른* 키가 바인딩되고 그 키가 User 쪽에도
-        // 들어간 경우를 놓친다(diff 리뷰 c2:3). 두 집합 전체의 교집합이 비어 있어야 한다.
+        // 들어간 경우를 놓친다. 두 집합 전체의 교집합이 비어 있어야 한다.
         Set<String> internalFingerprints = internalKeyRegistry.kids().stream()
                 .map(internalKeyRegistry::find)
                 .map(InternalKeyFingerprint::of)

@@ -15,7 +15,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 /**
- * JWKS 응답 스키마 단위 테스트 (ADR-0013 D1, 구현 ③ PR1 P5).
+ * JWKS 응답 스키마 단위 테스트 (ADR-0013 D1).
  * kid → 공개키를 RFC 7517 JWK(kty/use/alg/kid/n/e)로 노출하는지 회귀한다.
  */
 @DisplayName("JwkController JWKS 스키마 단위 테스트")

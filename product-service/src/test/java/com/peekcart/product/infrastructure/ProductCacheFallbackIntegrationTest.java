@@ -59,7 +59,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 /**
- * Redis 장애 시 조회 캐시 fail-open 검증 (L-006, 구현 ⑤ P5/P6 · 계획 §5 V0~V5).
+ * Redis 장애 시 조회 캐시 fail-open 검증 (L-006).
  *
  * <p><b>왜 Toxiproxy 인가</b>: 컨테이너를 정지시키면 <b>연결 거부</b>만 재현되고, 정작 위험한
  * <b>무응답</b>(연결은 살아 있는데 응답이 없는 상태)을 만들 수 없다. 무응답에서는 유계 타임아웃이
@@ -203,7 +203,7 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
 
         // 프록시를 끊으면 같은 연결이 실패해야 한다 = 앱이 프록시를 통과한다는 증거.
         // 누적값이 아니라 '이 호출이 만든 증가분'을 본다 — 앞선 테스트의 잔여로 통과하면
-        // 프록시 우회를 못 잡는다(diff 리뷰 #2).
+        // 프록시 우회를 못 잡는다.
         FallbackSnapshot before = captureFallback();
         clearInvocations(productRepository);
         redisProxy.disable();
@@ -298,7 +298,7 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
                     .isLessThan(Duration.ofMillis(3500));
 
             // 한 요청이 get·put 두 경로 '모두에서' 타임아웃을 맞았음을 증가분으로 고정한다.
-            // 누적값 단언이면 put 경로가 아예 안 타도 앞선 테스트 잔여로 통과한다(diff 리뷰 #2).
+            // 누적값 단언이면 put 경로가 아예 안 타도 앞선 테스트 잔여로 통과한다.
             assertThat(before.deltaOf(DETAIL_CACHE, "get")).isEqualTo(1.0);
             assertThat(before.deltaOf(DETAIL_CACHE, "put")).isEqualTo(1.0);
             // 재고 캐시는 '1 이상' 이다 — Lettuce 재연결 상태에 따라 이중 집계를 관측했다(V1 주석 참조).
@@ -407,7 +407,7 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
 
         /**
          * {@code cache} 라벨까지 함께 본다 — operation 만 보면 핸들러가 모든 이벤트를
-         * {@code cache="unknown"} 으로 기록해도 단언이 통과해 P3 의 라벨 계약이 무너진다.
+         * {@code cache="unknown"} 으로 기록해도 단언이 통과해 캐시 이름 라벨 계약이 무너진다.
          */
         double deltaOf(String cache, String operation) {
             return fallbackCount(cache, operation) - baseline.getOrDefault(key(cache, operation), 0.0);
