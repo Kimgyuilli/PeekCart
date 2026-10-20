@@ -40,7 +40,7 @@ PLAN-BLINDSPOTS B1/B4/B7/B10/B12를 확인했다. beginApproval/insertWaitingIfA
 - [x] P5. 실제 MySQL에서 migration legacy 유지, 신규/반복/동시 prepare, 중복 승인 및 불일치 rollback을 검증한다. HTTP fixture로 동일 ID 전달과 mismatched 응답의 비종결을 검증한다.
 - [x] P6. API·데이터·결제 테스트 문서와 감사 기록을 갱신하고 lint·분류 커밋·초안 PR 본문을 준비한다. 전체 CI와 최종 커밋 독립 검토 후에만 주 작업자가 merge한다.
 
-- [ ] P7. 저장소 E2E A/E의 준비·승인 호출과 PG stub의 영속 identity 응답을 새 계약으로 전환하고 양음 self-test 및 실제 E2E를 검증한다.
+- [x] P7. 저장소 E2E A/E의 준비·승인 호출과 PG stub의 영속 identity 응답을 새 계약으로 전환하고 양음 self-test 및 실제 E2E를 검증한다.
 
 ## 4. 검증 방법
 
@@ -50,11 +50,12 @@ PLAN-BLINDSPOTS B1/B4/B7/B10/B12를 확인했다. beginApproval/insertWaitingIfA
 | P3 | 다른 사용자·다른 PG ID·누락·잘못된 길이·금액·재고 만료 요청에서 승인 행/키/outbox 불변; 반복/동시 prepare가 같은 값 반환; 중복 confirm이 추가 원장/PG 호출을 만들지 않음 |
 | P4 | 최초 POST body 및 query/recovery 기대값이 prepare와 동일; DONE/ABORTED/CANCELED의 다른 paymentKey/orderId/amount 또는 잘못된 JSON 유형은 종결하지 않음; legacy 숫자 일치는 허용 |
 | P5 | 실제 MySQL SharedContainers와 MockRestServiceServer만 사용; 테스트 중 임의 PG 네트워크 없음; root의 heavy slot 승인 후 집중 Gradle 실행 |
+| P7 | prepare/PG identity 양음 HTTP fixture와 네 서비스 migration 파일 목록 누락·추가·대체 대조; 같은 commit의 이미지로 실제 Compose A/E 검증 |
 | P6 | migration-grant, integration-container, consistency, writing, diff 검사 및 필수 전체 CI; 미실행은 감사에서 명시 |
 
 ## 5. 완료 조건과 미해결
 
-P1~P6 로컬 구현 및 검증을 완료하고 최종 SHA/PR을 전달한다. 실제 PG 승인·취소·조회, 외부 webhook 수신, 운영 checkout 소비자의 전환 및 혼합 배포 차단은 수행하지 않는다. 따라서 이 변경만으로 D-064 전체 완료를 주장하지 않는다. TASKS·PHASE5·마스터 계획은 주 작업자가 소유한다. docs/06은 13-3만 수정하며 다른 작업자의 E2E 13-1을 건드리지 않는다.
+P1~P7 로컬 구현 및 검증을 완료하고 최종 SHA/PR을 전달한다. 실제 PG 승인·취소·조회, 외부 webhook 수신, 운영 checkout 소비자의 전환 및 혼합 배포 차단은 수행하지 않는다. 따라서 이 변경만으로 D-064 전체 완료를 주장하지 않는다. TASKS·PHASE5·마스터 계획은 주 작업자가 소유한다. docs/06은 13-3만 수정하며 다른 작업자의 E2E 13-1을 건드리지 않는다.
 
 공식 계약: [Toss 코어 API](https://docs.tosspayments.com/reference)의 orderId는 허용 문자로 된 6~64자 문자열이며 결제 요청에서 생성한 값을 저장하고 유지한다. 2026-10-21 직접 확인했다.
 
@@ -62,3 +63,5 @@ P1~P6 로컬 구현 및 검증을 완료하고 최종 SHA/PR을 전달한다. �
 ## 로컬 검증 결과
 
 집중 6개 클래스 58개, 실제 MySQL 44개를 통과했다. PR #193의 고정 head `6886c19`를 merge한 뒤 controller 28개, 실제 MySQL webhook 10개와 merchant 6개를 다시 통과했다. migration은 세션 임시 테이블의 대표 legacy 행으로 비재작성을 확인했고 전체 application schema는 Flyway 기동으로 검증했다. 실제 PG·운영 전환·전체 CI·최종 독립 검토는 미수행 또는 대기다. 초안 PR은 #193에 의존하며 #193 merge 후 실제 main을 다시 반영한다.
+
+독립 검토의 E2E P1 보완 후 소스 `bb944c3`에서 smoke 59개 및 PG stub 41개(9+32)를 통과했다. 같은 commit에서 정상 Dockerfile로 만든 4개 이미지로 실제 Compose A/E가 통과했다. E는 runner 298.7초로 기존 300초 예산에 근접했고 전체 A~F/음성 대조 및 최종 head 검토는 CI에서 계속 확인한다.
