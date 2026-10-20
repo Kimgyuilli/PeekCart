@@ -25,6 +25,12 @@
 
 정상 병합 SHA `be535c57ced11acfcbe9a24a349ddb6ad2055d8a`의 [main CI39474188286](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474188286)는 모든 검사와 여섯 publish가 성공했다. TASKS 완료 행 이동은 상태 외 본문 보존, 전체 ID 다중집합 동일성 및 유일성을 확인했다.
 
+### D-097 실제 런타임 의존성 기준 중복 클래스 검사 완료
+
+[PR187](https://github.com/Kimgyuilli/PeekCart/pull/187) 최종 head `cca3efbbc98ce6251afa7d13dfb9ece6a69dc119`은 gateway를 포함한 여섯 bootJar 앱의 실제 선택된 내부 런타임 프로젝트 산출물을 검사한다. runtimeOnly·전이 의존성을 포함하고 compileOnly·외부 jar·대상 외 패키지는 구분한다. [독립 초기 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/187#issuecomment-6297621464)는 실제 컴파일 8개 시나리오를 실행했고, [최종 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/187#issuecomment-6298143655)는 작성 patch 동일성과 최신 main 통합을 확인한 뒤 관련 경량 검증을 실행했다. 8개 컴파일 결과는 변경 없는 코드의 기존 증거로 재사용했다.
+
+[최신 PR CI39474405548](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474405548)가 통과한 뒤 정상 병합한 SHA는 `af60cd6d9dceac541b6f457062093df70753f3ce`다. [main CI39476821899](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476821899)는 E2E·gate와 여섯 publish를 포함해 성공했다. 완료 행은 상태 외 본문과 전체 ID 다중집합·유일성을 확인해 이동했다.
+
 ## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
 
 ## 최종 부채·소유권·증거 대조
