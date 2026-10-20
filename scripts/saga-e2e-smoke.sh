@@ -53,6 +53,15 @@ def check(name, requested, want_ok):
 
 
 print("saga-e2e-smoke 순서 계약 self-test")
+from pathlib import Path
+for service in m.SERVICES:
+    versions = sorted(p.name.split("__", 1)[0][1:] for p in
+                      Path(service + "-service/src/main/resources/db/migration").glob("V*__*.sql"))
+    if versions != sorted(m.EXPECTED_MIGRATIONS[service]):
+        print("  FAIL [migration manifest " + service + "]", versions)
+        fails += 1
+    else:
+        print("  ok   [migration manifest " + service + "]")
 check("정본 전체 순서", m.SCENARIO_ORDER, True)
 check("부분집합(순서 유지)", ["a", "c"], True)
 check("빈 목록", [], True)
