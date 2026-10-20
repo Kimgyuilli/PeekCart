@@ -49,3 +49,24 @@
 - 증거: `/private/tmp/d065-sql-prototype.log` SHA256 `78d2c35fe7a70dfceaabfa6fe252b5a754b057bfc139859aeada32c61c560ec6`, restart log `07944daf85fbd6bd360fe9952748590b65965149ea3ecf64cd60285b723c85af`, 임시 `.cache/d065-prototype/probe.py` `4402537cf733de44594d96c7343ac17de62307c5149519387e7393c340ef1ce0`은 boundary 대조를 수정한 최종 실행본이다.
 - 자기 MySQL·network를 제거했고 기존 momens 3개만 실행 중임을 확인하여 heavy slot을 반환했다. SQL prototype는 JPA/전체 애플리케이션 검증이 아니며 이후 production 통합 테스트가 필요하다.
 - root 승인으로 frozen #196 `5030e31`과 current main `545e5dc`를 정상 merge했다. 두 merge 후 baseline은 `d6cea4d`다. #196에 의존하는 별도 PR이며 실제 main merge 후 다시 맞추고 최종 review/CI를 확인한다. 실제 merge commit에 한해 `HPX_ALLOW_MIXED=1`을 사용했다.
+
+
+## 2026-10-21 production writer의 1차 실제 Spring/MySQL 검증과 보완
+
+- `./gradlew :peekcart-common-messaging:test --tests '*DeadLetterIdAllocatorTest' :order-service:test --tests '*DeadLetterIdReservationIntegrationTest' --tests '*DeadLetterLedgerIntegrationTest' --tests '*DlqReplayCorrelationIntegrationTest' --tests '*DeadLetterIncidentAggregationIntegrationTest' --no-daemon --no-parallel --max-workers=1`을 실행했다.
+- 첫 실행은 ID 충돌을 주입하는 Mockito spy 설정이 MANDATORY transaction 밖에 있어 2개가 실패했다. 실제 allocator의 transaction guard는 유지하고 spy 설정을 transaction 안에서 수행하도록 고쳤다. `/private/tmp/d065-writer-focused-injection-failure.log` 보존.
+- 다음 실행은 49초, common unit 4개와 order 실제 MySQL 64개(신규 allocator 12, ledger 11, correlation 28, aggregation 13) 통과했다. 로그 `/private/tmp/d065-writer-focused.log`, 당시 새 파일 포함 source snapshot SHA256 `64468d5e72047c7509c37976d1b852c36e88e67d229d8428e45aaf1de0236371`. 테스트 컨테이너 정리 후 기존 momens 3개만 확인하고 heavy slot을 반환했다.
+- 이 통과 뒤 자체 검토에서 no-op upsert + ID 비교만으로는 allocator가 이미 존재하는 같은 ID·같은 좌표를 다시 반환할 때 신규로 오인하는 반례를 발견했다. 최초 테스트 결과를 최종 구현의 통과로 주장하지 않는다.
+- root 승인 후 ADR-0043 본문을 보존하고 Update Log를 먼저 추가했다(`f6214ee`). 기존 모든 중복의 attempt 증가를 upsert 자체로 옮긴다. 새 insert count=1/실제 중복 증가 count=2를 좌표 current read의 ID 및 예약 ID 점유 여부와 함께 대조한다. row count만으로 분류하지 않으며 예상 밖 ID 충돌은 전체 rollback한다.
+- 동일 ID/같은 좌표 재사용, attempt INT 최대 overflow 뒤 rollback/정상 재시도, NOT NULL attempt 거절 대조를 추가했다. 이 보완 이후 테스트는 아직 실행하지 않았다. #196의 product CI 실패 조사가 우선이며 다음 승인된 heavy slot에서 실제 MySQL 최종 검증을 수행한다.
+
+
+## 2026-10-21 보완 계약의 최종 실제 MySQL 검증
+
+- 선행 PR #196의 최종 고정 head `3bec8aef2e3f02a7d30dd50009aebfdbf1ef0870`를 정상 merge했다. 실제 main `a7ffa11` 및 product 진단을 포함한 기준은 `1bcbe867bb35c4d500d0035c19888a53fcaceb2c`이며 자기 dirty D065 파일은 그대로 보존했다. #196의 미확정 product timeout 잔여도 상속하고 merchant/lineage 해결로 주장하지 않는다.
+- 위 집중 Gradle 명령을 같은 4개 order suite와 common allocator unit에 다시 실행했다. 세션 69939, 49초 exit 0, `/private/tmp/d065-writer-final-focused.log`. 실제 XML은 common 4개와 order 67개(신규 allocator 15, ledger 11, correlation 28, aggregation 13), 실패/오류/skip 모두 0이었다. `/private/tmp/d065-writer-final-test-results`에 XML을 별도 보존했다.
+- 실제 실행 source snapshot(새 파일 포함 src/scripts/Gradle 749개)은 SHA256 `caf2f01196f32011bf67f922988174a5c59c89b3d0c8e01236420e35f6e14d73`, manifest `/private/tmp/d065-writer-final-source-manifest.txt`다. 동일 ID·같은 좌표 재사용, 다른 좌표 PK 충돌, 정상 concurrent duplicate의 attempt 증가, INT 최대 overflow rollback/재시도와 NULL 거절을 실제 MySQL로 확인했다. 결과는 SQL prototype를 Spring/JPA 증거로 오인한 것이 아니다.
+- 테스트 컨테이너 종료 뒤 기존 momens 3개만 확인하고 heavy slot을 반환했다. smoke self-test 59개(`/private/tmp/d065-writer-smoke-selftest.log`), migration-grant 53개, integration-container lint 및 diff 검사도 통과했다. 전체 CI와 독립 검토는 아직 대기이며 실제 운영 전환·NOT NULL contract·signed gateway ADMIN 전체 경로·P22/GKE/replay 개방은 수행하지 않았다.
+
+- 최종 PR196 head `6b2b534e8c512868a1330a3aaa8399c5ea84ca7a`를 정상 merge한 기준은 `63ce6bf`다. 통합 전 전체 source snapshot은 여전히 `caf2f011...`과 일치했고, 통합 뒤 D065 소유 writer/migration/test/script 12개를 각 파일 SHA256으로 대조해 모두 불변임을 확인했다(`/private/tmp/d065-owned-tested-source.json`). 상위 product test/doc 변경은 최종 전체 CI에서 확인한다. D065 제품 코드는 `f4a0b25`, 테스트 `8a06507`, E2E 기대 목록 `3f4ea2b`로 분리했다.
+- 일시 경로만으로 증거가 사라지지 않도록 [증거 묶음](evidence/D-065-lineage-writer/README.md)에 당시 SQL prototype, 최종 SQL/restart 로그, 최종 집중 실행 로그 및 신규 JPA 15개 원본 XML과 해시를 보존했다. 역사적 no-op prototype가 최종 판정 계약이 아님을 명시했다.

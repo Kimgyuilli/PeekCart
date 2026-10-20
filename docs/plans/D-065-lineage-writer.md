@@ -9,14 +9,14 @@ grade: L
 
 ## 2. 범위와 확인한 전제
 
-공유 messaging writer와 네 서비스의 schema 준비, 동시 중복 의미 및 운영 전환 경계가 바뀌므로 L이다. 기존 D-065의 collector 보정과 분리한다. root가 ADR-0043 번호를 예약했다. 아직 구현하지 않았으며 ID 발급 전략은 아래 실험과 코드 추적을 거쳐 결정한다.
+공유 messaging writer와 네 서비스의 schema 준비, 동시 중복 의미 및 운영 전환 경계가 바뀌므로 L이다. 기존 D-065의 collector 보정과 분리한다. root가 ADR-0043 번호를 예약했다. ID 발급 전략은 아래 실험과 코드 추적을 거쳐 ADR-0043으로 결정했다. 구현 중이며 최종 검증 전이다.
 
 | 전제 | 코드 확인 | 처분 |
 |---|---|---|
 | INSERT IGNORE가 id/root를 생략하고 나중에 self root를 배정한다 | DeadLetterRecordJpaRepository.insertIfAbsent, DeadLetterRecorder.record, DeadLetterRecord.assignSelfRoot | 첫 INSERT 전에 ID를 확보하며 일반 오류 강등을 제거 |
 | NULL만 self로 바꾸므로 NOT NULL에서 강등된 0이 남는다 | assignSelfRoot, root 집계 query | 단순 ALTER 금지, 실제 MySQL 음성 대조 |
 | 상관 root를 먼저 잠근 뒤 새 child를 적재한다 | DeadLetterRecorder.correlate/record | 새로운 할당 잠금과 기존 root/child/purge 순서를 함께 추적 |
-| native duplicate affected-row는 JDBC found-rows 영향을 받는다 | repository Javadoc | 반환 행 수로 신규 판정 금지; allocated ID와 좌표 current read 비교 |
+| native duplicate affected-row는 JDBC found-rows 영향을 받는다 | repository Javadoc | 반환 행 수만으로 신규 판정 금지; attempt 증가 affected count와 allocated ID/좌표 current read를 함께 검증 |
 | 운영 writer는 shared recorder 한 곳이고 test fixture는 JPA save도 쓴다 | 네 서비스 main source 및 shared module 검색 | production 경로 전환, legacy test fixture는 명시적 전환기 증거로 유지 |
 | 네 서비스 backfill은 존재하나 contract는 없다 | replay_backfill migrations | allocator/writer 우선, NOT NULL은 별도 단계 |
 
@@ -34,10 +34,10 @@ schema의 nullable root와 record_kind를 이번 PR에서 제약하지 않는다
 
 - [x] P1. 모든 production insert·상관 child·재전달·root 종결/purge 잠금을 추적하고 ID 할당 대안 및 롤아웃 안전 설계를 확정한다. ADR-0043을 구현 전에 작성한다.
 - [x] P2. 승인된 heavy slot에서 실제 MySQL 실험으로 단순 NOT NULL의 현재 결함, ID 예약 잠금/rollback/restart/bootstrap 및 PK 충돌 처분을 검증한다. 결과가 후보를 반증하면 구현 전에 설계를 수정한다.
-- [ ] P3. 네 서비스의 additive allocator schema와 공유 writer를 구현한다. 첫 ledger INSERT에 id/root를 명시하고 duplicate/new 판정을 affected-row 수와 분리한다. NOT NULL contract는 넣지 않는다.
-- [ ] P4. 실제 MySQL에서 신규 root·상관 child·동시 같은/다른 좌표·원자 rollback·중복 재개방 금지·PK 충돌 비유실·보관/purge 관계를 검증한다. nullable 전환기와 테스트 전용 constrained schema 모두에서 writer를 확인한다.
-- [ ] P5. migration 목록을 소비하는 E2E readiness 기대값 및 파일 목록 양음 대조를 갱신한다. migration-grant, integration-container, consistency, writing, diff와 전체 CI를 수행한다.
-- [ ] P6. 승인받은 문서 영역·계획·감사에 실제 증거와 운영 미실행을 기록하고 분류 커밋·초안 PR을 만든다. 최종 head의 독립 검토와 전체 CI 후 root만 merge한다.
+- [x] P3. 네 서비스의 additive allocator schema와 공유 writer를 구현한다. 첫 ledger INSERT에 id/root를 명시하고 duplicate/new 판정에 실제 변경 affected count와 예약 ID/좌표 current read를 함께 사용한다. NOT NULL contract는 넣지 않는다.
+- [x] P4. 실제 MySQL에서 신규 root·상관 child·동시 같은/다른 좌표·원자 rollback·중복 재개방 금지·PK 충돌 비유실(동일 좌표 ID 재사용 포함)·attempt overflow/NULL 거절 및 재시도·보관/purge 관계를 검증한다. nullable 전환기와 테스트 전용 constrained schema 모두에서 writer를 확인한다.
+- [x] P5. migration 목록을 소비하는 E2E readiness 기대값 및 파일 목록 양음 대조를 갱신한다. migration-grant, integration-container, consistency, writing, diff를 수행하고 전체 CI를 merge 전 필수로 유지한다.
+- [x] P6. 승인받은 문서 영역·계획·감사에 실제 증거와 운영 미실행을 기록하고 분류 커밋·초안 PR 자료를 준비한다. PR 생성 후에도 최종 head의 독립 검토와 전체 CI 전에는 merge하지 않는다.
 
 ## 4. 검증과 완료 경계
 
@@ -48,3 +48,13 @@ P2 실험은 로컬 MySQL 8 컨테이너만 사용한다. 특히 한 트랜잭�
 ## 결정 및 prototype 결과
 
 ADR-0043을 production 코드 전에 작성했다. 별도 AUTO_INCREMENT 예약 테이블을 선택했고 명시적 signed 최대값 guard를 둔다. 실제 MySQL SQL prototype 12개와 정상 restart counter 보존을 통과했으나 JPA/Kafka 증거는 아니다. 상세 실패·반증·cleanup은 audit에 기록했다. frozen #196 `5030e31`과 main `545e5dc`를 정상 merge한 baseline `d6cea4d` 위에서 구현한다.
+
+
+## 최종 로컬 구현 검증
+
+최종 계약은 ADR-0043 Update Log의 affected count·좌표 ID·예약 ID 점유를 함께 대조하는 방식이다. 실제 MySQL 67개와 unit 4개를 통과했다. 신규 15개 외에 기존 ledger 11·correlation 28·aggregation 13을 재검증했다. 실패를 무시하지 않고 ID 충돌·overflow·NULL 제약·rollback-only를 확인했으며 테스트 전용 NOT NULL schema에서 첫 root/child INSERT도 검증했다.
+
+선행 #196 최종 head `3bec8ae`(실제 main `a7ffa11` 포함)를 정상 merge한 기준은 `1bcbe86`이다. source snapshot SHA256 `caf2f01196f32011bf67f922988174a5c59c89b3d0c8e01236420e35f6e14d73`, 실제 명령·실패/반증·cleanup은 audit에 보존한다. smoke self-test 59개와 migration/container lint도 통과했다. #196 의존성과 product timeout 원인 미확정 잔여를 상속하며, 최종 head의 전체 CI와 독립 검토 및 #196 실제 merge 뒤 main 재통합은 대기다.
+
+
+PR 준비 단계에서 #196 최종 `6b2b534`와 실제 #198 main `ec677b3`을 `63ce6bf`로 반영했다. 검증된 D065 소유 12개 source/test/migration/script 파일은 해시가 모두 같고 상위 변경은 별도 product test/doc뿐이다. 최종 전체 CI가 이 통합 상태를 확인한다. 재현 기록은 [증거 묶음](evidence/D-065-lineage-writer/README.md)에 보존한다.
