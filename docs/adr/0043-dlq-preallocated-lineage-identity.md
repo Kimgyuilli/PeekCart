@@ -54,3 +54,9 @@ writer와 실제 MySQL 검증이 끝난 뒤 backfill 확인 및 NOT NULL/no DEFA
 - [MySQL 8 AUTO_INCREMENT](https://dev.mysql.com/doc/refman/8.0/en/innodb-auto-increment-handling.html): 잠금 모드, rollback gap, counter 영속성과 비정상 종료 시 미flush 값 재사용 조건. 2026-10-21 확인.
 - [조사·실측 기록](../plans/D-065-lineage-writer.audit.md)
 - ADR-0020, ADR-0021, ADR-0022, ADR-0033
+
+## Update Log
+
+- 2026-10-21, 정정 대상 `564edc0`: no-op upsert와 저장 ID 비교만으로 신규를 판별할 수 있다는 기술 전제가 불충분했다. 예약 counter가 잘못 재설정되어 같은 ID·같은 좌표를 다시 내주면 기존 행도 신규처럼 보인다. 선택한 예약 테이블·최초 lineage·운영 전환 결정은 유지하고, 첫 INSERT 절의 중복 판정 구현을 다음과 같이 정정한다.
+- 중복 분기는 기존에 별도 UPDATE로 수행하던 attempt_count 증가를 upsert 안에서 수행한다. 실제 값이 증가한 duplicate는 found-rows 여부와 무관하게 affected=2이고 신규 INSERT는 1이어야 한다. 이 값만으로 판정하지 않으며 current read의 저장 ID와 예약 ID를 함께 비교한다. 신규는 affected=1/ID 동일, 정상 좌표 중복은 affected=2/ID 다름/예약 ID 미점유여야 한다. 같은 ID를 재사용했거나 다른 행과 PK 충돌한 경우 예외와 rollback으로 임시 증가까지 취소한다.
+- 정상 재전달의 attempt 증가 횟수와 알림·재개방 억제는 유지한다. overflow·NULL 제약 오류를 IGNORE/catch로 성공 처리하지 않으며 실패 뒤 retry도 검증한다. INSERT 전 미존재 PK의 FOR UPDATE는 gap lock을 더해 정상 동시 적재를 교착시킬 수 있어 선택하지 않는다. 별도 token 컬럼은 이 보완에 필요하지 않다. 수정 계약은 실제 MySQL/JPA 양음 대조와 전체 CI 후에만 완료로 기록한다.
