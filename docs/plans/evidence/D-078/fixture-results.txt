@@ -1,0 +1,14 @@
+test_before_and_after_capture_include_all_three_names (__main__.CacheCollectorFixtureTest.test_before_and_after_capture_include_all_three_names) ... ok
+test_historical_missing_product_is_unknown_not_zero (__main__.CacheCollectorFixtureTest.test_historical_missing_product_is_unknown_not_zero) ... ok
+test_invalid_named_counters_never_become_valid_zero (__main__.CacheCollectorFixtureTest.test_invalid_named_counters_never_become_valid_zero) ... ok
+test_legacy_gate_outcomes_remain_explicit (__main__.CacheCollectorFixtureTest.test_legacy_gate_outcomes_remain_explicit) ... ok
+test_named_capture_with_mock_scrape_only (__main__.CacheCollectorFixtureTest.test_named_capture_with_mock_scrape_only) ... ok
+test_names_and_medians_are_independent (__main__.CacheCollectorFixtureTest.test_names_and_medians_are_independent) ... ok
+test_partial_and_reset_are_not_hidden_by_positive_aggregate (__main__.CacheCollectorFixtureTest.test_partial_and_reset_are_not_hidden_by_positive_aggregate) ... ok
+test_partial_coverage_counts_only_valid_named_samples (__main__.CacheCollectorFixtureTest.test_partial_coverage_counts_only_valid_named_samples) ... ok
+test_zero_denominator_and_mixed_activity_counts (__main__.CacheCollectorFixtureTest.test_zero_denominator_and_mixed_activity_counts) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.728s
+
+OK
