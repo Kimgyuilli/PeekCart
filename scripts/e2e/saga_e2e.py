@@ -1153,7 +1153,7 @@ def control_poller_stopped_breaks_a():
 
 
 def control_poller_resumed_reserves():
-    """① 복원 확인. ShedLock 행을 걷은 뒤 같은 주문의 예약이 도착해야 한다."""
+    """① 복원 확인. ShedLock의 lock_until을 UPDATE한 뒤 같은 주문의 예약이 도착해야 한다."""
     wait_reserved(load_control_state("poller")["order_id"])
 
 
