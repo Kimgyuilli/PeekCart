@@ -116,9 +116,12 @@ byte 동일성 lint 를 없애고 **중복 FQCN 게이트**(`assertNoDuplicateGl
 ### 2026-10-21 D-096 사실 정정
 
 모듈 승격 결정과 32개 공유 대상 자체는 유지한다. #168 직전 commit `7e83ee3304584946c80e60af9d0e257a4f56f221`의
-실제 서비스 소스는 order/payment/product/notification 각각 35/35/35/34개이며, 32개 공유 후보 중 네 벌이 byte 동일한
-것은 31개다. `OutboxEventStatus` 는 order·product의 `BACKFILL` 포함 판과 payment·notification 판으로 나뉜다.
+여기서 집계한 대상은 전체 `global` Java 소스가 아니라 order/payment/product/notification의 outbox·idempotency·deadletter
+및 `ShedLockConfig` 파일 집합이다. 이 범위는 각각 35/35/35/34개다. 32개 공유 후보 중 네 벌이 byte 동일한 것은
+31개다. `OutboxEventStatus` 는 order·product의 `BACKFILL` 포함 판과 payment·notification 판으로 나뉜다.
 나머지 서비스별 파일은 `DeadLetterConsumer`, `DeadLetterQuarantineConsumer`(notification에는 없음), `LedgerOwnerConfig`다.
+참고로 서비스 전체 `global` Java 소스 수는 order/payment/product/notification 35/35/37/34개이며, product의 추가 2개는
+`ProductCacheConfig` 와 `ResilientCacheErrorHandler`다.
 
 `BACKFILL` migration은 order V5와 product V4다. 당시 `dead-letter-schema-parity-lint.sh`의 Java 비교 범위는
 deadletter 16개와 outbox 8개, 그리고 `OutboxEventStatus`의 두 집합이다. `idempotency` 6개와 `ShedLockConfig`를
