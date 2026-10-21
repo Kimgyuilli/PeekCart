@@ -821,3 +821,9 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 [PR189](https://github.com/Kimgyuilli/PeekCart/pull/189) 최종 head `a9dd257374bcee3eeb886a938db72e62662a753d`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/189#issuecomment-6318807417)는 최신 main 통합의 작성 patch 동일성과 실제 16개 판정·9개 수집 검사·9개 drift 대조를 확인했다. [PR CI39614158821](https://github.com/Kimgyuilli/PeekCart/actions/runs/39614158821) 전체 성공 뒤 정상 병합 SHA는 `7915f266500a25be457ce2ec67fc18526d437c5c`다. 실제 [main CI39619377710](https://github.com/Kimgyuilli/PeekCart/actions/runs/39619377710)은 성공으로 종료됐고 여섯 publish가 각각 성공했다. GitHub API의 payment 이미지 job 상태는 내부 `Complete job` 성공·후속 payment publish 성공에도 `in_progress`로 지연 표시돼 그 차이를 보존한다.
 
 이 범위는 replay preflight 수집 판정 보강이며 실제 MySQL/Kafka adapter #212·제약 #202·Flyway #207은 별도 최신 병합 검증이 남았다. 운영 P22/GKE·NOT NULL 실제 적용과 replay 개방은 수행하지 않았고 D-065 전체는 부분 완료다.
+
+## 2026-10-22 — D-093 초기평가 준비 수정 병합, 실제 Grafana 재검증 대기
+
+[PR188](https://github.com/Kimgyuilli/PeekCart/pull/188) 최종 head `560e16b5496ed802d8d5de8bd3c81edf2bf1ac72`는 초기 평가의 실제 vector·Normal을 유한 상한에서 기다리도록 바꾼다. [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/188#issuecomment-6319319025)는 직접 음성 대조와 원본 실행 증거를 확인했고, [PR CI39619631016](https://github.com/Kimgyuilli/PeekCart/actions/runs/39619631016) 필수 검사가 성공했다. 정상 병합한 main은 `8f0d2ee091bc2ce08a4c19e2ca3678d406559d34`다.
+
+실제 [main CI39623073011](https://github.com/Kimgyuilli/PeekCart/actions/runs/39623073011)은 workflow 성공으로 종료됐고 publish 다섯 job은 성공 결론이다. product publish는 Push image와 Complete job을 포함한 모든 단계가 성공했으나 GitHub API의 job 상태는 여전히 `in_progress`/결론 공란이므로 여섯 job 모두 성공 결론이라고 기록하지 않는다. D-092 PR217의 새 Grafana 실행으로 준비 경합 해소와 전달 경로를 재확인하기 전 D-093 전체 완료 표기는 보류한다. 운영 외부 전송·GKE 검증으로 확대하지 않는다.
