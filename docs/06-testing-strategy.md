@@ -79,11 +79,22 @@ scenario_e는 `stock_reservations.expires_at` 저장값을 과거로 바꿔 만�
 
 ### 13-3. 주요 테스트 시나리오
 
+- PG 주문 식별자: 실제 MySQL에서 반복·동시 prepare의 ID 고정, UNIQUE 충돌, legacy migration 값 보존, 불일치 confirm의 원장·outbox 불변을 확인한다. HTTP fixture는 checkout과 승인 body의 동일 ID 및 다른 식별자 응답의 비종결을 검증한다. 실제 PG 검증과 구분한다(see ADR-0042).
+
 - 주문 상태 전이: 허용되지 않은 상태 변경 시 예외 발생 검증
 - 재고 동시성: 동시 주문 시 오버셀링 방지 (멀티스레드 테스트)
 - 결제 실패 보상: 결제 실패 시 주문 취소 + 재고 복구 플로우
 - Kafka 멱등성: 동일 이벤트 중복 소비 시 비즈니스 로직 1회만 실행
 - 결제 타임아웃: 15분 초과 주문 자동 취소 스케줄러 동작
+- 일반 결제 웹훅: 입력 스트림 크기·중첩 형식·이벤트 allowlist를 HTTP에서 검증한다. 실제 MySQL에서 동시 알림의 단일 적재, 실패 시 로그/nudge rollback, 진행 중·종결 원장 불변을 확인한다. 승인 409는 HTTP stub과 실제 원장으로 미결 유지 및 조회 전용 확정을 검사하며, 실 PG 증적과 구분한다(see ADR-0041).
+
+### 13-4. DLQ ID 예약과 트랜잭션
+
+실제 MySQL/Spring repository로 첫 INSERT의 self/parent root, 동시 같은·다른 좌표 적재, RR snapshot 이후 current read, 외부 트랜잭션 rollback 및 catch한 제약 예외의 rollback-only를 검증한다. PK 충돌과 같은 ID·좌표 재사용을 정상 좌표 중복 또는 새 적재로 ack하지 않는지 확인한다. attempt overflow/NULL 거절과 rollback 뒤 정상 재시도도 검사한다. 테스트 전용 NOT NULL 제약은 post-insert root 배정이 통과할 수 없게 한다. 별도 SQL prototype의 정상 재시작 결과는 JPA·비정상 crash·운영 전환 증거와 구분한다(see ADR-0043).
+
+### 13-5. 실제 signed Gateway의 닫힌 replay 진입점
+
+별도 Actions fixture는 실제 User signup/login/JWKS, Gateway RSA 내부 서명, 네 SIGNED_ONLY 리소스를 연결한다. 각 리소스에서 ADMIN의 exact disabled 응답, USER403, 위조·만료·직접 평문·잘못된 내부 공개키 거부와 정상 경로 복구를 확인한다. 다섯 단계마다 전체 ledger/outbox 불변을 대조하며 replay는 항상 꺼져 있다. 따라서 이 검증은 lastReplayBy 영속이나 실제 replay 발행·drain, 운영 키·GKE 경로의 증거가 아니다(see ADR-0017, ADR-0022).
 
 ---
 

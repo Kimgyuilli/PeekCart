@@ -15,29 +15,26 @@ import java.util.Optional;
 public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterRecord, Long> {
 
     /**
-     * 원장 적재. <b>단일 원자 INSERT</b> — 유니크 충돌을 예외가 아니라
-     * 영향 행 수 0 으로 돌려받아야 소비 트랜잭션이 rollback-only 로 오염되지 않는다.
-     *
-     * <p>{@code ON DUPLICATE KEY UPDATE id = id} 를 쓰지 않는 이유(실측): MySQL Connector/J 는
-     * 기본이 <b>found-rows</b> 시맨틱이라 값이 바뀌지 않은 중복도 <b>1</b> 로 보고한다 — 그러면
-     * 중복 유입에도 "신규 적재" 로 판단해 알림이 중복 발송된다. {@code INSERT IGNORE} 는 건너뛴 행을
-     * 0 으로 보고한다.
-     *
-     * @return 1 이면 신규 적재(알림 대상), 0 이면 이미 있음(no-op)
+     * 예약 ID와 lineage를 첫 INSERT에 함께 기록한다(ADR-0043).
+     * duplicate는 attempt를 실제로 증가시켜 영향 행 수 2를 요구한다.
+     * 영향 행 수만 믿지 않고 좌표 current read와 예약 ID의 점유도 함께 검사한다.
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
-            INSERT IGNORE INTO dead_letter_records
-                (cluster_id, topic_generation, origin_topic, origin_partition, origin_offset,
+            INSERT INTO dead_letter_records
+                (id, root_record_id, cluster_id, topic_generation, origin_topic, origin_partition, origin_offset,
                  failed_consumer_group, origin_kind, event_id, original_key, original_timestamp,
                  payload, payload_truncated, exception_type, exception_message,
                  status, attempt_count, occurred_at)
-            VALUES (:clusterId, :topicGeneration, :originTopic, :originPartition, :originOffset,
+            VALUES (:id, :rootRecordId, :clusterId, :topicGeneration, :originTopic, :originPartition, :originOffset,
                     :failedConsumerGroup, :originKind, :eventId, :originalKey, :originalTimestamp,
                     :payload, :payloadTruncated, :exceptionType, :exceptionMessage,
                     'OPEN', 1, :occurredAt)
+            ON DUPLICATE KEY UPDATE attempt_count = dead_letter_records.attempt_count + 1
             """, nativeQuery = true)
-    int insertIfAbsent(@Param("clusterId") String clusterId,
+    int insertIfAbsent(@Param("id") long id,
+                       @Param("rootRecordId") long rootRecordId,
+                       @Param("clusterId") String clusterId,
                        @Param("topicGeneration") int topicGeneration,
                        @Param("originTopic") String originTopic,
                        @Param("originPartition") int originPartition,
@@ -53,28 +50,20 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
                        @Param("exceptionMessage") String exceptionMessage,
                        @Param("occurredAt") LocalDateTime occurredAt);
 
-    /**
-     * 같은 좌표가 다시 유입됐을 때 시도 횟수만 올린다. 새 행을 만들지 않는다 —
-     * 같은 사실이 여러 행이면 미결 건수가 부풀어 운영 판단이 틀어진다.
-     */
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query(value = """
-            UPDATE dead_letter_records
-               SET attempt_count = attempt_count + 1
-             WHERE cluster_id = :clusterId AND topic_generation = :topicGeneration
-               AND origin_topic = :originTopic AND origin_partition = :originPartition
-               AND origin_offset = :originOffset AND failed_consumer_group = :failedConsumerGroup
-            """, nativeQuery = true)
-    int incrementAttempt(@Param("clusterId") String clusterId,
-                         @Param("topicGeneration") int topicGeneration,
-                         @Param("originTopic") String originTopic,
-                         @Param("originPartition") int originPartition,
-                         @Param("originOffset") long originOffset,
-                         @Param("failedConsumerGroup") String failedConsumerGroup);
-
     Optional<DeadLetterRecord> findByClusterIdAndTopicGenerationAndOriginTopicAndOriginPartitionAndOriginOffsetAndFailedConsumerGroup(
             String clusterId, int topicGeneration, String originTopic,
             int originPartition, long originOffset, String failedConsumerGroup);
+
+    /** INSERT 뒤 RR snapshot 대신 현재 좌표 승자를 읽는다. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM DeadLetterRecord r WHERE r.clusterId = :clusterId "
+            + "AND r.topicGeneration = :topicGeneration AND r.originTopic = :originTopic "
+            + "AND r.originPartition = :originPartition AND r.originOffset = :originOffset "
+            + "AND r.failedConsumerGroup = :failedConsumerGroup")
+    Optional<DeadLetterRecord> findCoordinateForUpdate(
+            @Param("clusterId") String clusterId, @Param("topicGeneration") int topicGeneration,
+            @Param("originTopic") String originTopic, @Param("originPartition") int originPartition,
+            @Param("originOffset") long originOffset, @Param("failedConsumerGroup") String failedConsumerGroup);
 
     /**
      * 미결 <b>incident</b> 건수 (actuator 조회 표면 · 건수 상한 경보).

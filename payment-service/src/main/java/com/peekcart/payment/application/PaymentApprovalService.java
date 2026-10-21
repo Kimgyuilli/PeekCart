@@ -53,12 +53,13 @@ public class PaymentApprovalService {
      *                          진행 중인 승인 존재 {@code PAY-013}
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public PaymentApproval beginApproval(Long userId, Long orderId, String paymentKey, long amount) {
+    public PaymentApproval beginApproval(Long userId, Long orderId, String paymentKey, long amount, String pgOrderId) {
         Payment payment = paymentRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new PaymentException(ErrorCode.PAY_003));
 
         payment.verifyOwner(userId);
         payment.validateAmount(amount);
+        payment.validatePgOrderId(pgOrderId);
         payment.ensureConfirmable(properties.getLeaseApprovalMargin());
 
         outboxEventPublisher.publishPaymentRequested(payment, userId);
@@ -68,7 +69,7 @@ public class PaymentApprovalService {
         // 시작하면 같은 주문에 두 번 과금할 창이 열린다. 멱등키가 PG 측에서 막아 주더라도 그 방어를
         // 로컬 fence 의 대체물로 쓰지 않는다(방어가 한 겹 줄어든다).
         if (approvalRepository.insertWaitingIfAbsent(
-                orderId, paymentKey, payment.getUserId(), amount, LocalDateTime.now(),
+                orderId, paymentKey, payment.effectivePgOrderId(), payment.getUserId(), amount, LocalDateTime.now(),
                 payment.getReservationExpiresAt() != null ? payment.getReservationExpiresAt()
                         : LocalDateTime.now().plus(properties.getLeaseApprovalMargin())) == 0) {
             log.warn("승인 중복 요청 — 진행 중이거나 종결된 원장이 있다, orderId={}", orderId);

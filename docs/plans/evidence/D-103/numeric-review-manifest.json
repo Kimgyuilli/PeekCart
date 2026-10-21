@@ -1,0 +1,32 @@
+{
+  "integration_base": "bdc370a80e0bfa6adefb6a436a5f608f878d1b69",
+  "local_verification": "numeric method PASS and independent oracle method PASS; no full suite",
+  "actions": "9 methods and 10 mutants pending",
+  "files": [
+    {
+      "path": "scripts/codex-review-render.sh",
+      "bytes": 11703,
+      "sha256": "4249ee9b6c315863926d3e31c6812915c32219157987fea76a343e1d0c2042f5"
+    },
+    {
+      "path": "scripts/codex-review-render-selftest.sh",
+      "bytes": 14828,
+      "sha256": "6d88e92673e4d36ed50d6be5b6707ca60d25f09b8497caa2cdb998ed95764c14"
+    },
+    {
+      "path": "scripts/codex-review-render-contract-selftest.py",
+      "bytes": 11809,
+      "sha256": "e5cbae4af4d9736e338837eee8ef0a5607e833999ba6d6f0de1bc6ae5c16250d"
+    },
+    {
+      "path": "docs/plans/evidence/D-103/numeric-minimal.txt",
+      "bytes": 196,
+      "sha256": "d014a1811636d2fcbb9b15da1a272614f79dc8fe4441f0a1e6630adb6db18e2a"
+    },
+    {
+      "path": "docs/plans/evidence/D-103/oracle-numeric-minimal.txt",
+      "bytes": 208,
+      "sha256": "329a9a9b8f1a4c66dd103913b045eea3359926f46f0098cc55149e351f051b5a"
+    }
+  ]
+}
