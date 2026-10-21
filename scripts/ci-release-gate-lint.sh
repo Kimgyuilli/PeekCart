@@ -196,6 +196,25 @@ def validate(doc):
         bad("CRG-005", "latest 를 검증한 원격 digest 대신 별도 push 한다")
     if any("docker build " in (s.get("run") or "") for s in publish.get("steps", [])):
         bad("CRG-005", "publish 에서 이미지를 재빌드한다")
+    observation = jobs.get("publication-state", {})
+    if needs(observation) != ["gate", "publish"] or observation.get("if") != "${{ always() && github.event_name == 'push' && needs.gate.result == 'success' }}":
+        bad("CRG-006", "publication-state 는 성공gate 뒤 main publish 부분실패도 관측해야 한다")
+    if observation.get("permissions") != {"contents": "read", "packages": "read"} or observation.get("continue-on-error"):
+        bad("CRG-006", "publication-state 최소read권한/실패전파 위반")
+    observe = step(observation, "Observe publication state")
+    expected_run = 'python3 -B scripts/ci-publication-state.py "$GITHUB_SHA" "$RUNNER_TEMP/publication-inputs" "$RUNNER_TEMP/publication-state"'
+    if observe.get("run") != expected_run or observe.get("if") != "${{ always() }}" or observe.get("continue-on-error"):
+        bad("CRG-006", "관측실패/누락을 무시하거나 관측entrypoint가 바뀌었다")
+    for job, name in ((publish, "Preserve publication evidence"), (publish, "Upload publication evidence"),
+                      (observation, "Upload publication observation")):
+        if step(job, name).get("if") != "${{ always() }}" or step(job, name).get("continue-on-error"):
+            bad("CRG-006", "원publish/관측실패 증거의 always 보존이 빠졌다")
+    artifacts = step(publish, "Upload publication evidence").get("with", {})
+    if artifacts.get("name") != "publish-evidence-${{ matrix.service }}-attempt-${{ github.run_attempt }}" or artifacts.get("overwrite", False) or artifacts.get("if-no-files-found") != "error":
+        bad("CRG-006", "실패attempt artifact가 덮이거나 per-service/attempt 구분이 빠졌다")
+    result_artifact = step(observation, "Upload publication observation").get("with", {})
+    if result_artifact.get("name") != "publication-state-attempt-${{ github.run_attempt }}" or result_artifact.get("if-no-files-found") != "error":
+        bad("CRG-006", "관측artifact attempt 구분이 빠졌다")
     return errors
 
 
@@ -296,6 +315,17 @@ if sys.argv[2] == "--self-test":
         "latest 별도 push": (lambda d: change_step(d, "publish", "Push image", "run", step(d["jobs"]["publish"], "Push image")["run"] + '\ndocker push "$IMG:latest"'), "CRG-005"),
         "승격 digest 비교 삭제": (lambda d: change_step(d, "publish", "Push image", "run", step(d["jobs"]["publish"], "Push image")["run"].replace('[[ "$promoted" != "$DIGEST" ]]', '[[ false ]]')), "CRG-005"),
         "원격 latest 조회 삭제": (lambda d: change_step(d, "publish", "Push image", "run", step(d["jobs"]["publish"], "Push image")["run"].replace('imagetools inspect --format', 'echo --format')), "CRG-005"),
+    })
+    expected_observe_run = step(workflow["jobs"]["publication-state"], "Observe publication state")["run"]
+    mutations.update({
+        "부분publish 관측 생략": (lambda d: d["jobs"]["publication-state"].update({"if": "success()"}), "CRG-006"),
+        "관측 publish 의존 누락": (lambda d: d["jobs"]["publication-state"].update(needs=["gate"]), "CRG-006"),
+        "관측 registry write권한": (lambda d: d["jobs"]["publication-state"]["permissions"].update(packages="write"), "CRG-006"),
+        "관측 실패 무시": (lambda d: d["jobs"]["publication-state"].update({"continue-on-error": True}), "CRG-006"),
+        "관측 child 실패 무시": (lambda d: change_step(d, "publication-state", "Observe publication state", "run", expected_observe_run + " || true"), "CRG-006"),
+        "실패증거 always 제거": (lambda d: change_step(d, "publish", "Upload publication evidence", "if", "success()"), "CRG-006"),
+        "최초실패 overwrite": (lambda d: step(d["jobs"]["publish"], "Upload publication evidence")["with"].update(overwrite=True), "CRG-006"),
+        "증거 attempt 구분 제거": (lambda d: step(d["jobs"]["publish"], "Upload publication evidence")["with"].update(name="publish-evidence"), "CRG-006"),
     })
     for label, (change, code) in mutations.items():
         changed = copy.deepcopy(workflow)

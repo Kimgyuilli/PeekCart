@@ -56,7 +56,7 @@ class OrderCommandServiceTest {
         assertThat(result.receiverName()).isEqualTo(OrderFixture.DEFAULT_RECEIVER_NAME);
         assertThat(result.items()).hasSize(1);
         assertThat(cart.isEmpty()).isTrue();
-        // 단가는 Product 동기 호출 없이 로컬 가격 캐시에서 읽는다 (CQRS ⑤, strangler-2)
+        // 단가는 Product 동기 호출 없이 로컬 가격 캐시에서 읽는다 (CQRS 로컬 가격 캐시)
         then(priceCacheRepository).should().findUnitPrice(OrderFixture.DEFAULT_PRODUCT_ID);
         then(outboxEventPublisher).should().publishOrderCreated(any(Order.class));
     }

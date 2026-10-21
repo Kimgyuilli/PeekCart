@@ -11,7 +11,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 승인 정책값 fail-fast 검증 (계획 P12, ADR-0023 · ADR-0007).
+ * 승인 정책값 fail-fast 검증 (ADR-0023 · ADR-0007).
  *
  * <p>강제하는 불변식은 <b>하나뿐</b>이다 — {@code unresolved-limit > claim-lease}. 환불과 달리
  * claim lease 와 PG 타임아웃의 관계는 강제하지 않는다: 승인 reconciliation 은 조회만 하고

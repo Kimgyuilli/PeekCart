@@ -23,13 +23,13 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 예약 lease 만료 조회 통합 테스트 (계획 P3/P4 · §5).
+ * 예약 lease 만료 조회 통합 테스트.
  *
  * <p>이 조회가 담당하는 구간은 기존 두 만료 조회가 <b>비우지 못하는</b> 곳이다 —
  * {@code findUnconfirmedReservationBefore} 는 {@code reservationConfirmedAt IS NULL} 만,
  * {@code findExpiredPaymentRequested} 는 {@code PAYMENT_REQUESTED} 만 잡는다. 그 사이의
  * "예약 확정 완료 + 결제 미시작 PENDING" 은 수명 상한이 없어 Product sweeper 가 살아있는
- * 주문의 재고를 회수하는 oversell 의 원인이었다(계획 §2.3-A).
+ * 주문의 재고를 회수하는 oversell 의 원인이었다.
  */
 @SpringBootTest
 @TestPropertySource(properties = {

@@ -23,7 +23,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * {@code findExpiredPaymentRequested} JPQL 통합 테스트 (strangler-3, P6).
+ * {@code findExpiredPaymentRequested} JPQL 통합 테스트.
  * 실 DB 에서 paymentRequestedAt 기준 + null 폴백(마이그레이션 직후 backfill 미적용 행 안전) 을 검증한다.
  * mock 으로는 잡히지 않는 JPQL 조건/JOIN FETCH 회귀를 막는다.
  */
@@ -41,7 +41,7 @@ class OrderExpiredPaymentRequestedQueryIntegrationTest extends AbstractIntegrati
     private static final LocalDateTime PAST = LocalDateTime.now().minusMinutes(20);
     private static final LocalDateTime RECENT = LocalDateTime.now().minusMinutes(5);
 
-    // DB-per-service(구현 ② PR2): order 스키마엔 users/products 테이블이 없고 교차 FK 도 제거됨(V13) →
+    // DB-per-service: order 스키마엔 users/products 테이블이 없고 교차 FK 도 제거됨 →
     // 실제 행을 시드하지 않고 임의 ID 참조만 사용한다(orders.user_id·order_items.product_id 는 plain ID).
     private final Long userId = 42L;
     private final Long productId = 100L;

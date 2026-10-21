@@ -1,0 +1,423 @@
+{
+  "base": "3bb01bbc3190a9aa38a7b4e6faec7bb767117808",
+  "population": 24,
+  "ci_consumers": 23,
+  "inline_selftest_wiring": 19,
+  "external_health_scope": 4,
+  "ship_only": 1,
+  "rows": [
+    {
+      "path": "scripts/ci-e2e-parallel-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/ci-release-gate-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/ci-test-matrix-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "CI test matrix coverage lint",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "CI test matrix coverage lint",
+          "arguments": [
+            "--self-test"
+          ]
+        },
+        {
+          "job": "guards",
+          "step": "Assert guards actually ran",
+          "arguments": [
+            "--verify-guards",
+            "$RUNNER_TEMP/guards.log"
+          ]
+        },
+        {
+          "job": "gate",
+          "step": "Merge shard artifacts (collision-checked)",
+          "arguments": [
+            "--merge-artifacts",
+            "_artifacts"
+          ]
+        },
+        {
+          "job": "gate",
+          "step": "Verify artifact layout",
+          "arguments": [
+            "--verify-layout"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/dead-letter-schema-parity-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/dockerfile-module-sync-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/e2e-network-contract-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "gate",
+          "step": "Contract self-tests (stack-independent)",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/gateway-exposure-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/hpa-replicas-ownership-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/image-contract-lint.sh",
+      "classification": "four external actual entrypoint health fixtures",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        }
+      ]
+    },
+    {
+      "path": "scripts/integration-test-container-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/internal-key-ownership-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/kafka-subscription-contract-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "gate",
+          "step": "Contract self-tests (stack-independent)",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/kustomize-namespace-lint.sh",
+      "classification": "four external actual entrypoint health fixtures",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        }
+      ]
+    },
+    {
+      "path": "scripts/migration-grant-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/mysql-image-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/networkpolicy-contract-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/observability-promql-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/observability-ssot-lint.sh",
+      "classification": "four external actual entrypoint health fixtures",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        }
+      ]
+    },
+    {
+      "path": "scripts/replay-entrypoint-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/saga-contract-matrix-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "gate",
+          "step": "saga contract matrix — jvm evidence",
+          "arguments": [
+            "--jvm-evidence"
+          ]
+        },
+        {
+          "job": "gate",
+          "step": "Contract self-tests (stack-independent)",
+          "arguments": [
+            "--structure"
+          ]
+        },
+        {
+          "job": "gate",
+          "step": "Contract self-tests (stack-independent)",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/scheduler-lock-contract-lint.sh",
+      "classification": "four external actual entrypoint health fixtures",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        }
+      ]
+    },
+    {
+      "path": "scripts/servicemonitor-selector-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/workload-key-ownership-lint.sh",
+      "classification": "inline selftest wiring only; external early-exit health not proved",
+      "observed_calls": [
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": []
+        },
+        {
+          "job": "lint",
+          "step": "Run CI policy lints",
+          "arguments": [
+            "--self-test"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "scripts/writing-lint.sh",
+      "classification": "ship-only prose check",
+      "observed_calls": []
+    }
+  ]
+}

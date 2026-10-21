@@ -17,10 +17,10 @@ import org.springframework.test.context.TestPropertySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * DLQ 원장 메트릭 (계획 ④-d-1 §5 P3).
+ * DLQ 원장 메트릭.
  *
- * <p>구현이 4서비스에 복제돼 있어 계약도 4곳에서 고정한다 — order 에만 두면
- * product 의 Gauge 등록이나 조회 함수가 사라져도 아무 테스트도 실패하지 않는다(3R #3).
+ * <p>공유 구현을 4서비스가 사용하므로 배선 계약도 4곳에서 고정한다 — order 에만 두면
+ * product 의 Gauge 등록이나 조회 함수가 사라져도 아무 테스트도 실패하지 않는다.
  *
  * <p><b>{@link DeadLetterEndpoint} 와 값이 일치하는지</b>를 함께 본다. 두 표면이 서로 다른 방식으로
  * 세면 값이 갈라졌을 때 어느 쪽이 맞는지 알 수 없고, 그러면 둘 다 신뢰할 수 없게 된다.

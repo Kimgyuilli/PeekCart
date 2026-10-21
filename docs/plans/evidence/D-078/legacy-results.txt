@@ -1,0 +1,22 @@
+
+블록    EP      캐시    n      rps(중앙)       산포    p95ms  miss/s     적중률    MySQL스로틀s
+----------------------------------------------------------------------------------
+A     detail  OFF   3        378.1     0.5%     12.0     0.3   80.0%          0.2
+A     detail  ON    3        463.6     0.4%     12.0     0.3   80.0%          0.2
+A     list    OFF   3        380.0     0.5%     12.0     0.3   80.0%          0.2
+A     list    ON    3        767.1     0.3%     12.0     0.3   80.0%          0.2
+A2    detail  OFF   3        420.0     0.5%     12.0     0.3   80.0%          0.2
+A2    list    OFF   3        380.0     0.5%     12.0     0.3   80.0%          0.2
+
+=== 배속 (같은 블록 안 paired) ===
+  A     detail  OFF   378.1 → ON   463.6 = ×1.23   (기준선 ×1.23)
+  A     list    OFF   380.0 → ON   767.1 = ×2.02   (기준선 ×2.02)
+
+=== 게이트 ===
+  [통과] 재현 detail OFF: 378.1 vs 기준 378.1 (+0.0%, 허용 ±10%)
+  [통과] 재현 list OFF: 380.0 vs 기준 380.0 (+0.0%, 허용 ±10%)
+  [통과] 대조군 list ON: 767.1 vs 기준 767.1 (+0.0%, 허용 ±15%)
+  [실패] 되돌림 detail OFF (A′ vs A): 420.0 vs 기준 378.1 (+11.1%, 허용 ±10%)
+  [통과] 되돌림 list OFF (A′ vs A): 380.0 vs 기준 380.0 (+0.0%, 허용 ±10%)
+PASS: 18 fixture runs, legacy aggregate/gates byte-identical (new per-name warning lines and appended table excluded).
+legacy-output-sha256=ce769f6ed03725e0e5374d359e7a61017bcb13f65ed57bfb5955e8427b02038e

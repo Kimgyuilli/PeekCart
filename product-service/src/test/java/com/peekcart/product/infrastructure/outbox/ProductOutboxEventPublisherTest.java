@@ -20,8 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.then;
 
 /**
- * {@link ProductOutboxEventPublisher#publishProductUpdated} 단위 테스트 (strangler-2).
- * ADR-0012:48 7필드 + version 직렬화, status 매핑, aggregateId=productId 를 검증한다.
+ * {@link ProductOutboxEventPublisher#publishProductUpdated} 단위 테스트.
+ * ADR-0012 D2 7필드 + version 직렬화, status 매핑, aggregateId=productId 를 검증한다.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ProductOutboxEventPublisher 단위 테스트")

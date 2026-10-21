@@ -1,0 +1,107 @@
+{
+  "contract": "gzip decompression preserves fetched raw bytes; current API snapshots do not reconstruct expired evidence",
+  "files": [
+    {
+      "file": "raw/gateway-historical-sha-manifest.json.gz",
+      "raw_bytes": 2202,
+      "raw_sha256": "0e9339a679aa6949cb1be378aa4eaefa9dd073de910c16e4668f9dee6ec0db00",
+      "gzip_sha256": "c5a4a0e51d7eb692a98a81a98595f25bf482551711dd71756b93da2488d05302"
+    },
+    {
+      "file": "raw/historical-sha-current-availability.json.gz",
+      "raw_bytes": 3782,
+      "raw_sha256": "0eb7f9a081a3becb58ec5c509cb4c4293ce8e29df7e1a3d9f8fd6795e5d441d1",
+      "gzip_sha256": "028455cb8f6ee99d668144e891b59dd53afe6895a74c511ba2bef02da582e36f"
+    },
+    {
+      "file": "raw/notification-service-historical-sha-manifest.json.gz",
+      "raw_bytes": 2202,
+      "raw_sha256": "8ee2fc6a6b292e689294ca6cc7339dc0b3a617f1c5d3b3b65f0be5e3cc18045d",
+      "gzip_sha256": "a3ff287430704bfadf45bd81a1008df2807eadc277804cfddde73b501f48637c"
+    },
+    {
+      "file": "raw/order-service-historical-sha-manifest.json.gz",
+      "raw_bytes": 2202,
+      "raw_sha256": "4e25807ebb20584a62f39d9a89fdafd3709ba1d38caa060f8163ce39b7fbeeca",
+      "gzip_sha256": "7a9aa4acc976fc023e14f231ec62567e8a11f5dd6970379c541d3f2706640696"
+    },
+    {
+      "file": "raw/original-artifacts-now.json.gz",
+      "raw_bytes": 11190,
+      "raw_sha256": "af99200615552bd8353d788f11da129bea70e7b273b0417363e11e4d14e2f7cc",
+      "gzip_sha256": "eb9333276754ca48bfa807336a35e52c00057ae8c5acbfe2ef35aa01c493bcdb"
+    },
+    {
+      "file": "raw/original-run.json.gz",
+      "raw_bytes": 46996,
+      "raw_sha256": "061cae826509ce49096fcacfa36e8af6e2e53c39d36d8c0b26f2f28f2414b23f",
+      "gzip_sha256": "be2f4ba6a0617925839c466833d8c6197b9b4d8461e77657d308946e0f57c279"
+    },
+    {
+      "file": "raw/payment-historical-sha-error-response.json.gz",
+      "raw_bytes": 164,
+      "raw_sha256": "1fdb7c7e5daf62e5305bddebcbc97d47fb408aa7ec778a28049d2ed6412dbce4",
+      "gzip_sha256": "b6a5a4fc61e3297ecead5352d41f7079edd1598dc0d005414b9586c091bf7949"
+    },
+    {
+      "file": "raw/payment-historical-sha-error.json.gz",
+      "raw_bytes": 70,
+      "raw_sha256": "3cc1b73e81471d9dcd2672f0b5a102c7632fc068e47b5346738dfd9a549608f0",
+      "gzip_sha256": "c2a38e1689f17ac0c66b1357ecd8715975c35657ee7a619a8f7b686d14b930f6"
+    },
+    {
+      "file": "raw/payment-publish-failed.log.gz",
+      "raw_bytes": 32506,
+      "raw_sha256": "24ebc1a90fb3f7a2b38eceed5957b5b0f15259c83face7f9398c9ce70d31da98",
+      "gzip_sha256": "919a27cd85ac593e3154120114052654e921bf753b0097287f2b0df8b8812aac"
+    },
+    {
+      "file": "raw/product-service-historical-sha-manifest.json.gz",
+      "raw_bytes": 2202,
+      "raw_sha256": "90feb3e02ae3a0a6b80dba2a987a7e497caa01664aec624bcaad0023740e7151",
+      "gzip_sha256": "648f0261d91dace81e26f1c287c861683e994440420ddc267c3ecda43dfeb616"
+    },
+    {
+      "file": "raw/recovery-run-jobs.json.gz",
+      "raw_bytes": 61545,
+      "raw_sha256": "6462ae147be2097f7ad9fa5f2c8046a0412bb50c3f47d10e7d41ebbd9b9ea276",
+      "gzip_sha256": "0c09cd070f536a6098b5b453cbd2aeb1cb55a7483234c68d6d3998070a0c21df"
+    },
+    {
+      "file": "raw/retry-attempt1-jobs.json.gz",
+      "raw_bytes": 46534,
+      "raw_sha256": "67154b5e81212bd58c2ee9c32fbd66ae02b428c60b5c1f20d47898af58cba677",
+      "gzip_sha256": "daf1c102fb09e5e4839278d3ef5f4b9365582029b65d0d604f1be1859abcbed0"
+    },
+    {
+      "file": "raw/retry-attempt2-gate.log.gz",
+      "raw_bytes": 32414,
+      "raw_sha256": "07ea4cc90fc1c5451f903f07144844357580b28621988b6c43963134e1781075",
+      "gzip_sha256": "4ea952f1e85ff998e2c287b0228f03558f2e14e02ea596c3979b749584dbdfcf"
+    },
+    {
+      "file": "raw/retry-attempt2-jobs.json.gz",
+      "raw_bytes": 46579,
+      "raw_sha256": "cda3cf5bf7985094b848222f89c980d8b574241f94486105cefe5c49e4aa70e0",
+      "gzip_sha256": "bedf250d0b14ee955460c8e97f7ce06d3caa99f3cbeb7a254e89ea056a02b901"
+    },
+    {
+      "file": "raw/retry-run-artifacts.json.gz",
+      "raw_bytes": 14558,
+      "raw_sha256": "0269c6899c704823e1a7659838ab49a2b0c1664d7e2275998119c0a9d6b6f8a1",
+      "gzip_sha256": "7de38df459139b2121c3edec4691df6c6bcf9b5e1e67a4eeb0f23814f021fc30"
+    },
+    {
+      "file": "raw/user-publish-success.log.gz",
+      "raw_bytes": 34514,
+      "raw_sha256": "c283e2e0386635a441f4ded9e18960c94697b1a994a67793a0ca28040b4c38af",
+      "gzip_sha256": "8dec3fe500f2a062c3e4ea439dd7a25aad5e0787cf5511220f4fb3776a39cc0d"
+    },
+    {
+      "file": "raw/user-service-historical-sha-manifest.json.gz",
+      "raw_bytes": 2202,
+      "raw_sha256": "6b3e427300502cd080309e7607ccb6c674d663a2935aea365f1c85d113ac2157",
+      "gzip_sha256": "1cdd59f028fdedf3e92debf5e753fe20b3589286afa300c882086f0c784ea8a0"
+    }
+  ]
+}

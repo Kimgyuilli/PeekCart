@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.awaitility.Awaitility.await;
 
 /**
- * D-025 P4 — {@code lease} 만료가 락을 <b>조용히</b> 무력화한다.
+ * D-025 — {@code lease} 만료가 락을 <b>조용히</b> 무력화한다.
  *
  * <p>{@code InventoryLockFacade} 는 lease 를 5초 고정으로 잡는다. 트랜잭션이 그보다 길어지면
  * 락은 만료로 풀리고, 그 뒤의 {@code unlock} 은 {@code isHeldByCurrentThread()} 가 false 라

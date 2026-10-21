@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 발행 측 계약 (④-c-2b-3a P14-b, ADR-0021 D1).
+ * 발행 측 계약 (ADR-0021 D1).
  *
  * <p><b>판독 측과 대칭이 아닌 것이 의도다</b> — 쓰기는 엄격하게, 읽기는 관대하게.
  * 판독이 예외를 던지면 조작된 헤더 하나로 DLQ 적재를 막을 수 있지만, 발행이 관대하면

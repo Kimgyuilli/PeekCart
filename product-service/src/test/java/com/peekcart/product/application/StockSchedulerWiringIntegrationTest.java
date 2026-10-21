@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * Product 예약 lease sweeper 의 <b>스케줄러 배선</b> 계약 (계획 P17 · V20).
+ * Product 예약 lease sweeper 의 <b>스케줄러 배선</b> 계약.
  *
  * <p>{@code StockReservationLeaseSweepTest} 는 sweeper 객체의 메서드를 직접 호출한다 — 회수 규칙은
  * 검증하지만 {@code @Scheduled} 를 지워도 통과한다. sweeper 는 <b>안전망</b>이라 평소 회수 건수가

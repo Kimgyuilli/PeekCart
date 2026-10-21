@@ -62,10 +62,13 @@ jobs:
         # 구현 ③ PR3d-b: 비밀 계약이 "Secret 미주입(비밀 0)" → "승인된 CSI 마운트 정확히 1개" 로 바뀌었다
         # (gateway 가 내부 토큰 서명 개인키를 갖게 됨, ADR-0017 D2). k8s Secret 경유는 여전히 금지다.
         run: |
+          python3 -B scripts/ci-lint-wiring-lint.py
+          python3 -B scripts/ci-lint-health-selftest.py
           bash scripts/kustomize-namespace-lint.sh
           # D-043: gate 는 lint/test/guards/images/e2e 전체의 최종 판정자다.
           bash scripts/ci-release-gate-lint.sh
           bash scripts/ci-release-gate-lint.sh --self-test
+          python3 -B scripts/ci-publication-state-selftest.py
           bash scripts/ci-image-identity.sh --self-test
           python3 -B scripts/ci-build-profile-selftest.py
           python3 -B scripts/ci-build-profile-selftest.py --mutants
@@ -140,12 +143,12 @@ jobs:
           bash scripts/servicemonitor-selector-lint.sh --self-test
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh
-          # D-093: 초기 NoData/지연과 bounded timeout을 실제 대기 없이 검증한다.
-          python3 -m unittest discover -s scripts/monitoring -p 'test_verify_alerts.py'
           # 구현 ④-d-1 P5 + PR4: alert 라벨/식 계약과 dashboard 변수 집합이 조작 입력에서
           # 실제로 실패하는지 19종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
           # 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, outbox FAILED 삭제/status 변조, dashboard 드리프트 3종.
           bash scripts/observability-promql-lint.sh --self-test
+          # D-093: 초기 NoData/지연과 bounded timeout을 실제 대기 없이 검증한다.
+          python3 -m unittest discover -s scripts/monitoring -p 'test_verify_alerts.py'
           # D-092: Grafana operations route와 FAILED Outbox conditional re-entry를 무료 fixture로 검증한다.
           python3 -B scripts/d092-ops-fixture.py
           # PR3c sweep — 단일 'peekcart' 관측성 식별자(application/service) 잔존 0 강제.
@@ -156,6 +159,30 @@ jobs:
             exit 1
           fi
 
+
+      - name: Verify local DLQ contract safety
+        timeout-minutes: 8
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/dlq-contract
+          python3 scripts/tests/test_dlq_contract_preflight.py
+          python3 scripts/tests/dlq_contract_lab.py --evidence-dir .cache/dlq-contract/evidence 2>&1 | tee .cache/dlq-contract/lab.log
+          python3 -O scripts/tests/test_dlq_contract_cleanup.py 2>&1 | tee .cache/dlq-contract/cleanup-controls.log
+
+      - name: Clean up owned DLQ contract fixture
+        if: always()
+        timeout-minutes: 2
+        run: python3 scripts/tests/dlq_contract_lab.py --cleanup --evidence-dir .cache/dlq-contract/evidence
+
+      - name: Upload DLQ contract evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dlq-contract-safety-${{ github.sha }}
+          path: .cache/dlq-contract/
+          if-no-files-found: ignore
+          retention-days: 7
 
       # shard 커버리지 — settings.gradle 의 모듈이 test 매트릭스에 정확히 1회 나타나는가.
       # 누락되면 그 모듈 테스트가 조용히 사라지고, 중복되면 merge-multiple(last-writer-wins)이
@@ -669,6 +696,7 @@ jobs:
           name: image-${{ matrix.service }}
 
       - name: Load image
+        id: load
         run: bash scripts/ci-image-identity.sh load ${{ matrix.service }}:ci .
 
       - name: Set up Buildx
@@ -688,6 +716,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push image
+        id: push
         run: |
           set -euo pipefail
           IMG="${{ steps.img.outputs.name }}"
@@ -713,3 +742,67 @@ jobs:
             exit 1
           fi
           echo "pushed: ${IMG}@${DIGEST} (tags: ${{ github.sha }}, latest)"
+
+
+      - name: Preserve publication evidence
+        if: ${{ always() }}
+        env:
+          SERVICE: ${{ matrix.service }}
+          PUSH_OUTCOME: ${{ steps.push.outcome }}
+          LOAD_OUTCOME: ${{ steps.load.outcome }}
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/publish-evidence"
+          mkdir -p "$evidence"
+          printf '%s\n' "$SERVICE" > "$evidence/service.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$evidence/expected-sha.txt"
+          printf '%s\n' "$GITHUB_RUN_ID" > "$evidence/run-id.txt"
+          printf '%s\n' "$GITHUB_RUN_ATTEMPT" > "$evidence/run-attempt.txt"
+          printf '%s\n' "$PUSH_OUTCOME" > "$evidence/push-outcome.txt"
+          printf '%s\n' "$LOAD_OUTCOME" > "$evidence/load-outcome.txt"
+          for file in image-id.txt "$RUNNER_TEMP/ghcr-push.log" "$RUNNER_TEMP/promotion.json"; do
+            if [[ -f "$file" ]]; then cp "$file" "$evidence/"; fi
+          done
+
+      - name: Upload publication evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-evidence-${{ matrix.service }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/publish-evidence/
+          if-no-files-found: error
+          retention-days: 14
+
+  publication-state:
+    needs: [gate, publish]
+    if: ${{ always() && github.event_name == 'push' && needs.gate.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record registry inspection client
+        run: |
+          mkdir -p "$RUNNER_TEMP/publication-state"
+          docker buildx version > "$RUNNER_TEMP/publication-state/buildx-version.txt"
+      - name: Download publication evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: publish-evidence-*
+          path: ${{ runner.temp }}/publication-inputs
+      - name: Observe publication state
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+        run: python3 -B scripts/ci-publication-state.py "$GITHUB_SHA" "$RUNNER_TEMP/publication-inputs" "$RUNNER_TEMP/publication-state"
+      - name: Upload publication observation
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: publication-state-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/publication-state/
+          if-no-files-found: error
+          retention-days: 14

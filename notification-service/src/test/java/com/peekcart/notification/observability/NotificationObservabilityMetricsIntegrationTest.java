@@ -16,7 +16,7 @@ import org.springframework.test.context.TestPropertySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * notification-service 관측성 계약 회귀 (ADR-0009 §45-48 서비스별 복제).
+ * notification-service 관측성 계약 회귀 (ADR-0009 Decision S1/S2/S3/S4 서비스별 복제).
  * application= 태그 값(S2)·histogram bucket(S1)·prometheus 노출(S3)·health permitAll(S4)·exposure 화이트리스트.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

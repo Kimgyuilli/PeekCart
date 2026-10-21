@@ -196,6 +196,16 @@ SQL 은 migration 체크섬 근거를 확인하며 범위 밖으로 뒀다(당�
 미충족: 서비스별 `global.*` 통합 테스트(`DeadLetterLedger`·`DeadLetterMetrics`·`LedgerOwnerWiring`)는 4벌 그대로다.
 공유 로직을 바꿀 때 4벌을 함께 고치는 일이 반복되면 다시 본다.
 
+2026-10-21 D-096 사실 정정: #168 직전 `7e83ee3`의 32개 공유 후보 중 31개만 네 벌 byte 동일했다.
+`OutboxEventStatus`는 `BACKFILL` 유무에 따라 order·product와 payment·notification 두 집합이다. 원본 소스의
+outbox·idempotency·deadletter·`ShedLockConfig` 조사 범위의 서비스별 파일 수는 35/35/35/34다. 이는 전체 `global` Java
+파일 수가 아니다. 전체 수는 35/35/37/34이며 product에만 `global/config/CacheConfig.java`와 `ResilientCacheErrorHandler`가 추가된다.
+`DeadLetterConsumer`·`DeadLetterQuarantineConsumer`·
+`LedgerOwnerConfig`는 서비스 고유다(notification에는 quarantine consumer가 없다). BACKFILL migration은
+order V5와 product V4다. 당시 Java parity lint는 deadletter 16개, outbox 8개, enum 두 집합을 검사했고,
+idempotency 6개와 `ShedLockConfig`까지 byte 동일성을 강제하지 않았다. 상세 근거는 D-049 계획 addendum과
+ADR-0033 Update Log에 기록했다.
+
 ## Kafka 리스너 통합 테스트의 할당 대기와 발행 동기화 (D-058, [#167](https://github.com/Kimgyuilli/PeekCart/pull/167), 2026-09-29)
 
 #164 CI 에서 payment `DlqIntegrationTest` 가 20초 동안 DLT 레코드 0건으로 실패한 건의 후속이다. 같은 구조(리스너를

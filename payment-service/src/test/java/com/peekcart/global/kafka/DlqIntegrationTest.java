@@ -131,7 +131,7 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
         MDC.clear();
         dlqTestListener.records.clear();
         TestConfig.slackCallCount.set(0);
-        // 원장 행을 남기면 다음 테스트의 await 가 기존 행을 보고 즉시 끝난다 (④-c-2b-3b P17).
+        // 원장 행을 남기면 다음 테스트의 await 가 기존 행을 보고 즉시 끝난다.
         deadLetterRepository.deleteAll();
         diagnostic("setup-cleared queue=" + dlqTestListener.records.size());
     }
@@ -207,9 +207,9 @@ class DlqIntegrationTest extends AbstractIntegrationTest {
         // **non-null 단언으로는 부족하다** — 재발행 시각이나 엉뚱한 헤더 값을 저장해도 green 이 된다.
         // 그래서 실행마다 한 번 고정한 timestamp 로 발행하고 **그 값과 정확히 같은지**를 본다.
         //
-        // 이 값은 replay 상관의 fingerprint 축(④-c-2b-3b P15-b 축 8)이다. 조용히 NULL 이 되거나
+        // 이 값은 replay 상관의 fingerprint 축(ADR-0021 §D1)이다. 조용히 NULL 이 되거나
         // 재발행 시각으로 덮이면 **모든 상관이 실패해 사건이 갈라진다** — backlog=1 계약이 그 자리에서 깨진다.
-        // (NULL 비율 측정은 P22 소관이고, 여기서 고정하는 것은 계약이다.)
+        // (여기서는 NULL 비율을 측정하지 않고 original timestamp 저장 계약을 고정한다.)
         // 과거 날짜 리터럴은 broker retention에 의해 소비/재시도 전에 삭제될 수 있다.
         // 보존기간 안의 1분 전 값을 한 번 고정해 재발행 시각과 구분한다. 대기/정확값 검증은 그대로다.
         long fixedTimestamp = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1);

@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
- * {@link CommitAwareMetrics} 계약 (구현 ④-d-1 diff 리뷰 1R #1 · 2R #2·#4).
+ * {@link CommitAwareMetrics} 계약.
  *
  * <p><b>이 테스트가 없으면 구현을 즉시 증가 방식으로 되돌려도 전부 통과한다.</b> 서비스 통합테스트는
  * 프록시가 실제로 커밋한 뒤 값을 읽으므로 양성 경로만 보고, "롤백이면 증가 0" 은 고정되지 않는다.

@@ -85,3 +85,7 @@ lint·이미지·e2e 의 성공을 뜻하지 않는다.
 - ADR-0028 — 이미지와 테스트 병렬화, ADR-0011 — 증적 게이트
 - [GitHub Actions needs/skip semantics](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idneeds)
 - [Docker imagetools create](https://docs.docker.com/reference/cli/docker/buildx/imagetools/create/)
+
+## Update Log
+
+- 2026-10-21 D-089: 기존 gate/검증 artifact/원격 digest 승격과6레포 비원자성 결정은 유지한다. per-service/attempt 원 publish 증거를 덮어쓰지 않고 보존하고, read-only publication-state가 각 서비스의 expected SHA/config/latest와 currentmain 관측 구간을 기록한다. unavailable/부분·stale 관측은 전체 workflow 실패로 남기며 원 publish 실패를 취소하지 않는다. 역사 unknown blob 원인은 미확정이다. [복구 절차](../runbooks/ci-publication-recovery.md)는 원 image artifact1일/tiny evidence14일의 수명과같은run의5old+1new attempt를 구분한다. 자동 retry/다중레포 원자성/운영 배포는 추가하지 않는다.

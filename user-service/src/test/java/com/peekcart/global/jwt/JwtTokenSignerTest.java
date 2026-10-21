@@ -16,10 +16,10 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * RS256 발급 서명 + kid 헤더 + 왕복 검증 + 서명 latency 측정 (ADR-0013 D1/D2, 구현 ③ PR1 P2/P5).
+ * RS256 발급 서명 + kid 헤더 + 왕복 검증 + 서명 latency 측정 (ADR-0013 D1/D2).
  * 키 자료를 커밋하지 않기 위해 런타임 생성 키쌍({@link TestRsaKeys})으로 발급한다.
  *
- * <p>PR3d 에서 servlet 측 {@code JwtTokenVerifier} 가 삭제됐다(ADR-0014 D2-c exit) — 사용자 토큰을 검증하는
+ * <p>서비스 측 사용자 JWT 검증은 종료됐다(ADR-0014 D2-c exit) — 사용자 토큰을 검증하는
  * 주체는 이제 Gateway 뿐이다. 그래서 왕복 검증은 공개키로 직접 파싱해 <b>발급 산출물의 형태</b>만 고정한다.
  * latency 는 KMS 격상(D2 후속) 판단 근거로 p50/p95 를 기록한다(측정만, 전환 미결정).
  */

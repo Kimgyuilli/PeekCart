@@ -23,7 +23,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 좌표 reader 계약 (구현 ④-c-2b-4a P18 · ADR-0020 §D5-1 · diff 리뷰 1R #1·#7, 2R #4·#5).
+ * 좌표 reader 계약 (ADR-0020 §D5-1).
  *
  * <p><b>왜 별도 통합테스트인가</b>: 진입점 테스트는 정상 UTF-8·정상 retention·정상 payload 만 지나간다.
  * 그래서 {@code byte[]} consumer 로의 전환, strict UTF-8 왕복, tombstone 거부, retention 실측,
@@ -40,7 +40,7 @@ class OriginalRecordReaderIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired OriginalRecordReader reader;
 
-    /** 7일 — {@code app.idempotency.floor.dlq-replay-window} 와 같은 값을 리터럴로 독립 기재(N17). */
+    /** 7일 — {@code app.idempotency.floor.dlq-replay-window} 와 같은 값을 리터럴로 독립 기재. */
     private static final long REPLAY_WINDOW_MS = 7L * 24 * 60 * 60 * 1000;
 
     @Test

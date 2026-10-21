@@ -40,7 +40,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Gateway 인증 필터 계약 회귀 (계획 P12/P19 · PR3d P9).
+ * Gateway 인증 필터 계약 회귀.
  *
  * <p>고정하는 계약:
  * <ul>
