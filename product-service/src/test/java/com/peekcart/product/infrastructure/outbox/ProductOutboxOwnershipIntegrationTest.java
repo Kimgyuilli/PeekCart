@@ -21,9 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * DB-per-service(구현 ② PR2) outbox poller 발행 범위 검증.
+ * DB-per-service outbox poller 발행 범위 검증.
  * <p>스키마 물리 분리로 소유권이 보장되므로 poller 는 더 이상 aggregateType allowlist 로 필터하지 않고,
- * 자기 스키마(peekcart_product)의 PENDING 이벤트를 aggregateType 무관하게 전부 발행한다(B8b allowlist 제거).
+ * 자기 스키마(peekcart_product)의 PENDING 이벤트를 aggregateType 무관하게 발행한다(aggregateType allowlist 없음).
  * backlog gauge 집계 메서드도 자기 스키마 전체를 센다(countByStatus).
  */
 @SpringBootTest

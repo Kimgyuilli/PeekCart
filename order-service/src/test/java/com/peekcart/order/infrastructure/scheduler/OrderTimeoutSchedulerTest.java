@@ -32,7 +32,7 @@ class OrderTimeoutSchedulerTest {
     @InjectMocks OrderTimeoutScheduler orderTimeoutScheduler;
     @Mock OrderRepository orderRepository;
     @Mock OrderCommandService orderCommandService;
-    // 취소 건수를 사유별로 세는 메트릭(구현 ④-d-1 P2). 여기서는 스케줄러 로직만 보므로 mock 이면 충분하다.
+    // 취소 건수를 사유별로 세는 메트릭. 여기서는 스케줄러 로직만 보므로 mock 이면 충분하다.
     @Mock OrderSagaMetrics sagaMetrics;
 
     @Test

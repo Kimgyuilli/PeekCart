@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * {@code spring.data.redis} 하위 트리가 base(timeout)와 프로파일(host/port)로 나뉘어도
- * 최종 바인딩이 깨지지 않는지 고정한다 (구현 ⑤ P4 · V7).
+ * 최종 바인딩이 깨지지 않는지 고정한다.
  *
  * <p><b>왜 필요한가</b>: ADR-0007 은 "최상위 키 트리에 base/프로파일 간 병합 충돌 가능성이 있으면
  * Java Config 로 declare" 하라고 한다(D-001 의 {@code management.*} 사례). 타임아웃은 동작 규약이라

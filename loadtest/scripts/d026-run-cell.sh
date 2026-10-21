@@ -24,6 +24,8 @@
 
 set -uo pipefail
 
+command -v python3 >/dev/null 2>&1 || { echo "이름별 counter 검증에 python3 필요" >&2; exit 1; }
+
 NS=peekcart
 EP="${EP:?EP=detail|list 필요}"
 CACHE="${CACHE:?CACHE=on|off 필요}"
@@ -113,16 +115,49 @@ fi
 
 # ── 4) counter 사전 스냅샷 (절대값 아니라 **차분**을 쓴다 — 지적 #5) ──────────
 prom() { kubectl -n "$NS" exec "$POD" -- curl -s localhost:8080/actuator/prometheus 2>/dev/null; }
-# 캐시 **이름별**로 나눈다. 합산하면 products(상품) 와 productStock(재고) 가 섞여
+# 캐시 **이름별**로 나눈다. product(상세)·products(목록)·productStock(재고)를 합산하면
 # D-026 이 만든 재고 캐시의 miss 율을 못 본다 — 이 세션이 물어보는 바로 그 숫자다.
-cachegets() { prom | grep '^cache_gets_total' | grep "name=\"$2\"" | grep "result=\"$1\"" \
-                | awk '{s+=$NF} END{print s+0}'; }
+cachegets() {
+  local snapshot
+  snapshot=$(prom) || { printf 'unavailable\n'; return; }
+  # Decimal 검증 전에 awk의 부동소수 반올림을 거치지 않는다.
+  printf '%s\n' "$snapshot" | python3 -c '
+import re
+import sys
+from decimal import Decimal, InvalidOperation
+
+name, result = sys.argv[1:]
+maximum = Decimal(str(sys.float_info.max))
+count = total = 0
+try:
+    for line in sys.stdin:
+        if not line.startswith("cache_gets_total{"): continue
+        labels, separator, sample = line.partition("}")
+        if not re.search(r"(?:[{,])name=\"" + re.escape(name) + r"\"(?:,|$)", labels): continue
+        if not re.search(r"(?:[{,])result=\"" + re.escape(result) + r"\"(?:,|$)", labels): continue
+        fields = sample.split()
+        if not separator or len(fields) != 1: raise ValueError("sample")
+        raw = fields[0]
+        if not re.fullmatch(r"[+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", raw):
+            raise ValueError("number")
+        value = Decimal(raw)
+        if not value.is_finite() or value > maximum or value != value.to_integral_value():
+            raise ValueError("counter")
+        count += 1
+        total += int(value)
+        if total > maximum: raise ValueError("sum")
+    if not count: raise ValueError("missing")
+    print(total)
+except (InvalidOperation, ValueError, OverflowError):
+    print("unavailable")
+' "$2" "$1"
+}
 throttled() { kubectl -n "$NS" exec "$1" -- cat /sys/fs/cgroup/cpu.stat 2>/dev/null \
                 | awk '/throttled_usec/{print $2}'; }
 usage_usec() { kubectl -n "$NS" exec "$1" -- cat /sys/fs/cgroup/cpu.stat 2>/dev/null \
                 | awk '/^usage_usec/{print $2}'; }
 
-for C in products productStock; do
+for C in product products productStock; do
   meta "hit_before_${C}"  "$(cachegets hit  "$C")"
   meta "miss_before_${C}" "$(cachegets miss "$C")"
 done
@@ -142,7 +177,7 @@ gcloud compute scp "$LOADGEN:/tmp/${CELL}.json" "$OUTDIR/${CELL}.json" \
   --zone "$ZONE" --tunnel-through-iap --quiet >/dev/null 2>&1
 
 # ── 6) counter 사후 스냅샷 ────────────────────────────────────────────────────
-for C in products productStock; do
+for C in product products productStock; do
   meta "hit_after_${C}"  "$(cachegets hit  "$C")"
   meta "miss_after_${C}" "$(cachegets miss "$C")"
 done

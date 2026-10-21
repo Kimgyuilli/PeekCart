@@ -29,7 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 커서 페이지네이션의 정확성·격리를 실제 MySQL 로 검증한다 (계획 T1·T4·T11·T12).
+ * 커서 페이지네이션의 정확성·격리를 실제 MySQL 로 검증한다.
  *
  * <p>단위 테스트로는 닫히지 않는 것들이다 — 동률 {@code ordered_at} 의 페이지 경계는 DB 정렬이
  * 결정하고, {@code DATETIME(6)} 의 마이크로초·표현 범위는 JDBC 바인딩 경계에서만 드러난다.

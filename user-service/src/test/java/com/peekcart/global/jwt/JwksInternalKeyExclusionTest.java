@@ -19,7 +19,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * JWKS 에 Gateway 내부 토큰 공개키가 실리지 않음을 고정한다 (계획 P9 · ADR-0017 D3).
+ * JWKS 에 Gateway 내부 토큰 공개키가 실리지 않음을 고정한다 (ADR-0017 D3).
  *
  * <p><b>왜 kid 만으로는 부족한가</b>: {@code app.jwt.rs256.public-keys} 에 Gateway 공개키를 <i>다른 kid</i> 로
  * 끼워 넣으면 kid 대조는 통과하면서 키 자체는 공개된다. 그래서 kid 가 아니라 <b>SPKI DER SHA-256

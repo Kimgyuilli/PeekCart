@@ -43,7 +43,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 
 /**
- * Product 측 환불 보상 계약 통합 테스트 (계획 P14 — ④-c-1b).
+ * Product 측 환불 보상 계약 통합 테스트.
  *
  * <p>보는 것: 감지 marker 와 요청 Outbox 의 <b>원자성</b>(ADR-0018 D1), 회신에 의한 <b>종결 기록</b>
  * (marker ≠ 종결, D4), backfill 의 <b>멱등</b>. 세 가지 모두 실제 MySQL 과 트랜잭션 경계가 있어야
@@ -84,7 +84,7 @@ class StockCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         cleanDatabase();
     }
 
-    // ---------------- P11: 트리거 발행 + 원자성 ----------------
+    // ---------------- 트리거 발행 + 원자성 ----------------
 
     @Test
     @DisplayName("PAID_BUT_UNRESERVED 감지 → marker 와 stock.compensation.requested 가 함께 커밋된다")
@@ -133,7 +133,7 @@ class StockCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         assertThat(findRequestOutbox()).hasSize(1);
     }
 
-    // ---------------- P12: 회신 소비 종결 ----------------
+    // ---------------- 회신 소비 종결 ----------------
 
     @Test
     @DisplayName("[SAGA-REFUND-RESULT-PRODUCT-SUCCEEDED] payment.refunded(SUCCEEDED) → 종결 컬럼 기록 (marker 와 별개)")
@@ -232,7 +232,7 @@ class StockCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         assertThat(reload().getRefundFailureCode()).isNull();
     }
 
-    // ---------------- P14: listener 배선 (실제 Kafka 왕복) ----------------
+    // ---------------- listener 배선 (실제 Kafka 왕복) ----------------
 
     /**
      * 위 회신 테스트들은 listener 를 직접 호출하므로 토픽명·group·factory 배선이 틀려도 통과한다.
@@ -250,7 +250,7 @@ class StockCompensationRefundIntegrationTest extends AbstractIntegrationTest {
                 assertThat(reload().getRefundResult()).isEqualTo("SUCCEEDED"));
     }
 
-    // ---------------- P11: backfill 멱등 ----------------
+    // ---------------- backfill 멱등 ----------------
 
     @Test
     @DisplayName("backfill DML 2회 실행 → 2회차 0건")
@@ -264,7 +264,7 @@ class StockCompensationRefundIntegrationTest extends AbstractIntegrationTest {
     }
 
     /**
-     * <b>c1:5/c2:1/c3:1 (P1) 회귀</b> — 조립 중 행이 {@code PENDING} 이면 롤링 배포 중 구 poller 가
+     * <b>조립 중 outbox 행의 조기 발행 회귀</b> — 조립 중 행이 {@code PENDING} 이면 롤링 배포 중 구 poller 가
      * 빈 payload 를 발행하고 PUBLISHED 로 봉인해 요청이 영구 유실된다.
      */
     @Test
@@ -409,7 +409,7 @@ class StockCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         em.close();
     }
 
-    /** 감지 marker 만 있고 요청 Outbox 는 없는 상태 — ④-a 배포 이후 쌓인 잔여분을 모사한다. */
+    /** 감지 marker 만 있고 요청 Outbox 는 없는 상태 — 감지 marker 만 남은 과거 상태를 모사한다. */
     private void seedCompensatedReservationWithoutRequest() {
         EntityManager em = emf.createEntityManager();
         em.getTransaction().begin();

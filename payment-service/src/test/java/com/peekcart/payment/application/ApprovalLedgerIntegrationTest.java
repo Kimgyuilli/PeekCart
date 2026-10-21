@@ -30,11 +30,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 승인 원장의 fence·claim·nudge 계약 통합 테스트 (계획 P4/P8, ADR-0023).
+ * 승인 원장의 fence·claim·nudge 계약 통합 테스트 (ADR-0023).
  *
  * <p><b>단위 mock 으로는 판정할 수 없는 것들만</b> 여기서 본다 — 실제 MySQL 의 유니크 제약,
  * {@code INSERT IGNORE} 의 영향 행 수, 조건부 UPDATE 의 predicate(특히 {@code claimed_at IS NULL}
- * 분기 — 계획 C-9 가 환불 원장에서 발견한 함정이다).
+ * 분기가 올바른 행만 갱신하는지).
  */
 @SpringBootTest
 @Import(SharedContainers.class)

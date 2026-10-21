@@ -1,0 +1,15 @@
+{
+  "final-sql.log.gz": "a90a17139f53a4887d9a5e8cf885d78386b267e55f684ec77ce295677d861788",
+  "fixture-before.json.gz": "2f61d7f260335ab32f445f66250e23488ce0e6e08dbc07c550c0aecd392f21e2",
+  "fixture-provenance.json.gz": "fb0d14c8db7d1c1578d8865439398a5d46b5a49484c88d93dd6c95eb4e84b56a",
+  "initial-readiness-failure.log.gz": "c73fb88e4c79583aa349ed05ea8398ac0ed97297e5a5d715b93ffac2868645c7",
+  "interruption-cleanup.json": "b8b6547d8fe45cf6594afb832b70589b0c4de254268b3ceaf8b2ca795b95cb69",
+  "migration-files.json": "d547b35c1761ffbc278ed8c0c383006f573a2aa1d462854ad95ebb435052aa61",
+  "old-ignore-nonstrict.txt.gz": "661b34afd72f217505b910f7c5c43e1c5b5daf3e3d765b999172e196b479c005",
+  "old-ignore-strict.txt.gz": "661b34afd72f217505b910f7c5c43e1c5b5daf3e3d765b999172e196b479c005",
+  "partial-ddl-schema.json.gz": "0c35b4637aa550aa971baa2f95c508d99a63352f4c1cb3dad77efdf172d10bd8",
+  "pipeline-negative-results.json": "d1898dd6dbfd4d311b26e34ba8c1eed452c7f95d455e68fccbb26897d0296af1",
+  "pipeline-negative.log.gz": "d9c4e7aead99ab2413a158adb6bfba5a965617c31c5654903074af1819e646ab",
+  "results.json": "8056cf71d5a10053035e5b4c356695b3b3fdb2ff8327302afcbd5c8a4251ae3d",
+  "source-manifest.json": "393d5b0492548fb7845e545da5d9bbddb8569d1255bf0dde3c731dd11d633cc9"
+}

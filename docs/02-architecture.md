@@ -147,7 +147,7 @@ graph TD
 
 ## 12. 패키지 구조
 
-> Phase 4 Gradle 멀티모듈 구조(`common` + `peekcart-common-observability` + 5개 서비스 모듈)·의존 규칙은 ADR-0011 (see ADR-0011). 아래 `### Phase 4 — MSA` 가 현재 패키지 구조다. Phase 1·2 패키지 구조와 Phase 1 대비 변경점은 `docs/progress/design-archive-phase1-2.md` 로 옮겼다.
+> 현재 Gradle 멀티모듈 구조와 배포 파일은 아래 트리를 따른다. 모듈 경계·의존 규칙은 ADR-0011/0014/0033, Phase 1·2 패키지 구조는 [설계 아카이브](progress/design-archive-phase1-2.md#02-architecturemd-12-패키지-구조)를 참조한다. 루트는 빌드/가드 aggregator이며 애플리케이션 `src/`는 각 모듈에 있다.
 
 ### 레이어 책임 원칙
 
@@ -158,51 +158,49 @@ graph TD
 | Domain | 없음 | JPA 어노테이션 허용, JPA API 미의존, 순수 비즈니스 로직 |
 | Infrastructure | → Domain | Repository 인터페이스 구현, 외부 연동 |
 
-### Phase 3 — 인프라 매니페스트 (Kustomize base/overlays)
+### 현재 인프라 매니페스트 (Kustomize base/overlays)
 
-Phase 3 에서 K8s 를 도입하면서 `k8s/` 디렉토리가 추가됩니다. Kustomize 의 `base/` + `overlays/` 패턴을 사용하여 환경(minikube / GKE)별 차이를 patch 로 분리합니다. 선택 근거는 ADR-0005.
+Phase 3에서 도입한 base/overlay 분리는 현재 5개 도메인 서비스와 gateway의 배포에 쓰인다(see ADR-0005, ADR-0006). 아래는 주요 경로이며 전체 리소스 목록은 [base kustomization](../k8s/base/kustomization.yml)이 정본이다. 과거 루트 `src/`와 `services/peekcart/`를 포함한 Phase 3 트리는 [D-101 정정 전 기록](https://github.com/Kimgyuilli/PeekCart/blob/be535c57ced11acfcbe9a24a349ddb6ad2055d8a/docs/02-architecture.md#phase-3--인프라-매니페스트-kustomize-baseoverlays)에서 확인할 수 있다.
 
+```text
+k8s/
+├── base/
+│   ├── namespace/namespace.yml
+│   ├── infra/
+│   │   ├── mysql/{mysql.yml,secret.yml,init-configmap.yml}
+│   │   ├── redis/redis.yml
+│   │   └── kafka/kafka.yml
+│   ├── services/
+│   │   ├── gateway/                  # deployment.yml에 API·metrics Service 포함
+│   │   │   ├── deployment.yml
+│   │   │   ├── configmap.yml
+│   │   │   ├── serviceaccount.yml
+│   │   │   ├── secretproviderclass.yml
+│   │   │   └── servicemonitor.yml
+│   │   ├── order-service/            # 각 deployment.yml에 Deployment + Service
+│   │   ├── payment-service/          # 각 도메인 서비스에 configmap·secret·servicemonitor
+│   │   ├── product-service/
+│   │   ├── notification-service/
+│   │   ├── user-service/             # 서명키용 serviceaccount·secretproviderclass도 소유
+│   │   ├── internal-token-keys/configmap.yml
+│   │   └── user-jwt-public-keys/configmap.yml
+│   ├── networkpolicy.yml
+│   └── kustomization.yml
+├── overlays/
+│   ├── minikube/{kustomization.yml,patches/}
+│   └── gke/
+│       ├── kustomization.yml
+│       ├── README.md
+│       ├── hpa.yml                   # order-service 및 gateway HPA
+│       └── patches/
+└── monitoring/                       # base와 분리된 관측성 스택 (ADR-0006)
+    ├── namespace.yml
+    ├── shared/{kustomization.yml,grafana-alerts.yml,*.json}
+    ├── minikube/{values-prometheus.yml,install.sh}
+    └── gke/{values-prometheus.yml,install.sh}
 ```
-peekcart/
-├── src/                              # Phase 1·2 에서 구축된 애플리케이션 코드
-├── docker-compose.yml                # 로컬 개발용 (Phase 1·2 이후에도 유지)
-│
-└── k8s/
-    ├── base/                         # 환경 무관 공통 매니페스트 (ADR-0005, ADR-0006)
-    │   ├── namespace.yml             # peekcart NS 만 (monitoring NS 는 k8s/monitoring/ 소관)
-    │   ├── infra/                    # Phase 3 단순화: 디렉토리당 단일 통합 파일
-    │   │   ├── mysql/mysql.yml       # Deployment + Service + PVC
-    │   │   ├── redis/redis.yml
-    │   │   └── kafka/kafka.yml
-    │   ├── services/
-    │   │   └── peekcart/             # Phase 3: 모놀리스 단일 서비스
-    │   │       ├── deployment.yml    # Deployment + Service 통합 (환경 비종속)
-    │   │       ├── configmap.yml
-    │   │       ├── secret.yml
-    │   │       └── servicemonitor.yml  # 앱이 자기 메트릭을 노출하는 방법 (peekcart NS, ADR-0006 불변식 2)
-    │   └── kustomization.yml         # base 전체를 한 곳에서 집계
-    ├── overlays/
-    │   ├── minikube/                 # Phase 3 Task 3-1~3-3 로컬 검증 (ADR-0004 §Context)
-    │   │   ├── kustomization.yml
-    │   │   └── patches/              # imagePullPolicy: Never, Service type: NodePort 등
-    │   └── gke/                      # 부하 테스트 / 운영 (ADR-0004)
-    │       ├── kustomization.yml     # patches + images (PROJECT_ID placeholder) + hpa.yml
-    │       ├── README.md             # 이미지 운반 / PROJECT_ID 치환 / 정리 절차
-    │       ├── hpa.yml               # HorizontalPodAutoscaler (autoscaling/v2, CPU 60%, min=1/max=3) — Task 3-5 선행
-    │       └── patches/              # peekcart Service LB(Internal), Deployment 리소스 상향, PVC standard-rwo
-    └── monitoring/                   # base/ 분리된 관측성 스택 (ADR-0006)
-        ├── namespace.yml             # monitoring NS SSOT (불변식 5)
-        ├── shared/                   # 환경 무관 자원
-        │   ├── kustomization.yml        # `kubectl apply -k` 진입점. configMapGenerator 가 *.json → ConfigMap 생성 (SSOT=JSON)
-        │   ├── grafana-alerts.yml       # Grafana alert provisioning ConfigMap
-        │   └── *.json                   # 대시보드 SSOT (standalone 편집 원본, ConfigMap 은 kustomize 산출물)
-        ├── minikube/
-        │   ├── values-prometheus.yml     # NodePort 30030, retention 6h, 경량 limits
-        │   └── install.sh                # helm upgrade --install (멱등)
-        └── gke/
-            ├── values-prometheus.yml     # Internal LB, retention 24h, PVC standard-rwo 5Gi
-            └── install.sh                # helm upgrade --install (멱등)
-```
+
+측정·키 회전 리허설용 추가 overlay는 `k8s/overlays/`에 별도로 있다. 일반 배포 진입점은 위 `minikube`/`gke`이며 배포 순서는 다음과 같다.
 
 - **최초 배포 순서 (fresh 클러스터, minikube 기준)**:
   1. `kubectl apply -f k8s/monitoring/namespace.yml` — monitoring NS 단일 생성 주체 (ADR-0006 불변식 5)
@@ -218,127 +216,56 @@ peekcart/
   3. `kubectl apply -k k8s/monitoring/shared/`
   4. `bash scripts/deploy-overlay.sh k8s/overlays/gke` — apply 전 `kustomize edit set image` 로 PROJECT_ID 치환 (`k8s/overlays/gke/README.md` 참고). 편집 결과는 커밋하지 않음
 - **GKE 운영 체크리스트** (ADR-0004): 측정 종료 시 클러스터/VM/PD/예약 IP 정리. 상세 명령은 `k8s/overlays/gke/README.md` 또는 ADR-0004 §운영 체크리스트
-- **Phase 4 서비스 추가 시**: `k8s/base/services/` 하위에 형제 디렉토리 추가 + 각 서비스의 `servicemonitor.yml` 동봉 + `base/kustomization.yml` 에 참조 추가. 기존 파일 수정 없음 (ADR-0006 §긍정적 영향)
+- **서비스 추가 시**: `k8s/base/services/` 하위에 형제 디렉토리 추가 + 각 서비스의 `servicemonitor.yml` 동봉 + `base/kustomization.yml` 에 참조 추가 (ADR-0006 §긍정적 영향)
 
 ### Phase 4 — MSA (Gradle 멀티모듈)
 
-```
+[settings.gradle](../settings.gradle)이 포함하는 11개 모듈의 현재 위치다. 공유 라이브러리 5개와 도메인 서비스 5개, gateway로 구성되며 root는 배포 앱이 아니다(see ADR-0011, ADR-0014, ADR-0033).
+
+```text
 peekcart/
-├── build.gradle
+├── build.gradle                      # 공통 빌드 설정·의존 가드
 ├── settings.gradle
 ├── docker-compose.yml
-│
-├── k8s/                              # Phase 3 Kustomize 구조 유지, services/ 하위 확장
-│   ├── base/
-│   │   ├── namespace.yml
-│   │   ├── infra/{mysql,redis,kafka}/    # Phase 3 와 동일 (공통 인프라)
-│   │   ├── services/                      # Phase 3 의 peekcart/ 를 서비스별로 분리
-│   │   │   ├── gateway/
-│   │   │   │   ├── deployment.yml          # Deployment + Service(8080) + gateway-metrics Service(8081)
-│   │   │   │   ├── configmap.yml
-│   │   │   │   ├── secretproviderclass.yml # 내부 토큰 서명 개인키 CSI (ADR-0017 D2)
-│   │   │   │   └── servicemonitor.yml      # gateway-metrics 를 scrape (ADR-0024 D1)
-│   │   │   ├── order-service/
-│   │   │   │   ├── deployment.yml
-│   │   │   │   ├── service.yml
-│   │   │   │   ├── hpa.yml
-│   │   │   │   └── servicemonitor.yml
-│   │   │   ├── payment-service/
-│   │   │   ├── user-service/
-│   │   │   ├── product-service/
-│   │   │   └── notification-service/
-│   │   └── kustomization.yml
-│   ├── overlays/
-│   │   ├── minikube/                      # 로컬 개발/검증 (ADR-0004 §Context)
-│   │   └── gke/                           # 운영 (ADR-0004)
-│   └── monitoring/                        # Phase 3 와 동일 — base/ 와 분리 (ADR-0006)
-│       ├── namespace.yml
-│       ├── shared/{kustomization.yml,grafana-alerts.yml,*.json}
-│       └── {minikube,gke}/{values-prometheus.yml,install.sh}
-│
-├── common/                                # 공유 라이브러리 (bootJar 없음, ADR-0011)
+├── k8s/                              # 위 현재 인프라 트리 참조
+├── common/
 │   └── src/main/java/com/peekcart/global/
-│       ├── outbox/dto/                    # 이벤트 페이로드 DTO + KafkaEventEnvelope (서비스 간 공유)
-│       ├── kafka/                         # DLQ 토폴로지·헤더, MDC 전파, backoff
-│       ├── port/                          # SlackPort
-│       ├── slack/                         # SlackNotificationClient + no-op fallback
+│       ├── outbox/dto/                # 이벤트 payload·KafkaEventEnvelope
+│       ├── kafka/                     # 토폴로지·헤더·MDC·backoff
+│       ├── port/                      # SlackPort
+│       ├── slack/
 │       ├── cache/ · config/ · entity/ · exception/ · filter/ · lock/
-│       ├── deadletter/ · replay/ · retention/   # 설정·공통 타입 (원장·스케줄러 본체는 peekcart-common-messaging)
+│       ├── deadletter/ · replay/ · retention/   # 설정·공통 타입
 │       └── response/
-│
-├── internal-token-contract/               # 내부 토큰 이름 계약 (순수 Java, ADR-0017)
-│   └── src/main/java/com/peekcart/internaltoken/
-│       └── InternalTokenContract.java     # issuer / claim / 헤더 이름 단일 출처
-│
-├── peekcart-common-messaging/             # outbox·멱등성·DLQ 원장 실행 세트 (order/payment/product/notification 공유, ADR-0033)
+├── internal-token-contract/
+│   └── src/main/java/com/peekcart/internaltoken/InternalTokenContract.java
+├── peekcart-common-observability/
 │   └── src/main/java/com/peekcart/global/
-│       ├── outbox/                        # outbox 테이블·polling 발행
-│       ├── idempotency/                   # processed_events
-│       ├── deadletter/                    # DLQ 원장 (서비스별 구독·소유자 선언 3개는 서비스에 남는다)
+│       ├── config/                    # MetricsConfig·ActuatorSecurityConfig
+│       └── metrics/                   # CommitAwareMetrics
+├── peekcart-common-auth/
+│   └── src/main/java/com/peekcart/global/
+│       ├── auth/                      # LoginUser·인자 해석
+│       ├── config/
+│       ├── jwt/                       # 공개키·PEM 설정
+│       └── security/                  # 내부 토큰 검증·서비스 보안 구성
+├── peekcart-common-messaging/
+│   └── src/main/java/com/peekcart/global/
+│       ├── outbox/                    # 원장·polling 발행
+│       ├── idempotency/               # processed_events
+│       ├── deadletter/                # DLQ 원장·replay 실행
 │       └── config/ShedLockConfig.java
-│
-├── peekcart-common-auth/                  # 내부 토큰 검증 공유 모듈 (ADR-0014, ADR-0017)
-│   └── src/main/java/com/peekcart/global/
-│       ├── security/
-│       │   ├── InternalTokenAuthenticationFilter.java  # X-Internal-Auth 검증 → 인증 주체
-│       │   ├── InternalTokenVerifier.java
-│       │   ├── InternalGatewayPublicKeyRegistry.java   # User JWKS 와 키 도메인 분리
-│       │   ├── InternalTokenModeInvariant.java         # 부팅 시 필터 구성 검사
-│       │   └── HeaderTrustSecurityConfigurer.java
-│       └── auth/
-│           └── LoginUser.java             # userId · role · familyId
-│
-├── gateway/                               # Spring Cloud Gateway (WebFlux, :common 미의존)
+├── gateway/
 │   └── src/main/java/com/peekcart/gateway/
-│       ├── auth/
-│       │   ├── GatewayAuthenticationFilter.java  # 외부 헤더 strip → RS256 검증 → 내부 토큰 주입
-│       │   ├── GatewayJwtVerifier.java
-│       │   ├── JwksKeyRegistry.java
-│       │   ├── InternalTokenIssuer.java   # Gateway 개인키 서명 (ADR-0017)
-│       │   ├── AuthFailureReason.java     # 거부 사유 enum — 메트릭 태그의 단일 출처 (S9)
-│       │   └── GatewayAuthMetrics.java    # auth.failure counter (ADR-0009 S9 owner)
+│       ├── auth/                      # 사용자 JWT 검증·내부 토큰 발행
 │       ├── ratelimit/
-│       │   └── FailClosedRedisRateLimiter.java   # SCG 기본 fail-OPEN 대체 (ADR-0013 D3) + 429 계측
 │       ├── observability/
-│       │   └── ForbiddenResponseMetricsFilter.java  # 다운스트림 403 관측 (S9)
 │       └── config/
-│           ├── RateLimiterConfig.java
-│           └── GatewayObservabilityConfig.java   # 공유 MetricsConfig(S1) 명시 import
-│
 ├── user-service/
 ├── product-service/
 ├── order-service/
-│   └── src/main/java/com/peekcart/order/
-│       ├── presentation/
-│       ├── application/
-│       ├── domain/
-│       ├── infrastructure/
-│       │   ├── outbox/
-│       │   │   └── OrderOutboxEventPublisher.java  # 도메인 이벤트 → outbox 행 적재
-│       │   └── kafka/
-│       │       ├── OrderEventConsumer.java
-│       │       └── ProductPriceCacheConsumer.java
-│       └── (com/peekcart/global/deadletter/)
-│           ├── DeadLetterConsumer.java    # 이 서비스가 소유한 .dlq 구독
-│           ├── DeadLetterQuarantineConsumer.java  # 원본 토픽 발행 서비스만 (notification 없음)
-│           └── LedgerOwnerConfig.java     # 원장 소유자 선언
-│
 ├── payment-service/
-│   └── src/main/java/com/peekcart/payment/
-│       └── infrastructure/
-│           ├── toss/
-│           ├── outbox/
-│           │   └── PaymentOutboxEventPublisher.java
-│           └── kafka/
-│               ├── PaymentEventConsumer.java       # order.created 소비
-│               └── CompensationRequestConsumer.java
-│
 └── notification-service/
-    └── src/main/java/com/peekcart/notification/
-        └── infrastructure/
-            └── kafka/
-                └── NotificationConsumer.java      # Slack 발송은 common 의 SlackPort 경유
 ```
 
-> product-service 는 order/payment 와 같은 모양이다(`infrastructure/{outbox,kafka}` + `global/deadletter/` 서비스별 3개).
-> Outbox·멱등성·DLQ 원장 실행 세트는 `peekcart-common-messaging` 한 벌이고, 테이블 스키마(Flyway)는 서비스가 소유한다(see ADR-0033).
+각 도메인 서비스는 `<service>/src/main/java/com/peekcart/<domain>/` 아래에 `presentation/`, `application/`, `domain/`, `infrastructure/`를 둔다. 독립 부팅 진입점은 각 모듈에 있고, DLQ를 소비하는 서비스의 `global/deadletter/`도 해당 서비스 모듈에 있다. 각 서비스의 `src/main/resources/db/migration/`에 독립 Flyway 이력이 있다. Outbox·멱등성·DLQ 원장 실행 세트는 `peekcart-common-messaging`을 order/payment/product/notification이 공유하고, 테이블 스키마와 서비스별 DLQ 구독·소유자 선언은 서비스가 소유한다(see ADR-0033).

@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * 주문 목록 API 의 OpenAPI 계약 회귀 테스트 (계획 P11 · T7).
+ * 주문 목록 API 의 OpenAPI 계약 회귀 테스트.
  *
  * <p>파괴적 계약 변경이라 문서가 구현과 갈라지면 안 된다. 특히 {@code size} 는 런타임 타입이
  * {@code String} 이라(타입 변환 500 회피) {@code @Schema} 선언이 없으면 문서에 임의 문자열로

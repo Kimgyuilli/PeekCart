@@ -21,7 +21,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * processed_events retention cleanup 통합 테스트 (ADR-0012 D5 · 구현 ② PR3).
+ * processed_events retention cleanup 통합 테스트 (ADR-0012 D5).
  * <p>보존기간(7d) 경과 행 배치 삭제 / 미만료 보존 / batch LIMIT / 서비스×잡 매트릭스(product=둘 다 소유).
  * <p>ShedLock(PROXY_METHOD·lockAtLeastFor=1m) 때문에 {@code scheduler.cleanup()} 은 클래스당 1회만 호출한다.
  */

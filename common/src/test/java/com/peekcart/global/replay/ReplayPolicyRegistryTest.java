@@ -10,7 +10,7 @@ import java.util.TreeSet;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * V-28f — 정책 레지스트리 completeness (계획 리뷰 3R #5).
+ * V-28f — 정책 레지스트리 completeness.
  *
  * <p>정본은 {@code DlqTopology} 의 소비쌍이다. 토픽 11종만 세면 <b>공유 토픽의 소유자별 누락</b>이
  * 검사되지 않는다 — {@code stock.reservation.result} 는 order·payment 둘 다 소비한다.

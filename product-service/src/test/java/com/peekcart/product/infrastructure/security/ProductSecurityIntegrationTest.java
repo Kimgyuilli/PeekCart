@@ -31,9 +31,9 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * product-service 보안 통합 회귀 — Gateway 서명 내부 토큰(ADR-0017 · PR3d).
+ * product-service 보안 통합 회귀 — Gateway 서명 내부 토큰(ADR-0017).
  *
- * <p>5서비스 전부 같은 계약을 만족해야 한다(계획 P9 review #7 — 2개만 덮여 있던 공백 해소):
+ * <p>5서비스 전부 같은 계약을 만족해야 한다:
  * 토큰 부재→401 / 유효 서명→인증 / 위조·만료→401 / 평문 {@code X-User-*}·직접 {@code Authorization} 무시.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -53,7 +53,7 @@ class ProductSecurityIntegrationTest {
     /**
      * 사용자 access token 검증키를 <b>일부러</b> 등록한다 — 서비스가 Bearer 를 다시 인증하기 시작하면
      * directBearerToken_rejected 가 실제로 실패하도록 만드는 음성 대조군 배선이다.
-     * (운영 설정에는 이 서비스의 app.jwt.rs256 이 없다 — PR3d 에서 죽은 설정으로 제거했다.)
+     * (운영 설정에는 이 서비스의 app.jwt.rs256 이 없다.)
      */
     @DynamicPropertySource
     static void userTokenVerificationKeys(DynamicPropertyRegistry registry) {
@@ -134,7 +134,7 @@ class ProductSecurityIntegrationTest {
                 .isNotEmpty();
 
         // 고정 fixture 키 하나만 대조하면, 내부 레지스트리에 *다른* 키가 바인딩되고 그 키가 User 쪽에도
-        // 들어간 경우를 놓친다(diff 리뷰 c2:3). 두 집합 전체의 교집합이 비어 있어야 한다.
+        // 들어간 경우를 놓친다. 두 집합 전체의 교집합이 비어 있어야 한다.
         Set<String> internalFingerprints = internalKeyRegistry.kids().stream()
                 .map(internalKeyRegistry::find)
                 .map(InternalKeyFingerprint::of)

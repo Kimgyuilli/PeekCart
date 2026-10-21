@@ -1,0 +1,17 @@
+{
+  "head": "2d6f7afe1f1606a176abdd6d71de6b6b8e460af9",
+  "run": 39597261792,
+  "actualApplicationChainExecuted": false,
+  "files": {
+    "first-runtime-failure.log.gz": {
+      "rawBytes": 23505,
+      "rawSha256": "d5174fd7f17e0e562d052e8dbe7660c5cafbb262233c342ec8cebcceb7ab11b8",
+      "archiveSha256": "48617054db1e63750e2382d9e47248a2b77e38cbb56c5dbbf95635959f7e63cd"
+    },
+    "original-runtime-negative.log.gz": {
+      "rawBytes": 1603,
+      "rawSha256": "c9ea53c68e485033557b898973b3f60ba7e3168ffdc132d2b3d87cedaed8ba1a",
+      "archiveSha256": "18a7eb539a1dc40e59095a391b8f749267482f425604d77ede2d3958bcb1b5fd"
+    }
+  }
+}

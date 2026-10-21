@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * DLQ 원장 적재 통합 테스트 (계획 ④-c-2a §6 P1·P3·P4·P6·P7).
+ * DLQ 원장 적재 통합 테스트.
  *
  * <p><b>실제 Kafka 왕복으로 검증한다.</b> recorder 를 직접 호출하면 group/factory/토픽이 틀려도
- * 통과한다 — ④-c-1b 에서 확인된 false-green 유형이라 여기서는 브로커를 거친다.
+ * 통과한다. 그래서 실제 브로커를 거친다.
  *
  * <p>다만 "4서비스 중 1곳만 적재" 라는 <b>전역</b> 불변식은 여기서 증명하지 않는다(cross-service,
- * ④-d 부모 P12). 본 테스트는 order-service 의 행동을, {@code DlqTopologyContractTest} 가 매핑의
+ * 별도 검증 범위다). 본 테스트는 order-service 의 행동을, {@code DlqTopologyContractTest} 가 매핑의
  * 무모순을 각각 맡는다.
  */
 @SpringBootTest

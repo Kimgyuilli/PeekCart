@@ -25,19 +25,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * L-013 게이트 — 주문 상태 전이 동시성 실측 (계획 §3 P1, ADR-0012 D3/D4).
+ * L-013 게이트 — 주문 상태 전이 동시성 실측 (ADR-0012 D3/D4).
  *
  * <p>{@code payment.completed} 소비(→{@code PAYMENT_COMPLETED})와 {@link
  * com.peekcart.order.infrastructure.scheduler.OrderTimeoutScheduler} 취소(→{@code CANCELLED})가
  * 같은 주문에 동시 적용되는 상황을 <b>결정적으로</b> 재현한다. 두 EntityManager 가 커밋 전에 모두
  * 같은 스냅샷(같은 {@code version})을 읽도록 강제하므로 스케줄링 운에 의존하지 않는다 —
- * 확률적 미재현을 L-013 기각 근거로 쓸 수 없게 하기 위함이다(계획 §2.3-D).
+ * 확률적 미재현을 L-013 기각 근거로 쓸 수 없게 하기 위함이다.
  *
  * <p><b>실측 결과(@Version 도입 전)</b>: 두 순서 모두 lost update 가 발생해 나중 커밋이 앞 커밋을
  * 덮었다. 취소 선커밋 → 최종 {@code PAYMENT_COMPLETED}(취소 유실), 결제 선커밋 → 최종
  * {@code CANCELLED}(과금된 주문이 취소로 표시). 상태 전이 규칙({@code OrderStatus.canTransitionTo})
  * 은 각 트랜잭션의 <i>스냅샷</i> 기준으로만 평가되므로 전이 가드로는 막히지 않는다.
- * → L-013 <b>양성</b>, P2({@code @Version}) 승격.
+ * → L-013 <b>양성</b>, {@code @Version} 적용 필요.
  *
  * <p>본 테스트는 {@code @Version} 도입 후의 수렴을 고정한다: 진 쪽 커밋이 조용히 덮는 대신
  * {@link OptimisticLockException} 으로 드러난다.
