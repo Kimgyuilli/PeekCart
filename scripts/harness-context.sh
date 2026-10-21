@@ -7,27 +7,37 @@
 # (Phase · 진행 중 Task · 완료 카운트 · 최근 결정 · ADR 이상 · 파일 · 다음 작업)만 쓰이고,
 # 그 7줄은 전부 파싱으로 나온다. 읽기가 잘려 grep 을 여러 번 다시 도는 일도 있었다.
 #
-# **파서가 고장나면 조용히 비는 대신 크게 실패한다.** 형식이 바뀌었는데 0건을 정상으로
-# 보고하면 "진행 중 작업 없음" 이라는 거짓 요약이 나가기 때문이다. 각 구획은 최소 1건을
-# 기대하고, 못 읽으면 stderr 에 적고 exit 3 이다 (ci-test-matrix-lint 의 파서 고장 검사와 같은 규약).
+# 읽기/필수 구획 형식과 완료 archive 최소 D행·D-ID 유일성을 검사한다.
+# 진행 중 작업·root plan 0개는 정상일 수 있다. 이 건강 검사는 부채 전체 완료 증명이 아니다.
+# --check --base는 명시 git 기준의 ID 소실/완료 archive 감소도 검사한다.
+# 건강/기준 조회 실패는 exit 3이며 원문·순서·링크 보존은 D-098 별도 검사다.
 #
 # 사용:
 #   harness-context.sh              다이제스트 출력 (기본)
 #   harness-context.sh --phase N    PHASE{N}.md 를 지정 (기본: TASKS.md 에서 추론)
-#   harness-context.sh --check      파서가 각 구획을 읽어내는지만 확인
+#   harness-context.sh --check      현행 읽기/완료 archive 건강 검사(base 비교 없음)
+#   harness-context.sh --check --base <commit>  기준 ID 소실/완료 archive 감소도 검사
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT" || exit 2
 
-MODE="${1:---digest}"
-PHASE_ARG=""
-[ "${1:-}" = "--phase" ] && { PHASE_ARG="${2:-}"; MODE="--digest"; }
+python3 - "$@" <<'PYTHON'
+import argparse, os, re, subprocess, sys
+from collections import Counter
 
-python3 - "$MODE" "$PHASE_ARG" <<'PY'
-import os, re, subprocess, sys
-
-mode, phase_arg = sys.argv[1], sys.argv[2]
+parser = argparse.ArgumentParser(description='프로젝트 digest와 완료 archive 건강 검사')
+parser.add_argument('--check', action='store_true', help='현행 건강 검사(보존/전체 완료 판정 아님)')
+parser.add_argument('--phase', default='', help='progress Phase 번호')
+parser.add_argument('--base', help='--check에서 비교할 명시 git commit; 생략하면 상대 감소는 검사하지 않음')
+args = parser.parse_args()
+if args.base is not None and not args.base.strip():
+    parser.error('--base는 비어 있을 수 없다')
+if args.base is not None and not args.check:
+    parser.error('--base는 --check와 함께 사용한다')
+if args.phase and not re.fullmatch(r'[0-9]+', args.phase):
+    parser.error('--phase는 숫자여야 한다')
+mode, phase_arg = ('--check' if args.check else '--digest'), args.phase
 problems, out = [], []
 
 def read(p):
@@ -36,6 +46,36 @@ def read(p):
     except Exception:
         problems.append('읽기 실패: %s' % p)
         return ''
+
+def debt_rows(text, label):
+    rows = []
+    for line in text.splitlines():
+        if not re.match(r'^\s*\|\s*D-', line, re.I): continue
+        match = re.match(r'^\s*\|\s*(D-[0-9]{3,})\s*\|', line)
+        if not match or len(line.strip().strip('|').split('|')) < 5:
+            problems.append('%s: 손상된 D행 형식' % label)
+            continue
+        rows.append((match.group(1), line))
+    return rows
+
+
+def archive_health(text, label):
+    rows = debt_rows(text, label)
+    if not re.search(r'^## 완료 행\s*$', text, re.M) or not re.search(r'^\s*\|\s*ID\s*\|', text, re.M):
+        problems.append('%s: 완료 행 heading/table을 찾지 못했다' % label)
+    if not rows:
+        problems.append('%s: 완료 D행이 없다' % label)
+    for ident, line in rows:
+        if '✅' not in status_of(line):
+            problems.append('%s: 완료 상태가 없는 archive 행 %s' % (label, ident))
+    return rows
+
+
+def unique_ids(rows, label):
+    duplicates = sorted(key for key, n in Counter(key for key, _ in rows).items() if n > 1)
+    if duplicates:
+        problems.append('%s: 중복 D-ID %s' % (label, ', '.join(duplicates)))
+
 
 # ---------- TASKS.md ----------
 tasks = read('docs/TASKS.md')
@@ -57,7 +97,7 @@ def status_of(line):
 
 live = []
 for l in tasks.split('\n'):
-    if not l.startswith('|'):
+    if not re.match(r'^\s*\|', l):
         continue
     st = status_of(l)
     if '🔄' in st or '🔲' in st:
@@ -73,9 +113,43 @@ for l in live:
     out.append('- [%s] %s | %s'
                % (ident, desc[:90], '진행중' if '🔄' in status_of(l) else '대기'))
 
-# 완료 행은 TASKS-done.md 로 옮겨지므로 두 파일을 합쳐 센다
-done_rows = len([l for l in (tasks + '\n' + read('docs/progress/TASKS-done.md')).split('\n')
-                 if l.startswith('|') and '✅' in status_of(l)])
+# 완료 행은 TASKS-done.md 로 옮겨지므로 두 파일을 합쳐 센다.
+# 건강 검사는 현재 값, 명시 base 검사는 기대 감소를 아는 별도 계약이다.
+archive_path = 'docs/progress/TASKS-done.md'
+archive = read(archive_path)
+active_debts = debt_rows(tasks, 'docs/TASKS.md')
+archived_debts = archive_health(archive, archive_path)
+unique_ids(active_debts + archived_debts, '현행 task 문서')
+if args.base:
+    try:
+        revision = subprocess.run(['git', 'rev-parse', '--verify', args.base + '^{commit}'],
+                                  capture_output=True, text=True)
+        if revision.returncode:
+            problems.append('base 조회 실패(exit %s): %s' % (revision.returncode, args.base))
+        else:
+            base = revision.stdout.strip()
+            baseline = {}
+            for path in ('docs/TASKS.md', archive_path):
+                result = subprocess.run(['git', 'show', base + ':' + path], capture_output=True, text=True)
+                if result.returncode:
+                    problems.append('base 문서 조회 실패(exit %s): %s:%s' % (result.returncode, base, path))
+                else:
+                    baseline[path] = result.stdout
+            if len(baseline) == 2:
+                old_active = debt_rows(baseline['docs/TASKS.md'], 'base:docs/TASKS.md')
+                old_archive = archive_health(baseline[archive_path], 'base:' + archive_path)
+                unique_ids(old_active + old_archive, 'base task 문서')
+                current_ids = {key for key, _ in active_debts + archived_debts}
+                lost = {key for key, _ in old_active + old_archive} - current_ids
+                archive_lost = {key for key, _ in old_archive} - {key for key, _ in archived_debts}
+                if lost:
+                    problems.append('base 대비 task D-ID 소실: ' + ', '.join(sorted(lost)))
+                if archive_lost:
+                    problems.append('base 대비 완료 archive 감소: ' + ', '.join(sorted(archive_lost)))
+    except (OSError, UnicodeError) as error:
+        problems.append('base git 실행/읽기 실패: %s' % error)
+done_rows = len([l for l in (tasks + '\n' + archive).split('\n')
+                 if re.match(r'^\s*\|', l) and '✅' in status_of(l)])
 out.append('')
 out.append('완료 표기 행 %d · 진행중/대기 행 %d' % (done_rows, len(live)))
 
@@ -134,7 +208,15 @@ out.append('진행 중 %d개%s · 아카이브 %d개'
 
 # ---------- git ----------
 def sh(*a):
-    return subprocess.run(a, capture_output=True, text=True).stdout.strip()
+    try:
+        result = subprocess.run(a, capture_output=True, text=True)
+    except (OSError, UnicodeError) as error:
+        problems.append('git 실행 실패: %s' % error)
+        return ''
+    if result.returncode:
+        problems.append('git 조회 실패(exit %s): %s' % (result.returncode, ' '.join(a)))
+        return ''
+    return result.stdout.strip()
 out.append('')
 out.append('## git')
 out.append('브랜치 %s · 미커밋 %s개'
@@ -153,7 +235,7 @@ if mode == '--check':
         for p in problems:
             print('  %s' % p)
         sys.exit(3)
-    print('ok — 모든 구획을 읽었다')
+    print('ok — 현행 archive 건강 검사 통과; ' + ('명시 base ID 비교 통과' if args.base else 'base 비교 미실행'))
     sys.exit(0)
 
 if problems:
@@ -162,4 +244,4 @@ if problems:
 print('\n'.join(out))
 if problems:
     sys.exit(3)
-PY
+PYTHON
