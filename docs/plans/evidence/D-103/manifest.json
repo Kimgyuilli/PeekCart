@@ -1,0 +1,31 @@
+{
+  "source_base": "f4ee03b97b0bec0c9be7cd3077911fb67b578b74",
+  "formal_verification": "Actions pending; local minimal only",
+  "files": [
+    {
+      "path": "scripts/codex-review-render.sh",
+      "bytes": 11593,
+      "sha256": "3c92ff7077dd036030666763a8ced1fc6c0bfa8344125a23b50eba33c9f5fb3a"
+    },
+    {
+      "path": "scripts/codex-review-render-selftest.sh",
+      "bytes": 13729,
+      "sha256": "7023161305b7f4cdca604d46404c5ce94c9db3d6066b4e0ece489e8965960b5d"
+    },
+    {
+      "path": "scripts/codex-review-render-contract-selftest.py",
+      "bytes": 9153,
+      "sha256": "e4dd389367614b6ae9d420296318d56a7424c016bf11772687ee5e2b54038ca5"
+    },
+    {
+      "path": "docs/plans/evidence/D-103/minimal.txt",
+      "bytes": 314,
+      "sha256": "32d25213f9f835619c3cb710c9134420c6a1c17a0856ae7a5129a9f31e31448d"
+    },
+    {
+      "path": "docs/plans/evidence/D-103/schema-history.json",
+      "bytes": 4743,
+      "sha256": "236ee1477f352922e900c2cf623e0c0590b0620cb6d89c667e071b0c603b86e8"
+    }
+  ]
+}
