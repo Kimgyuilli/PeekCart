@@ -20,3 +20,10 @@
 - draft PR은 https://github.com/Kimgyuilli/PeekCart/pull/214 이며 첫 head는 `2d6f7afe1f1606a176abdd6d71de6b6b8e460af9`다. 전용 run39597261792는 4개 앱 이미지 build를 성공했고 경량15 및 PG11+32 통과 후, 존재하지 않는 `scripts/e2e/pg-stub/Dockerfile`을 build하려다 실패했다. 실제4앱 체인은 전혀 실행하지 않았다. owner manifest/fixture artifact가 없어서 업로드도 no-files 실패했으며 이를 cleanup 실행 근거나 실제 체인 실패로 해석하지 않는다. 원 failed-job log를 gzip/hash와 함께 보존했다.
 - 실제 기존 Compose는 `python:3.12-alpine`에 PG source를 read-only mount한다. 신규 Dockerfile을 만들지 않고 해당 service를 `extends`로 재사용하고 잘못 추가한 workflow build를 제거했다. 동일 대조에서 TossClient는 `/payments`를 base에 붙이므로 `/v1`이 필요한데 overlay에 누락했음을 source로 확인하고 기존 E2E의 정확한 base를 사용했다. 이 두 번째 경로 결함은 첫 실행에서 아직 도달하지 않은 정적 발견이다.
 - 새 경량 계약은 기존 PG service/command/mount 및 client base와 대조한다. 이전 구성에서 missing extends ERROR와 base mismatch FAIL을 확인한 뒤 수정 구성4검사 PASS했다. 원 반례 로그도 보존했다. runtime 서비스 종류/정책/대기 한도/성공 조건은 늘리거나 약화하지 않았다. 실제 수정 구성 Actions와 독립 검토는 미완이다.
+
+## 2026-10-21 — 수정 Actions 실제 성공
+
+- PR214 head `81fc5183db0c947ffe3149aba8d52e58411d8e7c`, dedicated39605979637 SUCCESS. 실제 checkout `5d54ab47377fc484ff95bd6cffdbd18003c70373`의4앱 이미지 source/archive checksum/load ID 대조가 Actions에서 통과했다. 로컬에 큰 이미지 archive를 다시 받지는 않았으며 다운로드한 raw39파일의 source report를 동일 입력으로 검사한 것을 별도 이미지 출처 검증이라고 부르지 않는다.
+- raw에서 setup16/execute-paused3/completed3/duplicates2의24관측과4event outbox/inbox 연계를 확인했다. order2001 COMPLETED/gen8/stock5, order2002 REVIEW_REQUIRED/gen8/stock3,404와identity불일치 두 행은stock3 및 seed상태를 유지했다. duplicate 실제 Kafka3회 전송 후 business execute outbox1/payment.failed1을 유지했다. PG 앱 원장은GET만, 준비 POST는 별도 원장이다.
+- Actions와 다운로드 raw 검사에서8변이 모두 거절했다. 자기 container8/network1/volume1 cleanup complete, secret scan safe/removed0. raw39파일은 deterministic tar.gz와 개별SHA256으로 보존했다. 첫 실패/원구성 반례는 앞선 bundle 그대로 유지한다. 실제 PG404 신뢰 증빙·운영 해제는 여전히 미확보이며 초기 보호 상태 seed와 실제 request 이후 체인을 구분한다.
+- 이번 동결 변경은 plan/audit/evidence만이다. 실행 source는81fc와 동일하며 일반 CI/독립 exact-head 검토와 root 순차 병합 전 P6를 완료하지 않는다. 별도 Codex 리뷰 미호출, root가 독립 검토를 배정한다.

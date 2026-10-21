@@ -28,10 +28,10 @@ grade: L
 ## 3. 작업 항목
 
 - [x] P1. 기존 구현/통합 테스트/서명 fixture/PG stub 전제를 읽고 전체 체인만 추가하는 범위와 한계를 기록한다. root 설계 검토 뒤 구현한다.
-- [ ] P2. PR210을 명시 선행으로 연결하고 기존 signed Compose에 Product와 기존 PG stub을 더하는 작은 overlay, 직접 host orchestration/runner를 구성한다. 4개 앱(User/Gateway/Payment/Product)의 기존 Dockerfile/ci-image-identity와 기존 DB init, 내부망/nonce cleanup을 재사용한다.
-- [ ] P3. 실제 signup/login의 서로 다른 승인자·실행자 ADMIN, USER 및 allowlist 밖 ADMIN을 만들고 실제 Gateway 경유 권한 반례와 적격 과거 FAILED 복구를 수행한다. 자기 DB에서 만든 보호 예약/결제 원장의 초기 snapshot을 보존하며 준비 단계와 실제 요청 이후 변경을 구분한다.
-- [ ] P4. 실제 request/snapshot/approve/execute/result 네 event 흐름, Product CAS와 재고 정확히 한 번 증가, Payment ack 후 완료, 동시 execute/같은 eventId 재전달/새 eventId 동일 execute payload의 멱등성을 검증한다. Product를 자기 container에서 잠시 중지한 구간에는 Payment가 RECOVERY_PENDING/EXECUTION_REQUESTED를 유지하고 ack 전 완료하지 않는지 확인한다.
-- [ ] P5. 알 수 없는 PG key의 실제 stub404 및 identity 불일치, 승인자 execute 거부, 승인 후 Product 예약 version 변경의 실제 CAS 거부를 확인한다. 거부 감사와 업무 상태/outbox/재고 불변을 구분한다. 고정 사전조건의 stale snapshot 반례를 실제 동시 thread 경합이라고 부르지 않는다.
+- [x] P2. PR210을 명시 선행으로 연결하고 기존 signed Compose에 Product와 기존 PG stub을 더하는 작은 overlay, 직접 host orchestration/runner를 구성한다. 4개 앱(User/Gateway/Payment/Product)의 기존 Dockerfile/ci-image-identity와 기존 DB init, 내부망/nonce cleanup을 재사용한다.
+- [x] P3. 실제 signup/login의 서로 다른 승인자·실행자 ADMIN, USER 및 allowlist 밖 ADMIN을 만들고 실제 Gateway 경유 권한 반례와 적격 과거 FAILED 복구를 수행한다. 자기 DB에서 만든 보호 예약/결제 원장의 초기 snapshot을 보존하며 준비 단계와 실제 요청 이후 변경을 구분한다.
+- [x] P4. 실제 request/snapshot/approve/execute/result 네 event 흐름, Product CAS와 재고 정확히 한 번 증가, Payment ack 후 완료, 동시 execute/같은 eventId 재전달/새 eventId 동일 execute payload의 멱등성을 검증한다. Product를 자기 container에서 잠시 중지한 구간에는 Payment가 RECOVERY_PENDING/EXECUTION_REQUESTED를 유지하고 ack 전 완료하지 않는지 확인한다.
+- [x] P5. 알 수 없는 PG key의 실제 stub404 및 identity 불일치, 승인자 execute 거부, 승인 후 Product 예약 version 변경의 실제 CAS 거부를 확인한다. 거부 감사와 업무 상태/outbox/재고 불변을 구분한다. 고정 사전조건의 stale snapshot 반례를 실제 동시 thread 경합이라고 부르지 않는다.
 - [ ] P6. Actions에서 새 좁은 workflow와 일반 CI를 실행하고 실제 원자료/이미지 출처/마이그레이션 hash/상태/중복/cleanup·secret scan/누락 증거 음성을 보존한다. root 독립 검토와 순차 병합 조건을 충족한 뒤 제한된 전체 체인 검증만 기록한다.
 
 ## 검증 방법과 최소 구성
@@ -51,3 +51,7 @@ grade: L
 최종 source에서 실제 signed HTTP, 직접 서버 PG 조회, 네 Kafka/outbox/inbox 전이, Product CAS, ack 완료와 중복/거부 반례가 모두 관측되어야 제한된 체인 검증을 완료한다. 실제 Linux Actions 증거 없는 코드는 완료로 표시하지 않는다. 신규 구현보다 기존 helper의 재사용을 우선하며 필요 없는 범용 분기/configuration/runtime를 추가하지 않는다.
 
 영구404의 신뢰 가능한 PG 발급 증빙, 실제 운영 데이터·PG·배포·GKE·운영 승인은 여전히 범위 밖이다. 404 보호는 유지하며 D084 전체 완료로 표시하지 않는다. 초기 보호 상태 생성은 seed이므로 실제 checkout부터 장기미결 발생까지 증명하지 않는다. CANCELED 환불원장 경합, DONE 전환, resume/retry 모든 기존 분기의 전체 E2E 확장은 이 작은 첫 체인 PR에 묶지 않고 기존 PR181 검증과 구분해 후속 필요성을 판단한다. TASKS/progress/master는 root가 소유한다.
+
+## 실제 실행 근거
+
+수정 source `81fc5183db0c947ffe3149aba8d52e58411d8e7c`, Actions39605979637의 실제 PR merge checkout은 `5d54ab47377fc484ff95bd6cffdbd18003c70373`이다. 24개 관측(16/3/3/2), 네 outbox/inbox 전이, 실제 Kafka 중복 전달, ack 전 상태 유지, happy 재고3→5 한 번, stale/404/identity 불일치 재고3 유지, 8개 실제 원자료 변이 거절이 통과했다. 자기 container8/network1/volume1 정리와 secret scan(제거0)도 완료했다. 39개 raw 파일과 개별 hash는 evidence bundle에 보존한다. 이는 fixture PG와 seeded 초기 상태의 검증이며 최종 일반 CI/독립 검토/순차 병합인 P6는 미완이다.
