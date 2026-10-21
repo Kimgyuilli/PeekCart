@@ -15,3 +15,5 @@
 - Draft 준비 시 actual main43a1745를 정상 통합했다. 실행 source는 그대로이고 보존gate/consistency/key ownership/gateway exposure/diff/writing 검사가 통과했다. hermetic 11 methods는 실제 체인 증거가 아니다. ship preflight는 P2–P6 미완으로 blocked이며 사용자·root가 승인한 Actions 검증용 draft 생성만 진행한다. 미완 항목을 체크해 우회하지 않는다.
 
 - Draft PR210 첫 head4268af5/전용39587253206/일반39587253300 제출 후 source 대조에서 direct plaintext 음성이 잘못된 X-Internal-Auth까지 동반함을 발견했다. 이대로면 DUAL_ACCEPT도 거부하므로 SIGNED_ONLY 증거가 되지 않는다. direct 요청만 세 X-User-* 헤더로 좁히고 실제 baseline 함수의 요청 인자를 캡처하는 hermetic 대조를 추가했다. Gateway 헤더 위조 사례는 그대로 둔다. 첫 head의 실제 HTTP PASS 주장은 없으며 수정 head Actions를 새로 실행한다.
+
+- 실제 최초4서비스실패 bundle44files(97,856bytes), 파일별/archive hash 및 완료되지 않은 경계를 repo에 보존했다. USER500은 독립 PR211로 분리했으며 승인된 exactd882fec 선행을 정상 merge했다. signed delta는 fixture/control/evidence만이며 제품 guard는 선행 소유다. 수정 head의 최초12 hermetic PASS, 실제 stack Actions는 새로 실행한다.

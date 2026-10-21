@@ -58,3 +58,9 @@ replay.enabled는항상false다. lastReplayBy영속,실제replay claim/publish/d
 2026-10-21 사용자 최소복잡성 지시를 반영해 생성 YAML 세 파일과 직접 작성한 readiness polling을 제거했다. Compose의 SPRING_APPLICATION_JSON은 공개 key 위치와 설정만 전달하고, 재생성은 native `up --force-recreate --no-deps --wait --wait-timeout 300`을 사용한다. 별도 shell wrapper나 공통 실행 framework는 추가하지 않는다. 초기420초/재생성300초 한도와 오류 보존, 생성 전 nonce 소유권 기록, 자기 프로젝트만 정리하는 경계는 유지한다.
 
 검증은 독립 사례 목록을 가진 작은 evidence 검사기로 16 HTTP 사례/5단계 전체 ledger·outbox 불변/source와 image ID/migration 원문/cleanup을 대조한다. 로컬 hermetic 검사는 실제 HTTP·MySQL 성공을 의미하지 않는다. 실제 build와 네 리소스 체인, 정상 CI 및 독립 검토가 끝나기 전 P2–P6는 미완으로 유지한다.
+
+## 7. actual USER500 반례와 명시적 선행
+
+최초 실제 Actions39587253206에서 네 ADMIN disabled200 뒤 USER500이 관측됐다. root 설계검토 후 제품 수정은 독립 PR211에서 common MVC advice의 AccessDeniedException rethrow만 다룬다. 본 PR은 PR211 exactd882fecf830e261e78fb6b890aca27b73911cc86을 정상 merge해 의존하며 fixture 자체의 제품 변경은 없다. 검토 시 이 선행 head 대비 signed delta와 main 대비 통합을 구분한다. 선행 실제 main 병합 뒤 다시 정렬·검토·CI하며 선행보다 먼저 병합하지 않는다.
+
+원 handler 회귀는 PR211 Actions39588457231 platform에서 USER403/anonymous401이 모두500으로 실패했고 unrelated500은 통과했다. 원본을 보존했으며 수정 head/실제4체인 성공은 새 Actions 전까지 미검증이다. direct plaintext 음성에서 malformed internal token을 제거해 SIGNED_ONLY 거부 의미를 분리했고 실제 baseline 요청 인자 캡처를 포함한 hermetic12 methods가 통과했다. 기대 HTTP 상태나 한도를 낮추지 않는다.
