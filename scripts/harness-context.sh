@@ -87,7 +87,25 @@ out.append('## 단계')
 out.append(phase_line)
 
 def cells(line):
-    return [c.strip() for c in line.strip().strip('|').split('|')]
+    text = line.strip()
+    if text.startswith('|'):
+        text = text[1:]
+
+    def delimiter(index):
+        previous = index - 1
+        while previous >= 0 and text[previous] == '\\':
+            previous -= 1
+        return (index - previous - 1) % 2 == 0
+
+    # Remove one optional border, never the extra empty final cell in "||".
+    if text.endswith('|') and delimiter(len(text) - 1):
+        text = text[:-1]
+    result, start = [], 0
+    for index, character in enumerate(text):
+        if character == '|' and delimiter(index):
+            result.append(text[start:index].strip())
+            start = index + 1
+    return result + [text[start:].strip()]
 
 # 상태는 **마지막 칸**으로만 판정한다. 행 전체에서 이모지를 찾으면 본문에 이모지가
 # 섞인 완료 행이 진행중으로 잡힌다(구현 ③·④ 에서 실제로 오탐했다).

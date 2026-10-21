@@ -103,6 +103,89 @@ class HarnessContextTest(unittest.TestCase):
         self.write(DONE, DONE_HEADER + no_pipe.replace('✅', '🔲') + OLD2 + FOOTER)
         self.check(3)
 
+    def test_extra_empty_final_status_is_not_a_border(self):
+        for body in ('first history', '`a | b` and escaped a \\| b'):
+            row = OLD1.replace('first history', body)
+            for normal in (row, row.rstrip().removesuffix('|').rstrip() + '\n'):
+                self.write(DONE, DONE_HEADER + normal + OLD2 + FOOTER)
+                self.check(base=True)
+            self.write(DONE, DONE_HEADER + row.rstrip('\n') + '|\n' + OLD2 + FOOTER)
+            self.check(3, base=True)
+
+    def workflow(self, state='false', query_rc=0, fetch_rc=0, tool_rc=0, base='fixture-base'):
+        import yaml
+        source = Path(os.environ.get('HARNESS_CONTEXT_TEST_WORKFLOW', ROOT / '.github/workflows/ci.yml'))
+        steps = yaml.safe_load(source.read_text())['jobs']['lint']['steps']
+        bodies = [s['run'] for s in steps if s.get('name') == 'Harness archive health']
+        self.assertEqual(len(bodies), 1)
+        self.write('workflow-bin/git', '''#!/bin/sh
+printf 'git:%s\n' "$*" >> "$HARNESS_WORKFLOW_LOG"
+case "$1" in
+  rev-parse) printf '%s\n' "$HARNESS_TEST_SHALLOW"; exit "$HARNESS_TEST_QUERY_RC" ;;
+  fetch) exit "$HARNESS_TEST_FETCH_RC" ;;
+  *) exit 97 ;;
+esac
+''')
+        stub = '''#!/bin/sh
+printf 'tool:%s:%s\n' "${0##*/}" "$*" >> "$HARNESS_WORKFLOW_LOG"
+exit "$HARNESS_TEST_TOOL_RC"
+'''
+        for tool in ('bash', 'python3'):
+            self.write('workflow-bin/' + tool, stub)
+        for path in (self.root / 'workflow-bin').iterdir():
+            path.chmod(0o755)
+        log = self.root / 'workflow-calls.txt'
+        if log.exists(): log.unlink()
+        env = self.env.copy()
+        env.update(HARNESS_BASE=base, HARNESS_TEST_SHALLOW=state,
+                   HARNESS_TEST_QUERY_RC=str(query_rc), HARNESS_TEST_FETCH_RC=str(fetch_rc),
+                   HARNESS_TEST_TOOL_RC=str(tool_rc), HARNESS_WORKFLOW_LOG=str(log))
+        env['PATH'] = str(self.root / 'workflow-bin') + os.pathsep + env['PATH']
+        result = subprocess.run(['/bin/bash', '-c', bodies[0]], cwd=self.root, env=env,
+                                text=True, capture_output=True)
+        calls = log.read_text().splitlines() if log.exists() else []
+        return result, calls
+
+    def test_workflow_normal_shallow_and_full_states(self):
+        expected_tools = ['tool:bash:scripts/harness-context.sh --check --base fixture-base',
+                          'tool:python3:-B scripts/harness-context-selftest.py',
+                          'tool:python3:-B docs/plans/evidence/D-099/check-mutants.py']
+        for state in ('true', 'false'):
+            with self.subTest(state=state):
+                result, calls = self.workflow(state)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual([c for c in calls if c.startswith('tool:')], expected_tools)
+                self.assertEqual('git:fetch --unshallow --no-tags origin' in calls, state == 'true')
+
+    def test_workflow_shallow_query_failure_stops_all_tools(self):
+        result, calls = self.workflow(query_rc=23)
+        self.assertEqual(result.returncode, 23, result.stderr)
+        self.assertEqual(calls, ['git:rev-parse --is-shallow-repository'])
+
+    def test_workflow_unshallow_fetch_failure_stops_all_tools(self):
+        result, calls = self.workflow(state='true', fetch_rc=23)
+        self.assertEqual(result.returncode, 23, result.stderr)
+        self.assertEqual(calls, ['git:rev-parse --is-shallow-repository',
+                                 'git:fetch --unshallow --no-tags origin'])
+
+    def test_workflow_unexpected_query_output_is_not_full_state(self):
+        for state in ('', 'unknown', 'true\nfalse'):
+            with self.subTest(state=state):
+                result, calls = self.workflow(state=state)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertEqual(calls, ['git:rev-parse --is-shallow-repository'])
+
+    def test_workflow_empty_event_base_stops_before_query(self):
+        result, calls = self.workflow(base='')
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual(calls, [])
+
+    def test_workflow_health_failure_stops_later_checks(self):
+        result, calls = self.workflow(tool_rc=3)
+        self.assertEqual(result.returncode, 3, result.stderr)
+        self.assertEqual(calls, ['git:rev-parse --is-shallow-repository',
+                                 'tool:bash:scripts/harness-context.sh --check --base fixture-base'])
+
     def test_cross_document_duplicate_is_failure(self):
         self.write(TASKS, self.read(TASKS) + OLD1); self.check(3)
 
