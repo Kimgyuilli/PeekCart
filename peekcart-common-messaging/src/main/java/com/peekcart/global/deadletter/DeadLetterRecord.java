@@ -304,18 +304,6 @@ public class DeadLetterRecord {
     }
 
     /**
-     * 자기 자신을 root 로 지정한다. 신규 적재 직후 1회만 호출된다.
-     *
-     * <p><b>{@code LAST_INSERT_ID()} 를 쓰지 않는 이유</b>: {@code INSERT IGNORE} 가 중복으로 건너뛰면
-     * 그 함수는 <b>직전 성공 INSERT 의 값</b>을 그대로 돌려줘 남의 행을 root 로 지목한다.
-     */
-    public void assignSelfRoot() {
-        if (this.rootRecordId == null) {
-            this.rootRecordId = this.id;
-        }
-    }
-
-    /**
      * 이 행을 다른 incident 의 <b>자식</b>으로 잇는다. 재발행 재실패분을 원래 사건에 귀속시키는
      * 경로가 쓴다 — 자식은 backlog 에 세지 않고 root 를 따라 종결·정리된다.
      */

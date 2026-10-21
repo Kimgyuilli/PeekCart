@@ -1,0 +1,7 @@
+--- a/product-service/src/test/java/com/peekcart/product/infrastructure/ProductCacheFallbackIntegrationTest.java
++++ b/product-service/src/test/java/com/peekcart/product/infrastructure/ProductCacheFallbackIntegrationTest.java
+@@ -276 +276 @@
+-    void unresponsiveRedis_isBoundedByCommandTimeout() throws IOException {
++    void unresponsiveRedis_isBoundedByCommandTimeout() throws IOException, InterruptedException {
+@@ -284,0 +285 @@
++            TimeUnit.MILLISECONDS.sleep(1800);

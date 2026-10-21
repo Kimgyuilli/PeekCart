@@ -19,6 +19,7 @@ public class PaymentFixture {
     public static final Long DEFAULT_ORDER_ID = 1L;
     public static final Long DEFAULT_USER_ID = 1L;
     public static final long DEFAULT_AMOUNT = 100_000L;
+    public static final String DEFAULT_PG_ORDER_ID = "pc_00000000000000000000000000000001";
     public static final String DEFAULT_PAYMENT_KEY = "toss-payment-key-123";
     public static final String DEFAULT_METHOD = "카드";
     public static final LocalDateTime DEFAULT_APPROVED_AT = LocalDateTime.of(2026, 3, 25, 14, 0);
@@ -29,7 +30,9 @@ public class PaymentFixture {
     // ── Domain 객체 ──
 
     public static Payment pendingPayment() {
-        return Payment.create(DEFAULT_ORDER_ID, DEFAULT_USER_ID, DEFAULT_AMOUNT);
+        Payment payment = Payment.create(DEFAULT_ORDER_ID, DEFAULT_USER_ID, DEFAULT_AMOUNT);
+        ReflectionTestUtils.setField(payment, "pgOrderId", DEFAULT_PG_ORDER_ID);
+        return payment;
     }
 
     public static Payment pendingPaymentWithId() {
@@ -85,12 +88,12 @@ public class PaymentFixture {
     // ── Application DTO ──
 
     public static ConfirmPaymentCommand confirmPaymentCommand() {
-        return new ConfirmPaymentCommand(DEFAULT_PAYMENT_KEY, DEFAULT_ORDER_ID, DEFAULT_AMOUNT);
+        return new ConfirmPaymentCommand(DEFAULT_PAYMENT_KEY, DEFAULT_ORDER_ID, DEFAULT_AMOUNT, DEFAULT_PG_ORDER_ID);
     }
 
     public static PaymentDetailDto approvedPaymentDetailDto() {
         return new PaymentDetailDto(
-                DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PAYMENT_KEY,
+                DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PG_ORDER_ID, DEFAULT_PAYMENT_KEY,
                 DEFAULT_AMOUNT, "APPROVED", "SUCCEEDED", DEFAULT_METHOD,
                 DEFAULT_APPROVED_AT, DEFAULT_CREATED_AT
         );
@@ -99,7 +102,7 @@ public class PaymentFixture {
     /** 결과 불명(ADR-0023 D8) — 승인이 확정되지 않아 PENDING 으로 남은 응답. */
     public static PaymentDetailDto pendingPaymentDetailDto() {
         return new PaymentDetailDto(
-                DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PAYMENT_KEY,
+                DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PG_ORDER_ID, DEFAULT_PAYMENT_KEY,
                 DEFAULT_AMOUNT, "PENDING", "WAITING_STOCK", null,
                 null, DEFAULT_CREATED_AT
         );
@@ -107,7 +110,7 @@ public class PaymentFixture {
 
     public static PaymentDetailDto failedPaymentDetailDto() {
         return new PaymentDetailDto(
-                DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PAYMENT_KEY,
+                DEFAULT_PAYMENT_ID, DEFAULT_ORDER_ID, DEFAULT_PG_ORDER_ID, DEFAULT_PAYMENT_KEY,
                 DEFAULT_AMOUNT, "FAILED", "FAILED", null,
                 null, DEFAULT_CREATED_AT
         );

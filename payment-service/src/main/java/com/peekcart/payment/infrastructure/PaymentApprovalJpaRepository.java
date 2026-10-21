@@ -28,11 +28,12 @@ public interface PaymentApprovalJpaRepository extends JpaRepository<PaymentAppro
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
             INSERT IGNORE INTO payment_approvals
-                (order_id, payment_key, user_id, amount, status, attempts, generation, claimed_at, requested_at, dispatch_deadline)
-            VALUES (:orderId, :paymentKey, :userId, :amount, 'WAITING_STOCK', 0, 0, NULL, :now, :deadline)
+                (order_id, payment_key, pg_order_id, user_id, amount, status, attempts, generation, claimed_at, requested_at, dispatch_deadline)
+            VALUES (:orderId, :paymentKey, :pgOrderId, :userId, :amount, 'WAITING_STOCK', 0, 0, NULL, :now, :deadline)
             """, nativeQuery = true)
     int insertWaitingIfAbsent(@Param("orderId") Long orderId,
                               @Param("paymentKey") String paymentKey,
+                              @Param("pgOrderId") String pgOrderId,
                               @Param("userId") Long userId,
                               @Param("amount") long amount,
                               @Param("now") LocalDateTime now,

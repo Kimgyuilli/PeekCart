@@ -122,6 +122,18 @@ def check_assertion(name, fn, should_pass):
     else:
         print("  ok   [%s]" % name)
 
+# 실제 SQL 파일을 독립 기대값으로 사용하고, 네 서비스 모두 누락/추가/대체를 거절한다.
+from pathlib import Path
+for service in m.SERVICES:
+    versions = sorted(p.name.split("__", 1)[0][1:] for p in
+                      Path(service + "-service/src/main/resources/db/migration").glob("V*__*.sql"))
+    check_assertion("migration manifest " + service,
+                    lambda: m.assert_migration_versions(service, versions), True)
+    for label, changed in [("missing", versions[:-1]), ("extra", versions + ["999999"]),
+                           ("replaced", versions[:-1] + ["999999"])]:
+        check_assertion("migration " + service + " " + label,
+                        lambda: m.assert_migration_versions(service, changed), False)
+
 calls = [{"seq": 1, "method": "POST", "idempotencyKey": "stable"},
          {"seq": 2, "method": "GET", "idempotencyKey": None}]
 check_assertion("POST GET 순서", lambda: m.assert_call_sequence(calls, ["POST", "GET"]), True)
@@ -142,6 +154,34 @@ check_assertion("DLT 중복 행 금지", lambda: m.assert_dlq_redelivery(before,
 for field in m.DLQ_IDENTITY:
     check_assertion("DLT 식별 변경: " + field, lambda f=field: m.assert_dlq_redelivery(
         before, [dict(redelivered, **{f: "different"})]), False)
+
+# Prepare-to-confirm 계약은 서버 ID를 그대로 전달하고 다른 주문/금액을 거부해야 한다.
+original_http = m.http
+checkout = {"orderId": 7, "pgOrderId": "pc_checkout_7", "amount": 20000}
+try:
+    observed = []
+    def fake_prepare(service, method, path, **kwargs):
+        observed.append((service, method, path, kwargs.get("user_id"), kwargs.get("expect")))
+        return 200, {"data": checkout}
+    m.http = fake_prepare
+    request = m.prepare_confirmation(99, 7, "e2e-ok-7", 20000)
+    check_assertion("prepare response forwarded", lambda: (
+        None if request == {"paymentKey": "e2e-ok-7", "orderId": 7,
+                            "pgOrderId": "pc_checkout_7", "amount": 20000}
+        and observed == [("payment", "POST", "/api/v1/payments/7/prepare", 99, 200)]
+        else raise_(AssertionError("prepare contract mismatch"))), True)
+    for field, invalid in (("orderId", 8), ("pgOrderId", None), ("pgOrderId", "7"),
+                           ("amount", 19999), ("amount", "20000")):
+        checkout = {"orderId": 7, "pgOrderId": "pc_checkout_7", "amount": 20000, field: invalid}
+        check_assertion("prepare rejects " + repr((field, invalid)),
+                        lambda: m.prepare_confirmation(99, 7, "e2e-ok-7", 20000), False)
+    actual = {"method": "POST", "paymentKey": "e2e-ok-7", "orderId": "pc_checkout_7", "amount": 20000}
+    check_assertion("PG received canonical identity", lambda: m.assert_confirm_identity([actual], request), True)
+    for field, invalid in (("paymentKey", "other"), ("orderId", "7"), ("amount", 19999)):
+        check_assertion("PG identity mismatch " + field,
+                        lambda f=field, v=invalid: m.assert_confirm_identity([dict(actual, **{f: v})], request), False)
+finally:
+    m.http = original_http
 
 if fails:
     print("self-test 실패 %d건" % fails)
