@@ -13,3 +13,5 @@
 - 전체 소스는 아직 미실행이다. 로컬은 hermetic safety/evidence controls만 실행하며 실제 이미지·HTTP·DB는 Actions에서 확인한다. 별도 Codex 리뷰 미호출. 제품코드·운영설정·replay.enabled 변경 없음.
 
 - Draft 준비 시 actual main43a1745를 정상 통합했다. 실행 source는 그대로이고 보존gate/consistency/key ownership/gateway exposure/diff/writing 검사가 통과했다. hermetic 11 methods는 실제 체인 증거가 아니다. ship preflight는 P2–P6 미완으로 blocked이며 사용자·root가 승인한 Actions 검증용 draft 생성만 진행한다. 미완 항목을 체크해 우회하지 않는다.
+
+- Draft PR210 첫 head4268af5/전용39587253206/일반39587253300 제출 후 source 대조에서 direct plaintext 음성이 잘못된 X-Internal-Auth까지 동반함을 발견했다. 이대로면 DUAL_ACCEPT도 거부하므로 SIGNED_ONLY 증거가 되지 않는다. direct 요청만 세 X-User-* 헤더로 좁히고 실제 baseline 함수의 요청 인자를 캡처하는 hermetic 대조를 추가했다. Gateway 헤더 위조 사례는 그대로 둔다. 첫 head의 실제 HTTP PASS 주장은 없으며 수정 head Actions를 새로 실행한다.
