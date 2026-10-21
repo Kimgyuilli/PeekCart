@@ -37,3 +37,9 @@
 - test/chore/docs로명시경로분할커밋했고writinglint/shippreflight/consistency/새docs-preservation-ci(basef4ee)PASS. 처음일반제목은형식lint에서거부되어test(kafka)형식으로고친뒤통과했다.
 - 원문로그는repo의*.log ignore규칙에걸리지않도록내용그대로.txt로보존했고SHA256manifest를갱신했다. 원형raw전체증거는/private/tmp각실행경로에도남아있다.
 - 최종Java eb40e48d, root소유TASKS/master/PHASE/ADR완료상태변경없음. user지시에따라최종full검증은Actions로넘겼다. PR일반CI와별도original-seed job이해당최종head에서통과해야하며, 현재미충족이다. D065전체완료로표기하지않는다.
+
+## 2026-10-21 — PR200 main 통합
+
+- 독립 검토 comment6313081275는 exact2b24에 차단 의견이 없었다. 해당 head의 원seed Actions39579295824와 일반CI39579295780 payment는 각각334tests PASS로 확인되었고, 일반전체 결과와 병합은 별도 조건이다. Root 승인으로 draft를 ready로 전환했다.
+- main bdc370a80e0bfa6adefb6a436a5f608f878d1b69를 정상 merge했다. 이전f4→2b24 authored patch와 새base→mergehead2c4a908 비교가 byte동일하며 SHA2565fa385e5ebd06847104d117fab9ce05b0fd0c8c8d2f3c899a08ec25d3aa7f988이다. 추가main은 D075 order 전용 probe/문서이며 payment 진단·workflow는 불변이다.
+- 최종 Java eb40e48d 및 보존 manifest12개 hash가 모두 일치했다. 새base 문서보존gate/diffcheck PASS. 이 audit 추가 외 authored 동작 변경 없음. 로컬 full 재실행은 하지 않았으며 새 최종 head의 일반CI/원seed Actions와 통합 delta 검토를 기다린다. 병합은 아직 승인되지 않았다.
