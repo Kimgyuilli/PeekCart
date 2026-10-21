@@ -847,3 +847,7 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 [PR212](https://github.com/Kimgyuilli/PeekCart/pull/212) 최종 head `cd1cbb1bb649e673a3650f4a6952f3b820d78ed8`은 replay preflight의 실제 MySQL/Kafka 읽기 어댑터를 로컬 분리 fixture에 연결한다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/212#issuecomment-6321171226)는 452개 원본 증거 파일·11사례·검사기 결함 변이와 정리를 직접 확인했고, [전용 CI39633001119](https://github.com/Kimgyuilli/PeekCart/actions/runs/39633001119) 및 일반 CI39633001050이 성공했다. 정상 병합 SHA는 `e45d3211e2cf30a0a4e220d80b2d397074467b81`이며 실제 main CI39636215009/여섯 publish는 진행 중이다.
 
 운영 표본·GKE·NOT NULL 실제 적용·replay 개방은 수행하지 않았다. D-065는 계속 부분 완료이고 replay kill-switch는 닫혀 있다.
+
+## 2026-10-22 — D-075 후속 정책 결정 보류
+
+사용자가 D-075 티켓의 후속 결정을 보류했다. [PR200](https://github.com/Kimgyuilli/PeekCart/pull/200)의 무료 로컬 병목 분석과 병합 후 검증은 유지한다. 목표 TPS, 최대 backlog, 초과 시 대응 정책은 정하지 않았고, 후속 선택·정책 검증은 사용자가 티켓 재개와 기준을 알려줄 때 진행한다. 이 보류를 전체 완료로 표시하지 않는다.
