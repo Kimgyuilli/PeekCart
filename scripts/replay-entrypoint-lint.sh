@@ -46,9 +46,22 @@ if [[ ! -f "peekcart-common-messaging/src/main/java/com/peekcart/global/deadlett
     violations+=("[REPLAY-ENTRY-002] peekcart-common-messaging 에 replay 진입점이 없다")
 fi
 
+# The collector's two fixed fixture states use only nonce/immutable-ID owned MySQL.
+# Match full source lines, never a whole-file exemption or an operational SQL allowance.
+owned_collector_setup() {
+    [[ "$1" == "scripts/replay-drain-docker.py" ]] || return 1
+    local requested="^        sql\\(\"order\", \"UPDATE[ ]dead_letter_records[ ]SET[ ]publication_status='REQUESTED' WHERE id=1001\"\\)$"
+    local settled="^        sql\\(\"order\", \"UPDATE[ ]dead_letter_records[ ]SET[ ]publication_status=NULL,last_replay_settled_at=UTC_TIMESTAMP\\(6\\) WHERE id=1001\"\\)$"
+    [[ "$2" =~ $requested || "$2" =~ $settled ]]
+}
+
 # --- (3) 문서·스크립트의 직접 상태 변경 SQL 0건 ---
 # 계획서(docs/plans)는 설계 논의 중 금지 사례를 인용하므로 제외한다 — 실행 절차가 아니다.
 while IFS= read -r hit; do
+    hit_file="${hit%%:*}"
+    hit_statement="${hit#*:}"
+    hit_statement="${hit_statement#*:}"
+    owned_collector_setup "$hit_file" "$hit_statement" && continue
     violations+=("[REPLAY-ENTRY-003] 문서/스크립트가 원장 상태를 직접 SQL 로 바꾼다: $hit")
 done < <(grep -rn -E "UPDATE[[:space:]]+dead_letter_records[[:space:]]+SET[[:space:]]+(status|publication_status)" \
             docs scripts --include="*.md" --include="*.sh" --include="*.py" 2>/dev/null \
@@ -170,6 +183,22 @@ if [[ "${1:-}" == "--self-test" ]]; then
     done
 
     failures=0
+    fixture_lines=0
+    while IFS= read -r line; do
+        [[ "$line" == *'sql("order",'*'publication_status='* ]] || continue
+        fixture_lines=$((fixture_lines + 1))
+        if ! owned_collector_setup "scripts/replay-drain-docker.py" "$line" \
+            || owned_collector_setup "scripts/operational-replay.py" "$line" \
+            || owned_collector_setup "scripts/replay-drain-docker.py" "${line/id=1001/id=1002}" \
+            || owned_collector_setup "scripts/replay-drain-docker.py" "${line/publication_status/status}"; then
+            echo "self-test 실패: exact owned fixture SQL boundary" >&2
+            failures=$((failures + 1))
+        fi
+    done < scripts/replay-drain-docker.py
+    if [[ "$fixture_lines" != 2 ]]; then
+        echo "self-test 실패: fixture SQL inventory $fixture_lines != 2" >&2
+        failures=$((failures + 1))
+    fi
     expect() {
         local name="$1" want="$2" needle="$3"
         local out rc
