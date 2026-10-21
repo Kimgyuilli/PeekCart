@@ -251,29 +251,53 @@ def lab(evidence):
         reset_group(GROUP)
         # A real assigned consumer deliberately never commits. This is not a fabricated '-' row.
         topic = "collector.no-commit"
-        require(kafka(owner, ["kafka-topics.sh", "--create", "--topic", topic, "--partitions", "1", "--replication-factor", "1"]).returncode == 0,
-                "no-commit topic creation failed")
-        started_consumer = run(["docker", "exec", "-d", owner["containers"]["kafka"], "/opt/kafka/bin/kafka-console-consumer.sh",
-                               "--bootstrap-server", "localhost:9092", "--topic", topic, "--group", "order-no-commit",
-                               "--consumer-property", "enable.auto.commit=false", "--timeout-ms", "120000"])
+        result["stage"] = "no-commit-topic-create"
+        created = kafka(owner, ["kafka-topics.sh", "--create", "--topic", topic, "--partitions", "1", "--replication-factor", "1"])
+        (evidence / "no-commit-create.stdout").write_text(created.stdout)
+        (evidence / "no-commit-create.stderr").write_text(created.stderr)
+        save(evidence / "no-commit-create.json", {"exit": created.returncode})
+        require(created.returncode == 0, "no-commit topic creation failed")
+        result["stage"] = "no-commit-consumer-start"
+        started_consumer = run(["docker", "exec", "-d", owner["containers"]["kafka"], "sh", "-c",
+                               "exec /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 "
+                               "--topic collector.no-commit --group order-no-commit --consumer-property enable.auto.commit=false "
+                               "--timeout-ms 120000 > /tmp/collector-no-commit.log 2>&1"])
+        (evidence / "no-commit-start.stdout").write_text(started_consumer.stdout)
+        (evidence / "no-commit-start.stderr").write_text(started_consumer.stderr)
+        save(evidence / "no-commit-start.json", {"exit": started_consumer.returncode})
         require(started_consumer.returncode == 0, "no-commit consumer launch failed")
+        result["stage"] = "no-commit-member-assignment"
         deadline = time.monotonic() + 40
         while True:
             members = kafka(owner, ["kafka-consumer-groups.sh", "--describe", "--members", "--verbose", "--group", "order-no-commit"])
+            (evidence / "no-commit-members-last.stdout").write_text(members.stdout)
+            (evidence / "no-commit-members-last.stderr").write_text(members.stderr)
+            with (evidence / "no-commit-members-attempts.jsonl").open("a") as stream:
+                stream.write(json.dumps({"exit": members.returncode, "remainingSeconds": deadline - time.monotonic()}) + "\n")
             if members.returncode == 0 and topic in members.stdout:
                 (evidence / "actual-no-commit-members.stdout").write_text(members.stdout)
                 break
             require(time.monotonic() < deadline, "actual no-commit partition assignment missing")
             time.sleep(1)
         sql("order", "UPDATE dead_letter_records SET last_replay_target_group='order-no-commit' WHERE id=1001")
+        result["stage"] = "no-commit-collector"
         scenario("no-committed-offset", 1, "lag 조회 실패")
         sql("order", "UPDATE dead_letter_records SET last_replay_target_group='order-target' WHERE id=1001")
         scenario("restored", 0, "OK — drain")
         result["complete"] = True
+        result["stage"] = "complete"
     except BaseException as error:
         failure = type(error).__name__
         result["failureType"] = failure
     finally:
+        (evidence / "bin" / "kubectl").unlink(missing_ok=True)  # adapter source is not a runtime observation
+        if result.get("stage", "").startswith("no-commit-") or result.get("complete"):
+            try:
+                log = owned_exec(owner, "kafka", ["cat", "/tmp/collector-no-commit.log"], timeout=5)
+                (evidence / "no-commit-consumer.log").write_text(log.stdout)
+                (evidence / "no-commit-consumer-log.stderr").write_text(log.stderr)
+            except Exception as error:
+                result["consumerLogFailure"] = type(error).__name__
         try:
             cleanup(owner_path)
         except BaseException as error:
