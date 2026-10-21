@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 105개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 113개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d002-bc-session](./task-d002-bc-session.md) | D-002 잔여 3축 측정 세션 (b' / c + a 천장 분리) | [#119](https://github.com/Kimgyuilli/PeakCart/pull/119) | 2026-10-17 | 있음 |
 | [task-d032-integration-test-container-singleton](./task-d032-integration-test-container-singleton.md) | D-032 — 통합 테스트 컨테이너 모듈 싱글톤 전환 (order-service) | [#138](https://github.com/Kimgyuilli/PeakCart/pull/138) | 2026-10-17 | 있음 |
 
-## 기타 (43)
+## 기타 (51)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -129,4 +129,12 @@
 | [D-081](./D-081.md) | 수동 리스너 기동의 할당 대기 (D-082 공동 구현) | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
 | [D-082](./D-082.md) | 자율 writer 수명 lint (D-081 공동 구현) | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
 | [D-083](./D-083.md) | D-083 Kafka cleanup 실패 전파 | [#177](https://github.com/Kimgyuilli/PeakCart/pull/177) | 2026-10-17 | 있음 |
+| [D-085](./D-085.md) | D-085: CI gate 실패 전파 의미 검사 | [#185](https://github.com/Kimgyuilli/PeakCart/pull/185) | 2026-10-21 | 있음 |
+| [D-090](./D-090.md) | D-090: Outbox FAILED 알림 실행 계약 검사 | [#186](https://github.com/Kimgyuilli/PeakCart/pull/186) | 2026-10-21 | 있음 |
+| [D-094](./D-094.md) | D-094: Redis 조회 상한 실패 진단 정정 | [#198](https://github.com/Kimgyuilli/PeakCart/pull/198) | 2026-10-21 |  |
+| [D-097](./D-097.md) | D-097: 실제 앱 런타임 프로젝트 산출물의 global FQCN 검사 | [#187](https://github.com/Kimgyuilli/PeakCart/pull/187) | 2026-10-21 | 있음 |
+| [D-098](./D-098.md) | D-098: 완료 행·계획 이동 보존 검사 | [#203](https://github.com/Kimgyuilli/PeakCart/pull/203) | 2026-10-21 | 있음 |
+| [D-099](./D-099.md) | D-099: harness 완료 아카이브 건강 검사 | [#204](https://github.com/Kimgyuilli/PeakCart/pull/204) | 2026-10-21 | 있음 |
+| [D-103](./D-103.md) | D-103: 리뷰 결과 렌더러 수용 계약 | [#206](https://github.com/Kimgyuilli/PeakCart/pull/206) | 2026-10-21 | 있음 |
+| [D-105](./D-105.md) | D-105: ship 재개 조회 실패 구분 | [#184](https://github.com/Kimgyuilli/PeakCart/pull/184) | 2026-10-21 | 있음 |
 
