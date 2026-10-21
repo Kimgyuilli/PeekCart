@@ -74,12 +74,12 @@ def slack_message_fields(notification):
     return '\n'.join(str(value) for value in values if value)
 
 
-def assert_operations_routes_are_separate(notifications, expected, default_signals):
+def assert_operations_routes_are_separate(notifications, expected):
     """Require each operations signal in its own captured Slack request."""
     messages = [slack_message_fields(notification) for notification in notifications]
     signal_sets = [
-        {match.group(1).lower() for match in re.finditer(
-            r'(?i)\bsignal\s*=\s*([a-z0-9][a-z0-9_-]*)(?![a-z0-9_-])', message
+        {match.group(1).strip() for match in re.finditer(
+            r'(?im)(?:^|\s)signal\s*=\s*([^\r\n]+)', message
         )}
         for message in messages
     ]
@@ -92,10 +92,6 @@ def assert_operations_routes_are_separate(notifications, expected, default_signa
     assert all(len(signal_set) == 1 for signal_set in signal_sets), (
         'each operations Slack request must contain only one signal', signal_sets
     )
-    for signal in default_signals:
-        assert signal not in set().union(*signal_sets), (
-            'default-route signal leaked into operations Slack payload', signal
-        )
 
 
 def main():
@@ -301,24 +297,22 @@ def main():
         assert notifications, 'matched operations alerts must reach the local receiver stub'
         assert 'outbox' in notification_text and 'dlq' in notification_text, notification_text
         expected_signals = {'outbox-publish', 'dlq'}
-        default_signals = {
-            rule['labels']['signal']
-            for uid, rule in rules.items()
-            if uid in CONTRACT and rule['labels'].get('signal')
-        } - expected_signals
         # Grafana's Slack contact point sends a Slack message payload, not the webhook
         # notifier's `alerts[].labels` schema. Inspect only Slack text/attachment fields
         # and require separate requests so grouping both signals cannot false-pass.
-        assert_operations_routes_are_separate(notifications, expected_signals, default_signals)
+        assert_operations_routes_are_separate(notifications, expected_signals)
         negative_notifications = [
             [{'text': 'signal = outbox-publish-extra'}, {'text': 'signal = dlq'}],
             [{'text': 'signal = outbox-publish'}],
             [{'text': 'signal = outbox-publish\nsignal = dlq'}],
             [{'text': 'signal = outbox-publish'}, {'text': 'signal = dlq'}, {'text': 'signal = other'}],
+            [{'text': 'signal = outbox-publish.extra'}, {'text': 'signal = dlq'}],
+            [{'text': 'signal = outbox-publish'}, {'text': 'signal = dlq/other'}],
+            [{'text': 'signal = outbox-publish'}, {'text': 'signal = DLQ'}],
         ]
         for candidate in negative_notifications:
             try:
-                assert_operations_routes_are_separate(candidate, expected_signals, default_signals)
+                assert_operations_routes_are_separate(candidate, expected_signals)
             except AssertionError:
                 continue
             raise AssertionError('route assertion accepted an invalid Slack request grouping', candidate)
