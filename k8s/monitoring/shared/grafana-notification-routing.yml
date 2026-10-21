@@ -1,0 +1,33 @@
+# Grafana unified alerting — D-092 operations channel routing.
+# Sidecar delivers this ConfigMap to provisioning/alerting. Outbox/DLQ share one ops destination.
+# The webhook URL is injected from a Secret by each monitoring values file; no URL or token is committed here.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-notification-routing
+  namespace: monitoring
+  labels:
+    grafana_alert: "1"
+data:
+  contact-points.yaml: |-
+    apiVersion: 1
+    contactPoints:
+      - orgId: 1
+        name: peekcart-operations
+        receivers:
+          - uid: peekcart-operations-slack
+            type: slack
+            settings:
+              url: ${PEAKCART_OPS_SLACK_WEBHOOK_URL}
+  notification-policies.yaml: |-
+    apiVersion: 1
+    policies:
+      - orgId: 1
+        receiver: grafana-default-email
+        group_by:
+          - alertname
+        routes:
+          - receiver: peekcart-operations
+            object_matchers:
+              - [signal, =~, '^(outbox-publish|dlq)$']
+            continue: false

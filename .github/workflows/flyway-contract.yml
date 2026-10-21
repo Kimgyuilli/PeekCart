@@ -1,0 +1,84 @@
+name: Flyway contract
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '*-service/src/main/resources/db/migration/**'
+      - 'payment-service/build.gradle'
+      - 'payment-service/src/test/java/com/peekcart/global/flyway/**'
+      - 'common/src/testFixtures/java/com/peekcart/support/SharedContainers.java'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'common/build.gradle'
+      - 'gradle/**'
+      - 'scripts/flyway-contract-*'
+      - 'scripts/fixtures/flyway-contract/**'
+      - '.github/workflows/flyway-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flyway-contract-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actual-flyway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17.0.20'
+          cache: gradle
+      - name: Evidence verifier negative controls
+        run: python3 -B scripts/flyway-contract-evidence-test.py
+      - name: Ordinary test inventory then isolated Flyway JVM
+        env:
+          SPRING_PROFILES_ACTIVE: test
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/flyway-contract
+          docker ps -aq --no-trunc > build/flyway-contract/containers-before.tmp
+          mv build/flyway-contract/containers-before.tmp build/flyway-contract/containers-before.txt
+          git rev-parse HEAD > build/flyway-contract/source-head.txt
+          java -version 2> build/flyway-contract/java-version.txt
+          ./gradlew :payment-service:cleanTest :payment-service:test --no-daemon --no-parallel --max-workers=1 --console=plain 2>&1 | tee build/flyway-contract/ordinary-gradle.log
+          ./gradlew :payment-service:flywayContractTest --no-daemon --no-parallel --max-workers=1 --console=plain 2>&1 | tee build/flyway-contract/lab-gradle.log
+          python3 -B scripts/flyway-contract-evidence.py | tee build/flyway-contract/verified.json
+      - name: Clean only this run's Testcontainers
+        if: always()
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          import subprocess
+          before = Path('build/flyway-contract/containers-before.txt')
+          if before.exists():
+              existing = set(before.read_text().split())
+              current = subprocess.check_output(
+                  ['docker', 'ps', '-aq', '--no-trunc', '--filter', 'label=org.testcontainers=true'],
+                  text=True, timeout=10).split()
+              owned = [container_id for container_id in current if container_id not in existing]
+              if owned:
+                  subprocess.run(['docker', 'rm', '-f', *owned], check=True, timeout=30)
+              Path('build/flyway-contract/cleanup.txt').write_text(
+                  f'new testcontainers removed={len(owned)}\n')
+          PYTHON
+      - name: Preserve Flyway evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flyway-contract-evidence
+          retention-days: 7
+          path: |
+            build/flyway-contract/
+            payment-service/build/flyway-contract/
+            payment-service/build/test-results/
+            payment-service/build/reports/tests/
