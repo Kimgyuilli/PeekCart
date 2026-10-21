@@ -1,0 +1,74 @@
+name: Payment DLQ reproduction
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'payment-service/src/test/java/com/peekcart/global/kafka/DlqIntegrationTest.java'
+      - 'payment-service/src/test/resources/dlq-diagnostic-logback.xml'
+      - 'common/src/testFixtures/java/com/peekcart/support/AbstractIntegrationTest.java'
+      - 'common/src/testFixtures/java/com/peekcart/support/SharedContainers.java'
+      - '.github/workflows/payment-dlq-reproduction.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: payment-dlq-reproduction-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17.0.20'
+          cache: gradle
+      - name: Original payment seed with CI profile
+        env:
+          SPRING_PROFILES_ACTIVE: test
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/dlq-reproduction
+          docker ps -aq --no-trunc > build/dlq-reproduction/containers-before.tmp
+          mv build/dlq-reproduction/containers-before.tmp build/dlq-reproduction/containers-before.txt
+          git rev-parse HEAD > build/dlq-reproduction/source-head.txt
+          java -version 2> build/dlq-reproduction/java-version.txt
+          printf '%s\n' 'SPRING_PROFILES_ACTIVE=test' 'testSeed=1792572889718' > build/dlq-reproduction/environment.txt
+          ./gradlew :payment-service:build -PtestSeed=1792572889718 --no-daemon --no-parallel --max-workers=1 --console=plain 2>&1 | tee build/dlq-reproduction/gradle.log
+      - name: Clean only this run's Testcontainers
+        if: always()
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          import subprocess
+          before = Path('build/dlq-reproduction/containers-before.txt')
+          if before.exists():
+              existing = set(before.read_text().split())
+              current = subprocess.check_output(
+                  ['docker', 'ps', '-aq', '--no-trunc', '--filter', 'label=org.testcontainers=true'],
+                  text=True, timeout=10).split()
+              owned = [container_id for container_id in current if container_id not in existing]
+              if owned:
+                  subprocess.run(['docker', 'rm', '-f', *owned], check=True, timeout=30)
+              Path('build/dlq-reproduction/cleanup.txt').write_text(
+                  f'new testcontainers removed={len(owned)}\n')
+          PYTHON
+      - name: Preserve reproduction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: payment-dlq-original-seed
+          retention-days: 7
+          path: |
+            build/dlq-reproduction/
+            payment-service/build/test-results/
+            payment-service/build/reports/tests/

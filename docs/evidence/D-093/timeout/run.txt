@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/private/tmp/peakcart-worker-b-alert-startup/scripts/monitoring/verify_alerts.py", line 313, in <module>
+    main()
+    ~~~~^^
+  File "/private/tmp/peakcart-worker-b-alert-startup/scripts/monitoring/verify_alerts.py", line 245, in main
+    wait_for_initial_evaluation(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        lambda: capture_snapshot(get, grafana, prometheus, rules, 'readiness', events, strict=False),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        out / 'observations.jsonl', timeout=args.readiness_timeout)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/peakcart-worker-b-alert-startup/scripts/monitoring/verify_alerts.py", line 68, in wait_for_initial_evaluation
+    raise AssertionError(f'Initial evaluation not ready after {timeout}s; raw observations: {evidence_path}')
+AssertionError: Initial evaluation not ready after 0.001s; raw observations: /private/tmp/peakcart-worker-b-alert-startup/.cache/d093-timeout/observations.jsonl

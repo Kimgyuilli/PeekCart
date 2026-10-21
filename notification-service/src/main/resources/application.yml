@@ -129,4 +129,9 @@ app:
 
 slack:
   webhook:
-    url: ${SLACK_WEBHOOK_URL:https://hooks.slack.com/services/placeholder}
+    url: ${SLACK_OPS_WEBHOOK_URL:http://127.0.0.1:9/ops}
+
+# 사용자 메시지와 운영 SlackPort를 별도 endpoint로 전달한다.
+notification:
+  slack:
+    user-webhook-url: ${SLACK_USER_WEBHOOK_URL:http://127.0.0.1:9/user}

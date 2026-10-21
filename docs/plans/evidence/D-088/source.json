@@ -1,0 +1,32 @@
+{
+  "source_ref": "c70c989221de1f3567d594b4c6d24058675d6752",
+  "base": "3bb01bbc3190a9aa38a7b4e6faec7bb767117808",
+  "status": "implementation complete; formal6methods/10poisons Actions pending; ship checklist remains unverified",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 32216,
+      "sha256": "84249c2d7bfb7fa11a5633935065c8c22dc3f3e7fe2718b9b5714879bb2cb467"
+    },
+    {
+      "path": "scripts/ci-lint-wiring-lint.py",
+      "bytes": 4630,
+      "sha256": "8d0534e668a9931a6c302b69c9cefc9435888c4dc998c9624a90348c13457d7b"
+    },
+    {
+      "path": "scripts/ci-lint-health-selftest.py",
+      "bytes": 13403,
+      "sha256": "43d4704632bb533445e2f9b40df5a6627d2d2a262de658145478bc5d6edd25f1"
+    },
+    {
+      "path": "docs/plans/evidence/D-088/inventory.json",
+      "bytes": 10791,
+      "sha256": "4f7762481d8ee5d54a423a842e09083c36fc480ed49ff67f4542eb20cdaeb97f"
+    },
+    {
+      "path": "docs/plans/evidence/D-088/minimal.txt",
+      "bytes": 688,
+      "sha256": "c3efe3c2de73fb7935264e13461652ad524332bbaa1798e8ecbb8b9e104c9810"
+    }
+  ]
+}

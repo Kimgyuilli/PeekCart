@@ -1,0 +1,20 @@
+{
+  "probe.xml": {
+    "raw_sha256": "647aebe6c1be2b938b1d271f47a5b8215efd23b253f94c0da6d03f790b162217",
+    "gzip_sha256": "02422cc7b780393961bf750c1dbbbdafb1b32d7929458e029bc63152ac9e8407",
+    "raw_bytes": 17696,
+    "gzip_bytes": 4465
+  },
+  "compile-failed.log": {
+    "raw_sha256": "86bb4679caa9e50464fb9d7377ab2e9eee0cd3ada5fbf5cea9b993cf875ea52f",
+    "gzip_sha256": "8fcc038ac27dfa287ed6f3039a82000539e47ff57387cb2ed4c9e439cc62e01c",
+    "raw_bytes": 5056,
+    "gzip_bytes": 1062
+  },
+  "probe-gradle.log": {
+    "raw_sha256": "8d8ae42d3cd19fb62fec2565af30d9a469f1bf0a0be5d633f914526942875e94",
+    "gzip_sha256": "4d956d0fb04ba46773786e0608132d9b2778ca5d650fd22b0bcc7e5b2dabba0f",
+    "raw_bytes": 2300,
+    "gzip_bytes": 770
+  }
+}
