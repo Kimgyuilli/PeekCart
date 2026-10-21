@@ -32,3 +32,10 @@
 - 진단head2efb/전용39592563904는 no-commit-member-assignment에서 실패했다. topic create와 detached consumer start는 실제 exit0이고 members row는 order-no-commit/consumer-id/#PARTITIONS=1/ASSIGNMENT=(0)이다. topic명 substring을 members 출력에서 찾던 전제가 맞지 않았다. consumer log는 비어있고 cleanup2container/1network/2volume은 통과했다. 원자료와 개별 hash를 diagnostic-actions-39592563904 bundle에 보존했다.
 - 준비 판정은 실제 members의 해당 group 1partition과 별도 기본 describe의 정확한 group/topic/partition0/CURRENT-OFFSET '-'를 함께 요구하도록 바꿨다. 두 실제 stdout를 보존한다. topic 없는 members 출력만으로 성공하지 않으며 합성 '-' row로 실제 검증을 대체하지 않는다. 변경된 hermetic7 methods는 통과했고 실제 출력 조합은 새 Actions 검증 전이다. deadline40초와 운영 collector 판단은 유지한다.
 - 최초9case와 두 번째9case 모두 exit/진단 일치만 기록하며, stdin 수정 전 baseline intake 누락이 있어 완전한 관측 PASS가 아니다. 다음 실제 run의5groups×2 및 최종 no-commit/restored/아티팩트 음성까지 확인해야 P2–P6 판단이 가능하다.
+
+## 2026-10-21 — 실제 수정 검증 성공 보존
+
+- final source5e74fcdd098ef6c6f4e6a9f5aee8f2d5977aacb6, dedicated39593585908, checkout4b302ea6f2ac7bb2d5ff23a5a5993d50ae865ef6에서 실제11case complete=true다. baseline/restored 각각18calls에 네aggregate/네group조회/5groups각2lag가 모두 있다. no-commit members는1partition/(0), 별도describe는 collector.no-commit/partition0/CURRENT-OFFSET '-'와LAG '-'다. MySQL8.0.46/Kafka3.8.1 원문과 collector SHA25615d13089580faaf02a7b5b01412309f752bee5c32ef43f3071587abe5ac429d1을 확인했다.
+- actual lab 약198.6초, artifact9음성 거부, 실제cleanup2containers/1network/2volumes가 통과했다. raw452files를 직접 내려받아 case/표본/SQL소수부/CLI/cleanup을 대조하고 bundle/hash로 보존했다. 로컬 Docker/Gradle은 실행하지 않았다.
+- root가 최종 independentreview6315156941 no blocker를 전달했다. 코드 이후 추가변경은 이 결과기록뿐이며 선행189 미병합/최신main 정렬과 기록head 새CI는 잔여다. P2–P5만 완료로 표시하고 P6/D065전체는 유지한다.
+- PR본문 업데이트 첫 시도에서 문체lint 실패를 다음 gh edit 호출 전에 차단하지 못했다. 잘못된 어미/기호를 즉시 수정해 lint 통과 후 다시 게시했다. 제품/source 검증 결과에는 영향이 없으며 후속 도구 orchestration은 exit code를 확인한 뒤 종속 mutation을 호출한다.
