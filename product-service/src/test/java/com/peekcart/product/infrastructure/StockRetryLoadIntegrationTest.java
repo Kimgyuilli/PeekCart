@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
@@ -87,7 +88,7 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
     @Autowired KafkaListenerEndpointRegistry registry;
     @Autowired KafkaTemplate<String, String> template;
     @Autowired KafkaAdmin kafkaAdmin;
-    @Autowired CommonErrorHandler commonErrorHandler;
+    @Autowired @Qualifier("kafkaErrorHandler") CommonErrorHandler commonErrorHandler;
     @Autowired ObjectMapper mapper;
     @MockitoSpyBean InventoryRepository inventoryRepository;
     @MockitoSpyBean StockReservationConsumer consumer;
@@ -198,6 +199,7 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
                 .filter(c -> Arrays.asList(c.getContainerProperties().getTopics()).contains(TOPIC)).toList();
         assertThat(selected).hasSize(1);
         listener = (ConcurrentMessageListenerContainer<?, ?>) selected.get(0);
+        assertThat(listener.getCommonErrorHandler()).isSameAs(handler);
         assertThat(listener.isRunning()).isFalse();
         listener.setConcurrency(3);
     }
