@@ -162,8 +162,8 @@ def record(directory, prefix):
     if prefix == 'image':
         context = read_json(directory / 'context.json'); context['image_finished_epoch'] = int(time.time()); save(directory / 'context.json', context)
     name = 'image-build.log' if prefix == 'image' else 'profile-export.log'
-    with (directory / name).open('w') as output, (directory / (name + '.stderr')).open('w') as error:
-        subprocess.run(['docker', 'buildx', 'history', 'logs', '--builder', builder, record_id, '--progress', 'plain'], stdout=output, stderr=error, check=True)
+    with (directory / name).open('w') as output:
+        subprocess.run(['docker', 'buildx', 'history', 'logs', '--builder', builder, record_id, '--progress', 'plain'], stdout=output, stderr=subprocess.STDOUT, check=True)
     if prefix == 'image':
         subprocess.run(['docker', 'buildx', 'history', 'export', '--builder', builder, record_id, '-o', str(directory / 'image.dockerbuild')], check=True)
 
