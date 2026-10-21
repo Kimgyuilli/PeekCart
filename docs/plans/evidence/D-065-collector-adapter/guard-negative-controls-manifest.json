@@ -1,0 +1,9 @@
+{
+  "rawSha256": "7138fa0a7fc6935465c04d3be7746fcb03df111d10c1953be8ffb9686d010d10",
+  "controls": [
+    "same SQL other path: rejected",
+    "same path changed UPDATE: rejected",
+    "restored exact setup: accepted"
+  ],
+  "scope": "full replay-entrypoint-lint; no Docker"
+}
