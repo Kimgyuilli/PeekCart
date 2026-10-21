@@ -427,6 +427,13 @@ class PreservationTest(unittest.TestCase):
         self.write(DONE, '# Done\n' + FOOTER + OLDROW)
         self.check(False)
 
+    def test_entity_escaped_source_target_does_not_bypass_prefilter(self):
+        self.write('docs/index.md', '[source](source&#46;md#section)\n')
+        self.commit_changes()
+        self.move_source()
+        self.write('docs/index.md', '[source](source&#46;md#section)\n')
+        self.check(False)
+
     def test_unquoted_html_source_link_is_not_ignored(self):
         self.write('docs/index.md', '<a href=source.md#section>source</a>\n')
         self.commit_changes()

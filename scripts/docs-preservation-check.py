@@ -109,6 +109,7 @@ def links(text):
     # Unsupported inline syntax fails closed instead of becoming invisible to a transfer check.
     for match in matches:
         preceding = masked[:match.start()]
+        require(html.unescape(match.group(1)) == match.group(1), 'Unsupported entity-escaped link target')
         require("\\" not in match.group(0) and not ((len(preceding) - len(preceding.rstrip("\\"))) & 1),
                 "Unsupported escaped link syntax")
         require('[' not in match.group(0)[1:match.group(0).find(']')], 'Unsupported nested link label')
@@ -124,7 +125,7 @@ def references_source(text, sources):
     This deliberately includes code/escaped candidates: those still fail closed
     in links(). Whitespace/newline after a link opener is included.
     """
-    decoded = unquote(text).replace("\\", "")
+    decoded = html.unescape(unquote(text)).replace("\\", "")
     for source in sources:
         name = re.escape(PurePosixPath(source).name)
         if re.search(r'(?:\]\(\s*|\]:\s*|(?:href|src)\s*=\s*)[^\n]*' + name, decoded, re.I):
