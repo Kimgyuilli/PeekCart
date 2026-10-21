@@ -803,3 +803,9 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 최종 head `0be5aa32ec9159cdbc86f351475443fa090aec7f`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/210#issuecomment-6315032985)는 새 전용 Actions39592715075의 실제64HTTP/20DB snapshot/112files와 네 fixture 정리를 확인했다. 일반 CI39592715276도 성공했다. [PR210](https://github.com/Kimgyuilli/PeekCart/pull/210)을 보호 우회 없이 직렬 병합한 실제 main은 `7894dcc9cf0de3dd966f62777d1b463a1d9313dc`다. [main CI39595168219](https://github.com/Kimgyuilli/PeekCart/actions/runs/39595168219)의 테스트·E2E·gate와 여섯 publish 모두 SUCCESS를 Root가 직접 조회했다.
 
 이 기록은 무료 signed gateway 경로 검증의 완료다. 운영 replay는 계속 false이며 D-065 전체는 부분 완료다. 실제 운영 표본·GKE·NOT NULL 적용, 별도 수집기/제약/Flyway PR의 최신 병합 검증을 대신하지 않는다. 이미지 archive의 독립 로컬 재다운로드 검증은 수행하지 않았고 Actions checksum/loadID 검사와 구분한다.
+
+## 2026-10-21 — D-087 실제 계측 병합과 후속 CI 회귀
+
+[PR209](https://github.com/Kimgyuilli/PeekCart/pull/209) head `20532aca4ec3b4ccbd1f314bc65e9ef2e064df97`, merge `c9e12d695e21c348a82da78c6577eac7b2dd4d89`. 독립 [최신 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/209#issuecomment-6315314079)는 실제6서비스 profile raw·해석과 최신main 실행 delta를 검토했다. PR CI39595421179 성공, 실제 [main CI39605505984](https://github.com/Kimgyuilli/PeekCart/actions/runs/39605505984)는 23잡 전부 성공했고 여섯 publish도 성공했다. 단일 실행의 profile 숫자를 성능 개선이나 새main 천장으로 확장하지 않는다.
+
+이후 PR189/214의 일반 CI에서 여섯 이미지가 모두 `profile was rebuilt after image; detached measurement`로 실패했다. 이미지 빌드는 원격 gha cache의 bootJar layer를 사용했지만 profile export는 같은 cache 입력이 없어 해당 RUN을 다시 실행했다. 검사기의 거부는 올바르며, D-087 전체 완료는 보류한다. [후속 PR216](https://github.com/Kimgyuilli/PeekCart/pull/216)의 첫 수정 CI39607970017도 이미지 잡이 실패해 원인 분리 중이다. 원 D-039 로그의 `jar` 헤더는 28.06초이며 앞선 `compileJava/processResources/classes` 세 헤더만 27.96초다. 역사 본문은 보존하고 이 정정을 상태·진행 기록에 명시한다.
