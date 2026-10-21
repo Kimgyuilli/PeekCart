@@ -10,7 +10,7 @@ grade: L
 
 ## 2. 배경과 코드 전제
 
-자기 worktree `/private/tmp/peakcart-worker-c-recovery`, branch `debt/d084-signed-recovery`, 시작 base `89797c9639e15fb7c362e6be49687e652f80d3b9`. PR210 최종 `0be5aa32ec9159cdbc86f351475443fa090aec7f`의 signed fixture를 선행으로 재사용한다. 미병합 동안 명시적으로 stack하고 최종 실제 main 정렬은 root 병합 순서를 따른다. PR212 실패/PR210 병합 준비가 우선이다.
+자기 worktree `/private/tmp/peakcart-worker-c-recovery`, branch `debt/d084-signed-recovery`, 시작 base `89797c9639e15fb7c362e6be49687e652f80d3b9`. PR210 최종 `0be5aa32ec9159cdbc86f351475443fa090aec7f`의 signed fixture를 선행으로 재사용한다. PR210은 root 승인으로 실제 main `7894dcc9cf0de3dd966f62777d1b463a1d9313dc`에 병합됐고 이 tree에 정상 통합했다(`8fd71ea`). PR212 실패 및 root가 지정한 PR189 후속 정렬이 우선이다.
 
 | 실제 source | 확인한 전제와 처분 |
 |---|---|
@@ -37,7 +37,7 @@ grade: L
 ## 검증 방법과 최소 구성
 
 - 신규 파일은 `docker-compose.approval-recovery.yml`, `scripts/approval-recovery/`의 직접 runner·작은 독립 evidence 검사/자기검사, 별도 `.github/workflows/approval-recovery.yml`, 이 plan/audit/evidence를 우선한다. 기존 signed Lab의 prepare/run/cleanup/sanitize와 request/sql을 import하고 고유 생명주기를 복제하지 않는다. 기존 signed runner 이미지를 사용하며 Kafka CLI 주입은 host가 자기 broker immutable ID에만 수행해 새 Kafka client dependency를 만들지 않는다.
-- Payment/Product만 실제 scheduling/listener를 켜 outbox poller와 consumer를 통과한다. User는 기존 closed fixture 설정을 유지한다. Gateway는 Payment resource 및 Product 주소만 실제 fixture에 연결한다. `replay.enabled=false`, 호스트 port 없음, 내부망, 로컬 PG stub 외 주소 없음은 유지한다. 신규 runtime 종류는 없고 필요한 Product 앱과 기존 PG stub만 추가한다.
+- Payment/Product만 실제 scheduling/listener를 켜 outbox poller와 consumer를 통과한다. User는 기존 closed fixture 설정을 유지한다. Gateway는 실제 User/Payment에 연결하고 Product는 기존 Kafka 계약으로만 참여한다. `replay.enabled=false`, 호스트 port 없음, 내부망, 로컬 PG stub 외 주소 없음은 유지한다. 신규 runtime 종류는 없고 필요한 Product 앱과 기존 PG stub만 추가한다.
 - 승인자/실행자 allowlist는 fresh User fixture의 고정 예상 ID에 맞추고 실제 signup 결과·JWT principal을 대조한다. ADMIN 승격은 이 nonce의 User DB만 변경한다. token/private key/사용자 비밀번호는 artifact에 쓰지 않는다. HTTP5초/기존 DB3·5초/Compose 유한 wait를 유지하고 각 phase에 명시 deadline을 둔다.
 - PG 준비는 기존 fence script에 fixture identity를 등록한 뒤 resolve한다. 이 준비 POST와 앱의 실제 증빙 GET 원장을 분리한다. recovery 실행 중 앱이 새로운 confirm/cancel을 발행하지 않았는지 stub 원장으로 검사한다. ABORTED balanceAmount0는 fixture 응답이며 실 PG 응답이라고 주장하지 않는다.
 - 먼저 known held reservation/items/stock/payment/approval을 자기 DB에 seed하고 원형을 기록한다. 이후 실제 request부터는 서비스 코드가 만든 recovery/audit/outbox/inbox/result를 관측한다. Product의 snapshot/ack를 runner가 직접 서비스 메서드 호출하거나 성공 이벤트를 합성해 대신하지 않는다. 중복 검증에서만 실제 발행된 실행 envelope를 그대로, 이후 eventId만 바꿔 재전달한다.
