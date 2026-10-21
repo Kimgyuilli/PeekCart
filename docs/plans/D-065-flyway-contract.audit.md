@@ -15,3 +15,5 @@
 - 기존 정상 payment334개는 이전 test-profile baseline54 XML의 classname/displayname multiset으로 보존했다. parameterized displayname 두 쌍은 중복 횟수까지 비교한다. 일반 task에서 새lab만 제외하고 randomization은 보존한다. 별도 task는 정확1개lab,4서비스,76child 및 성공·실패 분포가 빠지면 증거검사가 실패한다.
 - 로컬 artifact-verifier13 controls와 container singleton lint/diffcheck/consistency는 PASS. 이 controls는 synthetic JSON/XML 검증이며 actual Flyway/SQL 증거가 아니다. 로컬 Gradle/Docker 미실행이다.
 - ship preflight는 미완 P2–P7 때문에 blocked를 반환했다. 사용자 Actions 우선 및 root의 draft PR 생성 지시에 따라 미실행 항목을 체크하지 않은 채 draft로 Actions를 시작한다. 완료판정이나 gate 우회가 아니며 최종 head의 일반CI·전용workflow와 독립검토가 남는다. 공유TASKS/progress/master는 수정하지 않는다.
+
+- Draft 전 main bdc370a80e0bfa6adefb6a436a5f608f878d1b69를 정상 통합했다. f4 기반 de28f28 작성 patch와 bdc 기반 cbba917 patch가 byte동일(SHA2566a7515aef8bbce518df35fe32815a4b329466959d9bb2cf55ce19b0514e191b2)이다. 문서보존gate(basebdc), commit writinglint도 PASS.
