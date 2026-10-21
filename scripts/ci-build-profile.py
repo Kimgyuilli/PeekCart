@@ -2,6 +2,7 @@
 """Collect exact build records and validate Gradle HTML without inventing missing timings."""
 import argparse
 from decimal import Decimal
+from datetime import datetime
 import hashlib
 from html.parser import HTMLParser
 import json
@@ -107,6 +108,35 @@ def vertex(log, kind):
     return {'id': ident, 'cached': bool(cached), 'seconds': done[0] if done else None}
 
 
+def cache_vertex(path):
+    # Native solve events retain Cached even when plain rendering ends with extraction DONE.
+    vertices = {}; logged = set()
+    for line in path.read_text(encoding='utf-8').splitlines():
+        event = json.loads(line)
+        require(isinstance(event, dict), 'invalid solve event')
+        for v in event.get('vertexes', []):
+            require(isinstance(v, dict), 'invalid solve vertex')
+            if not re.match(r'^\[build [^\]]+\] RUN .*bootJar.*--profile', v.get('name', '')): continue
+            digest = v.get('digest')
+            require(isinstance(digest, str) and re.fullmatch(r'sha256:[0-9a-f]{64}', digest), 'invalid bootJar vertex digest')
+            require(type(v.get('cached', False)) is bool and not v.get('error'), 'invalid/failed bootJar cache event')
+            row = vertices.setdefault(digest, {'cached': False, 'completed': False})
+            completed = v.get('completed')
+            if completed is not None:
+                require(isinstance(completed, str) and re.fullmatch(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)', completed), 'invalid bootJar completion')
+                datetime.fromisoformat(completed.replace('Z', '+00:00'))
+            row['cached'] |= v.get('cached', False) and completed is not None
+            row['completed'] |= completed is not None
+        for log in event.get('logs', []):
+            require(isinstance(log, dict) and isinstance(log.get('data'), str), 'invalid solve log')
+            if log.get('data'): logged.add(log.get('vertex'))
+    require(len(vertices) == 1, 'missing/ambiguous structured bootJar vertex')
+    digest, row = next(iter(vertices.items()))
+    require(row['completed'], 'incomplete structured bootJar vertex')
+    require(not row['cached'] or digest not in logged, 'cached bootJar has execution output')
+    return {'digest': digest, 'cached': row['cached']}
+
+
 def reference(metadata):
     value = metadata.get('buildx.build.ref') if isinstance(metadata, dict) else None
     require(isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', value), 'missing/invalid exact build ref')
@@ -128,7 +158,17 @@ def analyze(directory):
     require((directory / 'image.dockerbuild').stat().st_size > 0, 'empty build record')
     boot = vertex(directory / 'image-build.log', 'bootJar')
     export = vertex(directory / 'image-build.log', 'cache-export')
-    require(vertex(directory / 'profile-export.log', 'bootJar')['cached'], 'profile was rebuilt after image; detached measurement')
+    export_boot = vertex(directory / 'profile-export.log', 'bootJar')
+    image_cache = cache_vertex(directory / 'image-progress.jsonl')
+    export_cache = cache_vertex(directory / 'profile-progress.jsonl')
+    require(image_cache['digest'] == export_cache['digest'], 'profile bootJar vertex differs from image')
+    require(export_cache['cached'], 'profile was rebuilt after image; detached measurement')
+    require(not boot['cached'] or image_cache['cached'], 'plain/structured image cache contradiction')
+    require(not export_boot['cached'] or export_cache['cached'], 'plain/structured profile cache contradiction')
+    for plain, structured in [(boot, image_cache), (export_boot, export_cache)]:
+        if structured['cached'] and not plain['cached']:
+            plain['materialization_seconds'] = plain['seconds']; plain['seconds'] = None
+        plain['cached'] = structured['cached']; plain['digest'] = structured['digest']
     raw = directory / 'export'
     metadata = read_json(raw / 'metadata/profile.json')
     require(metadata['service'] == service, 'profile service mismatch')
@@ -144,7 +184,7 @@ def analyze(directory):
         require(origin_start >= start, 'stale profile presented as fresh')
     result = {'context': context, 'image_build_ref': main_ref, 'profile_export_build_ref': export_ref,
               'measurement_status': 'cached_previous_profile' if boot['cached'] else 'fresh_execution',
-              'profile_origin': metadata, 'bootjar_vertex': boot, 'gha_cache_export_vertex': export,
+              'profile_origin': metadata, 'bootjar_vertex': boot, 'profile_export_vertex': export_boot, 'gha_cache_export_vertex': export,
               'gradle_profile': None if boot['cached'] else parsed,
               'previous_cached_profile': parsed if boot['cached'] else None,
               'timing_note': 'Gradle rows are nested/possibly overlapping. Vertex durations are separate wall times. Do not sum these as job/critical-path time.',
@@ -164,6 +204,8 @@ def record(directory, prefix):
     name = 'image-build.log' if prefix == 'image' else 'profile-export.log'
     with (directory / name).open('w') as output:
         subprocess.run(['docker', 'buildx', 'history', 'logs', '--builder', builder, record_id, '--progress', 'plain'], stdout=output, stderr=subprocess.STDOUT, check=True)
+    with (directory / (('image' if prefix == 'image' else 'profile') + '-progress.jsonl')).open('w') as output:
+        subprocess.run(['docker', 'buildx', 'history', 'logs', '--builder', builder, record_id, '--progress', 'rawjson'], stdout=output, stderr=subprocess.STDOUT, check=True)
     if prefix == 'image':
         subprocess.run(['docker', 'buildx', 'history', 'export', '--builder', builder, record_id, '-o', str(directory / 'image.dockerbuild')], check=True)
 
@@ -179,7 +221,8 @@ def main():
         require(args.service is not None, 'service required')
         checkout = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
         for name, command in [('buildx-version.txt', ['docker', 'buildx', 'version']),
-                              ('docker-version.txt', ['docker', 'version'])]:
+                              ('docker-version.txt', ['docker', 'version']),
+                              ('history-logs-help.txt', ['docker', 'buildx', 'history', 'logs', '--help'])]:
             (directory / name).write_text(subprocess.check_output(command, text=True))
         save(directory / 'context.json', {'service': args.service, 'checkout_sha': checkout,
              'github_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],

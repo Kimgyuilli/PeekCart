@@ -40,6 +40,13 @@ class ProfileTest(unittest.TestCase):
         self.write('profile-export.log', '#35 [build 27/27] RUN ./gradlew :notification-service:bootJar --profile\n#35 CACHED\n')
         self.write('image.dockerbuild', 'opaque fixture record')
         self.report(html())
+        self.progress('image', False); self.progress('profile', True)
+
+    def progress(self, prefix, cached, digest='sha256:' + 'a' * 64, logged=False):
+        event = {'vertexes': [{'digest': digest, 'name': '[build 27/27] RUN ./gradlew :notification-service:bootJar --profile',
+                              'cached': cached, 'completed': '2026-10-21T00:00:00Z'}]}
+        if logged: event['logs'] = [{'vertex': digest, 'data': 'PiBUYXNrIDpub3RpZmljYXRpb24tc2VydmljZTpib290SmFy'}]
+        self.write(prefix + '-progress.jsonl', json.dumps(event) + '\n')
 
     def write(self, name, value): (self.root / name).write_text(value)
     def write_json(self, name, value): self.write(name, json.dumps(value))
@@ -70,6 +77,7 @@ class ProfileTest(unittest.TestCase):
     def test_cache_hit_is_not_new_gradle_execution(self):
         p = self.root / 'image-build.log'; self.write('image-build.log', p.read_text().replace('#35 DONE 35.6s', '#35 CACHED'))
         self.write_json('export/metadata/profile.json', dict(service=SERVICE, started_epoch=10, finished_epoch=50))
+        self.progress('image', True)
         result = self.cli()
         self.assertEqual(result['measurement_status'], 'cached_previous_profile')
         self.assertIsNone(result['gradle_profile'])
@@ -80,7 +88,7 @@ class ProfileTest(unittest.TestCase):
 
     def test_missing_or_unparseable_inputs_are_rejected(self):
         self.cli()  # A later failure must remove this prior successful result.
-        for name in ('image-metadata.json', 'image-build.log', 'export/metadata/profile.json',
+        for name in ('image-metadata.json', 'image-build.log', 'image-progress.jsonl', 'profile-progress.jsonl', 'export/metadata/profile.json',
                      'export/reports/profile-fixture.html', 'image.dockerbuild'):
             path = self.root / name; original = path.read_bytes(); path.unlink()
             with self.subTest(missing=name): self.cli(2)
@@ -109,12 +117,32 @@ class ProfileTest(unittest.TestCase):
             with self.subTest(value=value[:60]): self.report(value); self.cli(2)
 
     def test_export_rebuild_and_incomplete_vertices_rejected(self):
-        p = self.root / 'profile-export.log'; old = p.read_text(); self.write('profile-export.log', old.replace('CACHED', 'DONE 35.6s')); self.cli(2); self.write('profile-export.log', old)
+        p = self.root / 'profile-export.log'; old = p.read_text(); self.write('profile-export.log', old.replace('CACHED', 'DONE 35.6s')); self.progress('profile', False, logged=True); self.cli(2); self.write('profile-export.log', old); self.progress('profile', True)
         p = self.root / 'image-build.log'; old = p.read_text()
         for value in (old.replace('#35 DONE 35.6s\n', ''), old.replace('#41 DONE 44.1s', '#41 DONE NaNs'),
                       old.replace('exporting to GitHub Actions Cache', 'exporting unknown'),
                       old + '#35 CACHED\n'):
             self.write('image-build.log', value); self.cli(2)
+
+    def test_materialized_cache_requires_structured_vertex_proof(self):
+        for name in ['image-build.log', 'profile-export.log']:
+            p = self.root / name; text = p.read_text()
+            text = text.replace('#35 DONE 35.6s', '#35 DONE 9.0s').replace('#35 CACHED', '#35 DONE 9.0s')
+            p.write_text(text)
+        self.progress('image', True)
+        event = json.loads((self.root / 'profile-progress.jsonl').read_text())
+        materialize = json.loads(json.dumps(event)); materialize['vertexes'][0]['cached'] = False
+        materialize['statuses'] = [{'vertex': 'sha256:' + 'a'*64, 'name': 'extracting layer', 'current': 100}]
+        self.write('profile-progress.jsonl', json.dumps(event)+'\n'+json.dumps(materialize)+'\n')
+        self.write_json('export/metadata/profile.json', dict(service=SERVICE, started_epoch=10, finished_epoch=50))
+        result = self.cli(); self.assertEqual(result['measurement_status'], 'cached_previous_profile')
+        self.assertIsNone(result['bootjar_vertex']['seconds']); self.assertEqual(result['profile_export_vertex']['materialization_seconds'], '9.0')
+        for label, content in [('empty',''), ('malformed','{broken'), ('wrongtype','[]'), ('badcompletion',json.dumps({'vertexes':[dict(event['vertexes'][0],completed='garbage')]})), ('duplicate',json.dumps({'vertexes':[event['vertexes'][0],dict(event['vertexes'][0],digest='sha256:'+'b'*64)]}))]:
+            self.write('profile-progress.jsonl', content)
+            with self.subTest(label=label): self.cli(2)
+        for cached, digest, logged in [(False,'sha256:'+'a'*64,False), (True,'sha256:'+'b'*64,False), (True,'sha256:'+'a'*64,True)]:
+            self.progress('profile', cached, digest, logged)
+            with self.subTest(cached=cached, digest=digest, logged=logged): self.cli(2)
 
     def test_record_command_failure_is_propagated(self):
         binary = self.root / 'bin'; binary.mkdir(); calls = self.root / 'calls'
@@ -124,12 +152,13 @@ class ProfileTest(unittest.TestCase):
         env = os.environ.copy(); env.update(BUILD_METADATA='{"buildx.build.ref":"builder/node/image"}', PROFILE_TEST_CALLS=str(calls))
         env['PATH'] = str(binary) + os.pathsep + env['PATH']
         logs = 'buildx history logs --builder builder image --progress plain'
+        raw = logs.replace('plain', 'rawjson')
         export = 'buildx history export --builder builder image -o ' + str(self.root / 'image.dockerbuild')
-        for mode, failing, expected in (('record-image', 'none', [logs, export]),
-                                        ('record-export', 'none', [logs]),
+        for mode, failing, expected in (('record-image', 'none', [logs, raw, export]),
+                                        ('record-export', 'none', [logs, raw]),
                                         ('record-image', 'logs', [logs]),
                                         ('record-export', 'logs', [logs]),
-                                        ('record-image', 'export', [logs, export])):
+                                        ('record-image', 'export', [logs, raw, export])):
             with self.subTest(mode=mode, failing=failing):
                 if calls.exists(): calls.unlink()
                 env['PROFILE_TEST_FAIL'] = failing
@@ -199,7 +228,9 @@ def mutants():
         ('stale-accepted', 'origin_start >= start', 'True', 'test_stale_fresh_report_is_rejected'),
         ('cached-marked-fresh', "'cached_previous_profile' if boot['cached'] else 'fresh_execution'", "'fresh_execution'", 'test_cache_hit_is_not_new_gradle_execution'),
         ('summary-incomplete', 'set(summary) == SUMMARY', 'True', 'test_hash_and_profile_shape_fail_closed'),
-        ('detached-rebuild-accepted', "vertex(directory / 'profile-export.log', 'bootJar')['cached']", 'True', 'test_export_rebuild_and_incomplete_vertices_rejected'),
+        ('detached-rebuild-accepted', "export_cache['cached']", 'True', 'test_export_rebuild_and_incomplete_vertices_rejected'),
+        ('cache-vertex-identity-ignored', "image_cache['digest'] == export_cache['digest']", 'True', 'test_materialized_cache_requires_structured_vertex_proof'),
+        ('cached-execution-output-ignored', "not row['cached'] or digest not in logged", 'True', 'test_materialized_cache_requires_structured_vertex_proof'),
         ('checksum-ignored', "manifest == sha(report) + '  build/reports/profile/' + report.name + '\\n'", 'True', 'test_hash_and_profile_shape_fail_closed'),
         ('progress-stream-discarded', 'stderr=subprocess.STDOUT', 'stderr=subprocess.PIPE', 'test_record_command_failure_is_propagated'),
         ('qualified-ref-passed-to-cli', "'--builder', builder, record_id", 'ref', 'test_record_command_failure_is_propagated'),
@@ -233,7 +264,7 @@ def mutants():
             result = subprocess.run([sys.executable, '-B', str(check), 'ProfileTest.test_workflow_and_final_runtime_contract'], text=True, capture_output=True)
             assert result.returncode and ('test_workflow_and_final_runtime_contract' in result.stderr), (name, result.stdout, result.stderr)
             print(name + ': REJECTED')
-    print('PASS: 12 wrong-implementation controls rejected; no Gradle/Docker invocation')
+    print('PASS: 14 wrong-implementation controls rejected; no Gradle/Docker invocation')
 
 
 if __name__ == '__main__':
