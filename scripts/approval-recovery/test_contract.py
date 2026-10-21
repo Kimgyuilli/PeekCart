@@ -33,11 +33,25 @@ class ContractTests(unittest.TestCase):
         payment=overlay["services"]["resource-service"]["environment"]
         self.assertEqual(payment["APP_APPROVAL_RECOVERY_APPROVERS"],"1")
         self.assertEqual(payment["APP_APPROVAL_RECOVERY_EXECUTORS"],"2")
-        self.assertEqual(payment["TOSS_PAYMENTS_BASE_URL"],"http://pg-stub:8080")
+        self.assertEqual(payment["TOSS_PAYMENTS_BASE_URL"],"http://pg-stub:8080/v1")
         self.assertEqual(base["services"]["resource-service"]["environment"]["APP_DEAD_LETTER_REPLAY_ENABLED"],"false")
         self.assertEqual(base["services"]["resource-service"]["environment"]["APP_INTERNAL_TOKEN_MODE"],"SIGNED_ONLY")
         self.assertEqual(overlay["services"]["product-service"]["extends"]["service"],"resource-service")
         self.assertEqual(overlay["services"]["pg-stub"]["labels"]["peekcart.fixture"],"signed-gateway")
+
+    def test_pg_runtime_and_client_prefix_reuse_existing_working_fixture(self):
+        overlay=yaml.safe_load((ROOT/"docker-compose.approval-recovery.yml").read_text())
+        pg=overlay["services"]["pg-stub"]
+        self.assertEqual(pg["extends"],{"file":"docker-compose.e2e.yml","service":"pg-stub"})
+        self.assertNotIn("build",pg)
+        existing=yaml.safe_load((ROOT/pg["extends"]["file"]).read_text())["services"]
+        self.assertEqual(existing["pg-stub"]["command"],["python3","stub.py"])
+        self.assertEqual(existing["pg-stub"]["volumes"],["./scripts/e2e/pg-stub:/app:ro"])
+        self.assertTrue((ROOT/"scripts/e2e/pg-stub/stub.py").is_file())
+        self.assertEqual(overlay["services"]["resource-service"]["environment"]["TOSS_PAYMENTS_BASE_URL"],
+                         existing["payment-service"]["environment"]["TOSS_PAYMENTS_BASE_URL"])
+        workflow=(ROOT/".github/workflows/approval-recovery.yml").read_text()
+        self.assertNotIn("docker build -t approval-recovery-pg",workflow)
 
     def test_empty_partial_and_missing_image_evidence_fail(self):
         with tempfile.TemporaryDirectory() as temp:
