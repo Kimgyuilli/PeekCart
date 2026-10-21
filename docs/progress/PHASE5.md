@@ -759,3 +759,12 @@ Phase 4 가 종결([#133](https://github.com/Kimgyuilli/PeakCart/pull/133))되�
 [PR203](https://github.com/Kimgyuilli/PeekCart/pull/203) 최종 head `2e7251b6b855009ce14adccd0c71a46d23a5ddf8`의 [독립 재검토](https://github.com/Kimgyuilli/PeekCart/pull/203#issuecomment-6312472715)는 세 P2 반례 해소, 직접 52개 fixture 및 실제 원문 분리·archive 정상/음성 대조를 확인했다. 수정 제거 변이 세 개도 각각 실패했다. [PR CI39575261544](https://github.com/Kimgyuilli/PeekCart/actions/runs/39575261544)가 성공한 뒤 정상 병합 SHA는 `f4ee03b97b0bec0c9be7cd3077911fb67b578b74`다. [main CI39578683569](https://github.com/Kimgyuilli/PeekCart/actions/runs/39578683569)는 E2E·gate와 여섯 publish 모두 성공했다. 운영 배포와 실제 계획 archive는 수행하지 않았다.
 
 TASKS 완료 행은 상태 외 본문과 비교 base의 순서를 보존해 이동한다. 일반 문서의 사실 정확성·전체 링크 건강이나 D-099 현행 corpus 검증을 완료했다고 주장하지 않는다. 이 완료 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.
+
+
+## 2026-10-21 — D-075 무료 분석 부분 병합 확인
+
+[PR200](https://github.com/Kimgyuilli/PeekCart/pull/200) 최종 head `3d960601f97dcfac58c00640d2bc00bbdfc2a7e3`는 300개 fixture의 유한 drain, DB save·publish timer·lock skip 및 DB 없는 producer 대조를 보존한다. [최신 독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/200#issuecomment-6313108582)는 원측정 소스·raw·hash 보존과 main 통합 영향, 실제 Actions 보존 gate를 확인했다. 이전 직접 53개 marker 및 여섯 추출기 반례 검토는 변경 없는 자료의 근거로 재사용했고 새 성능 실측으로 주장하지 않았다.
+
+[PR CI39579299737](https://github.com/Kimgyuilli/PeekCart/actions/runs/39579299737) 성공 후 병합 SHA는 `bdc370a80e0bfa6adefb6a436a5f608f878d1b69`다. [main CI39581607992](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581607992)는 E2E·gate와 여섯 publish 모두 성공했다. 운영 배포·설정 변경은 없었다.
+
+D-075는 부분 완료로 남는다. P1 목표 TPS/backlog/초과 대응, P3 정책 선택, P4 선택 정책 검증은 사용자 결정과 후속 근거가 필요하다. 유한 로컬 drain을 지속 TPS나 GKE 천장으로 환산하지 않는다. D-078의 무료 jitter/DLQ 및 실제 scheduler pool4 검증은 별도 후속이며 이 분석으로 완료되지 않았다.
