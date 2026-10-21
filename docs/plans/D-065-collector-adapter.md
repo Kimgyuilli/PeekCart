@@ -44,3 +44,7 @@ fixture는 생성 전에 random project+nonce ownership intent를 저장한다. 
 ## 5. 완료 후에도 남는 범위
 
 이 결과는 Docker에 연결한 kubectl adapter 계약이다. Kubernetes auth/exec/Secret decoding 권한, GKE ACL/실제 service group 좌표, 실제 broker 운영 데이터/소비자 상한, P22 production timestamp 표본, operator 직접 apply 우회와 운영 rollout은 별도 증거다. PR189의 shell fix나 이 actual adapter가 D065 전체를 완료하지 않는다. 미병합 선행이 main에 들어오면 실제 main 정렬/작성 delta/새 CI를 다시 확인한다.
+
+### 첫 Actions 이후 검증 보완
+
+최초9case의 exit/진단 일치와 baseline 전체 group coverage를 구분한다. 실제 adapter stdin 소비 결함을 수정하고 최종5groups×2 gate는 유지한다. no-commit 준비 원인은 별도 CLI/stage 자료로 판별한다. 일반 CI의 운영 직접SQL guard는 자기 fixture 파일과 고정 두 setup SQL만 예외로 둔다. 같은문장 다른경로·변경SQL 음성을 유지하며 guard와 소유권 경계를 최종 독립 리뷰에 포함한다. 제품 collector와 운영 절차에는 변경이 없다.
