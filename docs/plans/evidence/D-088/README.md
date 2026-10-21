@@ -22,3 +22,9 @@ writing-lint는 commit/PR 문체를 ship에서 검사하는 단일 예외이며 
 minimal.txt는 최소 개발 확인만 기록한다. 정식6methods/10poison은 Actions 대기다. source.json의 hash는 code snapshot에 귀속하며 미실행 전체 검증 성공을 뜻하지 않는다. plan checkbox는 미검증 상태로 유지하고 사용자 Actions-first/draft 허용에 따라 draft PR에서 정식 CI를 시작한다. ship preflight blocked는 audit에 그대로 기록한다.
 
 기존4개 shell은 byte불변이며 workflow delta는 기존 policy 앞의2줄뿐이다. shared TASKS/PHASE/master는 root 소유로 미편집이다. 별도 Codex 리뷰 미호출.
+
+## 초기 반례 수정
+
+초기 source c70/PR0e의 배선검사는 assigned exit/exec, compact uncalled function, builtin exit를 검증하지 못했다. 현재는 초기 연속된 지원 direct command만 인정하고 미지원 command/단독assignment/setup/control에서 중단한다. ship 문체 예외의 기존 mkdir -p .cache만 좁게 허용한다. actual Bash의정상assignedPython과5zero-call구문을 paired로 확인한다. 원 script selftest를 고치는 대신 외부 실행 경계를 유지한다.
+
+개발최소1method PASS1.231s/정상24배선CLI PASS이며 전체7methods/11poison은 새Actions 대기다. 초기source.json/minimal/inventory는그 snapshot의자료로보존하며 최신전체검증결과로부르지않는다.
