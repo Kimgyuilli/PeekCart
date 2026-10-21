@@ -11,7 +11,7 @@ import java.util.Map;
 /** Separate JVM entrypoint used only by the isolated Flyway contract lab. */
 public final class FlywayContractProcess {
     public static void main(String[] args) throws Exception {
-        if (args.length != 5 || !List.of("migrate", "validate", "info").contains(args[0])) {
+        if (args.length != 5 || !List.of("migrate", "validate").contains(args[0])) {
             throw new IllegalArgumentException("unsupported lab invocation");
         }
         Map<String, Object> result = new LinkedHashMap<>();
@@ -37,11 +37,6 @@ public final class FlywayContractProcess {
                 result.put("invalidCount", validation.invalidMigrations.size());
                 result.put("errorCode", validation.errorDetails == null ? "" : validation.errorDetails.errorCode.toString());
                 success = validation.validationSuccessful;
-            } else {
-                result.put("migrations", java.util.Arrays.stream(flyway.info().all()).map(migration -> Map.of(
-                        "version", migration.getVersion() == null ? "" : migration.getVersion().toString(),
-                        "script", migration.getScript(), "state", migration.getState().toString())).toList());
-                success = true;
             }
         } catch (Throwable failure) {
             result.put("failureType", failure.getClass().getName());
