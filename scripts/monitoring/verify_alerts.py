@@ -77,18 +77,23 @@ def slack_message_fields(notification):
 def assert_operations_routes_are_separate(notifications, expected, default_signals):
     """Require each operations signal in its own captured Slack request."""
     messages = [slack_message_fields(notification) for notification in notifications]
-    routed = {}
-    for signal in expected:
-        matches = [i for i, message in enumerate(messages)
-                   if re.search(rf'(?i)signal\s*=\s*{re.escape(signal)}\b', message)]
-        assert matches, ('operations Slack payload is missing a matched signal', signal, messages)
-        routed[signal] = matches[0]
-    assert len(set(routed.values())) == len(expected), (
-        'matched signals must arrive in separate Slack requests', routed, messages
+    signal_sets = [
+        {match.group(1).lower() for match in re.finditer(
+            r'(?i)\bsignal\s*=\s*([a-z0-9][a-z0-9_-]*)(?![a-z0-9_-])', message
+        )}
+        for message in messages
+    ]
+    assert signal_sets and all(signal_set for signal_set in signal_sets), (
+        'each operations Slack request must expose its signal label', messages
+    )
+    assert set().union(*signal_sets) == expected, (
+        'operations Slack requests must contain exactly the matched signals', signal_sets, expected
+    )
+    assert all(len(signal_set) == 1 for signal_set in signal_sets), (
+        'each operations Slack request must contain only one signal', signal_sets
     )
     for signal in default_signals:
-        assert not any(re.search(rf'(?i)signal\s*=\s*{re.escape(signal)}\b', message)
-                       for message in messages), (
+        assert signal not in set().union(*signal_sets), (
             'default-route signal leaked into operations Slack payload', signal
         )
 
@@ -305,14 +310,18 @@ def main():
         # notifier's `alerts[].labels` schema. Inspect only Slack text/attachment fields
         # and require separate requests so grouping both signals cannot false-pass.
         assert_operations_routes_are_separate(notifications, expected_signals, default_signals)
-        try:
-            assert_operations_routes_are_separate(
-                [{'text': 'signal = outbox-publish\nsignal = dlq'}], expected_signals, default_signals
-            )
-        except AssertionError:
-            pass
-        else:
-            raise AssertionError('route assertion accepted both signals in one Slack request')
+        negative_notifications = [
+            [{'text': 'signal = outbox-publish-extra'}, {'text': 'signal = dlq'}],
+            [{'text': 'signal = outbox-publish'}],
+            [{'text': 'signal = outbox-publish\nsignal = dlq'}],
+            [{'text': 'signal = outbox-publish'}, {'text': 'signal = dlq'}, {'text': 'signal = other'}],
+        ]
+        for candidate in negative_notifications:
+            try:
+                assert_operations_routes_are_separate(candidate, expected_signals, default_signals)
+            except AssertionError:
+                continue
+            raise AssertionError('route assertion accepted an invalid Slack request grouping', candidate)
         set_mode('healthy')
         resolved = sample_for('resolved', 390)
         assert all_normal(resolved[-1]), 'Recovery must be healthy zero, never absent/NoData'
