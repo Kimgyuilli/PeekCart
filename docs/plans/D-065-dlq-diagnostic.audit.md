@@ -29,3 +29,11 @@
 - 별도workflow는고정seed/manual입력없음/pull_request paths와contentsread/timeout15/alwaysartifact. 실행전전체IDsnapshot은성공시atomicrename후인정하고cleanup은신규Testcontainerslabel+immutableID만선택한다. hermeticownership/manifest없는earlyfailure2대조PASS, 실제Actionscleanup은CI결과대기. 기존CIrandomization불변.
 - 프로토타입retention회귀는30초기본cleanup과별도브로커생명주기를요하므로이번PR자동job에반복추가하지않았다. 실행가능원문/설정/삭제로그를보존하며최종기존DLQtest는재발행시각과구별되는정확값을검증한다. arithmetic를복제하는별도unit은추가하지않았다.
 - integration-test-container-lint/consistency/shippreflight/diffcheck PASS. 모든ownedfixtures정리/전체Dockerinventory전후동일. heavy반환. Root소유TASKS/master/PHASE는수정하지않으며D065완료로표기하지않는다.
+
+## 2026-10-21 — ship과 최신 main 통합
+
+- Draft PR: https://github.com/Kimgyuilli/PeekCart/pull/205 . 별도 Codex 리뷰 미호출, 독립 최종 head 리뷰 대기.
+- main f4ee03b97b0bec0c9be7cd3077911fb67b578b74를 정상 merge했다. 이전4a4 기반 authored patch와 새base 대비patch가 byte동일하며 SHA2567d64f032f90f1bca40a1cf7e2525989c19af578a510cd96bb5e9692b90875bb4였다. 추가main변경은문서보존workflow/도구로Java검증source와무관하다.
+- test/chore/docs로명시경로분할커밋했고writinglint/shippreflight/consistency/새docs-preservation-ci(basef4ee)PASS. 처음일반제목은형식lint에서거부되어test(kafka)형식으로고친뒤통과했다.
+- 원문로그는repo의*.log ignore규칙에걸리지않도록내용그대로.txt로보존했고SHA256manifest를갱신했다. 원형raw전체증거는/private/tmp각실행경로에도남아있다.
+- 최종Java eb40e48d, root소유TASKS/master/PHASE/ADR완료상태변경없음. user지시에따라최종full검증은Actions로넘겼다. PR일반CI와별도original-seed job이해당최종head에서통과해야하며, 현재미충족이다. D065전체완료로표기하지않는다.
