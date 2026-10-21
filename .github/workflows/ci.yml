@@ -149,6 +149,7 @@ jobs:
           mkdir -p .cache/dlq-contract
           python3 scripts/tests/test_dlq_contract_preflight.py
           python3 scripts/tests/dlq_contract_lab.py --evidence-dir .cache/dlq-contract/evidence 2>&1 | tee .cache/dlq-contract/lab.log
+          python3 -O scripts/tests/test_dlq_contract_cleanup.py 2>&1 | tee .cache/dlq-contract/cleanup-controls.log
 
       - name: Clean up owned DLQ contract fixture
         if: always()

@@ -31,12 +31,27 @@ def command(args, data=None, timeout=40, check=True):
     return result
 
 
+def owner_check(condition, message='invalid fixture ownership metadata'):
+    if not condition:
+        raise RuntimeError(message)
+
+
 class Lab:
     def __init__(self, evidence):
         self.name = 'peakcart-d065-contract-' + uuid.uuid4().hex[:10]
+        self.nonce = uuid.uuid4().hex
         self.evidence = evidence
         self.results = []
-        self.started = False
+        self.cleanup_completed = False
+
+    def save_owner(self, identifier=None):
+        owner = {'version': 2, 'name': self.name, 'nonce': self.nonce}
+        if identifier is not None:
+            owner_check(re.fullmatch(r'[0-9a-f]{64}', identifier))
+            owner['id'] = identifier
+        temporary = self.evidence / 'container.json.tmp'
+        temporary.write_text(json.dumps(owner))
+        temporary.replace(self.evidence / 'container.json')
 
     def sql(self, statement, service='order', root=False, check=True):
         args = ['docker', 'exec', '-i', self.name, 'mysql', '--batch', '--skip-column-names',
@@ -46,12 +61,14 @@ class Lab:
         return command(args, statement, check=check)
 
     def start(self):
+        # Persist ownership before Docker can create anything. A lost create response
+        # must not make the separate cleanup depend on an ID we never received.
+        self.save_owner()
         created = command(['docker', 'run', '--detach', '--name', self.name, '--network', 'none',
-                 '--label', 'peekcart.fixture=dlq-contract', '--tmpfs', '/var/lib/mysql',
+                 '--label', 'peekcart.fixture=dlq-contract',
+                 '--label', 'peekcart.fixture.run=' + self.nonce, '--tmpfs', '/var/lib/mysql',
                  '-e', 'MYSQL_ALLOW_EMPTY_PASSWORD=yes', 'mysql:8.0.46'])
-        self.started = True
-        self.evidence.joinpath('container.json').write_text(json.dumps(
-            {'id': created.stdout.strip(), 'name': self.name}))
+        self.save_owner(created.stdout.strip())
         deadline = time.monotonic() + 60
         while time.monotonic() < deadline:
             ping = command(['docker', 'exec', self.name, 'mysqladmin', '--user=root', 'ping'],
@@ -68,9 +85,8 @@ class Lab:
         self.image = command(['docker', 'inspect', self.name, '--format', '{{.Image}}']).stdout.strip()
 
     def stop(self):
-        if self.started:
-            command(['docker', 'rm', '-f', self.name])
-            self.started = False
+        cleanup_owned(self.evidence)
+        self.cleanup_completed = True
 
     def reset(self, service='order'):
         self.sql(f'DROP DATABASE IF EXISTS lab_{service}; CREATE DATABASE lab_{service}; '
@@ -363,16 +379,25 @@ def cleanup_owned(directory):
     if not state.exists():
         return
     owner = json.loads(state.read_text())
-    assert re.fullmatch(r'peakcart-d065-contract-[0-9a-f]{10}', owner['name'])
-    assert re.fullmatch(r'[0-9a-f]{64}', owner['id'])
-    present = command(['docker', 'ps', '-aq', '--no-trunc', '--filter', 'id=' + owner['id']]).stdout.strip()
+    owner_check(owner['version'] == 2)
+    owner_check(re.fullmatch(r'peakcart-d065-contract-[0-9a-f]{10}', owner['name']))
+    owner_check(re.fullmatch(r'[0-9a-f]{32}', owner['nonce']))
+    if 'id' in owner:
+        owner_check(re.fullmatch(r'[0-9a-f]{64}', owner['id']))
+    present = command(['docker', 'ps', '-aq', '--no-trunc', '--filter',
+                       'name=^/' + owner['name'] + '$']).stdout.strip()
     if not present:
         return
-    assert present == owner['id']
-    observed = json.loads(command(['docker', 'inspect', owner['id']]).stdout)[0]
-    assert observed['Name'] == '/' + owner['name']
-    assert observed['Config']['Labels'].get('peekcart.fixture') == 'dlq-contract'
-    command(['docker', 'rm', '-f', owner['id']])
+    owner_check(re.fullmatch(r'[0-9a-f]{64}', present))
+    if 'id' in owner:
+        owner_check(present == owner['id'], 'owned container ID changed; refusing cleanup')
+    observed = json.loads(command(['docker', 'inspect', present]).stdout)[0]
+    owner_check(observed['Name'] == '/' + owner['name'])
+    owner_check(observed['Config']['Labels'].get('peekcart.fixture') == 'dlq-contract')
+    owner_check(observed['Config']['Labels'].get('peekcart.fixture.run') == owner['nonce'],
+                'ownership nonce mismatch; refusing cleanup')
+    # Delete the inspected immutable ID, never a name that might be reused.
+    command(['docker', 'rm', '-f', present])
 
 
 def main():
@@ -387,7 +412,8 @@ def main():
     args.evidence_dir.mkdir(parents=True, exist_ok=False)
     lab = Lab(args.evidence_dir)
     source_paths = [ROOT / 'scripts/dlq_contract_preflight.py', Path(__file__).resolve(),
-                    ROOT / 'scripts/tests/test_dlq_contract_preflight.py', ROOT / '.github/workflows/ci.yml']
+                    ROOT / 'scripts/tests/test_dlq_contract_preflight.py',
+                    ROOT / 'scripts/tests/test_dlq_contract_cleanup.py', ROOT / '.github/workflows/ci.yml']
     source_paths += [path for service in SERVICES for path in
                      (ROOT / (service + '-service/src/main/resources/db/migration')).glob('V*.sql')]
     import hashlib
@@ -404,11 +430,13 @@ def main():
         lab.run()
         completed = True
     finally:
-        lab.stop()
-        args.evidence_dir.joinpath('results.json').write_text(json.dumps({
-            'mysql_version': getattr(lab, 'version', None), 'image': getattr(lab, 'image', None),
-            'results': lab.results, 'elapsed_seconds': round(time.monotonic() - started, 3),
-            'cleaned_up': not lab.started, 'completed': completed, 'rollout_ready': False}, indent=2))
+        try:
+            lab.stop()
+        finally:
+            args.evidence_dir.joinpath('results.json').write_text(json.dumps({
+                'mysql_version': getattr(lab, 'version', None), 'image': getattr(lab, 'image', None),
+                'results': lab.results, 'elapsed_seconds': round(time.monotonic() - started, 3),
+                'cleaned_up': lab.cleanup_completed, 'completed': completed, 'rollout_ready': False}, indent=2))
     print(json.dumps({'passed': len(lab.results), 'cleaned_up': True, 'rollout_ready': False}))
 
 
