@@ -1,5 +1,6 @@
 {
   "implementation_base": "4a4a36a12a3d914d6bc0379ded94bc0123c4d370",
+  "implementation_source_ref": "6e78e4faff9790ffd160b2e06f62594f6a46bfc4",
   "fixture_base": "a7ffa11f24be2bd281d8952ac5fc5d351fb6119c",
   "files": [
     {
@@ -9,8 +10,8 @@
     },
     {
       "path": "docs/plans/evidence/D098/hermetic.txt",
-      "sha256": "67b18312b76f1a7dcf523ff489c813aa48fa3a51aa94345badcb8846b5ca8847",
-      "bytes": 5555
+      "sha256": "7d40d665000b7e6a5a292b7a7f9b0398820fef099a69c6af07092098460c400b",
+      "bytes": 6228
     },
     {
       "path": "docs/plans/evidence/D098/local-ci.txt",
@@ -21,6 +22,11 @@
       "path": "docs/plans/evidence/D098/real-source.txt",
       "sha256": "8afcfc8735d762dec591266709b041bb75ba527823b768215529ecddd07605e3",
       "bytes": 394
+    },
+    {
+      "path": "docs/plans/evidence/D098/root-context.json",
+      "sha256": "ebc3cede596c1e66e12e51acfa12675e47baa14a1f092f409ba42e1aede04c60",
+      "bytes": 769
     },
     {
       "path": "docs/plans/evidence/D098/root-readonly.txt",
@@ -34,8 +40,8 @@
     },
     {
       "path": "scripts/docs-preservation-check.py",
-      "sha256": "f4777d23cb77a4606951bc58ab0e70d2b4896a04579c04855d83834b7cbb6c80",
-      "bytes": 25033
+      "sha256": "3817dcdda78bc7ecc54600f590b75f08420349322defd482b9bdec1c3b53b40c",
+      "bytes": 26259
     },
     {
       "path": "scripts/docs-preservation-ci.py",
@@ -49,8 +55,8 @@
     },
     {
       "path": "scripts/docs-preservation-selftest.py",
-      "sha256": "4e6ad3deab4590b6b1cd1fb84def7e221ff6b3b7f5f80f9831c539c78434f6f8",
-      "bytes": 22140
+      "sha256": "b3eeac4572644c93c1eeed25ab10c49699a8382b7a56ecc3d91df43479824294",
+      "bytes": 23988
     },
     {
       "path": "scripts/plans-archive.sh",

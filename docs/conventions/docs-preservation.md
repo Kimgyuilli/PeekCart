@@ -12,7 +12,7 @@ python3 -B scripts/docs-preservation-ci.py --base <PR-base-SHA>
 
 TASKS와 TASKS-done 첫 column의 D-ID는 각각 한 번만 존재해야 한다. 기존 ID는 사라질 수 없고 새 ID는 TASKS에만 등록한다. 완료 이동은 TASKS → TASKS-done이며 기존 done 행 뒤에 append한다. 여러 이동 행은 비교 base의 TASKS 원래 순서대로 추가한다. 기존 done 행과 남은 TASKS 행 순서도 보존한다.
 
-완료 행의 마지막 상태 cell은 ✅와 실제 GitHub PR 링크로 갱신할 수 있다. 그 앞의 본문은 그대로 보존한다(`rsplit('|', 2)`로 code 안의 pipe도 보존). 이동 때문에 상대 Markdown 링크가 달라지면 같은 파일·앵커·query를 가리켜야 한다. 기존 done footer/정정 이력은 위치와 순서를 보존하며 뒤에 추기할 수 있다. 상태 외 본문 사실 정정은 아래 좁은 예외를 선언한다.
+완료 행의 마지막 상태 cell은 ✅와 실제 GitHub PR 링크로 갱신할 수 있다. 그 앞의 본문은 그대로 보존한다(`rsplit('|', 2)`로 code 안의 pipe도 보존). 이동 때문에 상대 Markdown 링크가 달라지면 같은 파일·앵커·query를 가리켜야 한다. 비교할 때 세 값을 JSON 배열로 구조화해 구분자가 포함된 fragment/query도 서로 혼동하지 않는다. 기존 done footer/정정 이력은 기존 행 사이의 위치와 순서를 함께 보존하며 뒤에 추기할 수 있다. 마지막 줄에 LF가 없던 원문에도 기존 byte prefix를 유지한 추기가 가능하다. 상태 외 본문 사실 정정은 아래 좁은 예외를 선언한다.
 
 ## 선택 아카이브
 
@@ -65,7 +65,7 @@ old는 정확히 한 번 나타나야 하고 실제 변경·이유가 필요하�
 
 ## Markdown 지원 경계와 검증
 
-표준 라이브러리만 사용하는 제한된 링크/heading 해석이다. inline `[label](path#anchor)`와 한 줄 reference definition, ATX/setext heading, 단순 명시 HTML anchor를 지원한다. fenced/same-line inline code를 링크로 재작성하지 않는다. 모호한 escaped/nested link, 여러 줄 backtick span, 들여쓴 code/list의 link, HTML comment/link/block, 복잡한 heading, 내부 canonical marker 문자열은 관련 비교에서 실패한다. 짝 없는 backtick은 Markdown의 문자 원문으로 유지한다. parser를 우회하려고 원문을 바꾸지 말고 별도 검토 가능한 명시 이전 방식으로 처리한다. 이 제한은 일반 문서 전체의 Markdown lint가 아니다. 동일한 보호 archive 원문은 다시 해석하지 않는다.
+표준 라이브러리만 사용하는 제한된 링크/heading 해석이다. inline `[label](path#anchor)`와 한 줄 reference definition, ATX/setext heading, 단순 명시 HTML anchor를 지원한다. fenced/same-line inline code를 링크로 재작성하지 않는다. 모호한 escaped/nested link와 entity-escaped target, 여러 줄 backtick span, 들여쓴 code/list의 link, HTML comment/link/block(quoted/unquoted href/src 모두 포함), 복잡한 heading, 내부 canonical marker 문자열은 관련 비교에서 실패한다. 짝 없는 backtick은 Markdown의 문자 원문으로 유지한다. parser를 우회하려고 원문을 바꾸지 말고 별도 검토 가능한 명시 이전 방식으로 처리한다. 이 제한은 일반 문서 전체의 Markdown lint가 아니다. 동일한 보호 archive 원문은 다시 해석하지 않는다.
 
 ```bash
 python3 -B scripts/docs-preservation-selftest.py
