@@ -32,3 +32,14 @@
 - ship preflight/grade L/consistency/명시 staging 분류/whitespace/commit lint PASS. PR 본문 첫 문체 검사에서 평서형 어미를 지적받아 규약대로 수정 후 PASS, title PASS.
 - draft PR 생성 후 전체 CI 및 독립 exact-head 검토 대기. 아직 병합 승인 없음. D-065 전체 완료 및 운영 전환 준비 완료를 주장하지 않는다.
 - done 범위: 이 task plan/audit 및 evidence README만 갱신했다. TASKS/master/PHASE는 root 소유이며 별도 최신 사실로 갱신한다. Layer1 운영 계약은 바꾸지 않았다.
+
+## 2026-10-21 — 독립 P2 cleanup 경계 수정
+
+- 독립 검토: https://github.com/Kimgyuilli/PeekCart/pull/202#issuecomment-6312033007. f384의 SQL33/unit10/source55 자체는 통과했지만, 실제 Docker 생성 성공 후 응답 전 SIGKILL에서 owner manifest 부재로 cleanup이 자원을 남기는 P2를 확인했다. 최초 interruption 증거는 manifest 이후에만 해당했다.
+- Docker 호출 전 name+128bit nonce를 atomic manifest로 보존하고 생성 nonce label을 추가했다. ID/started 응답을 받지 못해도 cleanup이 exact name/class label/nonce를 확인한 뒤 조회된 immutable ID만 삭제한다. 응답 ID를 받은 뒤에는 ID도 대조한다. foreign same-name nonce는 거부하며 실패 진단/정리 상태를 보존한다.
+- 생성·삭제 소유 검사는 Python assert 대신 명시적 RuntimeError로 검사한다. CI는 optimized Python에서 ownership 경량5를 실행한다. 의도적 SIGKILL용 추가 fixture는 CI에서 만들지 않고 Docker2methods는 skip하며 실제 로컬4조건으로 별도 검증한다.
+- nonce 1차 수정 actual ownership7methods/4Docker조건 PASS(7.805초) 및 SQL33 PASS. 명시적 검사 보완 뒤 최종 결과는 cleanup-fix 증거에 별도로 기록한다. 기존 f384 증거는 덮어쓰지 않는다.
+
+- 최종 explicit ownership 검사 source: session22755 actual MySQL33 PASS/175.519초, completed=true/cleanup=true. current56 source hash가 실행 manifest와 일치한다.
+- actual cleanup7methods PASS/5.284초(ownership5+Docker2methods/4조건). Python -O ownership5 PASS, Docker2methods는 그 명령에서 명시적 skip. classifier10 PASS. 새CI는 optimized ownership 검사만 포함하며 의도적 생성중 SIGKILL 대조는 로컬 증거로 구분한다.
+- 자기 fixture 전부 정리, original momens3개만 확인하여 heavy 반환. 독립 P2 final-head 재검토와 최신 full CI는 아직 대기이며 최초 리뷰를 해결됐다고 임의 표시하지 않는다.

@@ -84,3 +84,7 @@ DML backfill은 명시적 트랜잭션 안에서 검증된 NULL 후보에만 적
 다음 무료 단계는 실제 Flyway runner와 최소 권한 계정으로 새 DB/기존 schema 업그레이드, failed schema-history 기록, repair 없이 안전하게 재개할 수 있는 경계와 불가능한 경계, restart 뒤 데이터·schema·allocator 보존을 검증하는 별도 계획/PR이다. 실패한 비트랜잭션 migration이 history에 남는 경우 이를 숨기거나 자동 repair하지 않는다. 필요하면 backfill/contract migration 분리 또는 명시적 수동 복구 요구를 새 증거와 함께 root 설계검토에 올린다. 이 단계는 무료 로컬로 할 수 있으므로 운영 제약에 묶어 미루지 않는다.
 
 실제 Flyway 실패/재개 증거를 확보한 뒤에만 별도 contract migration 번호를 최신 main에서 확정하고, 네 서비스 schema parity·전체 migration·E2E EXPECTED_MIGRATIONS·JPA writer와 incident/retention 회귀를 함께 검증한다. 외부에 남는 것은 실제 운영 writer 정지/전환 증빙, 실제 데이터 provenance·표본, 실제 DDL 적용이다.
+
+### cleanup 검토 보완
+
+독립 P2 검토가 생성 응답 전에 중단되면 기존 owner manifest가 없다는 반례를 재현했다. Docker 호출 전 atomic name+nonce manifest와 생성 nonce label을 기록하고, ID 반환과 무관하게 소유권을 확인한 immutable ID로 정리하도록 보완했다. 같은 이름의 다른 nonce는 삭제하지 않으며 Python -O에서도 검사를 유지한다. 최종 SQL33은 175.519초, actual cleanup7methods(ownership5와 Docker4조건을 담은 2methods)는 5.284초에 통과했다. classifier10과 optimized ownership5도 통과했다. 수정 source56의 hash 및 raw 결과는 [cleanup-fix 증거](evidence/D-065-constraints/cleanup-fix/results.json)에 있다. 최초108.805초 실행은 역사적 증거로 보존하고 이번 수정의 최종 검증과 구별한다. 최종 독립 재검토·전체 CI는 별도 확인한다.
