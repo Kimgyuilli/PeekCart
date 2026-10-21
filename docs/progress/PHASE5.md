@@ -58,6 +58,12 @@
 
 [최신 PR CI39487696753](https://github.com/Kimgyuilli/PeekCart/actions/runs/39487696753)가 성공한 뒤 병합 SHA는 `a98ae7d51e3f266a0d9a89996f4a2dd2483af4eb`다. [main CI39568336863](https://github.com/Kimgyuilli/PeekCart/actions/runs/39568336863)는 전체 검사와 여섯 publish가 성공했다. D-064는 전체 완료로 이동하지 않고 부분 완료를 유지한다. 운영 배포와 실제 결제·환불은 실행하지 않았다.
 
+### D-065 첫 적재 lineage writer 부분 병합
+
+[PR201](https://github.com/Kimgyuilli/PeekCart/pull/201)은 ID 예약과 첫 INSERT의 root 기록을 같은 트랜잭션에 두고, 중복·예약 ID 충돌을 affected count와 저장 ID·좌표로 함께 구분한다. ID 간격은 허용하며 구형 writer 혼재를 안전하다고 주장하지 않는다.
+
+최종 head `b288e3a1ff5975ed0edf2e26d02d0b286992a529`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/201#issuecomment-6311540940)는 unit 4개와 실제 MySQL 67개를 직접 실행해 failure/error/skip 없이 통과했다. [PR CI39568431878](https://github.com/Kimgyuilli/PeekCart/actions/runs/39568431878) 성공 후 정상 병합 SHA는 `4a4a36a12a3d914d6bc0379ded94bc0123c4d370`다. [main CI39570795532](https://github.com/Kimgyuilli/PeekCart/actions/runs/39570795532)는 전체 검사와 여섯 publish가 성공했다. writer 범위만 부분 완료이며 offline fixture 제약 검증은 PR202, 실제 Flyway contract/restart와 signed gateway는 무료 후속으로 남는다. 운영 표본·GKE·운영 DDL·replay 개방은 실행하지 않았다.
+
 ## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
 
 ## 최종 부채·소유권·증거 대조

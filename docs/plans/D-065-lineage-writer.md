@@ -58,3 +58,8 @@ ADR-0043을 production 코드 전에 작성했다. 별도 AUTO_INCREMENT 예약 
 
 
 PR 준비 단계에서 #196 최종 `6b2b534`와 실제 #198 main `ec677b3`을 `63ce6bf`로 반영했다. 검증된 D065 소유 12개 source/test/migration/script 파일은 해시가 모두 같고 상위 변경은 별도 product test/doc뿐이다. 최종 전체 CI가 이 통합 상태를 확인한다. 재현 기록은 [증거 묶음](evidence/D-065-lineage-writer/README.md)에 보존한다.
+
+
+## 병합 후 확인 (2026-10-21)
+
+최종 head `b288e3a1ff5975ed0edf2e26d02d0b286992a529`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/201#issuecomment-6311540940)는 unit 4개와 실제 MySQL 67개를 직접 실행해 failure/error/skip 없이 통과했다. [PR CI39568431878](https://github.com/Kimgyuilli/PeekCart/actions/runs/39568431878) 성공 후 정상 병합 SHA는 `4a4a36a12a3d914d6bc0379ded94bc0123c4d370`다. [main CI39570795532](https://github.com/Kimgyuilli/PeekCart/actions/runs/39570795532)는 전체 검사와 여섯 publish가 성공했다. writer 범위만 부분 완료이며 offline fixture 제약 검증은 PR202, 실제 Flyway contract/restart와 signed gateway는 무료 후속으로 남는다. 운영 표본·GKE·운영 DDL·replay 개방은 실행하지 않았다.
