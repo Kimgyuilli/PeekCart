@@ -783,3 +783,11 @@ D-075는 부분 완료로 남는다. P1 목표 TPS/backlog/초과 대응, P3 정
 PR [#204](https://github.com/Kimgyuilli/PeekCart/pull/204) 최종 head `48fca6eeaa6e65ba16f6e1cf75bc7dc473865c70`, merge `43a1745a548b24eb85a88ba3e5ecd77bc0742326`. 독립 [최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/204#issuecomment-6313836584)에서 세 P2 수정과 최신 main 통합을 확인했다. Actions의 실제 41 methods/16 mutants, 역사 덮어쓰기 거부·복구 허용, 정확 YAML 조회/fetch 실패 전파를 검토했다. PR CI39584448650과 실제 main CI39586582112/여섯 publish 모두 SUCCESS를 Root가 조회했다.
 
 명시 base의 ID 감소와 현재 빈/중복/손상 archive를 검사한다. standalone만으로 겉보기 정상인 감소를 알아내거나, 부채 전체 완료의 의미를 검증한다는 뜻은 아니다. TASKS 행은 원본문·순서를 보존해 이동했고 이 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.
+
+## 2026-10-21 — D-103 독립 검토·병합 후 확인 완료
+
+PR [#206](https://github.com/Kimgyuilli/PeekCart/pull/206) 최종 head `6b99cb90adf0dda127297da8e30f044e86756601`, merge `3bb01bbc3190a9aa38a7b4e6faec7bb767117808`. 독립 [최신 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314103635)는 실제 숫자 반례·정확 oracle·통합 delta와 Actions 9 methods/10 mutants를 확인했다. wrapper 45 PASS/원자료 cache 1 skip은 전체 역사 raw 검증으로 확대하지 않는다.
+
+PR CI39586719840 attempt1의 payment bootJar 의존성 해석 실패는 테스트 시작 전 발생했고 원로그를 보존했다. 동일 12 URL의 이후 HTTP200·의존성 설정 불변을 확인한 뒤 source 변경 없이 실패 잡만 재실행했다. attempt2에서 실제 payment 54 suites/334 tests/실패·오류·skip0 및 전체 gate SUCCESS를 확인했다. 당시 원인을 나중의 가용성으로 단정하지 않는다. [재실행·병합 근거](https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314417217). 실제 main CI39589440384와 여섯 publish 모두 SUCCESS를 Root가 조회했다.
+
+역사 계약의 선택 필드 생략 호환을 유지하고 필수 metadata/items 내부 계약과 정확 정수 판정을 검증한다. D104의 모집단 정정은 별도 작업이다. TASKS 행은 상태 외 본문·순서를 보존해 이동했다. 이 완료 기록 자체의 최종 PR 검증·병합은 캠페인 기록 작업에 남아 있다.
