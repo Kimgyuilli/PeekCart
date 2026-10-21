@@ -86,3 +86,8 @@
 - 주입을 제거한 파일 hash `083784f244e6bdb7c7348a7be420d7f61c6be6aa3928fd590e51ea698c4ad19c`를 확인한 뒤 원 seed 전체 product를 실행했다. 세션 23687, 1분22초 exit 0, 실제 236개/실패 0/오류 0/skip 0이었다(`/private/tmp/d064-product-bounded-full.log`, 해당 클래스 XML `/private/tmp/d064-product-bounded-full.xml`). Ryuk 정리 뒤 기존 momens 3개만 확인하고 heavy slot을 반환했다.
 - 이 소스를 test commit `aef4201`에 기록한 뒤 실제 #198 main `ec677b376ff69b1e77c43abf4a073722a58c786f`를 정상 merge했다(`dc30479`). 전체 authored diff `a7ffa11..aef4201`과 `ec677b..dc30479`는 byte-identical, SHA256 `54b1c0ca2f7d53775384a71211c7bd4679eea7cf773c4f9cea4292b2fa76ae14`다. test 파일 hash도 위와 같다. #198의 별도 cache fallback test/doc 변경은 최종 전체 CI에서 통합 검증하며, 236개 로컬 결과는 이 merge 전 증거다.
 - 최초 timeout 원인은 여전히 미확정이고 D-078 관련 잔여를 유지한다. P2 보완과 main 통합을 포함한 최종 head 독립 재검토·전체 CI가 필요하며 merge는 승인되지 않았다.
+
+
+## 병합 후 확인 (2026-10-21)
+
+최종 head `6b2b534e8c512868a1330a3aaa8399c5ea84ca7a`의 [독립 재검토](https://github.com/Kimgyuilli/PeekCart/pull/196#issuecomment-6300177654)와 [PR CI39487696753](https://github.com/Kimgyuilli/PeekCart/actions/runs/39487696753)가 통과했다. 정상 병합 SHA `a98ae7d51e3f266a0d9a89996f4a2dd2483af4eb`의 [main CI39568336863](https://github.com/Kimgyuilli/PeekCart/actions/runs/39568336863)는 전체 검사와 여섯 publish가 성공했다. 무료 주문 ID 계약 범위만 부분 완료이며 실 PG·외부 checkout·운영 전환은 미검증이다. 최초 product barrier timeout 원인 미확정은 D-078 후속으로 유지한다.

@@ -73,3 +73,8 @@ P1~P8 로컬 구현 및 검증을 완료하고 최종 SHA/PR을 전달한다. �
 
 
 독립 검토 P2에 따라 진단 DB 연결·읽기·SQL 실행도 유한 timeout으로 바꾸고 관찰 오류가 worker 판정을 가리지 않도록 했다. 실제 무응답 소켓·느린 SQL을 포함한 4개 집중 검사 및 진단 SQL 실패/참여자 누락 음성 대조를 검증했다. 원 seed 전체 product는 236개 통과했다. 이후 실제 main `ec677b3`을 `dc30479`로 통합했고 전체 authored patch와 해당 test 파일의 byte-identical을 확인했다. 최종 CI·재검토는 대기이며 최초 비주입 timeout 원인 해소를 주장하지 않는다.
+
+
+## 병합 후 확인 (2026-10-21)
+
+최종 head `6b2b534e8c512868a1330a3aaa8399c5ea84ca7a`의 [독립 재검토](https://github.com/Kimgyuilli/PeekCart/pull/196#issuecomment-6300177654)와 [PR CI39487696753](https://github.com/Kimgyuilli/PeekCart/actions/runs/39487696753)가 통과했다. 정상 병합 SHA `a98ae7d51e3f266a0d9a89996f4a2dd2483af4eb`의 [main CI39568336863](https://github.com/Kimgyuilli/PeekCart/actions/runs/39568336863)는 전체 검사와 여섯 publish가 성공했다. 무료 주문 ID 계약 범위만 부분 완료이며 실 PG·외부 checkout·운영 전환은 미검증이다. 최초 product barrier timeout 원인 미확정은 D-078 후속으로 유지한다.

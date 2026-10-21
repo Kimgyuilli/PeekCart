@@ -49,6 +49,15 @@
 
 [최신 PR CI39484673767](https://github.com/Kimgyuilli/PeekCart/actions/runs/39484673767) 성공 후 정상 병합 SHA는 `ec677b376ff69b1e77c43abf4a073722a58c786f`다. [main CI39487364120](https://github.com/Kimgyuilli/PeekCart/actions/runs/39487364120)는 전체 검사와 여섯 publish가 성공했다. TASKS 완료 행 이동은 상태 외 본문, 전체 D-ID 다중집합과 유일성을 확인했다.
 
+
+### D-064 PG 주문 식별자 무료 계약 부분 병합
+
+[PR196](https://github.com/Kimgyuilli/PeekCart/pull/196)의 최종 head `6b2b534e8c512868a1330a3aaa8399c5ea84ca7a`는 사용자 승인에 따라 canonical PG 주문 ID를 생성·저장하고 checkout 준비 응답부터 승인·조회·복구까지 같은 ID를 유지한다. 기존 NULL 행은 다시 쓰지 않으며 외부 인증에 사용한 ID를 서버에서 임의 변경하지 않는다. 실제 PG와 외부 checkout 연결은 미검증이다.
+
+[최종 독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/196#issuecomment-6300177654)는 E2E 클라이언트 계약 보완과 유한 timeout 진단을 확인했다. 작성자 실제 Compose A/E, 최종 product 236개 및 진단 음성 대조의 원본·hash를 대조했고, 리뷰어는 PG stub 41개와 smoke 59개를 직접 실행했다. 최초 product 동시성 barrier timeout 원인은 아직 미확정이며 D-078 무료 후속 분석으로 남긴다. 통과를 원인 해소로 주장하지 않는다.
+
+[최신 PR CI39487696753](https://github.com/Kimgyuilli/PeekCart/actions/runs/39487696753)가 성공한 뒤 병합 SHA는 `a98ae7d51e3f266a0d9a89996f4a2dd2483af4eb`다. [main CI39568336863](https://github.com/Kimgyuilli/PeekCart/actions/runs/39568336863)는 전체 검사와 여섯 publish가 성공했다. D-064는 전체 완료로 이동하지 않고 부분 완료를 유지한다. 운영 배포와 실제 결제·환불은 실행하지 않았다.
+
 ## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
 
 ## 최종 부채·소유권·증거 대조
