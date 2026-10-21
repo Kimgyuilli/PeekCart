@@ -1,0 +1,38 @@
+test_active_id_loss_is_failure_with_base (__main__.HarnessContextTest.test_active_id_loss_is_failure_with_base) ... ok
+test_archive_return_to_active_preserves_total_but_is_regression (__main__.HarnessContextTest.test_archive_return_to_active_preserves_total_but_is_regression) ... ok
+test_completion_move_and_new_archive_row_are_allowed (__main__.HarnessContextTest.test_completion_move_and_new_archive_row_are_allowed) ... ok
+test_cross_document_duplicate_is_failure (__main__.HarnessContextTest.test_cross_document_duplicate_is_failure) ... ok
+test_digest_retains_status_and_plan_summary (__main__.HarnessContextTest.test_digest_retains_status_and_plan_summary) ... ok
+test_duplicate_archive_id_is_failure (__main__.HarnessContextTest.test_duplicate_archive_id_is_failure) ... ok
+test_empty_archive_and_digest_are_failures (__main__.HarnessContextTest.test_empty_archive_and_digest_are_failures) ... ok
+test_explicit_older_base_is_not_replaced_with_current_head (__main__.HarnessContextTest.test_explicit_older_base_is_not_replaced_with_current_head) ... ok
+test_git_revision_failure_is_propagated (__main__.HarnessContextTest.test_git_revision_failure_is_propagated) ... ok
+test_git_source_failure_is_propagated (__main__.HarnessContextTest.test_git_source_failure_is_propagated) ... ok
+test_git_status_failure_is_not_ignored (__main__.HarnessContextTest.test_git_status_failure_is_not_ignored) ... ok
+test_header_only_archive_is_failure (__main__.HarnessContextTest.test_header_only_archive_is_failure) ... ok
+test_incomplete_archive_status_is_failure (__main__.HarnessContextTest.test_incomplete_archive_status_is_failure) ... ok
+test_indented_duplicate_id_is_not_ignored (__main__.HarnessContextTest.test_indented_duplicate_id_is_not_ignored) ... ok
+test_invalid_utf8_base_source_is_failure (__main__.HarnessContextTest.test_invalid_utf8_base_source_is_failure) ... ok
+test_malformed_debt_id_is_failure (__main__.HarnessContextTest.test_malformed_debt_id_is_failure) ... ok
+test_missing_archive_is_failure (__main__.HarnessContextTest.test_missing_archive_is_failure) ... ok
+test_missing_base_archive_does_not_fall_back_to_current (__main__.HarnessContextTest.test_missing_base_archive_does_not_fall_back_to_current) ... ok
+test_missing_historical_objects_fail_instead_of_skipping (__main__.HarnessContextTest.test_missing_historical_objects_fail_instead_of_skipping) ... ok
+test_new_active_debt_is_allowed (__main__.HarnessContextTest.test_new_active_debt_is_allowed) ... ok
+test_no_active_debts_is_valid (__main__.HarnessContextTest.test_no_active_debts_is_valid) ... ok
+test_normal_base_comparison_reports_its_scope (__main__.HarnessContextTest.test_normal_base_comparison_reports_its_scope) ... ok
+test_normal_standalone_explicitly_reports_no_base (__main__.HarnessContextTest.test_normal_standalone_explicitly_reports_no_base) ... ok
+test_optional_final_pipe_uses_actual_final_status (__main__.HarnessContextTest.test_optional_final_pipe_uses_actual_final_status) ... ok
+test_original_d053_overwrite_and_recovery (__main__.HarnessContextTest.test_original_d053_overwrite_and_recovery) ... ok
+test_phase_and_invalid_cli_arguments (__main__.HarnessContextTest.test_phase_and_invalid_cli_arguments) ... ok
+test_plan_archive_decrease_is_not_task_loss (__main__.HarnessContextTest.test_plan_archive_decrease_is_not_task_loss) ... ok
+test_relative_decrease_requires_explicit_base (__main__.HarnessContextTest.test_relative_decrease_requires_explicit_base) ... ok
+test_replacement_id_does_not_hide_loss_at_same_count (__main__.HarnessContextTest.test_replacement_id_does_not_hide_loss_at_same_count) ... ok
+test_unhealthy_base_is_not_a_valid_expected_population (__main__.HarnessContextTest.test_unhealthy_base_is_not_a_valid_expected_population) ... ok
+test_unknown_base_does_not_fall_back_to_current (__main__.HarnessContextTest.test_unknown_base_does_not_fall_back_to_current) ... ok
+test_wrong_archive_heading_is_failure (__main__.HarnessContextTest.test_wrong_archive_heading_is_failure) ... ok
+test_wrong_archive_table_header_is_failure (__main__.HarnessContextTest.test_wrong_archive_table_header_is_failure) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 13.522s
+
+OK
