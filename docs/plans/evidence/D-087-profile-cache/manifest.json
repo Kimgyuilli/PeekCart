@@ -1,0 +1,55 @@
+{
+  "contract": "Original downloaded bytes; gzip rows verify decompressed raw hash. ZIPs are unchanged API response archives.",
+  "source_base": "c9e12d695e21c348a82da78c6577eac7b2dd4d89",
+  "raw_pattern_scan": "GitHub token/JWT/private key forms:0 matches; bounded check, not universal secret proof",
+  "files": [
+    {
+      "file": "pr214-user.log.gz",
+      "raw_bytes": 266801,
+      "raw_sha256": "2492d3a3182f01728fc14d9494e9c3f604f2619ade86d7f9ead9b02b4787111e",
+      "stored_sha256": "b543fb09a5f1cea0aa22718ad4c8df0661253f7c39965dbc648e3494eea120fd"
+    },
+    {
+      "file": "pr189-user.log.gz",
+      "raw_bytes": 265981,
+      "raw_sha256": "84fae3fad7d087efc1ea0e946e623393d13ffd2f14f21a55790f6879855854a3",
+      "stored_sha256": "9581f5a2e46d067290d5ff8efce492eba3865a346ca04cb3b0a2dd665efd0531"
+    },
+    {
+      "file": "pr214-artifacts.json.gz",
+      "raw_bytes": 14365,
+      "raw_sha256": "761b8a8ee3512d5bbe48f5ef124285cf3d7c579142150615c84efb764b89db7f",
+      "stored_sha256": "7cd235b44be8f607ead00a0fdbdbfe6b667828311844ccf2b032c815809f29a2"
+    },
+    {
+      "file": "pr189-artifacts.json.gz",
+      "raw_bytes": 14245,
+      "raw_sha256": "f4518f027ca6284b18bcd3ea71f43ef56ebee10a83be3a3ed7a5a77d4c4eb1c8",
+      "stored_sha256": "af1cfb408746b0711db3be10b647be89086516361039d0a14fd8bd48ac00b9ba"
+    },
+    {
+      "file": "pr214-jobs.json.gz",
+      "raw_bytes": 48116,
+      "raw_sha256": "2ba928019cf5aeec3213f4d201e7a6bbe69639ecbca95be8e8e6560dd0dbd0a4",
+      "stored_sha256": "43894bf0bdb24f632cdfb68e0ef1224de8190aede1ee855d6a1539b4a75a16cb"
+    },
+    {
+      "file": "pr189-state.json.gz",
+      "raw_bytes": 348,
+      "raw_sha256": "04255275d1551ddd3efdd95ca060a16ec87d1d42361168d57d85a92af2579aa6",
+      "stored_sha256": "0a7d44f234adeee2c619c4a0e79194befe43e8861ab44bdd83aa0b3dbc79c284"
+    },
+    {
+      "file": "pr214-user-artifact.zip",
+      "raw_bytes": 67125,
+      "raw_sha256": "946db49fce9fd182c5bb8a23f6e5bffc1ee1eef94f464c14e5a31c3da8fe2092",
+      "stored_sha256": "946db49fce9fd182c5bb8a23f6e5bffc1ee1eef94f464c14e5a31c3da8fe2092"
+    },
+    {
+      "file": "pr189-user-artifact.zip",
+      "raw_bytes": 67002,
+      "raw_sha256": "5363306d0441862e93e489fe0611ae57b39faefd96e74e99dbb4ad36266f1d49",
+      "stored_sha256": "5363306d0441862e93e489fe0611ae57b39faefd96e74e99dbb4ad36266f1d49"
+    }
+  ]
+}
