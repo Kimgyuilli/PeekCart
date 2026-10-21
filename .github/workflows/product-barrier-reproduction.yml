@@ -38,15 +38,25 @@ jobs:
           java -version 2> build/product-barrier-reproduction/java-version.txt
           sha256sum product-service/src/test/java/com/peekcart/product/infrastructure/StockReservationLockBoundaryIntegrationTest.java > build/product-barrier-reproduction/test-source.sha256
           git status --porcelain > build/product-barrier-reproduction/source-status.txt
-          printf '%s\n' './gradlew :product-service:build -PtestSeed=1792523372921 --no-daemon --no-parallel --max-workers=1 --console=plain --info' > build/product-barrier-reproduction/command.txt
+          cat > build/product-barrier-reproduction/order.init.gradle <<'GRADLE'
+          gradle.beforeProject { project ->
+              if (project.path == ':product-service') {
+                  project.tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+                      beforeTest { descriptor -> logger.lifecycle("D078_TEST_START ${descriptor.className}#${descriptor.name}") }
+                  }
+              }
+          }
+          GRADLE
+          printf '%s\n' './gradlew -I build/product-barrier-reproduction/order.init.gradle :product-service:build -PtestSeed=1792523372921 --no-daemon --no-parallel --max-workers=1 --console=plain --info' > build/product-barrier-reproduction/command.txt
           printf '%s\n' 'SPRING_PROFILES_ACTIVE=test' 'testSeed=1792523372921' > build/product-barrier-reproduction/environment.txt
-          ./gradlew :product-service:build -PtestSeed=1792523372921 --no-daemon --no-parallel --max-workers=1 --console=plain --info 2>&1 | tee build/product-barrier-reproduction/gradle.log
+          ./gradlew -I build/product-barrier-reproduction/order.init.gradle :product-service:build -PtestSeed=1792523372921 --no-daemon --no-parallel --max-workers=1 --console=plain --info 2>&1 | tee build/product-barrier-reproduction/gradle.log
       - name: Verify original barrier test actually ran
         run: |
           python3 - <<'PYTHON'
           import xml.etree.ElementTree as ET
           root = ET.parse('product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest.xml').getroot()
-          cases = [case for case in root.findall('testcase') if case.get('name', '').removesuffix('()') == 'concurrentReservations_convergeByOptimisticLock']
+          names = {'concurrentReservations_convergeByOptimisticLock()', '동시 예약은 낙관락으로 수렴한다 — 오버셀링 0, 충돌은 재시도 대상'}
+          cases = [case for case in root.findall('testcase') if case.get('classname') == 'com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest' and case.get('name') in names]
           assert len(cases) == 1 and not any(cases[0].find(tag) is not None for tag in ['skipped', 'failure', 'error']), 'original barrier case missing/skipped/failed'
           assert int(root.get('tests', '0')) > 0 and int(root.get('failures', '0')) == 0 and int(root.get('errors', '0')) == 0, 'invalid barrier suite result'
           print('Original barrier case executed; raw XML/log retained; PASS does not establish the historical failure cause')
