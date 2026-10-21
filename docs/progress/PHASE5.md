@@ -835,3 +835,7 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 정상 병합 SHA는 `7320ffdd4a72a1bdde77bc9424c8d11ecff18ba3`다. 실제 [main CI39629072400](https://github.com/Kimgyuilli/PeekCart/actions/runs/39629072400) 및 publish 검증은 진행 중이다. 실제 Slack·GKE·운영 DB 전송은 검증하지 않았고, D-092는 사용자/운영 웹훅 분리 PR219와 실제 Secret 소유·전환, 외부 전달·FAILED 복구 조건이 남은 부분 완료다. D-093 완료 기록은 병합 후 확인까지 보류한다.
 
 실제 main CI39629072400은 테스트·E2E·gate와 여섯 publish가 모두 개별 성공으로 종료됐다. 따라서 D-093은 PR188의 실제 지연/timeout 대조, PR217에서 초기 준비 통과 뒤 실제 Grafana 평가·전달 검증, 두 병합의 main 검사를 근거로 완료 처리한다. TASKS의 원래 본문을 보존해 완료 아카이브에 옮겼다. D-092는 무료 로컬 경로만 부분 완료이며, 실제 외부 전달과 운영 복구를 확인한 것으로 바꾸지 않는다.
+
+## 2026-10-22 — D-092 사용자·운영 웹훅 분리 부분 병합
+
+[PR219](https://github.com/Kimgyuilli/PeekCart/pull/219) 최종 head `8c55ef3ecfdef8a978fdf15fad8e220ad2514a40`은 사용자 알림과 운영 경보를 별도 필수 URL로 바꾸고 누락·동일 endpoint 설정을 시작 시 거부한다. [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/219#issuecomment-6320677035)는 사용자·운영 loopback 분리, 실패 설정 음성 대조, signed 경로 증거를 직접 확인했다. [일반 CI39629291268](https://github.com/Kimgyuilli/PeekCart/actions/runs/39629291268)과 signed CI39629291259가 성공했다. 정상 병합 SHA는 `b2e862085de695f601725717a7eeae68ca83aecf`이고 실제 main CI39632767287과 여섯 publish는 진행 중이다. 실제 두 Secret의 소유·값·전환 및 외부 Slack/GKE 전달은 여전히 미검증이며 D-092 전체 완료가 아니다.
