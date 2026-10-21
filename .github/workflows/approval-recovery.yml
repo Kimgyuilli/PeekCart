@@ -1,0 +1,109 @@
+name: Signed approval recovery
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docker-compose.approval-recovery.yml'
+      - 'docker-compose.signed-gateway.yml'
+      - 'scripts/approval-recovery/**'
+      - 'scripts/e2e/pg-stub/**'
+      - 'scripts/signed-gateway/**'
+      - 'scripts/ci-image-identity.sh'
+      - 'scripts/e2e/mysql-init/**'
+      - 'Dockerfile'
+      - '*-service/src/main/**'
+      - 'gateway/src/main/**'
+      - 'common/src/main/**'
+      - 'peekcart-common-*/src/main/**'
+      - 'internal-token-contract/src/main/**'
+      - '**/build.gradle'
+      - 'gradle/**'
+      - 'settings.gradle'
+      - '.github/workflows/approval-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: approval-recovery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [user-service, gateway, product-service, payment-service]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: SERVICE=${{ matrix.service }}
+          tags: ${{ matrix.service }}:ci
+          load: true
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+      - name: Record existing image identity contract
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: |
+          set -euo pipefail
+          mkdir -p image
+          docker save "$SERVICE:ci" | gzip > image/image.tar.gz
+          bash scripts/ci-image-identity.sh record "$SERVICE:ci" image
+          git rev-parse HEAD > image/source-head.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: recovery-image-${{ matrix.service }}
+          path: image/
+          retention-days: 2
+          if-no-files-found: error
+
+  recovery:
+    needs: images
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: recovery-image-*
+          path: _images
+      - name: Existing fixture controls and exact image load
+        run: |
+          set -euo pipefail
+          python3 -m pip install pyyaml
+          python3 -B scripts/signed-gateway/test_contract.py
+          python3 -B scripts/approval-recovery/test_contract.py
+          python3 -B scripts/e2e/pg-stub/stub.py --self-test
+          for image in user-service gateway payment-service product-service; do
+            test "$(cat "_images/recovery-image-$image/source-head.txt")" = "$(git rev-parse HEAD)"
+            bash scripts/ci-image-identity.sh load "$image:ci" "_images/recovery-image-$image"
+          done
+          docker build -t signed-gateway-runner:ci scripts/signed-gateway/runner
+          docker build -t approval-recovery-pg:ci scripts/e2e/pg-stub
+      - name: Actual signed ADMIN and distributed recovery
+        run: python3 -B scripts/approval-recovery/lab.py --evidence build/recovery
+      - name: Recover only this project's resources and scan evidence
+        if: always()
+        timeout-minutes: 2
+        run: python3 -B scripts/signed-gateway/lab.py cleanup --evidence build/recovery
+      - name: Complete recovery evidence and actual artifact negative controls
+        run: python3 -B scripts/approval-recovery/evidence.py build/recovery "$(git rev-parse HEAD)" _images
+      - name: Final secret scan before upload
+        if: always()
+        id: scan
+        run: python3 -B scripts/signed-gateway/lab.py sanitize --evidence build/recovery
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.scan.outcome == 'success' }}
+        with:
+          name: signed-approval-recovery
+          path: build/recovery/
+          retention-days: 7
+          if-no-files-found: error
