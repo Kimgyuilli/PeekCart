@@ -1,0 +1,55 @@
+{
+  "comparison_base": "4a4a36a12a3d914d6bc0379ded94bc0123c4d370",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 31250,
+      "sha256": "1c2de91d93476ba404ba6d3860651155454a65b2603d66edd9e0f9294e712db1"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/check-mutants.py",
+      "bytes": 2576,
+      "sha256": "d755a117b04dd505d9835d207103a706c4d40170acaeb7f82ae79685d75a9329"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/current-base.txt",
+      "bytes": 73,
+      "sha256": "2d8ad2f39c6a3180e34257e236f935562c958b0f213eaed93e1da24ebab40bd7"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/current-health.txt",
+      "bytes": 66,
+      "sha256": "767c8e46e322a1d3f4e81f1926d12867f1e60f2cc7cdd1591383144123ddf3a6"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/history.json",
+      "bytes": 776,
+      "sha256": "a03485bca55de61cf97195d2cd2e88a09ad37e9f93fe421f86966ae3134fe7e3"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/mutant-results.txt",
+      "bytes": 803,
+      "sha256": "8382ded9b96708189bab03b61f0fbba74ac66d147b263e4e69d505c517e211c1"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/selftest-results.txt",
+      "bytes": 4227,
+      "sha256": "be6fc5c46f30168cfac299e90a6a204c0ae46086702da3158941f3dda2ace3af"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/workflow-check.txt",
+      "bytes": 148,
+      "sha256": "affc755342d21c58c4abd2f55a5264998c8addbf23d09641ba80690e225d6534"
+    },
+    {
+      "path": "scripts/harness-context-selftest.py",
+      "bytes": 12084,
+      "sha256": "4ba88960276960e180fb6ae161b9236d1199d8cbee0fbb8cb8bdc15c608bf601"
+    },
+    {
+      "path": "scripts/harness-context.sh",
+      "bytes": 11146,
+      "sha256": "158b3fef7ca20b6cce0fe575f0644063677e22c1c0e37f20095aa4b2afda1e2d"
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+PASS: workflow adds only Harness archive health; PR base SHA/push before and fetch failure propagation are explicit. Existing jobs/steps unchanged.
