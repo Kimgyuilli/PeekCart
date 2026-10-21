@@ -415,6 +415,38 @@ class PreservationTest(unittest.TestCase):
         self.write('docs/index.md', '[source](%73ource.md#section)\n')
         self.check(False)
 
+    def test_history_append_without_original_final_newline(self):
+        self.write(DONE, self.read(DONE).rstrip('\n'))
+        self.commit_changes()
+        self.write(DONE, self.read(DONE) + '\nNew history.\n')
+        self.check()
+
+    def test_footer_stays_after_existing_done_row(self):
+        self.write(DONE, '# Done\n' + OLDROW + FOOTER + 'New correction append.\n')
+        self.check()
+        self.write(DONE, '# Done\n' + FOOTER + OLDROW)
+        self.check(False)
+
+    def test_unquoted_html_source_link_is_not_ignored(self):
+        self.write('docs/index.md', '<a href=source.md#section>source</a>\n')
+        self.commit_changes()
+        self.move_source()
+        self.write('docs/index.md', '<a href=source.md#section>source</a>\n')
+        self.check(False)
+        self.write('docs/index.md', '[source](plans/done/source.md#section)\n')
+        # Unsupported original HTML still requires explicit conversion, never silent acceptance.
+        self.check(False)
+
+    def test_fragment_and_query_are_structurally_distinct(self):
+        self.write('docs/guide.md', '# Guide\n<a id="guide?x"></a>\n')
+        self.write('docs/source.md', SOURCE.replace('guide.md#guide', 'guide.md?x?#guide'))
+        self.commit_changes()
+        target = self.move_source()
+        self.write(target, self.read(target).replace('(guide.md?x?#guide)', '(../../guide.md?x?#guide)'))
+        self.check()
+        self.write(target, self.read(target).replace('(../../guide.md?x?#guide)', '(../../guide.md#guide?x)'))
+        self.check(False)
+
     def test_source_hash_mismatch_rejected(self):
         self.move_source(); self.manifest['sources'][0]['sha256'] = '0' * 64; self.check(False)
 

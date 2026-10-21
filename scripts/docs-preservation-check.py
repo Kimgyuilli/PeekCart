@@ -100,7 +100,7 @@ def links(text):
         if re.match(r'^\s{0,3}</?[A-Za-z][A-Za-z0-9-]*(?:\s|/?>)', line):
             require(bool(re.fullmatch(r"\s*<(?:a|h[1-6])\s+(?:id|name)=[\"'][^\"']+[\"']\s*>(?:</(?:a|h[1-6])>)?\s*", line, re.I)),
                     'Unsupported HTML block in preservation scope')
-    require('<!--' not in masked and not re.search(r"\b(?:href|src)\s*=\s*[\"']", masked, re.I),
+    require('<!--' not in masked and not re.search(r"\b(?:href|src)\s*=", masked, re.I),
             'Unsupported HTML comment/link: preserve literally or use Markdown links')
     require(not re.search(r'^ {4,}.*(?:\]\(|^\s*\[.*\]:)', masked, re.M),
             'Unsupported indented-code/list link ambiguity')
@@ -127,7 +127,7 @@ def references_source(text, sources):
     decoded = unquote(text).replace("\\", "")
     for source in sources:
         name = re.escape(PurePosixPath(source).name)
-        if re.search(r'(?:\]\(\s*|\]:\s*|(?:href|src)\s*=\s*["\'])[^\n]*' + name, decoded, re.I):
+        if re.search(r'(?:\]\(\s*|\]:\s*|(?:href|src)\s*=\s*)[^\n]*' + name, decoded, re.I):
             return True
     return False
 
@@ -269,7 +269,7 @@ class Checker:
                 if fragment:
                     require(actual.is_file() and actual.suffix == '.md' and fragment in anchors(actual.read_bytes().decode('utf-8')),
                             f'Broken local anchor: {path}: {target}')
-            changes.append((start, end, f'@@LOCAL[{dest}#{fragment}?{query}]'))
+            changes.append((start, end, '@@LOCAL[' + json.dumps([dest, fragment, query], ensure_ascii=False, separators=(',', ':')) + ']'))
         for start, end, value in reversed(changes): text = text[:start] + value + text[end:]
         # Historical blob URLs remain opaque even when written as bare URLs in prose/code.
         text = re.sub(r"[A-Za-z][A-Za-z0-9+.-]*://[^\s<>()]+", lambda m: f"@@URL[{sha(m.group())}]", text)
@@ -341,10 +341,6 @@ class Checker:
             if match: rows.append((match.group(1), line))
         return rows
 
-    @staticmethod
-    def skeleton(text):
-        return ''.join(line for line in text.splitlines(keepends=True) if not ROW.match(line))
-
     def tasks(self):
         originals = {path: self.rows(self.corrected(path)) for path in (TASKS, DONE)}
         currents = {path: self.rows(self.current(path)) for path in (TASKS, DONE)}
@@ -379,10 +375,31 @@ class Checker:
                 require('✅' in status and re.search(r'https://github\.com/[^/]+/[^/]+/pull/[0-9]+', status),
                         f'Moved row lacks completion/PR evidence: {key}')
         for path in (TASKS, DONE):
-            before = self.canonical(self.skeleton(self.corrected(path)), path, before=True)
-            after = self.canonical(self.skeleton(self.current(path)), path, validate=True)
-            if path == DONE or moved:
-                require(after.startswith(before), f'Existing footer/non-row history changed: {path}')
+            if path != DONE and not moved: continue
+            retained = {key for key, _ in originals[path] if key not in moved}
+
+            def history(text, before):
+                # Preserve where the existing rows occur among header/footer lines.
+                # Ignore only newly appended/moved rows; their bodies/order are checked above.
+                canonical = self.canonical(text, path, before=before, validate=not before)
+                result = []
+                for line in canonical.splitlines(keepends=True):
+                    match = ROW.match(line)
+                    if match:
+                        if match.group(1) in retained: result.append(('row', match.group(1)))
+                    else:
+                        result.append(('text', line))
+                return result
+
+            before = history(self.corrected(path), True)
+            after = history(self.current(path), False)
+            prefix_preserved = after[:len(before)] == before
+            # A byte-preserving append may extend an original final line without LF.
+            final_line_append = (before and len(after) >= len(before) and before[-1][0] == 'text'
+                                 and after[len(before) - 1][0] == 'text'
+                                 and after[:len(before) - 1] == before[:-1]
+                                 and after[len(before) - 1][1].startswith(before[-1][1]))
+            require(prefix_preserved or final_line_append, f'Existing row/footer interleave changed: {path}')
 
     def protected(self):
         paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', self.base, 'docs'],
