@@ -1,0 +1,378 @@
+{
+  "run_id": 39630546332,
+  "job_id": 119327788981,
+  "artifact_id": 12359776352,
+  "head": "b933806004801b10e0617c32626af691bea4df76",
+  "branch_base": "8f0d2ee091bc2ce08a4c19e2ca3678d406559d34",
+  "checkout": {
+    "parents": [
+      "7320ffdd4a72a1bdde77bc9424c8d11ecff18ba3",
+      "b933806004801b10e0617c32626af691bea4df76"
+    ],
+    "sha": "b09fd148271c5ea7f57a9fd334e655bee4dbb9cb"
+  },
+  "seed": "1792598420536",
+  "fixture_sha256": "60bbd0ec4fb9bca8f97f7fa93650e17a0e5d6b128d5fce45e3d5f4127535d568",
+  "module": {
+    "suites": 47,
+    "tests": 240,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "target": {
+    "name": "com.peekcart.product.infrastructure.StockRetryLoadIntegrationTest",
+    "tests": "4",
+    "skipped": "0",
+    "failures": "0",
+    "errors": "0",
+    "timestamp": "2026-10-21T16:02:10.683Z",
+    "hostname": "runnervm8k3b6",
+    "time": "88.263"
+  },
+  "testcases": [
+    {
+      "name": "[1] selected=FIXED",
+      "classname": "com.peekcart.product.infrastructure.StockRetryLoadIntegrationTest",
+      "time": "7.29"
+    },
+    {
+      "name": "[2] selected=JITTER",
+      "classname": "com.peekcart.product.infrastructure.StockRetryLoadIntegrationTest",
+      "time": "5.389"
+    },
+    {
+      "name": "[1] selected=FIXED",
+      "classname": "com.peekcart.product.infrastructure.StockRetryLoadIntegrationTest",
+      "time": "36.945"
+    },
+    {
+      "name": "[2] selected=JITTER",
+      "classname": "com.peekcart.product.infrastructure.StockRetryLoadIntegrationTest",
+      "time": "38.635"
+    }
+  ],
+  "diagnostic_rows": 81,
+  "observations": {
+    "transient_FIXED": {
+      "run_key": "retry-6f129eaf-ebde-43e1-acd0-9c7d68c3cc85",
+      "delivery_rows": 9,
+      "failure_rows": 3,
+      "all_failures_optimistic": true,
+      "issued_delay_ms": [
+        1000,
+        1000,
+        5000
+      ],
+      "result_row": "D078_RETRY mode=FIXED run=retry-6f129eaf-ebde-43e1-acd0-9c7d68c3cc85 elapsedNanos=6853702849 result transient sourceRecords=3 duplicateRecords=3 conflicts=3 deliveries={fe386153-a6d7-39d6-90be-9b1f4aafddb6=2, 36df05c2-3786-396c-a665-33d9e8907d51=3, 4ede4d71-03ef-38bd-9253-c3bf7a463fdb=4} finalStock=97 dlq=0",
+      "cleanup_stopped": true,
+      "original_records": 3,
+      "duplicate_records": 3,
+      "original_deliveries": 6,
+      "arrival_rows": [
+        "D078_RETRY mode=FIXED run=retry-6f129eaf-ebde-43e1-acd0-9c7d68c3cc85 elapsedNanos=412868501 arrival event=36df05c2-3786-396c-a665-33d9e8907d51 barrier=2072311246 thread=org.springframework.kafka.KafkaListenerEndpointContainer#6-0-C-1 version=0",
+        "D078_RETRY mode=FIXED run=retry-6f129eaf-ebde-43e1-acd0-9c7d68c3cc85 elapsedNanos=451078891 arrival event=4ede4d71-03ef-38bd-9253-c3bf7a463fdb barrier=2072311246 thread=org.springframework.kafka.KafkaListenerEndpointContainer#6-2-C-1 version=0",
+        "D078_RETRY mode=FIXED run=retry-6f129eaf-ebde-43e1-acd0-9c7d68c3cc85 elapsedNanos=451078900 arrival event=fe386153-a6d7-39d6-90be-9b1f4aafddb6 barrier=2072311246 thread=org.springframework.kafka.KafkaListenerEndpointContainer#6-1-C-1 version=0"
+      ],
+      "generation_rows": [
+        "D078_RETRY mode=FIXED run=retry-6f129eaf-ebde-43e1-acd0-9c7d68c3cc85 elapsedNanos=451357120 generation completed participants=3"
+      ],
+      "asserted_final_db": {
+        "stock": 97,
+        "stock_reservations": 3,
+        "outbox_events": 3,
+        "processed_events": 3
+      },
+      "asserted_dlq_records": 0
+    },
+    "transient_JITTER": {
+      "run_key": "retry-3f9b4f48-6cdb-41c2-ad90-7e71271dfc28",
+      "delivery_rows": 8,
+      "failure_rows": 2,
+      "all_failures_optimistic": true,
+      "issued_delay_ms": [
+        1258,
+        1436
+      ],
+      "result_row": "D078_RETRY mode=JITTER run=retry-3f9b4f48-6cdb-41c2-ad90-7e71271dfc28 elapsedNanos=4966242961 result transient sourceRecords=3 duplicateRecords=3 conflicts=2 deliveries={05bd3d0d-973f-3b81-882c-4a67f2fe4638=3, ffb3b9ff-ca58-314d-9435-25618e75d061=2, df9de5a9-0804-3e15-9625-077895db520a=3} finalStock=97 dlq=0",
+      "cleanup_stopped": true,
+      "original_records": 3,
+      "duplicate_records": 3,
+      "original_deliveries": 5,
+      "arrival_rows": [
+        "D078_RETRY mode=JITTER run=retry-3f9b4f48-6cdb-41c2-ad90-7e71271dfc28 elapsedNanos=3105644650 arrival event=05bd3d0d-973f-3b81-882c-4a67f2fe4638 barrier=937832211 thread=org.springframework.kafka.KafkaListenerEndpointContainer#6-1-C-2 version=0",
+        "D078_RETRY mode=JITTER run=retry-3f9b4f48-6cdb-41c2-ad90-7e71271dfc28 elapsedNanos=3105865117 arrival event=ffb3b9ff-ca58-314d-9435-25618e75d061 barrier=937832211 thread=org.springframework.kafka.KafkaListenerEndpointContainer#6-0-C-2 version=0",
+        "D078_RETRY mode=JITTER run=retry-3f9b4f48-6cdb-41c2-ad90-7e71271dfc28 elapsedNanos=3106858819 arrival event=df9de5a9-0804-3e15-9625-077895db520a barrier=937832211 thread=org.springframework.kafka.KafkaListenerEndpointContainer#6-2-C-2 version=0"
+      ],
+      "generation_rows": [
+        "D078_RETRY mode=JITTER run=retry-3f9b4f48-6cdb-41c2-ad90-7e71271dfc28 elapsedNanos=3106898209 generation completed participants=3"
+      ],
+      "asserted_final_db": {
+        "stock": 97,
+        "stock_reservations": 3,
+        "outbox_events": 3,
+        "processed_events": 3
+      },
+      "asserted_dlq_records": 0
+    },
+    "persistent_FIXED": {
+      "run_key": "retry-96d9ec54-4e89-449c-b996-d5972396e475",
+      "delivery_rows": 4,
+      "failure_rows": 4,
+      "all_failures_optimistic": true,
+      "issued_delay_ms": [
+        1000,
+        5000,
+        30000,
+        -1
+      ],
+      "result_row": "D078_RETRY mode=FIXED run=retry-96d9ec54-4e89-449c-b996-d5972396e475 elapsedNanos=36419942686 result persistent source=order.created/0/4 deliveries=4 dlq=1 finalStock=100 delays=[1000, 5000, 30000, -1]",
+      "cleanup_stopped": true,
+      "inter_failure_ms": [
+        1011.903175,
+        5015.236858,
+        30034.699839
+      ],
+      "asserted_final_db": {
+        "stock": 100,
+        "stock_reservations": 0,
+        "outbox_events": 0,
+        "processed_events": 0
+      },
+      "asserted_dlq_records": 1,
+      "original_coordinate": "order.created/0/4",
+      "coordinate_evidence": "Executed passing source assertions compare observed DLQ original topic/partition/offset/key/value. No separate header/DB dump."
+    },
+    "persistent_JITTER": {
+      "run_key": "retry-c6cc3a57-8eff-459d-af35-818e7c54af50",
+      "delivery_rows": 4,
+      "failure_rows": 4,
+      "all_failures_optimistic": true,
+      "issued_delay_ms": [
+        793,
+        4973,
+        29107,
+        -1
+      ],
+      "result_row": "D078_RETRY mode=JITTER run=retry-c6cc3a57-8eff-459d-af35-818e7c54af50 elapsedNanos=38094541535 result persistent source=order.created/0/5 deliveries=4 dlq=1 finalStock=100 delays=[793, 4973, 29107, -1]",
+      "cleanup_stopped": true,
+      "inter_failure_ms": [
+        813.832498,
+        5013.704844,
+        29133.375956
+      ],
+      "asserted_final_db": {
+        "stock": 100,
+        "stock_reservations": 0,
+        "outbox_events": 0,
+        "processed_events": 0
+      },
+      "asserted_dlq_records": 1,
+      "original_coordinate": "order.created/0/5",
+      "coordinate_evidence": "Executed passing source assertions compare observed DLQ original topic/partition/offset/key/value. No separate header/DB dump."
+    }
+  },
+  "limits": "One finite burst and one injected persistent record per mode. No performance advantage, rate or operating-policy conclusion. Total XML case duration includes unequal startup. WholeCI separately pending.",
+  "xml_members": {
+    "product-service/build/test-results/test/TEST-com.peekcart.global.config.ProductReadBulkheadConfigTest.xml": {
+      "raw_bytes": 619,
+      "sha256": "747a80a0244cb958bd3a656d34ab1889176156481702b1a474b09411f14caf14"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.config.RedisPropertiesBindingTest.xml": {
+      "raw_bytes": 655,
+      "sha256": "8c1e8bbdfbb09fbe4c1b85a5ef5b3df6c3e0991bb75a8f7501ffc382253dca8c"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.config.ResilientCacheErrorHandlerTest$AvailabilityFaults.xml": {
+      "raw_bytes": 912,
+      "sha256": "f513664980e7ac785f2edc136c47f179004fc5dd36c8be69c4a4f8abb0716b69"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.config.ResilientCacheErrorHandlerTest$CorrectnessFaults.xml": {
+      "raw_bytes": 2059,
+      "sha256": "4c3bd297c2ad76419af7cf7416569fcd417b77bd35a630314f9a8919cb26c38e"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.deadletter.DeadLetterLedgerIntegrationTest.xml": {
+      "raw_bytes": 1443,
+      "sha256": "ec2c37465bb6b6dd472ca7718681cd0c2a368135c956721837fb9b11cf1cf005"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.deadletter.DeadLetterMetricsIntegrationTest.xml": {
+      "raw_bytes": 1331,
+      "sha256": "8a9c63516777ee9e2880e106da265b52b50eb764e14f66aa7b0ca7b9c4dd508a"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.deadletter.LedgerOwnerWiringTest.xml": {
+      "raw_bytes": 743,
+      "sha256": "53fe11ff67a3d0ec307a48ac2542b91aed9e01b2f0bf217ca9e72db04d205365"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.idempotency.ProcessedEventCleanupIntegrationTest.xml": {
+      "raw_bytes": 1274,
+      "sha256": "9af85019774c16ccf4a1a17e3fce3011e6095d2ac27593194e9b058a37f8737c"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.outbox.OutboxEventCleanupIntegrationTest.xml": {
+      "raw_bytes": 874,
+      "sha256": "971d1fa0151b1eb09abef42767241a157945d149330a4952224441555590c223"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.retention.IdempotencyRetentionPropertiesTest.xml": {
+      "raw_bytes": 2013,
+      "sha256": "2b2cb9177513fe9cb92c85fe274f942c89ebe07da0214473eafc91ce39961a23"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.retention.RetentionFailFastTest.xml": {
+      "raw_bytes": 1051,
+      "sha256": "466d9f3e180d7f8835764a65082f888abf224521fa5308219fb595e1e4599ab2"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.global.retention.RetentionPolicyPlacementTest.xml": {
+      "raw_bytes": 527,
+      "sha256": "87e215b5f3a252fbe052451eed68d7c74681664f3775add57f311ca1d71e2476"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.ApprovalFenceContentionIntegrationTest.xml": {
+      "raw_bytes": 1290,
+      "sha256": "0722b1d44e691b27f96121180bf907d5d301dd5fa393e32dcce496dca43fe367"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.InventoryServiceTest.xml": {
+      "raw_bytes": 940,
+      "sha256": "3a1664f3b1e79defd7b25b8cb0c801ce5fe0ca357c364689fd6ec5dfa64a18a2"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.ProductCacheServiceTest.xml": {
+      "raw_bytes": 699,
+      "sha256": "3ca9d7d6096359c4e91c213832e14f7c7c2b4df9563760d6ebd710be18eea1e6"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.ProductCommandServiceTest.xml": {
+      "raw_bytes": 1524,
+      "sha256": "527d2ff1c9a3c7f8519f16f457d6a7eda206d5bfe7d9a1a9eaf344f6cbec308d"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.ProductQueryServiceTest.xml": {
+      "raw_bytes": 1048,
+      "sha256": "23e805ffa137e1019e9508954e90f12841afc4b3e60f84f45ee72614192c74d6"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.ReservationVersionIntegrationTest.xml": {
+      "raw_bytes": 1221,
+      "sha256": "e7c4911a8887a192062e22af02649daa17072bfacc5a9929ae666e7e574bbd8e"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.StockCompensationRefundIntegrationTest.xml": {
+      "raw_bytes": 3546,
+      "sha256": "cd969f75c0049c9e6050ecd28db8345fb29ffea92f4638aa0957581df7583e7f"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.StockReservationLeaseSweepIntegrationTest.xml": {
+      "raw_bytes": 1178,
+      "sha256": "a60ff87e82ef0ae290cdd6d679d395c7cd74bb44ec89ba17ea95140eb7bac343"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.StockReservationLeaseSweepTest.xml": {
+      "raw_bytes": 1233,
+      "sha256": "8740ced476969ef96065ab0c9fd322cacef598e5380969801fd0b59df0f4edc5"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.StockReservationSagaIntegrationTest.xml": {
+      "raw_bytes": 5049,
+      "sha256": "46be3c6a7527d4af0abd17927ea3160bb953937ad5c512bdd42c030d163f78ad"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.StockReservationServiceTest.xml": {
+      "raw_bytes": 3389,
+      "sha256": "d7307aa890165943e37dfddba1cbb88b62a0225c5d00c578d6a872dfe2425fd2"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.StockReservationSweeperExplainTest.xml": {
+      "raw_bytes": 716,
+      "sha256": "f0b0f1d1bd166bb287f3eea435d9aac855b3d9076eeab34da6b6ab44424c5333"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.application.StockSchedulerWiringIntegrationTest.xml": {
+      "raw_bytes": 1079,
+      "sha256": "89ba2f31722e2c3841fb56e8e578531a44ec8da9c88ae371a5fa22d0366e1527"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.domain.model.InventoryTest.xml": {
+      "raw_bytes": 1247,
+      "sha256": "67e41e765282b75f6d43c4c1a8e5d5b14733479541de547741fcec874cbcd5fd"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.domain.model.ProductTest.xml": {
+      "raw_bytes": 1045,
+      "sha256": "074b9be2eb025de2dc229b286597b22c29fdb648e07eaef474d9b975e9882dc8"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.DistributedLockLeaseExpiryIntegrationTest.xml": {
+      "raw_bytes": 607,
+      "sha256": "3fbb660e8989d7fe0a0e921370c6c8382327b8683b43061327448b26f07fd5f0"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.InventoryConcurrencyTest.xml": {
+      "raw_bytes": 591,
+      "sha256": "c978203483643bb97982398370079cca9342d5a953b1734cc92695bd23427fa4"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.ProductCacheFallbackIntegrationTest.xml": {
+      "raw_bytes": 2721,
+      "sha256": "649f9e8844b2ba0f7cbcc5175c327ab5709bd36828613157202aa2b6340f93ca"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.ProductCacheIntegrationTest.xml": {
+      "raw_bytes": 1881,
+      "sha256": "de34dd7bc62291acce0378ad392eb3941cc3f332da11d694aaa6b5a219665416"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.ProductDetailQueryCostIntegrationTest.xml": {
+      "raw_bytes": 1403,
+      "sha256": "1969a081f8d0010162f9c5c4cb4cd2181d111c6501d882156bef36961b8d036c"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.ProductStockCacheStalenessIntegrationTest.xml": {
+      "raw_bytes": 1092,
+      "sha256": "ee70aed2866bb6fdcdeca5f083258a65dc88cc65d40df215d7a78b4a158ec578"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest.xml": {
+      "raw_bytes": 1407,
+      "sha256": "5f1acef4073c5d86d6ed3353af767dae5f76d2522222418957a75864427fd888"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.StockRetryLoadIntegrationTest.xml": {
+      "raw_bytes": 18603,
+      "sha256": "481217f213a78e8986e8117baed69333fd852e018904f9b4f212b87f2979041b"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.kafka.ProductKafkaConfigTopicConfigContractTest.xml": {
+      "raw_bytes": 1774,
+      "sha256": "a94edcef5b8dc321b0b25f81d50c7d370dc92277112e8052d2a2f3a5f5b71a1d"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.kafka.StockConflictRetryPolicyTest.xml": {
+      "raw_bytes": 994,
+      "sha256": "e2ea69ad552f0bef7ef34fb6e846d3beaa417ab7e7d04d1f65ca60bd4f260f8a"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.kafka.StockReleaseConsumerTest.xml": {
+      "raw_bytes": 688,
+      "sha256": "58dd50a6d6a5723348ca483a2af240c775d2ff773c7f715da9e3fb82f9fec8cd"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.metrics.ProductSagaMetricsIntegrationTest.xml": {
+      "raw_bytes": 3012,
+      "sha256": "0432c2f2962a1dd72e2ef6d1960556bc27c28acb8a062b1c4abe5b91a7cb48fd"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.outbox.ProductOutboxEventPublisherTest.xml": {
+      "raw_bytes": 750,
+      "sha256": "a6f9e827616d99fc6755f625e3d709031da874600ae54db7e6efd6e718cdd3e5"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.outbox.ProductOutboxOwnershipIntegrationTest.xml": {
+      "raw_bytes": 655,
+      "sha256": "de488c6a20bf3dc4459c90ce98b988d6db8a660d181e87ff46b3c2ca35883887"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.scheduler.StockSchedulerPropertiesTest.xml": {
+      "raw_bytes": 1567,
+      "sha256": "77b8f18809863efda2f5ccd53a4076305b4b7e1f292bc688357255dba6946687"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.security.ProductSecurityIntegrationTest.xml": {
+      "raw_bytes": 2383,
+      "sha256": "2c95e4a79a4a202f65be0770affde6096a5a7986c258157c03a6240d2d275e2b"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.observability.ProductObservabilityMetricsIntegrationTest.xml": {
+      "raw_bytes": 1380,
+      "sha256": "d2ce7b59f191bac7f31b0b2b8042d9d515c70437d5ce857c133e7475d4a9a605"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.presentation.AdminProductControllerTest.xml": {
+      "raw_bytes": 1842,
+      "sha256": "40f73733b891fae4a36c94afcf8c97d76cefbbee82f60064284a2c045e52a1ab"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.presentation.ProductControllerTest.xml": {
+      "raw_bytes": 1393,
+      "sha256": "1aaa62c40d082463b9bafd4de9beb73213da3a8061d7fdb6ba80fe2e80d4171c"
+    },
+    "product-service/build/test-results/test/TEST-com.peekcart.product.presentation.RequestValidationContractTest.xml": {
+      "raw_bytes": 917,
+      "sha256": "ee2b20de7feb0879b029168b55c0f416401cdcfb3c9ab79bd04ce79e345f1fcf"
+    }
+  },
+  "files": {
+    "third-product-xml.tar.gz": {
+      "bytes": 16978,
+      "sha256": "96ec6f5eee399b0ba2a231a7fd8f70609a6f750fa0e0aea7504f0f364d8608c2"
+    },
+    "third-product-job.log.gz": {
+      "bytes": 7039,
+      "sha256": "6ea0ed01c72e39e13a29d968c2e5cee0744217bb34e5227962b5dbb0cb7e611d",
+      "raw_bytes": 24928,
+      "raw_sha256": "f7fa9d00328e0c08cd5242a4411dc4790e64a1944a5446735c34a92306da5261"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "run_id": 39627945741,
+  "job_id": 119318107525,
+  "artifact_id": 12356789882,
+  "head": "f2ffe2e8564d0ea2c19da64e7d677f260e13ac8f",
+  "checkout_prefix": "117cbe6",
+  "seed": "1792597335136",
+  "cases": 4,
+  "failures": 4,
+  "diagnostic_rows": 0,
+  "cause": "Autowired CommonErrorHandler ambiguous before setup; no retry measurement",
+  "files": {
+    "first-product.xml.gz": {
+      "raw_sha256": "5d8cb85ee1c94ae4184d3271e7e7e34895ab5b48397e731e9e2007af301414d9",
+      "raw_bytes": 32255,
+      "gzip_sha256": "ede458da9fdf3f80290c1fdd1d93d60ff1b50b45b923e652c2a962355c778e1f"
+    },
+    "first-product-job.log.gz": {
+      "raw_sha256": "a789cbc3b5bac06828fa3781cf229baa0baa0fd961716cfba7670b5f32f95907",
+      "raw_bytes": 27491,
+      "gzip_sha256": "282211d46f368c731693a96dd42c2a0301bc858c452269252ad7a2d325624d07"
+    }
+  }
+}
