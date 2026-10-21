@@ -129,16 +129,17 @@ class WebhookAdmissionIntegrationTest extends AbstractIntegrationTest {
         PaymentApproval dispatched = dispatched();
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
-        var executor = new ApprovalExecutor(new TossPaymentClient("test-fixture", "http://pg.invalid/v1", builder, new ObjectMapper()));
+        var executor = new ApprovalExecutor(new TossPaymentClient("test-fixture", "http://pg.invalid/v1", builder, new ObjectMapper()), new ObjectMapper());
         server.expect(requestTo("http://pg.invalid/v1/payments/confirm"))
                 .andExpect(method(HttpMethod.POST)).andExpect(header("Idempotency-Key", "approve-100001"))
-                .andExpect(content().json("{\"paymentKey\":\"" + KEY + "\",\"orderId\":\"100001\",\"amount\":10000}"))
+                .andExpect(content().json("{\"paymentKey\":\"" + KEY + "\",\"orderId\":\"" + dispatched.effectivePgOrderId() + "\",\"amount\":10000}"))
                 .andRespond(withStatus(HttpStatus.CONFLICT).contentType(MediaType.APPLICATION_JSON)
                         .body("{\"code\":\"IDEMPOTENT_REQUEST_PROCESSING\"}"));
         server.expect(requestTo("http://pg.invalid/v1/payments/" + KEY)).andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess("{\"status\":\"IN_PROGRESS\"}", MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess("{\"paymentKey\":\"" + KEY + "\",\"orderId\":\"" + dispatched.effectivePgOrderId()
+                        + "\",\"totalAmount\":10000,\"status\":\"IN_PROGRESS\"}", MediaType.APPLICATION_JSON));
         server.expect(requestTo("http://pg.invalid/v1/payments/" + KEY)).andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess("{\"paymentKey\":\"" + KEY + "\",\"orderId\":\"100001\","
+                .andRespond(withSuccess("{\"paymentKey\":\"" + KEY + "\",\"orderId\":\"" + dispatched.effectivePgOrderId() + "\","
                         + "\"totalAmount\":10000,\"status\":\"DONE\",\"method\":\"카드\","
                         + "\"approvedAt\":\"2026-10-21T10:00:00+09:00\"}", MediaType.APPLICATION_JSON));
         var initial = executor.execute(dispatched);
@@ -172,7 +173,7 @@ class WebhookAdmissionIntegrationTest extends AbstractIntegrationTest {
     }
     private PaymentApproval dispatched() {
         knownPayment();
-        service.beginApproval(1L, ORDER, KEY, AMOUNT);
+        service.beginApproval(1L, ORDER, KEY, AMOUNT, payments.findByOrderId(ORDER).orElseThrow().getPgOrderId());
         service.applyStockApprovalResult(ORDER, true);
         return service.claimForDispatch(ORDER).orElseThrow();
     }

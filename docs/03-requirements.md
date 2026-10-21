@@ -70,6 +70,7 @@
 | GET | `/api/v1/orders` | 주문 내역 조회 (**커서 페이지네이션** — `cursor`(불투명 문자열, 생략 시 첫 페이지) · `size`(1~100, 기본 20). 응답 `{content, nextCursor, hasNext}`. **breaking change (구현 ⑥)**: `page`/`sort`/`offset` 은 400 `ORD-012`, `totalElements`/`totalPages` 미제공) | O |
 | GET | `/api/v1/orders/{id}` | 주문 상세 조회 | O |
 | POST | `/api/v1/orders/{id}/cancel` | 주문 취소 | O |
+| POST | `/api/v1/payments/{orderId}/prepare` | 소유자의 신규 결제 PG 주문 ID와 서버 금액 조회 | O |
 | POST | `/api/v1/payments/confirm` | 비동기 결제 승인 접수 (202) | O |
 | GET | `/api/v1/payments/{orderId}` | 결제 내역 조회 | O |
 | POST | `/api/v1/payments/webhook` | 일반 결제 상태 알림의 제한된 조회 가속 접수 | X (비신뢰 신호, ADR-0041) |
@@ -169,3 +170,12 @@ Product의 재고 보호 확인을 받은 승인만 PG를 호출한다. 접수 �
 | POST `/{id}/retry` | 실행자 | 응답 유실 시 PG 재확인 뒤 같은 id/generation/version 실행만 재전달 |
 
 실행 요청은 완료가 아니며 Product 해제 확인 뒤에만 COMPLETED다. 예약 변경 시 REVIEW_REQUIRED와 승인 RECOVERY_PENDING을 유지한다. 이전 generation이나 reservation version은 새 실행에 사용할 수 없다. 늦은 PG DONE은 해제하지 않고 검증된 성공 증거를 기존 승인/고아 환불 경로에 전달한다. 404·불명·부분 취소·증빙 모순·PG 결과 변경은 해제 근거가 아니다. 영구 404의 외부 PG 증빙 경로는 미지원이며 D-084 전체는 열린 상태다. 상세 운영 계약은 [복구 runbook](runbooks/approval-recovery.md)을 따른다.
+
+
+### PG 주문 식별자와 checkout (see ADR-0042)
+
+신규 결제는 내부 숫자 `orderId`와 별도 `pgOrderId`를 가진다. 소유자는 먼저 `POST /api/v1/payments/{orderId}/prepare`로 `{orderId, pgOrderId, amount}`를 받는다. 클라이언트는 `pgOrderId`를 Toss 인증 요청의 `orderId`로 사용하고, 성공 callback의 같은 값을 `{paymentKey, orderId: 내부 숫자, pgOrderId, amount}`로 confirm에 전달한다. prepare는 반복해도 같은 ID를 반환하고 PG를 호출하지 않는다. prepare 이후에도 승인 접수의 재고·lease 검증은 다시 수행한다.
+
+새 행의 누락·불일치 PG ID는 PAY-014로 거절한다. legacy NULL 행은 prepare를 허용하지 않으며 PAY-015로 새 주문을 요청한다. 이미 인증된 기존 callback의 confirm은 기존 숫자 ID가 6~64자일 때만 유지하고 생략된 pgOrderId도 그 숫자로만 해석한다. 기존 승인 원장의 식별자는 재작성하지 않는다. 결제 조회 응답에도 유효 식별자를 `pgOrderId`로 제공한다. 이미 접수한 원장은 prepare를 거절하며 중복 confirm은 PAY-013을 유지한다.
+
+운영 전환은 신규 접수를 중지한 상태에서 schema, 전체 payment writer/dispatcher와 checkout 소비자를 같은 계약으로 전환한 후 재개한다. 구 바이너리는 새 필드를 무시할 수 있어 혼합 실행과 단순 rollback을 허용하지 않는다. 실제 전환·PG 연동 검증은 별도 실행 항목이다.

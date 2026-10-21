@@ -208,6 +208,7 @@ erDiagram
   payments {
     bigint id PK
     bigint order_id UK
+    string pg_order_id UK
     bigint user_id
     string payment_key UK
     bigint amount
@@ -329,3 +330,8 @@ Order V13은 `product_price_cache.product_name VARCHAR(255) NULL`, `product_stat
 - `payment_approvals.RECOVERY_PENDING`: 자동 reconciliation claim 대상에서 제외하는 운영 실행 대기 상태다. 신규 generation으로 기존 실행자를 fence하고 Product 확인 뒤 FAILED를 확정한다. 명시적인 Product 거절의 재개도 이 상태를 유지하며 새 generation/snapshot/승인을 요구한다. 장기 미결 gauge 및 경보에는 포함한다.
 
 상태 변경·감사·업무 outbox는 같은 트랜잭션에 기록한다. 네 신규 메시지의 소비는 inbox와 같은 트랜잭션이며 일반 replay 정책은 DENY다. Product snapshot의 확인 없이 교차 DB 조회나 동기 Product HTTP로 상태를 결정하지 않는다. 업무 DDL 배포 후 소비자/replay 정책을 배포하고 마지막으로 운영 역할을 설정한다.
+
+
+### PG 주문 식별자 (see ADR-0042)
+
+Payment V14는 `payments.pg_order_id VARCHAR(64) NULL`과 UNIQUE `uk_payments_pg_order_id`, `payment_approvals.pg_order_id VARCHAR(64) NULL`을 추가한다. 신규 Payment 생성 시 `pc_`와 UUID hex 32자를 저장하며 수정하지 않는다. 승인 접수 native INSERT가 같은 값을 snapshot으로 기록하여 이후 PG 승인·조회·복구가 같은 ID를 사용한다. 기존 NULL은 기존 숫자 order_id 문자열 계약이고 backfill하지 않는다. UNIQUE는 신규 canonical ID의 충돌만 막으며 기존 NULL 행을 허용한다. 내부 order_id의 이벤트·멱등키·원장 UNIQUE 의미는 유지한다.

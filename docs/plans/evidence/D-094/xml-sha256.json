@@ -1,0 +1,26 @@
+{
+  "baseline.xml": {
+    "xml_sha256": "5bd0921fa2d9c68130caf9a07b5da8118092116db5d143a2864216e1eb1c00fc",
+    "gzip_sha256": "74bba40d0d1496a6d68a5570d0cb5c673c35a81c3094d139f0c75277c0ce22ac",
+    "xml_bytes": 4529,
+    "gzip_bytes": 1845
+  },
+  "delay-1800ms.xml": {
+    "xml_sha256": "25c39223cb4c99a91c993d730e5424ea79ec9aac65eea5451a10276fdaeeb043",
+    "gzip_sha256": "6caa9024e5c55ecf4fc216be76c5bd1e400c67523689c157a9126421da688979",
+    "xml_bytes": 6465,
+    "gzip_bytes": 2426
+  },
+  "restored.xml": {
+    "xml_sha256": "5f42d02a2883188b3c39ba1192380158e107ecb9756f7234af4ce55a8a841c84",
+    "gzip_sha256": "81672cad3d893a3d095cef4abd0fd2187e9aaaee658b51596620166807150789",
+    "xml_bytes": 4530,
+    "gzip_bytes": 1852
+  },
+  "timeout-1s.xml": {
+    "xml_sha256": "aa7a31478c533d958112dfddbed628ff09f4173ecd22645dde93fe23f951625d",
+    "gzip_sha256": "caaa392f8232c3430990aa194d8f933da647cc41ceba87ecc646dcb2ac428db1",
+    "xml_bytes": 6460,
+    "gzip_bytes": 2417
+  }
+}
