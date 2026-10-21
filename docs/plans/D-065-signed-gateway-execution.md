@@ -39,10 +39,10 @@ User/Gateway/공격자용 RSA 키를 매실행 별도로 생성한다. User·Gat
 ## 4. 작업 항목과 검증
 
 - [x] P1. 기존계획과actualmain의User/JWKS/Gateway/리소스경계·이미지identity정본을 읽고 실행scope를 분리한다.
-- [ ] P2. 독립Compose/키생성/3JVM matrix/실제login·knownroot fixture와 boundedstartup·HTTP·cleanup을 구현한다.
-- [ ] P3. ADMIN signed양성은4서비스 각각id/rootId일치, accepted=false, exactdisabledrejection,attemptId없음과전체ledger/outbox불변으로 확인한다. USER정상JWT에 X-User-RoleADMIN 위조를 동반해도403이어야 한다.
-- [ ] P4. 미인증/malformed/다른키서명/만료외부토큰/직접서비스평문ADMIN/route외부노출/잘못된내부공개키 음성을 실제HTTP로 검증한다. 각각정상경로복구와DB불변을 함께 확인한다.
-- [ ] P5. 자기fixture의준비실패·요청실패·artifact누락·foreignprojectcollision 정리 대조를 작성한다. source/image/4서비스/case누락과공개artifact의privatekey/JWT누출이green이되지않게guard한다.
+- [x] P2. 독립Compose/키생성/3JVM matrix/실제login·knownroot fixture와 boundedstartup·HTTP·cleanup을 구현한다.
+- [x] P3. ADMIN signed양성은4서비스 각각id/rootId일치, accepted=false, exactdisabledrejection,attemptId없음과전체ledger/outbox불변으로 확인한다. USER정상JWT에 X-User-RoleADMIN 위조를 동반해도403이어야 한다.
+- [x] P4. 미인증/malformed/다른키서명/만료외부토큰/직접서비스평문ADMIN/route외부노출/잘못된내부공개키 음성을 실제HTTP로 검증한다. 각각정상경로복구와DB불변을 함께 확인한다.
+- [x] P5. 자기fixture의준비실패·요청실패·artifact누락·foreignprojectcollision 정리 대조를 작성한다. source/image/4서비스/case누락과공개artifact의privatekey/JWT누출이green이되지않게guard한다.
 - [ ] P6. Actions실제build/4matrix/음성/정리결과와일반CI·독립검토로최종head를확인한다. docs06변경은root의좁은소유범위를받아실제증거만추가한다.
 
 만료토큰은 claims를변조한서명실패로대체하지않는다. 자기User issuer의짧은TTL fixture단계를별도로사용해실제login발급→exp경과→Gateway401을확인하고정상TTL과정상login을복구한다. 검증기의만료/skew/서명정책은변경하지않는다. 정상token이나issuerprivate key를runner에제공해직접양성내부token을만드는방법은사용하지않는다.
@@ -64,3 +64,7 @@ replay.enabled는항상false다. lastReplayBy영속,실제replay claim/publish/d
 최초 실제 Actions39587253206에서 네 ADMIN disabled200 뒤 USER500이 관측됐다. root 설계검토 후 제품 수정은 독립 PR211에서 common MVC advice의 AccessDeniedException rethrow만 다룬다. 본 PR은 PR211 exactd882fecf830e261e78fb6b890aca27b73911cc86을 정상 merge해 의존하며 fixture 자체의 제품 변경은 없다. 검토 시 이 선행 head 대비 signed delta와 main 대비 통합을 구분한다. 선행 실제 main 병합 뒤 다시 정렬·검토·CI하며 선행보다 먼저 병합하지 않는다.
 
 원 handler 회귀는 PR211 Actions39588457231 platform에서 USER403/anonymous401이 모두500으로 실패했고 unrelated500은 통과했다. 원본을 보존했으며 수정 head/실제4체인 성공은 새 Actions 전까지 미검증이다. direct plaintext 음성에서 malformed internal token을 제거해 SIGNED_ONLY 거부 의미를 분리했고 실제 baseline 요청 인자 캡처를 포함한 hermetic12 methods가 통과했다. 기대 HTTP 상태나 한도를 낮추지 않는다.
+
+## 8. 실제 검증 결과
+
+head53af54e의 전용 Actions39589065938에서 이미지6개와 리소스4개가 성공했다. 각16 HTTP 사례와5개 DB불변 snapshot, 실제 짧은TTL 만료/잘못된내부키 거부 후 복구, cleanup6containers/1network/1volume와 safe artifact scan을 raw로 확인했다. 원문bundle과개별hash를 보존했다. P5의 실패·foreign collision은12 hermetic methods의 증거이고 actual 종료 정리는 네 Actions fixture에서 별도로 확인했다. 두 근거를 혼동하지 않는다. P6의 최신 main/전체CI/독립검토/직렬승인은 아직 남아 있다.
