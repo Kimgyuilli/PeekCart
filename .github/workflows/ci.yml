@@ -454,6 +454,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=image-${{ matrix.service }}
 
       - name: Capture exact image build record
+        id: image-profile
         if: always() && steps.image-build.outcome != 'skipped'
         env:
           BUILD_METADATA: ${{ steps.image-build.outputs.metadata }}
@@ -461,6 +462,7 @@ jobs:
 
       - name: Export Gradle profile from the image build cache
         id: profile-export
+        if: steps.image-profile.outputs.profile_needed == 'true'
         uses: docker/build-push-action@v6
         env:
           # The image build record is preserved separately; this target only exports files.
@@ -475,13 +477,16 @@ jobs:
           cache-from: type=gha,scope=image-${{ matrix.service }}
           # Reuse the image's remote cache too; do not export a second cache or bust RUN cache.
 
-      - name: Capture profile export record and validate timings
+      - name: Capture profile export record
+        if: steps.image-profile.outputs.profile_needed == 'true'
         env:
           BUILD_METADATA: ${{ steps.profile-export.outputs.metadata }}
         run: |
           set -euo pipefail
           python3 -B scripts/ci-build-profile.py record-export ${{ runner.temp }}/build-profile
-          python3 -B scripts/ci-build-profile.py analyze ${{ runner.temp }}/build-profile
+
+      - name: Validate image profile evidence
+        run: python3 -B scripts/ci-build-profile.py analyze ${{ runner.temp }}/build-profile
 
       - name: Upload Docker build profile evidence
         if: always()

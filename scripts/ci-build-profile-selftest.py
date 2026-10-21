@@ -2,6 +2,7 @@
 """Actual analyzer CLI fixtures. No Gradle, Docker, or remote calls."""
 import hashlib
 import json
+import shutil
 import os
 from pathlib import Path
 import subprocess
@@ -71,6 +72,7 @@ class ProfileTest(unittest.TestCase):
         self.assertEqual(result['measurement_status'], 'fresh_execution')
         self.assertEqual(result['bootjar_vertex']['seconds'], '35.6')
         self.assertEqual(result['gha_cache_export_vertex']['seconds'], '44.1')
+        self.assertIsNotNone(result['gradle_profile'])
         self.assertEqual(result['gradle_profile']['summary_seconds']['Startup'], '1.000')
         self.assertIsNone(result['previous_cached_profile'])
 
@@ -78,10 +80,12 @@ class ProfileTest(unittest.TestCase):
         p = self.root / 'image-build.log'; self.write('image-build.log', p.read_text().replace('#35 DONE 35.6s', '#35 CACHED'))
         self.write_json('export/metadata/profile.json', dict(service=SERVICE, started_epoch=10, finished_epoch=50))
         self.progress('image', True)
+        shutil.rmtree(self.root / 'export')
+        for name in ['profile-progress.jsonl','profile-export.log','export-metadata.json']: (self.root / name).unlink()
         result = self.cli()
-        self.assertEqual(result['measurement_status'], 'cached_previous_profile')
+        self.assertEqual(result['measurement_status'], 'cache_hit_unmeasured')
         self.assertIsNone(result['gradle_profile'])
-        self.assertIsNotNone(result['previous_cached_profile'])
+        self.assertIsNone(result['previous_cached_profile']); self.assertIsNone(result['profile_origin']); self.assertIsNone(result['profile_export_build_ref'])
 
     def test_stale_fresh_report_is_rejected(self):
         self.write_json('export/metadata/profile.json', dict(service=SERVICE, started_epoch=10, finished_epoch=50)); self.cli(2)
@@ -125,31 +129,40 @@ class ProfileTest(unittest.TestCase):
             self.write('image-build.log', value); self.cli(2)
 
     def test_materialized_cache_requires_structured_vertex_proof(self):
-        for name in ['image-build.log', 'profile-export.log']:
-            p = self.root / name; text = p.read_text()
-            text = text.replace('#35 DONE 35.6s', '#35 DONE 9.0s').replace('#35 CACHED', '#35 DONE 9.0s')
-            p.write_text(text)
+        p = self.root / 'image-build.log'; p.write_text(p.read_text().replace('#35 DONE 35.6s', '#35 DONE 9.0s'))
         self.progress('image', True)
-        event = json.loads((self.root / 'profile-progress.jsonl').read_text())
+        event = json.loads((self.root / 'image-progress.jsonl').read_text())
         materialize = json.loads(json.dumps(event)); materialize['vertexes'][0]['cached'] = False
         materialize['statuses'] = [{'vertex': 'sha256:' + 'a'*64, 'name': 'extracting layer', 'current': 100}]
-        self.write('profile-progress.jsonl', json.dumps(event)+'\n'+json.dumps(materialize)+'\n')
-        self.write_json('export/metadata/profile.json', dict(service=SERVICE, started_epoch=10, finished_epoch=50))
-        result = self.cli(); self.assertEqual(result['measurement_status'], 'cached_previous_profile')
-        self.assertIsNone(result['bootjar_vertex']['seconds']); self.assertEqual(result['profile_export_vertex']['materialization_seconds'], '9.0')
-        for label, content in [('empty',''), ('malformed','{broken'), ('wrongtype','[]'), ('badcompletion',json.dumps({'vertexes':[dict(event['vertexes'][0],completed='garbage')]})), ('duplicate',json.dumps({'vertexes':[event['vertexes'][0],dict(event['vertexes'][0],digest='sha256:'+'b'*64)]}))]:
-            self.write('profile-progress.jsonl', content)
+        self.write('image-progress.jsonl', json.dumps(event)+'\n'+json.dumps(materialize)+'\n')
+        result = self.cli(); self.assertEqual(result['measurement_status'], 'cache_hit_unmeasured')
+        self.assertIsNone(result['bootjar_vertex']['seconds']); self.assertIsNone(result['gradle_profile'])
+        self.assertIsNone(result['profile_origin']); self.assertIsNone(result['profile_export_build_ref'])
+        for label, content in [('empty',''), ('malformed','{broken'), ('wrongtype','[]'),
+                               ('badcompletion',json.dumps({'vertexes':[dict(event['vertexes'][0],completed='garbage')]})),
+                               ('duplicate',json.dumps({'vertexes':[event['vertexes'][0],dict(event['vertexes'][0],digest='sha256:'+'b'*64)]}))]:
+            self.write('image-progress.jsonl', content)
             with self.subTest(label=label): self.cli(2)
-        for cached, digest, logged in [(False,'sha256:'+'a'*64,False), (True,'sha256:'+'b'*64,False), (True,'sha256:'+'a'*64,True)]:
-            self.progress('profile', cached, digest, logged)
-            with self.subTest(cached=cached, digest=digest, logged=logged): self.cli(2)
+        self.progress('image', True, logged=True); self.cli(2)
+
+    def test_fresh_export_uses_own_vertex_and_strict_profile(self):
+        # Different target graphs can have different native vertex IDs; never equate them.
+        self.progress('profile', True, digest='sha256:'+'b'*64)
+        self.assertEqual(self.cli()['measurement_status'], 'fresh_execution')
+        self.write('profile-progress.jsonl', (self.root/'profile-progress.jsonl').read_text().replace('RUN ./gradlew','RUN echo changed; ./gradlew')); self.cli(2)
+        self.progress('profile', False, logged=True); self.cli(2)
+        self.progress('profile', True)
+        for name in ['profile-progress.jsonl','export-metadata.json']:
+            p = self.root/name; old = p.read_bytes(); p.unlink(); self.cli(2); p.write_bytes(old)
+        # A forged skip output cannot make missing fresh export evidence pass analysis.
+        shutil.rmtree(self.root / 'export'); self.cli(2)
 
     def test_record_command_failure_is_propagated(self):
         binary = self.root / 'bin'; binary.mkdir(); calls = self.root / 'calls'
         docker = binary / 'docker'
-        docker.write_text('#!/bin/sh\necho "$*" >> "$PROFILE_TEST_CALLS"\nif [ "$3" = "logs" ]; then echo "#35 [build 27/27] RUN ./gradlew :notification-service:bootJar --profile" >&2; echo "#35 CACHED" >&2; fi\nif [ "$3" = "$PROFILE_TEST_FAIL" ]; then exit 23; fi\n')
+        docker.write_text('#!/bin/sh\necho "$*" >> "$PROFILE_TEST_CALLS"\nif [ "$3" = "logs" ]; then\n  case "$*" in\n  *rawjson) printf \'%s\\n\' \'{"vertexes":[{"digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","name":"[build 27/27] RUN ./gradlew :notification-service:bootJar --profile","cached":true,"completed":"2026-10-21T00:00:00Z"}]}\' >&2 ;;\n  *) echo "#35 [build 27/27] RUN ./gradlew :notification-service:bootJar --profile" >&2; echo "#35 CACHED" >&2 ;;\n  esac\nfi\nif [ "$3" = "$PROFILE_TEST_FAIL" ]; then exit 23; fi\n')
         docker.chmod(0o755)
-        env = os.environ.copy(); env.update(BUILD_METADATA='{"buildx.build.ref":"builder/node/image"}', PROFILE_TEST_CALLS=str(calls))
+        env = os.environ.copy(); env.update(BUILD_METADATA='{"buildx.build.ref":"builder/node/image"}', PROFILE_TEST_CALLS=str(calls), GITHUB_OUTPUT=str(self.root/'step-output'))
         env['PATH'] = str(binary) + os.pathsep + env['PATH']
         logs = 'buildx history logs --builder builder image --progress plain'
         raw = logs.replace('plain', 'rawjson')
@@ -168,6 +181,13 @@ class ProfileTest(unittest.TestCase):
                 log = self.root / ('image-build.log' if mode == 'record-image' else 'profile-export.log')
                 self.assertIn('#35 CACHED', log.read_text())
                 self.assertIn('RUN ./gradlew :notification-service:bootJar --profile', log.read_text())
+                if mode == 'record-image' and failing == 'none':
+                    self.assertEqual((self.root/'step-output').read_text(), 'profile_needed=false\n')
+        docker.write_text(docker.read_text().replace('"cached":true', '"cached":false'))
+        env['PROFILE_TEST_FAIL'] = 'none'; (self.root/'step-output').unlink()
+        result = subprocess.run([sys.executable, '-B', str(SCRIPT), 'record-image', str(self.root)], env=env, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.root/'step-output').read_text(), 'profile_needed=true\n')
 
     def test_workflow_and_final_runtime_contract(self):
         import yaml
@@ -176,6 +196,14 @@ class ProfileTest(unittest.TestCase):
         image = next(s for s in steps if s.get('id') == 'image-build')['with']
         export = next(s for s in steps if s.get('id') == 'profile-export')['with']
         self.assertEqual(image['target'], 'runtime'); self.assertTrue(image['load'])
+        capture = next(s for s in steps if s.get('name') == 'Capture exact image build record')
+        self.assertEqual(capture['id'], 'image-profile')
+        for name in ['Export Gradle profile from the image build cache','Capture profile export record']:
+            self.assertEqual(next(s for s in steps if s.get('name') == name)['if'], "steps.image-profile.outputs.profile_needed == 'true'")
+        validate = next(s for s in steps if s.get('name') == 'Validate image profile evidence')
+        self.assertNotIn('if', validate)
+        self.assertEqual(validate['run'], 'python3 -B scripts/ci-build-profile.py analyze ${{ runner.temp }}/build-profile')
+        self.assertEqual(next(s for s in steps if s.get('name') == 'Health smoke')['run'], 'bash scripts/docker-health-smoke.sh ${{ matrix.service }}:ci')
         self.assertEqual(image['cache-to'], 'type=gha,mode=max,scope=image-${{ matrix.service }}')
         self.assertEqual(image['builder'], export['builder']); self.assertEqual(image['build-args'], export['build-args'])
         self.assertEqual(export['target'], 'gradle-profile'); self.assertNotIn('cache-to', export)
@@ -225,11 +253,11 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 def mutants():
     original = (ROOT / 'scripts/ci-build-profile.py').read_text()
     variants = [
-        ('stale-accepted', 'origin_start >= start', 'True', 'test_stale_fresh_report_is_rejected'),
-        ('cached-marked-fresh', "'cached_previous_profile' if boot['cached'] else 'fresh_execution'", "'fresh_execution'", 'test_cache_hit_is_not_new_gradle_execution'),
+        ('stale-accepted', 'start <= origin_start', 'True', 'test_stale_fresh_report_is_rejected'),
+        ('cached-marked-fresh', "'cache_hit_unmeasured' if boot['cached'] else 'fresh_execution'", "'fresh_execution'", 'test_cache_hit_is_not_new_gradle_execution'),
         ('summary-incomplete', 'set(summary) == SUMMARY', 'True', 'test_hash_and_profile_shape_fail_closed'),
         ('detached-rebuild-accepted', "export_cache['cached']", 'True', 'test_export_rebuild_and_incomplete_vertices_rejected'),
-        ('cache-vertex-identity-ignored', "image_cache['digest'] == export_cache['digest']", 'True', 'test_materialized_cache_requires_structured_vertex_proof'),
+        ('fresh-export-skipped', "if not boot['cached']:", 'if False:', 'test_fresh_profile_and_distinct_cache_export'),
         ('cached-execution-output-ignored', "not row['cached'] or digest not in logged", 'True', 'test_materialized_cache_requires_structured_vertex_proof'),
         ('checksum-ignored', "manifest == sha(report) + '  build/reports/profile/' + report.name + '\\n'", 'True', 'test_hash_and_profile_shape_fail_closed'),
         ('progress-stream-discarded', 'stderr=subprocess.STDOUT', 'stderr=subprocess.PIPE', 'test_record_command_failure_is_propagated'),
@@ -255,16 +283,18 @@ def mutants():
         check = root / 'scripts/ci-build-profile-selftest.py'; check.write_text(Path(__file__).read_text())
         (root / 'Dockerfile').write_bytes((ROOT / 'Dockerfile').read_bytes())
         workflow = yaml.safe_load((ROOT / '.github/workflows/ci.yml').read_text())
-        for name, value in [('export-cache-import-missing', None), ('export-cache-scope-mismatch', 'type=gha,scope=other')]:
+        for name, value in [('export-cache-import-missing', None), ('export-cache-scope-mismatch', 'type=gha,scope=other'), ('fresh-export-always-skipped', 'skip'), ('cache-export-forced', 'force')]:
             changed = copy.deepcopy(workflow)
             export = next(s for s in changed['jobs']['images']['steps'] if s.get('id') == 'profile-export')['with']
-            if value is None: export.pop('cache-from', None)
+            if value in {'skip','force'}:
+                next(s for s in changed['jobs']['images']['steps'] if s.get('id') == 'profile-export')['if'] = 'false' if value == 'skip' else 'true'
+            elif value is None: export.pop('cache-from', None)
             else: export['cache-from'] = value
             (root / '.github/workflows/ci.yml').write_text(yaml.safe_dump(changed, sort_keys=False))
             result = subprocess.run([sys.executable, '-B', str(check), 'ProfileTest.test_workflow_and_final_runtime_contract'], text=True, capture_output=True)
             assert result.returncode and ('test_workflow_and_final_runtime_contract' in result.stderr), (name, result.stdout, result.stderr)
             print(name + ': REJECTED')
-    print('PASS: 14 wrong-implementation controls rejected; no Gradle/Docker invocation')
+    print('PASS: 16 wrong-implementation controls rejected; no Gradle/Docker invocation')
 
 
 if __name__ == '__main__':
