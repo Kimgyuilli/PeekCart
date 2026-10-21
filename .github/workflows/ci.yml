@@ -140,6 +140,8 @@ jobs:
           bash scripts/servicemonitor-selector-lint.sh --self-test
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh
+          # D-093: 초기 NoData/지연과 bounded timeout을 실제 대기 없이 검증한다.
+          python3 -m unittest discover -s scripts/monitoring -p 'test_verify_alerts.py'
           # 구현 ④-d-1 P5 + PR4: alert 라벨/식 계약과 dashboard 변수 집합이 조작 입력에서
           # 실제로 실패하는지 19종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
           # 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, outbox FAILED 삭제/status 변조, dashboard 드리프트 3종.
@@ -486,6 +488,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=image-${{ matrix.service }}
 
       - name: Capture exact image build record
+        id: image-profile
         if: always() && steps.image-build.outcome != 'skipped'
         env:
           BUILD_METADATA: ${{ steps.image-build.outputs.metadata }}
@@ -493,6 +496,7 @@ jobs:
 
       - name: Export Gradle profile from the image build cache
         id: profile-export
+        if: steps.image-profile.outputs.profile_needed == 'true'
         uses: docker/build-push-action@v6
         env:
           # The image build record is preserved separately; this target only exports files.
@@ -504,15 +508,19 @@ jobs:
           target: gradle-profile
           build-args: SERVICE=${{ matrix.service }}
           outputs: type=local,dest=${{ runner.temp }}/build-profile/export
-          # Same local builder state; do not export a second gha cache or bust RUN cache.
+          cache-from: type=gha,scope=image-${{ matrix.service }}
+          # Reuse the image's remote cache too; do not export a second cache or bust RUN cache.
 
-      - name: Capture profile export record and validate timings
+      - name: Capture profile export record
+        if: steps.image-profile.outputs.profile_needed == 'true'
         env:
           BUILD_METADATA: ${{ steps.profile-export.outputs.metadata }}
         run: |
           set -euo pipefail
           python3 -B scripts/ci-build-profile.py record-export ${{ runner.temp }}/build-profile
-          python3 -B scripts/ci-build-profile.py analyze ${{ runner.temp }}/build-profile
+
+      - name: Validate image profile evidence
+        run: python3 -B scripts/ci-build-profile.py analyze ${{ runner.temp }}/build-profile
 
       - name: Upload Docker build profile evidence
         if: always()

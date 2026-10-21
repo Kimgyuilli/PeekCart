@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import time
 from urllib.parse import urlencode
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 import yaml
@@ -37,6 +38,8 @@ def duration(text):
 
 def all_normal(result):
     """Grafana rule state and instance state use different vocabularies."""
+    if set(result) != set(CONTRACT):
+        return False
     for uid, rule in result.items():
         if rule['state'] != 'inactive' or not rule['vector'] or not rule['alerts']:
             return False
@@ -44,11 +47,66 @@ def all_normal(result):
             return False
         if any(a['state'] != 'Normal' for a in rule['alerts']):
             return False
-        if {a['labels'].get('application') for a in rule['alerts']} != CONTRACT[uid][0]:
+        caches = {'product', 'products', 'productStock'} if uid.startswith('peekcart-cache-fallback') else {None}
+        expected = {(app, cache) for app in CONTRACT[uid][0] for cache in caches}
+        vectors = [(v['metric'].get('application'), v['metric'].get('cache')) for v in rule['vector']]
+        instances = [(a['labels'].get('application'), a['labels'].get('cache')) for a in rule['alerts']]
+        if set(vectors) != expected or set(instances) != expected or len(vectors) != len(expected) or len(instances) != len(expected):
             return False
-        if uid.startswith('peekcart-cache-fallback') and {a['labels'].get('cache') for a in rule['alerts']} != {'product', 'products', 'productStock'}:
-            return False
-    return set(result) == set(CONTRACT)
+    return True
+
+
+def wait_for_initial_evaluation(probe, evidence_path, timeout=180, interval=5,
+                                clock=time.monotonic, sleep=time.sleep):
+    """API availability is insufficient: wait for evaluated Normal instances and real zeros."""
+    deadline = clock() + timeout
+    while True:
+        result = probe()
+        remaining = deadline - clock()
+        if remaining >= 0 and all_normal(result) and all(r.get('health') == 'ok' for r in result.values()):
+            return result
+        if remaining <= 0:
+            raise AssertionError(f'Initial evaluation not ready after {timeout}s; raw observations: {evidence_path}')
+        sleep(min(interval, remaining))
+
+
+def capture_snapshot(get, grafana, prometheus, sources, phase, events, strict=True):
+    """Record original responses before assertions, including initial NoData and API failures."""
+    entry = {'timestamp': time.time(), 'phase': phase, 'rules': {}, 'queries': {}}
+    try:
+        entry['grafana'] = get(grafana + '/api/prometheus/grafana/api/v1/rules', True)
+        all_rules = [r for g in entry['grafana']['data']['groups'] for r in g['rules']]
+        for uid, source in sources.items():
+            actual = next(r for r in all_rules if r.get('uid') == uid or r.get('name') == source['title'])
+            expr = next(d['model']['expr'] for d in source['data'] if d['refId'] == 'A')
+            query = get(prometheus + '/api/v1/query?' + urlencode({'query': expr}))
+            entry['queries'][uid] = query
+            entry['rules'][uid] = {'state': actual['state'], 'health': actual.get('health'),
+                                   'alerts': actual.get('alerts', []),
+                                   'vector': query.get('data', {}).get('result', []),
+                                   'lastEvaluation': actual.get('lastEvaluation')}
+    except Exception as error:
+        entry['error'] = {'type': type(error).__name__, 'message': str(error)}
+        if isinstance(error, HTTPError):
+            entry['error']['body'] = error.read().decode(errors='replace')
+            error.close()
+        events.write(json.dumps(entry) + '\n')
+        if strict:
+            raise
+        return {}
+    events.write(json.dumps(entry) + '\n')
+    result = entry['rules']
+    if strict:
+        for uid, rule in result.items():
+            assert entry['queries'][uid]['status'] == 'success', (uid, entry['queries'][uid])
+            assert rule['vector'], (uid, 'NoData is not a healthy zero')
+            assert {v['metric']['application'] for v in rule['vector']} == CONTRACT[uid][0], uid
+            assert rule['health'] == 'ok', (uid, rule)
+            if uid.startswith('peekcart-cache-fallback'):
+                assert {v['metric']['cache'] for v in rule['vector']} == {'product', 'products', 'productStock'}, uid
+    elif any(query.get('status') != 'success' for query in entry['queries'].values()):
+        return {}
+    return result
 
 
 def assert_alerting_instances(uid, rule):
@@ -98,7 +156,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--run', action='store_true')
+    parser.add_argument('--startup-only', action='store_true', help='With --run, verify readiness and baseline only')
+    parser.add_argument('--readiness-timeout', type=float, default=180, help='Initial evaluation deadline in seconds')
     args = parser.parse_args()
+    if args.startup_only and not args.run:
+        parser.error('--startup-only requires --run')
+    if not 0 < args.readiness_timeout < float('inf'):
+        parser.error('--readiness-timeout must be finite and positive')
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=False)
     source_path = ROOT / 'k8s/monitoring/shared/grafana-alerts.yml'
@@ -177,7 +241,8 @@ def main():
         return subprocess.check_output([*compose, *args], text=True, stderr=subprocess.STDOUT)
 
     def get(url, authenticated=False):
-        return json.load(urlopen(Request(url, headers={'Authorization': auth} if authenticated else {}), timeout=15))
+        with urlopen(Request(url, headers={'Authorization': auth} if authenticated else {}), timeout=15) as response:
+            return json.load(response)
 
     def wait_api(url, authenticated=False):
         deadline = time.time() + 180
@@ -221,26 +286,7 @@ def main():
                     assert actual_data['model'][key] == value, (uid, key)
 
         def snapshot(phase):
-            raw = get(grafana + '/api/prometheus/grafana/api/v1/rules', True)
-            all_rules = [r for g in raw['data']['groups'] for r in g['rules']]
-            result = {}
-            for uid, source in rules.items():
-                actual = next(r for r in all_rules if r.get('uid') == uid or r.get('name') == source['title'])
-                expr = next(d['model']['expr'] for d in source['data'] if d['refId'] == 'A')
-                query = get(prometheus + '/api/v1/query?' + urlencode({'query': expr}))
-                assert query['status'] == 'success'
-                vector = query['data']['result']
-                assert vector, (uid, 'NoData is not a healthy zero')
-                apps = {row['metric']['application'] for row in vector}
-                assert apps == CONTRACT[uid][0], (uid, apps)
-                assert actual.get('health', 'ok') == 'ok', (uid, actual)
-                if uid.startswith('peekcart-cache-fallback'):
-                    assert {row['metric']['cache'] for row in vector} == {'product', 'products', 'productStock'}
-                result[uid] = {'state': actual['state'], 'alerts': actual.get('alerts', []), 'vector': vector,
-                               'lastEvaluation': actual.get('lastEvaluation')}
-            entry = {'timestamp': time.time(), 'phase': phase, 'rules': result}
-            events.write(json.dumps(entry) + '\n')
-            return result
+            return capture_snapshot(get, grafana, prometheus, rules, phase, events)
 
         def sample_for(phase, seconds, forbid_firing=False):
             deadline = time.time() + seconds
@@ -253,10 +299,19 @@ def main():
                 time.sleep(15)
             return seen
 
-        # Two samples are needed for counter rate/increase; wait while keeping every series present.
-        time.sleep(15)
+        wait_for_initial_evaluation(
+            lambda: capture_snapshot(get, grafana, prometheus, rules, 'readiness', events, strict=False),
+            out / 'observations.jsonl', timeout=args.readiness_timeout)
         healthy = sample_for('baseline', 120, True)
         assert all_normal(healthy[-1])
+        if args.startup_only:
+            summary = {'result': 'BASELINE_PASS', 'startedAt': started, 'finishedAt': time.time(),
+                       'sourceSHA': manifest['sourceSHA'], 'rules': list(CONTRACT),
+                       'baselineSamples': len(healthy),
+                       'scope': 'Initial evaluation readiness and 120s baseline only; no lifecycle/delivery claim'}
+            (out / 'summary.json').write_text(json.dumps(summary, indent=2))
+            print(json.dumps(summary), flush=True)
+            return
         controls = {}
         for expression in (
                 'dlq_backlog{application="user-service"}',
