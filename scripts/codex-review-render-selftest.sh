@@ -186,7 +186,7 @@ argcase 'V15 없는 파일 → exit 1' 1 '파일 없음' "${TMP}/nope.json"
 # 독립 oracle은 renderer Python과 다른 jq predicate를 사용한다.
 # 실제 cache가 없어도 아래 합성 정상/음성 자료로 이 경로를 실행한다.
 expected_valid() {
-python3 - "$1" <<'STRICTJSON' 2>/dev/null && jq -e '
+python3 - "$1" <<'STRICTJSON' 2>/dev/null | jq -e '
       def integer_at_least($n): type == "number" and isfinite and . >= $n and floor == .;
       def text: type == "string";
       def enum($values): . as $value | text and ($values | index($value)) != null;
@@ -204,8 +204,9 @@ python3 - "$1" <<'STRICTJSON' 2>/dev/null && jq -e '
           optional("line"; integer_at_least(0)) and optional("scope"; enum(["in_scope", "out_of_scope", "new_surface"])) and
           optional("suggested_disposition"; enum(["reflect", "defer", "reject"]))
         ))
-      ) catch false' "$1" >/dev/null 2>&1
+      ) catch false' >/dev/null 2>&1
 import json, sys
+from decimal import Decimal
 
 def invalid(value):
     raise ValueError(value)
@@ -217,8 +218,36 @@ def unicode_strings(value):
     elif isinstance(value, dict):
         for key, item in value.items():
             key.encode('utf-8'); unicode_strings(item)
+def exact_integer(value, minimum):
+    if type(value) is int:
+        return value >= minimum
+    if type(value) is not Decimal or not value.is_finite():
+        return False
+    sign, digits, exponent = value.as_tuple()
+    if not any(digits):
+        return minimum == 0
+    if sign:
+        return False
+    trailing = len(digits) - len(''.join(map(str, digits)).rstrip('0'))
+    return exponent >= -trailing
+
+def normalize(value):
+    if type(value) is Decimal: return 0
+    if isinstance(value, list): return [normalize(item) for item in value]
+    if isinstance(value, dict): return {key: normalize(item) for key, item in value.items()}
+    return value
+
 with open(sys.argv[1], encoding='utf-8') as source:
-    unicode_strings(json.load(source, parse_constant=invalid))
+    doc = json.load(source, parse_float=Decimal, parse_constant=invalid)
+unicode_strings(doc)
+if isinstance(doc, dict) and isinstance(doc.get('items'), list):
+    for item in doc['items']:
+        if isinstance(item, dict):
+            for key, minimum in (('id', 1), ('line', 0)):
+                if key in item:
+                    if not exact_integer(item[key], minimum): invalid('noninteger ' + key)
+                    item[key] = minimum
+print(json.dumps(normalize(doc)))
 STRICTJSON
 }
 

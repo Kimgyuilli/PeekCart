@@ -123,7 +123,8 @@ fail_review() {
 # 생산자 envelope/core 계약을 렌더 전에 검사한다. 과거 선택 필드 생략은 허용한다.
 [ -s "$JSON" ] || fail_review '빈 응답 (0바이트)'
 rendered="$(python3 - "$JSON" "$LABEL" <<'PYRENDER'
-import io, json, math, sys
+import io, json, sys
+from decimal import Decimal, InvalidOperation
 
 path, label = sys.argv[1], sys.argv[2]
 
@@ -132,8 +133,8 @@ def reject_constant(value):
 
 try:
     with io.open(path, encoding='utf-8') as source:
-        doc = json.load(source, parse_constant=reject_constant)
-except (OSError, UnicodeError, ValueError, RecursionError):
+        doc = json.load(source, parse_float=Decimal, parse_constant=reject_constant)
+except (OSError, UnicodeError, ValueError, RecursionError, InvalidOperation):
     print('JSON 파싱 실패')
     sys.exit(2)
 
@@ -152,8 +153,8 @@ def string(value):
 
 def integer(value, minimum):
     # JSON Schema integer에는 1.0도 속한다. bool은 JSON boolean이므로 제외한다.
-    return type(value) in (int, float) and value >= minimum and (
-        type(value) is int or (math.isfinite(value) and value.is_integer()))
+    return type(value) in (int, Decimal) and value >= minimum and (
+        type(value) is int or (value.is_finite() and value == value.to_integral_value()))
 
 try:
     require(isinstance(doc, dict), '결과가 object가 아님')

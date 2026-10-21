@@ -73,7 +73,15 @@ class RendererContractTest(unittest.TestCase):
                             ('line', (-1, 1.5, True, False, '1', None, [], {}))):
             for value in values:
                 with self.subTest(key=key, value=value): self.invalid(self.item_with(key, value))
-        self.invalid('{"run_id":"r","summary":"s","items":[{"id":1e999,"severity":"P1","category":"bug","finding":"f","suggestion":"s"}]}', raw=True)
+        for key, number in (('id', '1.0000000000000001'), ('id', '0.99999999999999999999'),
+                            ('line', '1e-999'), ('line', '-1e-999'), ('line', '1.0000000000000001')):
+            raw = json.dumps(self.item_with(key, 'RAW_NUMBER')).replace('"RAW_NUMBER"', number)
+            self.invalid(raw, raw=True)
+        for key, number in (('id', '1.0'), ('id', '1e999'), ('id', '1e1000000'),
+                            ('line', '0.0'), ('line', '10e-1')):
+            raw = json.dumps(self.item_with(key, 'RAW_NUMBER')).replace('"RAW_NUMBER"', number)
+            result = self.run_cli(raw, raw=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_empty_malformed_and_non_json_constants(self):
         for value in ('', ' ', '{', '{"items":', 'null', '[]',
@@ -97,6 +105,19 @@ class RendererContractTest(unittest.TestCase):
                 result = self.run_cli(DOC | {'items': [ITEM | {'severity': severity, 'category': category}]})
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertIn(severity + ' 1', result.stdout)
+
+    def test_independent_oracle_raw_numbers(self):
+        wrapper = Path(os.environ.get('CODEX_REVIEW_RENDER_TEST_WRAPPER', ROOT / 'scripts/codex-review-render-selftest.sh')).read_text()
+        start = wrapper.index('expected_valid() {')
+        function = wrapper[start:wrapper.index('\nfor f in "$TMP"', start)]
+        for key, number, want in (('id', '1.0', 0), ('id', '1e1000000', 0), ('line', '10e-1', 0),
+                                  ('id', '1.0000000000000001', 1), ('line', '1e-999', 1)):
+            raw = json.dumps(self.item_with(key, 'RAW_NUMBER')).replace('"RAW_NUMBER"', number)
+            self.path.write_text(raw)
+            result = subprocess.run(['/bin/bash', '-o', 'pipefail', '-c', function + '\nexpected_valid "$1"',
+                                     'oracle', str(self.path)], text=True, capture_output=True)
+            if want: self.assertNotEqual(result.returncode, 0, (key, number, result.stderr))
+            else: self.assertEqual(result.returncode, 0, (key, number, result.stderr))
 
     def test_ci_policy_step_propagates_renderer_failure(self):
         import yaml
@@ -132,7 +153,8 @@ def mutations():
         ('metadata-missing-accepted', "set(doc) == {'run_id', 'summary', 'items'}", "set(doc) <= {'run_id', 'summary', 'items'}", 'test_envelope_types_and_required_metadata'),
         ('core-missing-accepted', 'required <= set(item) <= required | optional', 'set(item) <= required | optional', 'test_item_objects_and_required_core'),
         ('optional-enum-ignored', "if key in item:\n                require(string(item[key]) and item[key] in choices", "if key in item and key not in ('scope', 'suggested_disposition'):\n                require(string(item[key]) and item[key] in choices", 'test_string_and_optional_fields'),
-        ('fractional-integer-accepted', 'value.is_integer()', 'True', 'test_integer_types_and_ranges'),
+        ('fractional-integer-accepted', 'value == value.to_integral_value()', 'True', 'test_integer_types_and_ranges'),
+        ('decimal-rounded-before-check', 'parse_float=Decimal', 'parse_float=lambda spelling: Decimal(str(float(spelling)))', 'test_integer_types_and_ranges'),
         ('failure-mapped-to-usage', '  exit 2\n}', '  exit 1\n}', 'test_empty_malformed_and_non_json_constants'),
         ('always-reject', "items = doc['items']", "sys.exit(2)\nitems = doc['items']", 'test_legacy_and_current_success'),
     ]
@@ -145,7 +167,19 @@ def mutations():
                                     env=env, text=True, capture_output=True)
             assert result.returncode and ('FAIL: ' + method) in result.stderr, (name, result.stdout, result.stderr)
             print(name + ': REJECTED by ' + method)
-    print('PASS: 8 wrong-implementation controls rejected; source untouched')
+    wrapper = (ROOT / 'scripts/codex-review-render-selftest.sh').read_text()
+    old = 'parse_float=Decimal'
+    assert old in wrapper
+    with tempfile.TemporaryDirectory(prefix='renderer-oracle-mutant-') as directory:
+        script = Path(directory) / 'oracle-rounded.sh'
+        script.write_text(wrapper.replace(old, 'parse_float=lambda spelling: Decimal(str(float(spelling)))'))
+        env = os.environ.copy(); env['CODEX_REVIEW_RENDER_TEST_WRAPPER'] = str(script)
+        method = 'test_independent_oracle_raw_numbers'
+        result = subprocess.run([sys.executable, '-B', __file__, 'RendererContractTest.' + method],
+                                env=env, text=True, capture_output=True)
+        assert result.returncode and ('FAIL: ' + method) in result.stderr, (result.stdout, result.stderr)
+        print('oracle-decimal-rounded: REJECTED by ' + method)
+    print('PASS: 10 wrong-implementation controls rejected; source untouched')
 
 
 if __name__ == '__main__':
