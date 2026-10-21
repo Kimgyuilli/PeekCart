@@ -109,8 +109,8 @@ class NotificationOutboxIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("D-092 runbook 재개 SQL은 MySQL에서 FAILED domain 한 행만 바꾸고 JSON payload 중복은 보류한다")
     void failedDomainRecoverySqlIsGuardedByMySql() {
         insertRecoveryFixture(9001L, "d092-domain-1", "d092-domain-1", "FAILED", "DOMAIN");
-        insertRecoveryFixture(9002L, "d092-duplicate-a", "d092-duplicate-payload", "FAILED", "DOMAIN");
-        insertRecoveryFixture(9003L, "d092-duplicate-b", "d092-duplicate-payload", "FAILED", "DOMAIN");
+        insertRecoveryFixture(9002L, "d092-duplicate-payload", "d092-duplicate-payload", "FAILED", "DOMAIN");
+        insertRecoveryFixture(9003L, "d092-duplicate-other", "d092-duplicate-payload", "FAILED", "DOMAIN");
         insertRecoveryFixture(9004L, "d092-pending-1", "d092-pending-1", "PENDING", "DOMAIN");
         insertRecoveryFixture(9005L, "d092-replay-1", "d092-replay-payload", "FAILED", "REPLAY");
 
@@ -139,10 +139,13 @@ class NotificationOutboxIntegrationTest extends AbstractIntegrationTest {
                 .containsEntry("payload", "{\"eventId\":\"d092-domain-1\"}");
 
         assertThat(reissueIfUnique(duplicateCountSql, recoverySql, "d092-duplicate-payload", 9002L,
-                "d092-duplicate-a")).isZero(); // read-only preflight rejects before UPDATE
+                "d092-duplicate-payload")).isZero(); // read-only preflight rejects before UPDATE
         assertThat(jdbcTemplate.queryForList(
                 "SELECT status FROM outbox_events WHERE id IN (9002, 9003) ORDER BY id", String.class))
                 .containsExactly("FAILED", "FAILED");
+        // Mutation control: the conditional UPDATE alone accepts the otherwise valid target row.
+        // Therefore removing the cross-row duplicate preflight makes the recovery path unsafe.
+        assertThat(jdbcTemplate.update(recoverySql, 9002L, "d092-duplicate-payload")).isEqualTo(1);
         assertThat(jdbcTemplate.update(recoverySql, 9004L, "d092-pending-1")).isZero();
         assertThat(jdbcTemplate.update(recoverySql, 9005L, "d092-replay-1")).isZero();
     }
