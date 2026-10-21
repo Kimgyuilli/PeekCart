@@ -141,6 +141,29 @@ jobs:
           fi
 
 
+      - name: Verify local DLQ contract safety
+        timeout-minutes: 8
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/dlq-contract
+          python3 scripts/tests/test_dlq_contract_preflight.py
+          python3 scripts/tests/dlq_contract_lab.py --evidence-dir .cache/dlq-contract/evidence 2>&1 | tee .cache/dlq-contract/lab.log
+
+      - name: Clean up owned DLQ contract fixture
+        if: always()
+        timeout-minutes: 2
+        run: python3 scripts/tests/dlq_contract_lab.py --cleanup --evidence-dir .cache/dlq-contract/evidence
+
+      - name: Upload DLQ contract evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dlq-contract-safety-${{ github.sha }}
+          path: .cache/dlq-contract/
+          if-no-files-found: ignore
+          retention-days: 7
+
       # shard 커버리지 — settings.gradle 의 모듈이 test 매트릭스에 정확히 1회 나타나는가.
       # 누락되면 그 모듈 테스트가 조용히 사라지고, 중복되면 merge-multiple(last-writer-wins)이
       # 증적을 덮는다. dockerfile-module-sync-lint 와 같은 종류의 실패를 막는다.
