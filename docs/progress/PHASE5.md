@@ -507,6 +507,13 @@ PR 의 publish 는 건너뛰었다. 이후 [main push run 36228604631](https://g
 체크로 교체했다. PR #140 head 에서 `gate` 를 발행한 GitHub Actions 앱 ID `15368` 을 확인한
 뒤 같은 앱으로 고정했다. `strict=true` 와 다른 보호 설정은 유지했다.
 
+원본 Git 이력 기준 `build` job 은 #97(2026-09-01 09:53:05Z)에서 main 에서 제거됐다. main 의
+first-parent 이력에서 #98~#140 사이 실제 병합된 PR 은 40개다. #101은 PR 레코드가 없고 #113은
+`feat/user-jwt-public-key-seam` 에 병합됐다. #114는 #113을 main 에 재적용한 PR이며, #130은 종료됐지만
+병합되지 않았다. #141까지 포함하면 main 병합은 41개이고 그 PR에서 필수 체크를 `build`에서 `gate`로
+복구했다. 따라서 #135~#137도 존재하지 않는 `build` 체크가 필수였던 기간에 main 으로 병합됐다는 점은
+이력으로 확인된다.
+
 GitHub API 재조회, 게이트 실패 전파 lint 자체 검사 6/6, `./gradlew test` 가 통과했다.
 별도 Codex 리뷰는 호출하지 않았다. 실제 실패 PR 의 병합 UI 는 재현하지 않았다.
 관리자 우회(`enforce_admins=false`)와 `gate` 밖의 lint·이미지·e2e 검증 범위는
@@ -557,12 +564,21 @@ context 파괴 시 새 포트로 재기동돼 캐시된 다른 context 가 전�
 18.6분에서 5.2분이다. run5 이상치(7018초/27건)는 CI 에서 재현되지 않아 로컬 자원 고갈
 가설이 남는다.
 
-**그런데 CI 전체 벽시계는 줄지 않았다** — 19분 03초에서 20분 49초다. D-031 이 test 를
-임계경로에서 뺀 뒤라 임계경로는 `images → e2e` 이고, test 에서 13.4분을 걷어내도 전체는
-그만큼 줄지 않는다. **ADR-0028 이 적은 "19분 → 약 16분" 예측이 빗나갔다.** 이번 run 의
-`images` 가 1.9분에서 3.4분으로 늘어난 것은 새 브랜치라 `type=gha` 캐시가 콜드였던
-것이다(D-034 가 기록한 ref 격리와 같은 현상). 이 전환의 값어치는 CI 벽시계가 아니라
-**로컬 반복 비용과 확장성**이고, 그 판단은 계획서 §명제가 처음부터 적어둔 것이다.
+**그런데 CI 전체 벽시계는 줄지 않았다** — PR #138 run [35753591828](https://github.com/Kimgyuilli/PeakCart/actions/runs/35753591828)은
+19분 03초, 다음 비교 run 은 20분 49초였다. 첫 run 에서 `test(order)` 는 16:40:20Z 에 끝났고,
+`gate` 는 16:40:24Z–16:40:41Z 에 실행됐다. `e2e` 는 16:40:35Z 에 끝나 gate 보다 6초 빨랐다.
+run 의 실제 workflow revision(`703fe73`)에서 `gate` 는 `[test, guards]`, `e2e` 는 `images` 에
+의존했다. 따라서 이 run 에서는 `test(order) → historical gate` 경로가 독립 `e2e` 경로보다
+6초 늦게 끝났고 두 경로는 거의 동률이었다. 이는 당시 DAG 의 측정이며, 현재 `gate` 가 모든
+필수 job 을 기다리는 계약을 뜻하지 않는다. 따라서 이 비교에서 test 가 이미 임계경로 밖이었다고
+할 수 없다.
+
+또한 PR #138 run [35976903613](https://github.com/Kimgyuilli/PeekCart/actions/runs/35976903613)의
+order-service 이미지 로그는 GHA cache manifest 를 가져온 뒤 11개 레이어를 `CACHED` 로 표시한다.
+그 뒤 `COPY order-service/build.gradle` 다음 dependency 단계가 28.8초, `bootJar` 가 약 34초
+걸렸다. PR #138 은 이 Gradle 파일에 27줄을 추가해 해당 단계와 뒤 레이어를 무효화했다. 관측된
+증거는 완전한 캐시 부재가 아니라 해당 입력 변경으로 인한 부분 재빌드를 뒷받침한다. 이 전환의
+값어치는 CI 벽시계가 아니라 **로컬 반복 비용과 확장성**이라는 판단은 유지한다.
 
 부수로 `e2e` 16.1분이 단독 병목이라는 **D-033 의 전제가 실측으로 확증**됐다.
 
@@ -603,8 +619,10 @@ factory 를 쓰지 않는다.
 CI 36분의 구조를 측정으로 분해하고, 그 결과를 ADR-0028 로 고정한 뒤 1단계를 구현했다.
 
 측정이 먼저였다. 실측 [run 35731821466](https://github.com/Kimgyuilli/PeakCart/actions/runs/35731821466)
-에서 `test(order) 1051s` · `gate 15s` · `images 173s` · `e2e 856s` 가 직렬로 이어져 36분 중
-34.5분을 차지했다. 샤드 내부는 더 극단적이었다 — `:order-service:test` 975초 중 JUnit XML 이
+에서 `test(order) 1051s` · `gate 15s` · `images 173s` · `e2e 856s` 의 네 job duration 합은
+2095초(34분 55초)였다. 직렬 구간의 벽시계는 13:12:23Z 부터 e2e 종료 13:47:57Z 까지
+35분 34초다. 두 값은 job 내부 시간의 합과 job 사이 대기까지 포함한 경과 시간으로 구분한다.
+샤드 내부는 더 극단적이었다 — `:order-service:test` 975초 중 JUnit XML 이
 보고하는 클래스 시간은 **131초뿐**이고 나머지 **844초(87%)** 가 컨테이너 부팅·Flyway·context
 기동이다. JUnit 이 static initializer 를 testcase 시간에 넣지 않아 그동안 보이지 않던 구간이다.
 
@@ -641,9 +659,12 @@ withReuse · 러너 코어 재배분 · e2e PR 제외 · 모듈 분할)의 기�
 15:49:42 에 시작했다. PR 에서는 `publish` 가 skip 되므로 이 확인은 머지 후에만 가능했다.
 `ci-release-gate-lint` 도 CI 에서 `self-test OK (6/6)` 로 조작 입력 4종을 전부 탐지했다.
 
-**임계경로가 이동했다.** `test(order) 1051s -> gate -> images -> e2e 856s` 였던 것이
-`lint 51s -> images 206s -> e2e 949s` 가 됐다. 20분 미달의 원인은 **e2e 단독**이고
-(949초 = 전체의 72%), 이것은 ADR-0028 §후속 ① 이 예측한 상태이며 D-033 의 표적이다.
+**임계경로가 이동했다.** `test(order) 1051s -> gate -> images 173s -> e2e 856s` 였던 것이
+`lint 51s -> images matrix barrier 242s -> e2e 949s` 가 됐다. D-031 PR run
+[35744585147](https://github.com/Kimgyuilli/PeakCart/actions/runs/35744585147)에서 206초는
+order-service 이미지 job 이고, e2e 시작 직전 완료된 matrix 최장 job 은 notification-service
+242초였다. 20분 미달의 주된 직렬 구간은 여전히 e2e 였으며, 이는 ADR-0028 §후속 ① 이 예측한
+상태이자 D-033 의 표적이다.
 
 **미충족**:
 

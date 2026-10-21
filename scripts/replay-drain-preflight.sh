@@ -15,7 +15,8 @@
 #   ⓓ   MAX(last_replay_settled_at) + 상한 < NOW(). NULL 이면 replay 이력 없음 → 충족
 #
 # **구조: 수집과 판정을 분리한다.** 수집은 클러스터(kubectl/mysql/kafka)에 의존해 CI 에서 돌릴 수 없지만,
-#   판정은 순수 함수라 fixture 로 검증할 수 있다. `--self-test` 가 판정을 관통한다(계획 §6 V-37).
+#   판정은 순수 함수로 검증하고, 수집은 PATH kubectl fixture로 실제 진입점을 실행한다.
+#   `--self-test` 가 두 경로를 모두 관통한다(계획 §6 V-37, D-065 collector).
 #   이 분리가 없으면 "스크립트가 있다" 외에는 아무 것도 관측되지 않는다.
 #
 # **fail-closed**: DB·브로커 접속 실패, 파싱 실패, 알 수 없는 상태는 전부 **배포를 막는다**(exit 1).
@@ -67,7 +68,9 @@ LAG_RECHECK_INTERVAL_SECONDS="${DRAIN_LAG_RECHECK_SECONDS:-15}"
 #   LAG  <service> <group> <lag1> <lag2>
 #   ERR  <service> <message>          ← 수집 실패. 한 건이라도 있으면 fail-closed
 JUDGE=$(cat <<'PY'
+import re
 import sys
+from decimal import Decimal
 
 bound = int(sys.argv[1])
 violations = []
@@ -89,6 +92,11 @@ for raw in sys.stdin:
             errors.append("%s: %s" % (parts[1], parts[2]))
         elif kind == "DB":
             service, pending, requested, settled = parts[1], int(parts[2]), int(parts[3]), parts[4]
+            if len(parts) != 5 or service not in expected or service in seen_db or pending < 0 or requested < 0:
+                raise ValueError("잘못된 DB 집계 행")
+            # MySQL UNIX_TIMESTAMP(DATETIME(6)) includes fractional seconds.
+            if settled != "-" and re.fullmatch(r"[0-9]+(?:\.[0-9]{1,6})?", settled) is None:
+                raise ValueError("잘못된 종착 시각")
             seen_db.add(service)
             if pending > 0:
                 violations.append(
@@ -99,7 +107,7 @@ for raw in sys.stdin:
                     "[ⓐ'] %s: 발행 결과 미확정 원장 행 %d건 (publication_status='REQUESTED'). "
                     "outbox 행이 이미 사라진 건이면 publication-unknown 으로 해제해야 한다" % (service, requested))
             if settled != "-":
-                elapsed = now - int(settled)
+                elapsed = now - Decimal(settled)
                 if elapsed < bound:
                     violations.append(
                         "[ⓓ] %s: 마지막 발행 종착 이후 %ds 밖에 지나지 않았다 (상한 %ds). "
@@ -202,6 +210,11 @@ self_test() {
     run_case "ⓓ 고정 564초에서는 통과한다" 0 "" \
         "${clean/$'DB\torder\t0\t0\t-'/$'DB\torder\t0\t0\t'$((now - 564))}"
 
+    run_case "ⓓ 소수초 경계 — 1마이크로초 부족하면 막는다" 1 "[ⓓ] order" \
+        "${clean/$'DB\torder\t0\t0\t-'/$'DB\torder\t0\t0\t'$((now - DRAIN_BOUND_SECONDS)).000001}"
+    run_case "ⓓ 소수초 경계 — 상한 도달은 통과한다" 0 "" \
+        "${clean/$'DB\torder\t0\t0\t-'/$'DB\torder\t0\t0\t'$((now - DRAIN_BOUND_SECONDS)).000000}"
+
     run_case "수집 실패는 fail-closed 다" 1 "fail-closed" \
         "${clean}"$'ERR\tpayment\tAccess denied for user\n'
     run_case "서비스 하나의 조회가 통째로 빠지면 막는다 (누락은 통과가 아니다)" 1 "수집되지 않은 서비스" \
@@ -215,7 +228,7 @@ self_test() {
         echo "$TAG self-test 실패 $failures 건" >&2
         exit 2
     fi
-    echo "$TAG self-test OK — 판정 14종"
+    echo "$TAG self-test OK — 판정 16종"
 }
 
 # --- 수집 (클러스터 의존) ---
@@ -232,7 +245,11 @@ collect() {
             printf 'ERR\t%s\t%s\n' "$service" "Secret $secret 에서 DB_USERNAME 을 읽지 못했다"
             continue
         fi
-        password=$(kubectl -n "$NAMESPACE" get secret "$secret" -o jsonpath='{.data.DB_PASSWORD}' 2>/dev/null | base64 -d)
+        if ! password=$(kubectl -n "$NAMESPACE" get secret "$secret" -o jsonpath='{.data.DB_PASSWORD}' 2>/dev/null | base64 -d) \
+            || [[ -z "$password" ]]; then
+            printf 'ERR\t%s\t%s\n' "$service" "Secret $secret 에서 DB_PASSWORD 을 읽지 못했다"
+            continue
+        fi
         schema="peekcart_${service}"
 
         local sql row
@@ -249,10 +266,13 @@ collect() {
 
         # ⓑⓒ — 원장이 기록한 표적 group + 그 서비스의 DLQ intake group
         local groups
-        groups=$(kubectl -n "$NAMESPACE" exec deploy/mysql -- \
+        if ! groups=$(kubectl -n "$NAMESPACE" exec deploy/mysql -- \
             mysql -u"$user" -p"$password" -D "$schema" -N -B \
             -e "SELECT DISTINCT last_replay_target_group FROM dead_letter_records WHERE last_replay_target_group IS NOT NULL" \
-            2>/dev/null || true)
+            2>/dev/null); then
+            printf 'ERR\t%s\t%s\n' "$service" "스키마 $schema 표적 group 조회 실패 (접속·권한)"
+            continue
+        fi
         groups+=$'\n'"${service}-svc-dlq-group"
 
         while IFS= read -r group; do
@@ -262,7 +282,10 @@ collect() {
                 printf 'ERR\t%s\t%s\n' "$service" "consumer group $group 의 lag 조회 실패"
                 continue
             fi
-            sleep "$LAG_RECHECK_INTERVAL_SECONDS"
+            if ! sleep "$LAG_RECHECK_INTERVAL_SECONDS"; then
+                printf 'ERR\t%s\t%s\n' "$service" "consumer group $group 의 lag 재관측 대기 실패"
+                continue
+            fi
             if ! lag2=$(consumer_group_lag "$group"); then
                 printf 'ERR\t%s\t%s\n' "$service" "consumer group $group 의 lag 재조회 실패"
                 continue
@@ -277,14 +300,37 @@ consumer_group_lag() {
     output=$(kubectl -n "$NAMESPACE" exec deploy/kafka -- \
         /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 \
         --describe --group "$group" 2>/dev/null) || return 1
-    # LAG 컬럼 합. '-'(할당 없음)은 0 으로 읽지 않고 **실패로 돌린다** — 미할당은 소비 완료의 증거가 아니다.
-    awk 'NR > 1 && NF >= 6 { if ($6 == "-") { bad = 1 } else { sum += $6 } } END { if (bad) exit 1; print sum + 0 }' \
-        <<< "$output"
+    # Empty output, a header alone, or a missing group is not evidence of drain.
+    # Kafka --describe emits one row per topic/partition after this header.
+    python3 -c '
+import re
+import sys
+
+rows = [line.split() for line in sys.stdin if line.strip()]
+header = "GROUP TOPIC PARTITION CURRENT-OFFSET LOG-END-OFFSET LAG CONSUMER-ID HOST CLIENT-ID".split()
+if len(rows) < 2 or rows[0] != header:
+    sys.exit(1)
+lag = 0
+partitions = set()
+for row in rows[1:]:
+    if len(row) != len(header) or row[0] != sys.argv[1]:
+        sys.exit(1)
+    # An unknown offset/lag (-), NaN, or a negative value must not become zero.
+    if any(re.fullmatch(r"[0-9]+", value) is None for value in row[2:6]):
+        sys.exit(1)
+    key = (row[1], int(row[2]))
+    if key in partitions:
+        sys.exit(1)
+    partitions.add(key)
+    lag += int(row[5])
+print(lag)
+' "$group" <<< "$output"
 }
 
 main() {
     if [[ "${1:-}" == "--self-test" ]]; then
         self_test
+        python3 "$REPO_ROOT/scripts/tests/replay-drain-collector-test.py"
         exit 0
     fi
 
