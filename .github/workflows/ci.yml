@@ -19,7 +19,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - name: Document preservation
+        env:
+          PRESERVATION_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          python3 -B scripts/docs-preservation-ci.py --base "$PRESERVATION_BASE"
+          python3 -B scripts/docs-preservation-selftest.py
+          python3 -B scripts/docs-preservation-real-selftest.py
+          bash scripts/plans-archive.sh --self-test
 
       - name: Install lint dependencies
         run: |
