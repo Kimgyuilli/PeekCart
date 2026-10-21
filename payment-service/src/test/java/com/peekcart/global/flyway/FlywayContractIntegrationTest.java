@@ -43,6 +43,7 @@ class FlywayContractIntegrationTest {
     private final Map<String, Map<String, Object>> services = new LinkedHashMap<>();
     private final List<Scenario> scenarios = new ArrayList<>();
     private int invocationNumber;
+    private int mysqlPort;
 
     @Test
     @Timeout(value = 10, unit = TimeUnit.MINUTES)
@@ -55,6 +56,8 @@ class FlywayContractIntegrationTest {
         try {
             report.put("mysqlImage", SharedContainers.MYSQL.getDockerImageName());
             report.put("containerId", SharedContainers.MYSQL.getContainerId());
+            mysqlPort = inspectOwnedEndpoint("before-restart-endpoint");
+            report.put("initialMappedPort", mysqlPort);
             rootSql("CREATE USER '" + user + "'@'%' IDENTIFIED BY '" + password + "'");
             for (String service : List.of("order", "product", "payment", "notification")) {
                 exerciseService(service);
@@ -71,6 +74,11 @@ class FlywayContractIntegrationTest {
             } finally {
                 if (restart.isAlive()) { restart.destroyForcibly(); restart.waitFor(5, TimeUnit.SECONDS); }
             }
+            mysqlPort = inspectOwnedEndpoint("after-restart-endpoint");
+            report.put("restartedMappedPort", mysqlPort);
+            Instant startedBefore = Instant.parse(JSON.readTree(evidence.resolve("before-restart-endpoint.json").toFile()).path("startedAt").asText());
+            Instant startedAfter = Instant.parse(JSON.readTree(evidence.resolve("after-restart-endpoint.json").toFile()).path("startedAt").asText());
+            assertThat(startedAfter).isAfter(startedBefore);
             awaitReady();
             report.put("restartReadyAt", Instant.now().toString());
             assertThat(SharedContainers.MYSQL.getContainerId()).isEqualTo(containerId);
@@ -302,7 +310,7 @@ class FlywayContractIntegrationTest {
     }
 
     private String url(String schema) {
-        return "jdbc:mysql://" + SharedContainers.MYSQL.getHost() + ":" + SharedContainers.MYSQL.getMappedPort(3306)
+        return "jdbc:mysql://" + SharedContainers.MYSQL.getHost() + ":" + mysqlPort
                 + "/" + schema + "?connectTimeout=2000&socketTimeout=3000&allowPublicKeyRetrieval=true&useSSL=false";
     }
 
@@ -330,6 +338,30 @@ class FlywayContractIntegrationTest {
                 process.destroyForcibly();
                 process.waitFor(5, TimeUnit.SECONDS);
             }
+        }
+    }
+
+    private int inspectOwnedEndpoint(String phase) throws Exception {
+        String id = SharedContainers.MYSQL.getContainerId();
+        Path output = evidence.resolve(phase + ".json");
+        // Select only identity/state/ports: a full inspect would include fixture credentials.
+        String format = "{\"id\":\"{{.Id}}\",\"status\":{{json .State.Status}},"
+                + "\"startedAt\":{{json .State.StartedAt}},\"ports\":{{json .NetworkSettings.Ports}}}";
+        Process process = new ProcessBuilder("docker", "inspect", "--format", format, id)
+                .redirectOutput(output.toFile()).redirectError(evidence.resolve(phase + ".stderr").toFile()).start();
+        try {
+            assertThat(process.waitFor(10, TimeUnit.SECONDS)).as("owned inspect deadline").isTrue();
+            assertThat(process.exitValue()).isZero();
+            var actual = JSON.readTree(output.toFile());
+            assertThat(actual.path("id").asText()).isEqualTo(id);
+            assertThat(actual.path("status").asText()).isEqualTo("running");
+            var bindings = actual.path("ports").path("3306/tcp");
+            assertThat(bindings.isArray() && !bindings.isEmpty()).isTrue();
+            int port = Integer.parseInt(bindings.get(0).path("HostPort").asText());
+            assertThat(port).isBetween(1, 65535);
+            return port;
+        } finally {
+            if (process.isAlive()) { process.destroyForcibly(); process.waitFor(5, TimeUnit.SECONDS); }
         }
     }
 
