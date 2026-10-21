@@ -13,7 +13,7 @@ public class PaymentCommandService {
     private final PaymentQueryService paymentQueryService;
 
     public PaymentDetailDto confirmPayment(Long userId, ConfirmPaymentCommand command) {
-        approvalService.beginApproval(userId, command.orderId(), command.paymentKey(), command.amount());
+        approvalService.beginApproval(userId, command.orderId(), command.paymentKey(), command.amount(), command.pgOrderId());
         return paymentQueryService.getPaymentByOrderId(userId, command.orderId());
     }
 }
