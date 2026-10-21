@@ -1,0 +1,32 @@
+{
+  "source_ref": "23cc7720777db6537dc8d1ea3b4ec45037b7a24d",
+  "status": "CLI builder/nativeID fix; actual Actions validation pending",
+  "previous_attempt": "d0ec714711dcf4f8f051591ae85e6fe8d3b1abc8",
+  "files": [
+    {
+      "path": "Dockerfile",
+      "bytes": 3680,
+      "sha256": "ae4197048727c1de5fef90c56ae29b8efe15f25e92d548b2c1393fcffaa7375c"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 34280,
+      "sha256": "b8d2b47eac227fd0cfc74d3d1aca1693d4e0251c829ebb53356aa86b03e5d70c"
+    },
+    {
+      "path": "scripts/ci-build-profile.py",
+      "bytes": 10366,
+      "sha256": "a932c53e6f81ddc6da0ca9991a673bfd6912615ad889ab552d80f8c9b42f3b42"
+    },
+    {
+      "path": "scripts/ci-build-profile-selftest.py",
+      "bytes": 14168,
+      "sha256": "90a5728dd7ac4edc6bc9128b82df845fadd08555e80c6b26f6c0fc3f7a73734d"
+    },
+    {
+      "path": "docs/plans/evidence/D-087/record-fix-minimal.txt",
+      "bytes": 296,
+      "sha256": "533897da462d087bf3716c1aa68c9f51f1b6fe397e85f068819f2ced6296ded1"
+    }
+  ]
+}

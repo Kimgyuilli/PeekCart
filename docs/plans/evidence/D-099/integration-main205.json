@@ -1,0 +1,29 @@
+{
+  "previous_head": "a2d8511f6a0fb37074ea52e41832c849bb4d77cc",
+  "integration_base": "d506f7eef5d29e9894342a6d47b93b89a34266b2",
+  "authored_paths_byte_identical": [
+    ".github/workflows/ci.yml",
+    "docs/plans/D-099.audit.md",
+    "docs/plans/D-099.md",
+    "docs/plans/evidence/D-099/README.md",
+    "docs/plans/evidence/D-099/check-mutants.py",
+    "docs/plans/evidence/D-099/current-base.txt",
+    "docs/plans/evidence/D-099/current-health.txt",
+    "docs/plans/evidence/D-099/history.json",
+    "docs/plans/evidence/D-099/manifest.json",
+    "docs/plans/evidence/D-099/mutant-results.txt",
+    "docs/plans/evidence/D-099/review-fix-manifest.json",
+    "docs/plans/evidence/D-099/review-fix-minimal.txt",
+    "docs/plans/evidence/D-099/review-shape-minimal.txt",
+    "docs/plans/evidence/D-099/selftest-results.txt",
+    "docs/plans/evidence/D-099/workflow-check.txt",
+    "scripts/harness-context-selftest.py",
+    "scripts/harness-context.sh"
+  ],
+  "payment_fixture": {
+    "path": "payment-service/src/test/java/com/peekcart/global/kafka/DlqIntegrationTest.java",
+    "sha256": "eb40e48d3c6133add9adec035b879acd2a50fa91d31e99dbdb05be3bb568dc80",
+    "source": "latest main205; imported normally, not D099 author change"
+  },
+  "local_verification": "source equality and preservation gate only; full tests Actions pending"
+}
