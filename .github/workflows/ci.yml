@@ -62,6 +62,8 @@ jobs:
         # 구현 ③ PR3d-b: 비밀 계약이 "Secret 미주입(비밀 0)" → "승인된 CSI 마운트 정확히 1개" 로 바뀌었다
         # (gateway 가 내부 토큰 서명 개인키를 갖게 됨, ADR-0017 D2). k8s Secret 경유는 여전히 금지다.
         run: |
+          python3 -B scripts/ci-lint-wiring-lint.py
+          python3 -B scripts/ci-lint-health-selftest.py
           bash scripts/kustomize-namespace-lint.sh
           # D-043: gate 는 lint/test/guards/images/e2e 전체의 최종 판정자다.
           bash scripts/ci-release-gate-lint.sh
@@ -140,12 +142,12 @@ jobs:
           bash scripts/servicemonitor-selector-lint.sh --self-test
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh
-          # D-093: 초기 NoData/지연과 bounded timeout을 실제 대기 없이 검증한다.
-          python3 -m unittest discover -s scripts/monitoring -p 'test_verify_alerts.py'
           # 구현 ④-d-1 P5 + PR4: alert 라벨/식 계약과 dashboard 변수 집합이 조작 입력에서
           # 실제로 실패하는지 19종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
           # 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, outbox FAILED 삭제/status 변조, dashboard 드리프트 3종.
           bash scripts/observability-promql-lint.sh --self-test
+          # D-093: 초기 NoData/지연과 bounded timeout을 실제 대기 없이 검증한다.
+          python3 -m unittest discover -s scripts/monitoring -p 'test_verify_alerts.py'
           # D-092: Grafana operations route와 FAILED Outbox conditional re-entry를 무료 fixture로 검증한다.
           python3 -B scripts/d092-ops-fixture.py
           # PR3c sweep — 단일 'peekcart' 관측성 식별자(application/service) 잔존 0 강제.
