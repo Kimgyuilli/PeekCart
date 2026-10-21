@@ -15,6 +15,8 @@ mutants = [
      'test_duplicate_archive_id_is_failure'),
     ('extra-empty-status-hidden', 'text = text[:-1]', "text = text.rstrip('|')",
      'test_extra_empty_final_status_is_not_a_border'),
+    ('escaped-pipe-counted-as-column', 'len(cells(line)) < 5',
+     "len(line.strip().strip('|').split('|')) < 5", 'test_escaped_pipe_cannot_supply_missing_columns'),
     ('base-ignored', 'if args.base:\n', 'if False:\n', 'test_relative_decrease_requires_explicit_base'),
     ('requested-base-replaced-by-head', "args.base + '^{commit}'", "'HEAD^{commit}'",
      'test_explicit_older_base_is_not_replaced_with_current_head'),
@@ -65,4 +67,4 @@ with tempfile.TemporaryDirectory(prefix='d099-mutants-') as directory:
                                  'HarnessContextTest.' + test], env=environment, text=True, capture_output=True)
         assert result.returncode != 0 and 'FAIL: ' + test in result.stderr, (name, result.stdout, result.stderr)
         print(name + ': REJECTED by ' + test)
-print('PASS: 10 CLI and 5 exact-workflow wrong-implementation controls rejected; source worktree untouched.')
+print('PASS: 11 CLI and 5 exact-workflow wrong-implementation controls rejected; source worktree untouched.')

@@ -52,4 +52,6 @@ bash scripts/ci-test-matrix-lint.sh
 
 정확 `.github/workflows/ci.yml`의 `Harness archive health` run body를 PyYAML로 추출하여 임시 mock git/bash/python3에서 실행한다. 정상 shallow/full, query23/fetch23, 예상 외 출력(빈 값 포함), 빈 base, health 실패의 전파를 대조하며 실제 fetch는 실행하지 않는다. 기존 CI lint job이 설치하는 PyYAML을 사용한다.
 
-[review-fix-minimal.txt](review-fix-minimal.txt)는 원래 두 결함의 최소 2 method PASS다. 수정 전체 40 method와 15 wrong-implementation control(10 CLI/5 exact-workflow)은 Actions에서 실행할 대상으로, 이 로컬 기록은 전체 통과 증거가 아니다. `review-fix-manifest.json`은 수정 source와 최소 출력의 hash이며 독립 oracle이나 전체 CI 성공 판정은 아니다.
+[review-fix-minimal.txt](review-fix-minimal.txt)는 원래 두 결함의 최소 2 method PASS다. 수정 전체 41 method와 16 wrong-implementation control(11 CLI/5 exact-workflow)은 Actions에서 실행할 대상으로, 이 로컬 기록은 전체 통과 증거가 아니다. `review-fix-manifest.json`은 수정 source와 최소 출력의 hash이며 독립 oracle이나 전체 CI 성공 판정은 아니다.
+
+[review-shape-minimal.txt](review-shape-minimal.txt)는 후속 escaped-pipe 열 수 반례의 추가 1 method PASS다. 상태와 행 모양 판정이 모두 같은 `cells()` 규칙을 사용하도록 수정했다. 유효한 5열 escaped 본문/짝수 backslash delimiter와 잘못된 3열의 홀수 backslash(1/3개)를 paired control로 확인한다. 전체 대상은 41 method와 16 mutant(11 CLI/5 exact-workflow)이며 원격 Actions 결과와 구분한다.
