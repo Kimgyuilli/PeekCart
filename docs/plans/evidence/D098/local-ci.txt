@@ -1,0 +1,1 @@
+[preservation] PASS: task rows, declared ordered transfers, protected history and local links

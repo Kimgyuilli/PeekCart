@@ -34,6 +34,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
@@ -284,26 +285,38 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
             ProductDetailDto detail = queryService.getProduct(productId);
             Duration elapsed = Duration.ofNanos(System.nanoTime() - startedAt);
 
-            assertThat(detail.name()).isEqualTo("스마트폰");
+            Duration commandTimeout = ((LettuceConnectionFactory) redisConnectionFactory)
+                    .getClientConfiguration().getCommandTimeout();
+            double detailGet = before.deltaOf(DETAIL_CACHE, "get");
+            double detailPut = before.deltaOf(DETAIL_CACHE, "put");
+            double stockGet = before.deltaOf(STOCK_CACHE, "get");
+            double stockPut = before.deltaOf(STOCK_CACHE, "put");
+            String observation = "elapsed=%dms, commandTimeout=%dms, product/get=%s, product/put=%s, "
+                    .formatted(elapsed.toMillis(), commandTimeout.toMillis(), detailGet, detailPut)
+                    + "productStock/get=%s, productStock/put=%s".formatted(stockGet, stockPut);
+            System.out.println("Redis V3 observation: " + observation);
+
+            assertThat(detail.name()).as(observation).isEqualTo("스마트폰");
             assertThat(elapsed)
                     .as("""
-                            상세 조회는 캐시를 <b>둘</b> 탄다(product + productStock, ADR-0026 D2).
-                            무응답 Redis 에서는 각 캐시가 get 500ms + put 500ms 를 소비하므로
-                            타임아웃 예산이 4회 = 2000ms 다 — 재고 캐시 도입 전에는 2회 = 1000ms 였다.
-                            이 배가는 D2 가 실제로 치르는 비용이고 ADR-0026 Consequences 에 적혀 있다.
-                            상한이 깨지면 timeout 설정이 지워졌거나(Lettuce 기본 60s) 커진 것이다.""")
-                    // 여유 1500ms 는 부하 잡음 몫이다. 전체 test 실행에서 타임아웃 4회에 DB 조회 등
-                    // 약 760ms 가 얹힌 2.764s 를 실측했다(D-046). timeout 을 1s 로 올리면 4000ms 라 걸린다.
-                    // 캐시가 늘었는지는 시간으로 가르지 않는다 — 폭이 좁아 flake 가 된다. 아래 증가분이 맡는다.
+                            무응답 Redis 상세 조회는 3500ms 미만이어야 한다. 관측: %s
+                            상세 조회는 product + productStock 두 캐시를 탄다(ADR-0026 D2).
+                            각 get·put이 timeout 500ms를 소비하면 4회 예산은 2000ms다.
+                            이 경과에는 DB 조회·JVM 정지·runner 경합 등도 섞이므로 초과 원인을 단정하지 않는다.
+                            timeout 변경, 캐시 경로 변화, DB/JVM/runner 지연을 함께 확인한다.
+                            경로 카운터는 fallback 횟수이며 timeout 원인이나 시간 기여를 직접 증명하지 않는다.""",
+                            observation)
+                    // 여유 1500ms 는 부하 잡음 몫이다. 기존 D-046의 3500ms bound를 유지한다.
+                    // 경로 소실은 시간만으로 가르지 않고 아래 요청별 증가분으로 확인한다.
                     .isLessThan(Duration.ofMillis(3500));
 
-            // 한 요청이 get·put 두 경로 '모두에서' 타임아웃을 맞았음을 증가분으로 고정한다.
-            // 누적값 단언이면 put 경로가 아예 안 타도 앞선 테스트 잔여로 통과한다(diff 리뷰 #2).
-            assertThat(before.deltaOf(DETAIL_CACHE, "get")).isEqualTo(1.0);
-            assertThat(before.deltaOf(DETAIL_CACHE, "put")).isEqualTo(1.0);
-            // 재고 캐시는 '1 이상' 이다 — Lettuce 재연결 상태에 따라 이중 집계를 관측했다(V1 주석 참조).
-            assertThat(before.deltaOf(STOCK_CACHE, "get")).isGreaterThanOrEqualTo(1.0);
-            assertThat(before.deltaOf(STOCK_CACHE, "put")).isGreaterThanOrEqualTo(1.0);
+            assertThat(detailGet).as("product get fallback: %s", observation).isEqualTo(1.0);
+            assertThat(detailPut).as("product put fallback: %s", observation).isEqualTo(1.0);
+            // 재고 캐시는 재연결 상태에 따른 이중 집계를 허용한다(V1의 관측 근거 참조).
+            assertThat(stockGet).as("productStock get fallback: %s", observation)
+                    .isGreaterThanOrEqualTo(1.0);
+            assertThat(stockPut).as("productStock put fallback: %s", observation)
+                    .isGreaterThanOrEqualTo(1.0);
         } finally {
             toxic.remove();
         }

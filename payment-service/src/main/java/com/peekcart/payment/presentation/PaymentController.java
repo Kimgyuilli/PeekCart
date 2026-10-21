@@ -1,5 +1,7 @@
 package com.peekcart.payment.presentation;
 
+import com.peekcart.payment.application.dto.PaymentCheckoutDto;
+
 import com.peekcart.global.auth.CurrentUser;
 import com.peekcart.global.auth.LoginUser;
 import com.peekcart.global.response.ApiResponse;
@@ -8,6 +10,10 @@ import com.peekcart.payment.application.PaymentQueryService;
 import com.peekcart.payment.application.WebhookService;
 import com.peekcart.payment.application.dto.ConfirmPaymentCommand;
 import com.peekcart.payment.application.dto.PaymentDetailDto;
+import com.peekcart.payment.application.dto.PaymentStatusHint;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import com.peekcart.payment.presentation.dto.request.ConfirmPaymentRequest;
 import com.peekcart.payment.presentation.dto.response.PaymentResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +41,14 @@ public class PaymentController {
     private final WebhookService webhookService;
     private final ObjectMapper objectMapper;
 
+    /** 클라이언트는 반환된 pgOrderId를 PG 인증과 confirm 양쪽에 그대로 사용한다. */
+    @Operation(summary = "결제 준비", description = "소유자의 신규 결제에 저장된 PG 주문 식별자와 금액을 조회한다.")
+    @PostMapping("/{orderId}/prepare")
+    public ResponseEntity<ApiResponse<PaymentCheckoutDto>> preparePayment(
+            @CurrentUser LoginUser loginUser, @PathVariable Long orderId) {
+        return ResponseEntity.ok(ApiResponse.of(paymentQueryService.preparePayment(loginUser.userId(), orderId)));
+    }
+
     /** 승인 접수(202). 결과는 GET /api/v1/payments/{orderId}로 조회한다 (ADR-0034). */
     @Operation(summary = "결제 승인 접수", description = "재고 보호 확인 후 비동기 승인한다. 결과는 결제 조회로 확인한다.")
     @PostMapping("/confirm")
@@ -43,7 +57,7 @@ public class PaymentController {
             @Valid @RequestBody ConfirmPaymentRequest request
     ) {
         ConfirmPaymentCommand command = new ConfirmPaymentCommand(
-                request.paymentKey(), request.orderId(), request.amount());
+                request.paymentKey(), request.orderId(), request.amount(), request.pgOrderId());
         PaymentDetailDto result = paymentCommandService.confirmPayment(loginUser.userId(), command);
         return ResponseEntity.accepted()
                 .location(URI.create("/api/v1/payments/" + result.orderId()))
@@ -63,23 +77,34 @@ public class PaymentController {
                 PaymentResponse.from(paymentQueryService.getPaymentByOrderId(loginUser.userId(), orderId))));
     }
 
-    /**
-     * Toss 웹훅을 수신한다.
-     * HMAC 서명 검증을 위해 원본 JSON 문자열을 그대로 수신한다.
-     */
-    @Operation(summary = "Toss 웹훅 수신", description = "Toss Payments 웹훅을 수신하여 HMAC 서명 검증 후 처리한다.")
-    @PostMapping("/webhook")
-    public ResponseEntity<Void> handleWebhook(
-            @RequestHeader(value = "Toss-Signature", required = false) String signature,
-            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
-            @RequestBody String rawPayload
-    ) throws Exception {
-        JsonNode node = objectMapper.readTree(rawPayload);
-        String paymentKey = node.path("paymentKey").asText("");
-        String eventType = node.path("eventType").asText("");
-        String idempKey = idempotencyKey != null ? idempotencyKey : paymentKey + "-" + eventType;
-
-        webhookService.processWebhook(signature, paymentKey, eventType, idempKey, rawPayload);
+    /** Bound the raw stream before parsing, including requests without Content-Length. */
+    @Operation(summary = "Toss 웹훅 수신", description = "일반 결제 알림을 제한된 조회 가속 신호로 접수한다.")
+    @PostMapping(value = "/webhook", consumes = "application/json")
+    public ResponseEntity<Void> handleWebhook(HttpServletRequest request) throws IOException {
+        int maxBytes = 16 * 1024;
+        if (request.getContentLengthLong() > maxBytes) {
+            return ResponseEntity.status(413).build();
+        }
+        byte[] payload = request.getInputStream().readNBytes(maxBytes + 1);
+        if (payload.length > maxBytes) {
+            return ResponseEntity.status(413).build();
+        }
+        JsonNode node;
+        try {
+            node = objectMapper.reader()
+                    .with(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                    .with(com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
+                    .readTree(payload);
+        } catch (JsonProcessingException malformed) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (node == null || !node.isObject() || !node.path("eventType").isTextual()
+                || !node.path("data").isObject() || !node.path("data").path("paymentKey").isTextual()
+                || !node.path("data").path("status").isTextual()) {
+            return ResponseEntity.badRequest().build();
+        }
+        webhookService.processWebhook(new PaymentStatusHint(node.path("eventType").textValue(),
+                node.path("data").path("paymentKey").textValue(), node.path("data").path("status").textValue()));
         return ResponseEntity.ok().build();
     }
 }

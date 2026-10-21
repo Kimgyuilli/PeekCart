@@ -1,0 +1,6 @@
+Actual a7ffa11f24be2bd281d8952ac5fc5d351fb6119c architecture 344 lines split 147/197: PASS
+Actual architecture destination ownership swap: REJECTED
+Actual architecture one repeated blank-line deletion: REJECTED
+Actual D-097 plan/audit full ordered archive: PASS
+Actual audit ordered-line reversal: REJECTED
+PASS: actual-source normal transfers and 3 single-fault controls, originals untouched.

@@ -1,0 +1,31 @@
+{
+  "tested_source_snapshot": "caf2f01196f32011bf67f922988174a5c59c89b3d0c8e01236420e35f6e14d73",
+  "tests": {
+    "common_unit": 4,
+    "order_mysql": 67,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "files": {
+    "sql-prototype.log.gz": {
+      "uncompressed_sha256": "78d2c35fe7a70dfceaabfa6fe252b5a754b057bfc139859aeada32c61c560ec6",
+      "uncompressed_bytes": 1175
+    },
+    "sql-prototype-restart.log.gz": {
+      "uncompressed_sha256": "07944daf85fbd6bd360fe9952748590b65965149ea3ecf64cd60285b723c85af",
+      "uncompressed_bytes": 111
+    },
+    "final-focused.log.gz": {
+      "uncompressed_sha256": "28c252718750f106378065227015846acd17b780ec11ed7a11a3b138775938e9",
+      "uncompressed_bytes": 3922
+    },
+    "allocator-jpa.xml.gz": {
+      "uncompressed_sha256": "b5930c9a503b0ecc23d47c671d12ad0d1464d65857bd8bad7e45cc3214e29d46",
+      "uncompressed_bytes": 149941
+    },
+    "sql-prototype.py": {
+      "sha256": "4402537cf733de44594d96c7343ac17de62307c5149519387e7393c340ef1ce0"
+    }
+  }
+}
