@@ -1,0 +1,1 @@
+ok — 현행 archive 건강 검사 통과; 명시 base ID 비교 통과
