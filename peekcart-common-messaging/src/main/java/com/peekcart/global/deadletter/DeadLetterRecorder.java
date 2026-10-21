@@ -20,7 +20,7 @@ import java.util.Optional;
 /**
  * DLQ 원장 적재.
  *
- * <p><b>적재는 멱등하다.</b> {@code INSERT IGNORE} 가 신규 1 / 중복 0 을 돌려주며, 중복이면
+ * <p><b>적재는 멱등하다.</b> 예약 ID와 좌표 current read로 신규/중복을 구분하며, 중복이면
  * 시도 횟수만 올린다. 유니크 위반을 catch 하지 않는다 — JPA 에서는 flush 시점과
  * rollback-only 때문에 "충돌 잡아서 no-op" 이 성립하지 않는다.
  *
@@ -50,6 +50,7 @@ import java.util.Optional;
 public class DeadLetterRecorder {
 
     private final DeadLetterRecordJpaRepository repository;
+    private final DeadLetterIdAllocator idAllocator;
     private final DeadLetterProperties properties;
     private final SlackPort slackPort;
     private final ObjectMapper objectMapper;
@@ -78,7 +79,9 @@ public class DeadLetterRecorder {
         // --- 단계 1~3: 로케이터 → root 잠금 → 유일 대조. INSERT 보다 **먼저** 한다 ---
         Correlation correlation = correlate(origin, candidate, eventId);
 
-        int inserted = repository.insertIfAbsent(
+        long id = idAllocator.allocate();
+        int affected = repository.insertIfAbsent(
+                id, correlation.correlated() ? correlation.rootId() : id,
                 candidate.getClusterId(), candidate.getTopicGeneration(),
                 candidate.getOriginTopic(), candidate.getOriginPartition(), candidate.getOriginOffset(),
                 candidate.getFailedConsumerGroup(), candidate.getOriginKind().name(),
@@ -87,34 +90,29 @@ public class DeadLetterRecorder {
                 candidate.getExceptionType(), candidate.getExceptionMessage(),
                 candidate.getOccurredAt());
 
-        if (inserted == 0) {
-            // 중복 유입: 대조는 이미 계산됐지만 **계측·알림·재개방을 전부 생략**한다.
-            // 첫 적재 때 상관 판정이 끝났고, 재전달마다 재개방하면 운영자가 닫은 root 를
-            // broker 재전달만으로 다시 여는 경로가 생긴다.
-            repository.incrementAttempt(
-                    candidate.getClusterId(), candidate.getTopicGeneration(),
-                    candidate.getOriginTopic(), candidate.getOriginPartition(),
-                    candidate.getOriginOffset(), candidate.getFailedConsumerGroup());
+        DeadLetterRecord child = repository.findCoordinateForUpdate(
+                        candidate.getClusterId(), candidate.getTopicGeneration(),
+                        candidate.getOriginTopic(), candidate.getOriginPartition(),
+                        candidate.getOriginOffset(), candidate.getFailedConsumerGroup())
+                .orElseThrow(() -> new IllegalStateException(
+                        "DLQ 예약 ID가 충돌했거나 적재한 좌표를 찾지 못했다 — id=" + id));
+
+        boolean inserted = child.getId() == id;
+        if (affected != (inserted ? 1 : 2)) {
+            throw new IllegalStateException("DLQ 예약 ID가 재사용됐거나 적재 결과가 충돌했다 — id=" + id);
+        }
+        if (!inserted) {
+            if (repository.findByIdForUpdate(id).isPresent()) {
+                throw new IllegalStateException("DLQ 예약 ID가 다른 원장 행과 충돌했다 — id=" + id);
+            }
+            // 좌표 중복만 정상 재전달이다. ID 충돌을 중복으로 ack하지 않는다.
             log.info("DLQ 원장 중복 유입 — topic={}, partition={}, offset={}, group={}",
                     origin.originTopic(), origin.originPartition(), origin.originOffset(),
                     origin.failedConsumerGroup());
             return false;
         }
 
-        // 방금 넣은 행. INSERT IGNORE 가 건너뛴 경우 LAST_INSERT_ID() 가 **직전 성공 INSERT 의 값**을
-        // 돌려줘 남의 행을 지목하므로 좌표로 다시 찾는다.
-        DeadLetterRecord child = repository
-                .findByClusterIdAndTopicGenerationAndOriginTopicAndOriginPartitionAndOriginOffsetAndFailedConsumerGroup(
-                        candidate.getClusterId(), candidate.getTopicGeneration(),
-                        candidate.getOriginTopic(), candidate.getOriginPartition(),
-                        candidate.getOriginOffset(), candidate.getFailedConsumerGroup())
-                .orElseThrow(() -> new IllegalStateException(
-                        "방금 적재한 DLQ 원장 행을 좌표로 찾지 못했다 — topic=" + candidate.getOriginTopic()
-                                + ", partition=" + candidate.getOriginPartition()
-                                + ", offset=" + candidate.getOriginOffset()));
-
         if (!correlation.correlated()) {
-            child.assignSelfRoot();
             metrics.recordCorrelation(false, correlation.reason());
             log.error("DLQ 원장 신규 적재 — topic={}, partition={}, offset={}, group={}, kind={}, exception={}",
                     origin.originTopic(), origin.originPartition(), origin.originOffset(),
@@ -131,7 +129,6 @@ public class DeadLetterRecorder {
                 .orElseThrow(() -> new IllegalStateException(
                         "잠근 root 가 사라졌다 — rootId=" + correlation.rootId()));
 
-        child.linkToRoot(root.getId());
         metrics.recordCorrelation(true, DeadLetterMetrics.CorrelationReason.NONE);
 
         boolean reopened = root.reopen(

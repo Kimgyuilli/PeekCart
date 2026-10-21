@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public record PaymentResponse(
         Long id,
         Long orderId,
+        String pgOrderId,
         String paymentKey,
         long amount,
         String status,
@@ -20,6 +21,7 @@ public record PaymentResponse(
         return new PaymentResponse(
                 dto.id(),
                 dto.orderId(),
+                dto.pgOrderId(),
                 dto.paymentKey(),
                 dto.amount(),
                 dto.status(),

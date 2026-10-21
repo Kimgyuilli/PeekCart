@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public record PaymentDetailDto(
         Long id,
         Long orderId,
+        String pgOrderId,
         String paymentKey,
         long amount,
         String status,
@@ -20,6 +21,7 @@ public record PaymentDetailDto(
         return new PaymentDetailDto(
                 payment.getId(),
                 payment.getOrderId(),
+                payment.effectivePgOrderId(),
                 payment.getPaymentKey(),
                 payment.getAmount(),
                 payment.getStatus().name(),
