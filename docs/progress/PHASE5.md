@@ -43,6 +43,12 @@
 
 [최신 PR CI39480119984](https://github.com/Kimgyuilli/PeekCart/actions/runs/39480119984) 성공 후 정상 병합 SHA는 `a7ffa11f24be2bd281d8952ac5fc5d351fb6119c`다. [main CI39483390397](https://github.com/Kimgyuilli/PeekCart/actions/runs/39483390397)는 모든 검사와 여섯 publish가 성공했다. 실제 PG·외부 웹훅 전달은 미검증이고 사용자 승인된 새 주문 ID 계약은 PR196에서 검증 중이므로 D-064는 열린 부분 완료로 유지한다. 운영 배포나 결제·환불은 실행하지 않았다.
 
+### D-094 Redis 장애 시간 상한 진단 완료
+
+[PR198](https://github.com/Kimgyuilli/PeekCart/pull/198) 최종 head `a0c2d3e7cd36f6153c020ee6df4aef5f8935c14e`는 실제 Lettuce timeout·네 경로 fallback 카운터·경과 시간을 실패 전에 남긴다. 기존 3500ms 상한은 유지했다. 실제 정상 2075ms, 1800ms 지연 변이 3885ms 실패, timeout 1초 변이 4070ms 실패, 원복 2056ms 통과의 원본 XML과 해시를 보존했다. [독립 최초 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/198#issuecomment-6299237478)와 [최신 통합 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/198#issuecomment-6299645860)는 원본·API 설정·변이와 복원 해시·최신 main 통합을 직접 대조했다. 리뷰어가 같은 Docker 실측을 재실행한 것으로 주장하지 않는다.
+
+[최신 PR CI39484673767](https://github.com/Kimgyuilli/PeekCart/actions/runs/39484673767) 성공 후 정상 병합 SHA는 `ec677b376ff69b1e77c43abf4a073722a58c786f`다. [main CI39487364120](https://github.com/Kimgyuilli/PeekCart/actions/runs/39487364120)는 전체 검사와 여섯 publish가 성공했다. TASKS 완료 행 이동은 상태 외 본문, 전체 D-ID 다중집합과 유일성을 확인했다.
+
 ## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
 
 ## 최종 부채·소유권·증거 대조
