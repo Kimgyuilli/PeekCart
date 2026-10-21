@@ -7,6 +7,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -109,6 +110,10 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
+        // Preserve Security's authenticated403 / anonymous401 handling outside MVC advice.
+        if (e instanceof AccessDeniedException denied) {
+            throw denied;
+        }
         log.error("Unhandled exception", e);
         ErrorCode errorCode = ErrorCode.SYS_001;
         return ResponseEntity

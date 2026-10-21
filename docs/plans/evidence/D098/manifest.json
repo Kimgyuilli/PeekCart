@@ -1,0 +1,67 @@
+{
+  "implementation_base": "4a4a36a12a3d914d6bc0379ded94bc0123c4d370",
+  "implementation_source_ref": "6e78e4faff9790ffd160b2e06f62594f6a46bfc4",
+  "fixture_base": "a7ffa11f24be2bd281d8952ac5fc5d351fb6119c",
+  "files": [
+    {
+      "path": "docs/plans/evidence/D098/archive.txt",
+      "sha256": "4584da78103f72c03bb43ae6e733d843c37a9a5c38d3d09cf9768dddf488051a",
+      "bytes": 195
+    },
+    {
+      "path": "docs/plans/evidence/D098/hermetic.txt",
+      "sha256": "7d40d665000b7e6a5a292b7a7f9b0398820fef099a69c6af07092098460c400b",
+      "bytes": 6228
+    },
+    {
+      "path": "docs/plans/evidence/D098/local-ci.txt",
+      "sha256": "913465e917a43db3cbc5ab8735433fb50ea76d2aa5dc34a4d31a0ce79122c27c",
+      "bytes": 94
+    },
+    {
+      "path": "docs/plans/evidence/D098/real-source.txt",
+      "sha256": "8afcfc8735d762dec591266709b041bb75ba527823b768215529ecddd07605e3",
+      "bytes": 394
+    },
+    {
+      "path": "docs/plans/evidence/D098/root-context.json",
+      "sha256": "ebc3cede596c1e66e12e51acfa12675e47baa14a1f092f409ba42e1aede04c60",
+      "bytes": 769
+    },
+    {
+      "path": "docs/plans/evidence/D098/root-readonly.txt",
+      "sha256": "913465e917a43db3cbc5ab8735433fb50ea76d2aa5dc34a4d31a0ce79122c27c",
+      "bytes": 94
+    },
+    {
+      "path": "scripts/docs-archive-apply.py",
+      "sha256": "30c42066d2d7966bcd00395f222344d43e0e633bbbd2d2cfd54b362fc7643028",
+      "bytes": 6825
+    },
+    {
+      "path": "scripts/docs-preservation-check.py",
+      "sha256": "3817dcdda78bc7ecc54600f590b75f08420349322defd482b9bdec1c3b53b40c",
+      "bytes": 26259
+    },
+    {
+      "path": "scripts/docs-preservation-ci.py",
+      "sha256": "e6646f95c97efff05ee809d510eaa491fad5f265e2e3ebaa7056f4f3b81470d4",
+      "bytes": 2030
+    },
+    {
+      "path": "scripts/docs-preservation-real-selftest.py",
+      "sha256": "988ccd2b7c616cddaf10eed05dbf8212c58e925974a77cf2b4fdac50caf30477",
+      "bytes": 4337
+    },
+    {
+      "path": "scripts/docs-preservation-selftest.py",
+      "sha256": "b3eeac4572644c93c1eeed25ab10c49699a8382b7a56ecc3d91df43479824294",
+      "bytes": 23988
+    },
+    {
+      "path": "scripts/plans-archive.sh",
+      "sha256": "bcc8c23c45d7645fffa0e4a04b6545e512b82268a4be50a985778250b7d1865a",
+      "bytes": 8047
+    }
+  ]
+}

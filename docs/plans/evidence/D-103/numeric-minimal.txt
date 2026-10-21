@@ -1,0 +1,6 @@
+test_integer_types_and_ranges (__main__.RendererContractTest.test_integer_types_and_ranges) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 1.634s
+
+OK

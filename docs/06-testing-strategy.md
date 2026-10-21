@@ -79,6 +79,10 @@
 
 실제 MySQL/Spring repository로 첫 INSERT의 self/parent root, 동시 같은·다른 좌표 적재, RR snapshot 이후 current read, 외부 트랜잭션 rollback 및 catch한 제약 예외의 rollback-only를 검증한다. PK 충돌과 같은 ID·좌표 재사용을 정상 좌표 중복 또는 새 적재로 ack하지 않는지 확인한다. attempt overflow/NULL 거절과 rollback 뒤 정상 재시도도 검사한다. 테스트 전용 NOT NULL 제약은 post-insert root 배정이 통과할 수 없게 한다. 별도 SQL prototype의 정상 재시작 결과는 JPA·비정상 crash·운영 전환 증거와 구분한다(see ADR-0043).
 
+### 13-5. 실제 signed Gateway의 닫힌 replay 진입점
+
+별도 Actions fixture는 실제 User signup/login/JWKS, Gateway RSA 내부 서명, 네 SIGNED_ONLY 리소스를 연결한다. 각 리소스에서 ADMIN의 exact disabled 응답, USER403, 위조·만료·직접 평문·잘못된 내부 공개키 거부와 정상 경로 복구를 확인한다. 다섯 단계마다 전체 ledger/outbox 불변을 대조하며 replay는 항상 꺼져 있다. 따라서 이 검증은 lastReplayBy 영속이나 실제 replay 발행·drain, 운영 키·GKE 경로의 증거가 아니다(see ADR-0017, ADR-0022).
+
 ---
 
 ## 14. 성능 테스트 시나리오

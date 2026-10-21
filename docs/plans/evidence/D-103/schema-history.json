@@ -1,0 +1,230 @@
+[
+  {
+    "commit": "3ce748ba024e41e673e3c4a4d059c604e624f1c7",
+    "path": ".claude/schemas/plan-review.json",
+    "sha256": "2ffc07abf2e966cd765eaf81b25702e493dc5fb92f9083cfeda27aa3eae9eebb",
+    "envelope_required": [
+      "run_id",
+      "summary",
+      "items"
+    ],
+    "item_required": [
+      "id",
+      "severity",
+      "category",
+      "finding",
+      "suggestion"
+    ],
+    "item_properties": [
+      "id",
+      "severity",
+      "category",
+      "finding",
+      "suggestion"
+    ]
+  },
+  {
+    "commit": "3ce748ba024e41e673e3c4a4d059c604e624f1c7",
+    "path": ".claude/schemas/diff-review.json",
+    "sha256": "be49cbf8f7bef043d71958dd51cb381c3f1eaf424c3ca469f42b1a4e55f8f361",
+    "envelope_required": [
+      "run_id",
+      "summary",
+      "items"
+    ],
+    "item_required": [
+      "id",
+      "severity",
+      "category",
+      "file",
+      "line",
+      "finding",
+      "suggestion"
+    ],
+    "item_properties": [
+      "id",
+      "severity",
+      "category",
+      "file",
+      "line",
+      "finding",
+      "suggestion"
+    ]
+  },
+  {
+    "commit": "268d994cd220b00611590231560b75e73567e219",
+    "path": ".claude/schemas/plan-review.json",
+    "sha256": "b726bc21d0da654a2436ee9c70b77185a522e8ca1f8603813875ae75334da071",
+    "envelope_required": [
+      "run_id",
+      "summary",
+      "items"
+    ],
+    "item_required": [
+      "id",
+      "severity",
+      "category",
+      "finding",
+      "suggestion"
+    ],
+    "item_properties": [
+      "id",
+      "severity",
+      "category",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ]
+  },
+  {
+    "commit": "268d994cd220b00611590231560b75e73567e219",
+    "path": ".claude/schemas/diff-review.json",
+    "sha256": "33f324872cd9aa9cef56b1baec6bf7078acdce7d1dcef0ea7d0712171972391c",
+    "envelope_required": [
+      "run_id",
+      "summary",
+      "items"
+    ],
+    "item_required": [
+      "id",
+      "severity",
+      "category",
+      "file",
+      "line",
+      "finding",
+      "suggestion"
+    ],
+    "item_properties": [
+      "id",
+      "severity",
+      "category",
+      "file",
+      "line",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ]
+  },
+  {
+    "commit": "6026d5e5f6bcd23bc9eaf0d755c6361a2d5928c9",
+    "path": ".claude/schemas/plan-review.json",
+    "sha256": "5bc2c1a182cbd07fd985570c2d611d3645cbc6ffad487ab33bad39033d9c9c5c",
+    "envelope_required": [
+      "run_id",
+      "summary",
+      "items"
+    ],
+    "item_required": [
+      "id",
+      "severity",
+      "category",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ],
+    "item_properties": [
+      "id",
+      "severity",
+      "category",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ]
+  },
+  {
+    "commit": "6026d5e5f6bcd23bc9eaf0d755c6361a2d5928c9",
+    "path": ".claude/schemas/diff-review.json",
+    "sha256": "f18c641a4d3b57f88ea105e44669f02d98aa89c1165d3998cf99106b0ad01bc4",
+    "envelope_required": [
+      "run_id",
+      "summary",
+      "items"
+    ],
+    "item_required": [
+      "id",
+      "severity",
+      "category",
+      "file",
+      "line",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ],
+    "item_properties": [
+      "id",
+      "severity",
+      "category",
+      "file",
+      "line",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ]
+  },
+  {
+    "commit": "f4ee03b97b0bec0c9be7cd3077911fb67b578b74",
+    "path": ".claude/schemas/plan-review.json",
+    "sha256": "5bc2c1a182cbd07fd985570c2d611d3645cbc6ffad487ab33bad39033d9c9c5c",
+    "envelope_required": [
+      "run_id",
+      "summary",
+      "items"
+    ],
+    "item_required": [
+      "id",
+      "severity",
+      "category",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ],
+    "item_properties": [
+      "id",
+      "severity",
+      "category",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ]
+  },
+  {
+    "commit": "f4ee03b97b0bec0c9be7cd3077911fb67b578b74",
+    "path": ".claude/schemas/diff-review.json",
+    "sha256": "f18c641a4d3b57f88ea105e44669f02d98aa89c1165d3998cf99106b0ad01bc4",
+    "envelope_required": [
+      "run_id",
+      "summary",
+      "items"
+    ],
+    "item_required": [
+      "id",
+      "severity",
+      "category",
+      "file",
+      "line",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ],
+    "item_properties": [
+      "id",
+      "severity",
+      "category",
+      "file",
+      "line",
+      "finding",
+      "suggestion",
+      "scope",
+      "suggested_disposition"
+    ]
+  }
+]
