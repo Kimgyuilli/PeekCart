@@ -45,3 +45,11 @@ bash scripts/ci-test-matrix-lint.sh
 이 수치는 당시 TASKS-done 원문이며 현행 완료/캠페인 개수와 혼용하지 않는다. fixture는 정확한 git bytes를 읽어 사용한다. 정상 44행 원문을 base로 두고 기존 main4a4의 옛 checker에 실제 덮어쓰기 875B를 넣으면 exit0으로 잘못 통과한다. 수정 checker는 standalone과 base 비교 모두 거부하고, 실제 복구 원문 45행은 통과한다. 과거 d5f 시점에 지금의 checker를 실제 운영 실행했다는 주장이 아니다. D-052 최초 분리 사건으로 바꾸지 않는다.
 
 `manifest.json`은 검사 source·출력의 동일성을 기록하며 검증 의미의 독립 oracle은 아니다. 별도 Codex 리뷰 미호출. 정확 head 독립 검토와 전체 원격 CI는 별도로 기다린다.
+
+## 독립 검토 후 추가 검증
+
+위 33/9 결과와 `manifest.json`은 초기 head `c9330783e6a25e00a318fc07952872b9e855eca9`에 귀속한다. 독립 검토 후 추가 빈 final status cell과 shallow 조회 오류의 삼킴을 수정했다. optional final border는 하나만 제거하며 escaped pipe는 cell 구분자로 취급하지 않는다. 본문 code pipe가 있어도 마지막 status 판정은 유지한다.
+
+정확 `.github/workflows/ci.yml`의 `Harness archive health` run body를 PyYAML로 추출하여 임시 mock git/bash/python3에서 실행한다. 정상 shallow/full, query23/fetch23, 예상 외 출력(빈 값 포함), 빈 base, health 실패의 전파를 대조하며 실제 fetch는 실행하지 않는다. 기존 CI lint job이 설치하는 PyYAML을 사용한다.
+
+[review-fix-minimal.txt](review-fix-minimal.txt)는 원래 두 결함의 최소 2 method PASS다. 수정 전체 40 method와 15 wrong-implementation control(10 CLI/5 exact-workflow)은 Actions에서 실행할 대상으로, 이 로컬 기록은 전체 통과 증거가 아니다. `review-fix-manifest.json`은 수정 source와 최소 출력의 hash이며 독립 oracle이나 전체 CI 성공 판정은 아니다.

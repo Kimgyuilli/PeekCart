@@ -51,5 +51,7 @@
       "bytes": 11146,
       "sha256": "158b3fef7ca20b6cce0fe575f0644063677e22c1c0e37f20095aa4b2afda1e2d"
     }
-  ]
+  ],
+  "source_ref": "c9330783e6a25e00a318fc07952872b9e855eca9",
+  "phase": "initial implementation; outputs are historical, not rerun against review fixes"
 }

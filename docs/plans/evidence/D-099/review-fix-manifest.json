@@ -1,0 +1,34 @@
+{
+  "comparison_base": "4a4a36a12a3d914d6bc0379ded94bc0123c4d370",
+  "verification": {
+    "local": "two minimal counterexample methods PASS",
+    "actions": "40 methods and 15 mutants pending"
+  },
+  "files": [
+    {
+      "path": "scripts/harness-context.sh",
+      "bytes": 11746,
+      "sha256": "7f594dc2b868256521755b3acd8bde6f7dfeacb26dcf815025b15b818a82ae56"
+    },
+    {
+      "path": "scripts/harness-context-selftest.py",
+      "bytes": 16551,
+      "sha256": "1f3e76605f2dd796de9397d04823ce2c863439aa1207fa6f6049f795bba3c6a7"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 31655,
+      "sha256": "a24fbf8404ab63aa5d4a7c19eb3970f1323883e32de7428f593e8b91ad99cd02"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/check-mutants.py",
+      "bytes": 4510,
+      "sha256": "82a348235d4daeb20184e8fbf67b0590a5fd3b674ef774ea914e0b5e2f7db39f"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/review-fix-minimal.txt",
+      "bytes": 368,
+      "sha256": "a539a6a75b36021e579d69256da89492c8f0355a633e4b33a9731cce6b084382"
+    }
+  ]
+}
