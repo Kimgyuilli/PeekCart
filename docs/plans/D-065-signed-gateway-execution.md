@@ -28,7 +28,7 @@ grade: L
 
 ## 3. 구성과 파일 범위
 
-별도 `docker-compose.signed-gateway.yml`, `scripts/signed-gateway/` runner/fixture/selftest, `scripts/signed-gateway-e2e.sh`, 전용 `.github/workflows/signed-gateway.yml`, 이 plan/audit 및 좁은 테스트 문서가 범위다. 기존 ci.yml 및 saga runner는 수정하지 않는다. build image identity helper는 기존 record/load 명령을 재사용한다.
+별도 `docker-compose.signed-gateway.yml`, `scripts/signed-gateway/` runner/fixture/selftest/evidence, 전용 `.github/workflows/signed-gateway.yml`, 이 plan/audit 및 좁은 테스트 문서가 범위다. 기존 ci.yml 및 saga runner는 수정하지 않는다. build image identity helper는 기존 record/load 명령을 재사용한다.
 
 Actions의 build matrix6개(User/Gateway/4리소스)는 같은 checkout Dockerfile과 서비스별캐시로 이미지를 만들고 archive+ID+checksum을 보존한다. 실행 matrix4개는 각 User/Gateway/해당리소스3JVM만 기동해 한runner의6JVM 메모리 경합을 피한다. MySQL/Redis/Kafka/HTTP runner는 자기 Compose project의 internal:true 네트워크에만 붙이며 host port/외부egress를 열지 않는다. PG/Slack 외부 연결은 필요 없고 payment baseURL은 도달불가 자기fixture sentinel로 명시한다. 자율scheduler/listener는 이번 닫힌HTTP 계약과 무관하므로 기존 off 설정으로만 격리한다.
 
@@ -52,3 +52,9 @@ User/Gateway/공격자용 RSA 키를 매실행 별도로 생성한다. User·Gat
 ## 5. 남는 범위
 
 replay.enabled는항상false다. lastReplayBy영속,실제replay claim/publish/drain,운영표본P22/GKE/ACL/oldwriter중지증거는이검증으로완료되지않는다. D084복구전체체인과실제DB/Kafka collector는기반fixture를재사용할수있는별도계획/PR로진행한다. PR207 Flyway/PR202offlineconstraints도각증거범위를유지한다. D065전체는부분완료다.
+
+## 6. 구현 중 단순화와 검증 구분
+
+2026-10-21 사용자 최소복잡성 지시를 반영해 생성 YAML 세 파일과 직접 작성한 readiness polling을 제거했다. Compose의 SPRING_APPLICATION_JSON은 공개 key 위치와 설정만 전달하고, 재생성은 native `up --force-recreate --no-deps --wait --wait-timeout 300`을 사용한다. 별도 shell wrapper나 공통 실행 framework는 추가하지 않는다. 초기420초/재생성300초 한도와 오류 보존, 생성 전 nonce 소유권 기록, 자기 프로젝트만 정리하는 경계는 유지한다.
+
+검증은 독립 사례 목록을 가진 작은 evidence 검사기로 16 HTTP 사례/5단계 전체 ledger·outbox 불변/source와 image ID/migration 원문/cleanup을 대조한다. 로컬 hermetic 검사는 실제 HTTP·MySQL 성공을 의미하지 않는다. 실제 build와 네 리소스 체인, 정상 CI 및 독립 검토가 끝나기 전 P2–P6는 미완으로 유지한다.
