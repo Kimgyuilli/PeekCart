@@ -28,6 +28,10 @@ public class Payment {
     @Column(name = "order_id", nullable = false, unique = true)
     private Long orderId;
 
+    /** 신규 checkout의 불변 PG 식별자. NULL은 기존 숫자 계약이다 (ADR-0042). */
+    @Column(name = "pg_order_id", length = 64, unique = true, updatable = false)
+    private String pgOrderId;
+
     @Column(name = "user_id")
     private Long userId;
 
@@ -68,6 +72,7 @@ public class Payment {
 
     private Payment(Long orderId, Long userId, long amount) {
         this.orderId = orderId;
+        this.pgOrderId = "pc_" + UUID.randomUUID().toString().replace("-", "");
         this.userId = userId;
         this.paymentKey = UUID.randomUUID().toString();
         this.amount = amount;
@@ -78,6 +83,24 @@ public class Payment {
 
     public static Payment create(Long orderId, Long userId, long amount) {
         return new Payment(orderId, userId, amount);
+    }
+
+    /** Legacy는 인증 때 사용한 숫자를 유지한다. 신규 행에는 fallback하지 않는다. */
+    public String effectivePgOrderId() {
+        return pgOrderId != null ? pgOrderId : orderId.toString();
+    }
+
+    public void ensureCanonicalCheckout() {
+        if (pgOrderId == null) throw new PaymentException(ErrorCode.PAY_015);
+    }
+
+    public void validatePgOrderId(String requestedPgOrderId) {
+        String expected = effectivePgOrderId();
+        if (!expected.matches("[A-Za-z0-9_-]{6,64}")) {
+            throw new PaymentException(ErrorCode.PAY_015);
+        }
+        String requested = pgOrderId == null && requestedPgOrderId == null ? expected : requestedPgOrderId;
+        if (!expected.equals(requested)) throw new PaymentException(ErrorCode.PAY_014);
     }
 
     /**

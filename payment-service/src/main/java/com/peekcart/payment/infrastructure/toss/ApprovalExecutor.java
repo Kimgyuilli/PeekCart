@@ -1,6 +1,8 @@
 package com.peekcart.payment.infrastructure.toss;
 
 import com.peekcart.payment.application.ApprovalOutcome;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.peekcart.payment.domain.model.PaymentApproval;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,7 @@ public class ApprovalExecutor {
             Set.of("ABORTED", "EXPIRED");
 
     private final TossPaymentClient tossPaymentClient;
+    private final ObjectMapper objectMapper;
 
     /**
      * 신규 승인 실행 — <b>1회만 호출한다</b> (ADR-0023 D4).
@@ -44,12 +47,12 @@ public class ApprovalExecutor {
     public CallResult execute(PaymentApproval approval) {
         TossOutcome outcome = tossPaymentClient.confirm(
                 approval.getPaymentKey(),
-                approval.getOrderId().toString(),
+                approval.effectivePgOrderId(),
                 approval.getAmount(),
                 idempotencyKey(approval.getOrderId()));
 
         return switch (outcome.kind()) {
-            case SUCCEEDED -> new CallResult(toSucceeded(outcome.rawResponse()), 1);
+            case SUCCEEDED -> new CallResult(confirmedOutcome(approval, outcome.rawResponse()), 1);
             case PERMANENT_FAILURE -> new CallResult(
                     ApprovalOutcome.failed(outcome.code(), outcome.rawResponse()), 1);
             // 이미 승인됨 = 이전 호출이 성공하고 응답만 유실된 경우. 조회로 진실을 가른다(D3).
@@ -81,7 +84,9 @@ public class ApprovalExecutor {
             return ApprovalOutcome.unresolved("PG 조회 실패 — 진실 미확정");
         }
         TossPaymentSnapshot found = snapshot.get();
-        String status = found.status();
+        Optional<JsonNode> evidence = matchingEvidence(approval, found.rawResponse());
+        if (evidence.isEmpty()) return ApprovalOutcome.unresolved("PG 조회 식별자 불일치 또는 잘못된 응답");
+        String status = evidence.get().path("status").asText();
 
         if (DONE.equals(status)) {
             return toSucceeded(found.rawResponse());
@@ -97,6 +102,23 @@ public class ApprovalExecutor {
         log.info("PG 승인 상태 미확정 — 원장을 닫지 않는다, paymentKey={}, status={}",
                 approval.getPaymentKey(), status);
         return ApprovalOutcome.unresolved("PG 상태 미확정: " + status);
+    }
+
+    private ApprovalOutcome confirmedOutcome(PaymentApproval approval, String rawResponse) {
+        Optional<JsonNode> evidence = matchingEvidence(approval, rawResponse);
+        if (evidence.isEmpty() || !"DONE".equals(evidence.get().path("status").asText())) {
+            return ApprovalOutcome.unresolved("PG 승인 식별자 불일치 또는 잘못된 응답");
+        }
+        return toSucceeded(rawResponse);
+    }
+
+    private Optional<JsonNode> matchingEvidence(PaymentApproval approval, String rawResponse) {
+        try {
+            JsonNode body = objectMapper.readTree(rawResponse);
+            return TossPaymentIdentity.matches(approval, body) ? Optional.of(body) : Optional.empty();
+        } catch (Exception invalidEvidence) {
+            return Optional.empty();
+        }
     }
 
     /**
