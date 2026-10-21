@@ -1,0 +1,61 @@
+{
+  "implementation_base": "4a4a36a12a3d914d6bc0379ded94bc0123c4d370",
+  "fixture_base": "a7ffa11f24be2bd281d8952ac5fc5d351fb6119c",
+  "files": [
+    {
+      "path": "docs/plans/evidence/D098/archive.txt",
+      "sha256": "4584da78103f72c03bb43ae6e733d843c37a9a5c38d3d09cf9768dddf488051a",
+      "bytes": 195
+    },
+    {
+      "path": "docs/plans/evidence/D098/hermetic.txt",
+      "sha256": "67b18312b76f1a7dcf523ff489c813aa48fa3a51aa94345badcb8846b5ca8847",
+      "bytes": 5555
+    },
+    {
+      "path": "docs/plans/evidence/D098/local-ci.txt",
+      "sha256": "913465e917a43db3cbc5ab8735433fb50ea76d2aa5dc34a4d31a0ce79122c27c",
+      "bytes": 94
+    },
+    {
+      "path": "docs/plans/evidence/D098/real-source.txt",
+      "sha256": "8afcfc8735d762dec591266709b041bb75ba527823b768215529ecddd07605e3",
+      "bytes": 394
+    },
+    {
+      "path": "docs/plans/evidence/D098/root-readonly.txt",
+      "sha256": "913465e917a43db3cbc5ab8735433fb50ea76d2aa5dc34a4d31a0ce79122c27c",
+      "bytes": 94
+    },
+    {
+      "path": "scripts/docs-archive-apply.py",
+      "sha256": "30c42066d2d7966bcd00395f222344d43e0e633bbbd2d2cfd54b362fc7643028",
+      "bytes": 6825
+    },
+    {
+      "path": "scripts/docs-preservation-check.py",
+      "sha256": "f4777d23cb77a4606951bc58ab0e70d2b4896a04579c04855d83834b7cbb6c80",
+      "bytes": 25033
+    },
+    {
+      "path": "scripts/docs-preservation-ci.py",
+      "sha256": "e6646f95c97efff05ee809d510eaa491fad5f265e2e3ebaa7056f4f3b81470d4",
+      "bytes": 2030
+    },
+    {
+      "path": "scripts/docs-preservation-real-selftest.py",
+      "sha256": "988ccd2b7c616cddaf10eed05dbf8212c58e925974a77cf2b4fdac50caf30477",
+      "bytes": 4337
+    },
+    {
+      "path": "scripts/docs-preservation-selftest.py",
+      "sha256": "4e6ad3deab4590b6b1cd1fb84def7e221ff6b3b7f5f80f9831c539c78434f6f8",
+      "bytes": 22140
+    },
+    {
+      "path": "scripts/plans-archive.sh",
+      "sha256": "bcc8c23c45d7645fffa0e4a04b6545e512b82268a4be50a985778250b7d1865a",
+      "bytes": 8047
+    }
+  ]
+}

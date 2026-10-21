@@ -1,0 +1,52 @@
+test_archive_nonappend_edit_needs_narrow_allowance (__main__.PreservationTest.test_archive_nonappend_edit_needs_narrow_allowance) ... ok
+test_blanket_archive_apply_rejected_without_mutation (__main__.PreservationTest.test_blanket_archive_apply_rejected_without_mutation) ... ok
+test_canonical_marker_injection_is_rejected (__main__.PreservationTest.test_canonical_marker_injection_is_rejected) ... ok
+test_ci_rejects_undeclared_archive (__main__.PreservationTest.test_ci_rejects_undeclared_archive) ... ok
+test_combined_corrections_cannot_replace_whole_history (__main__.PreservationTest.test_combined_corrections_cannot_replace_whole_history) ... ok
+test_completed_row_normal_body_pipe_and_footer (__main__.PreservationTest.test_completed_row_normal_body_pipe_and_footer) ... ok
+test_crlf_is_preserved_not_normalized (__main__.PreservationTest.test_crlf_is_preserved_not_normalized) ... ok
+test_destination_order_change_rejected (__main__.PreservationTest.test_destination_order_change_rejected) ... ok
+test_done_prepend_rejected (__main__.PreservationTest.test_done_prepend_rejected) ... ok
+test_done_wrong_destination_rejected (__main__.PreservationTest.test_done_wrong_destination_rejected) ... ok
+test_duplicate_id_rejected (__main__.PreservationTest.test_duplicate_id_rejected) ... ok
+test_escaped_reference_to_source_does_not_bypass_prefilter (__main__.PreservationTest.test_escaped_reference_to_source_does_not_bypass_prefilter) ... ok
+test_existing_destination_must_be_preserved_source (__main__.PreservationTest.test_existing_destination_must_be_preserved_source) ... ok
+test_fence_info_is_not_a_closing_fence (__main__.PreservationTest.test_fence_info_is_not_a_closing_fence) ... ok
+test_historical_append_is_allowed (__main__.PreservationTest.test_historical_append_is_allowed) ... ok
+test_historical_blob_url_is_not_a_current_path_alias (__main__.PreservationTest.test_historical_blob_url_is_not_a_current_path_alias) ... ok
+test_inbound_not_retargeted_rejected (__main__.PreservationTest.test_inbound_not_retargeted_rejected) ... ok
+test_manifest_missing_or_duplicate_line_rejected (__main__.PreservationTest.test_manifest_missing_or_duplicate_line_rejected) ... ok
+test_manifest_source_line_order_rejected (__main__.PreservationTest.test_manifest_source_line_order_rejected) ... ok
+test_merge_duplicate_heading_routes (__main__.PreservationTest.test_merge_duplicate_heading_routes) ... ok
+test_missing_anchor_rejected (__main__.PreservationTest.test_missing_anchor_rejected) ... ok
+test_missing_completion_evidence_rejected (__main__.PreservationTest.test_missing_completion_evidence_rejected) ... ok
+test_missing_link_target_rejected (__main__.PreservationTest.test_missing_link_target_rejected) ... ok
+test_move_relative_link_and_inbound_rewrite (__main__.PreservationTest.test_move_relative_link_and_inbound_rewrite) ... ok
+test_moved_body_change_rejected (__main__.PreservationTest.test_moved_body_change_rejected) ... ok
+test_moved_rows_keep_source_order (__main__.PreservationTest.test_moved_rows_keep_source_order) ... ok
+test_narrow_correction_allowed (__main__.PreservationTest.test_narrow_correction_allowed) ... ok
+test_noop_and_ordinary_document_edit (__main__.PreservationTest.test_noop_and_ordinary_document_edit) ... ok
+test_percent_encoded_inbound_source_is_checked (__main__.PreservationTest.test_percent_encoded_inbound_source_is_checked) ... ok
+test_prose_and_code_paths_are_not_route_aliases (__main__.PreservationTest.test_prose_and_code_paths_are_not_route_aliases) ... ok
+test_protected_history_reorder_rejected (__main__.PreservationTest.test_protected_history_reorder_rejected) ... ok
+test_reference_link_retarget_and_bad_heading_control (__main__.PreservationTest.test_reference_link_retarget_and_bad_heading_control) ... ok
+test_remaining_row_order_rejected (__main__.PreservationTest.test_remaining_row_order_rejected) ... ok
+test_repeated_footer_deletion_rejected (__main__.PreservationTest.test_repeated_footer_deletion_rejected) ... ok
+test_repeated_source_line_deletion_rejected (__main__.PreservationTest.test_repeated_source_line_deletion_rejected) ... ok
+test_row_loss_rejected (__main__.PreservationTest.test_row_loss_rejected) ... ok
+test_selected_archive_and_manifest_ci (__main__.PreservationTest.test_selected_archive_and_manifest_ci) ... ok
+test_source_hash_mismatch_rejected (__main__.PreservationTest.test_source_hash_mismatch_rejected) ... ok
+test_split_and_ownership_control (__main__.PreservationTest.test_split_and_ownership_control) ... ok
+test_unmerged_selection_stops_all_archive_mutations (__main__.PreservationTest.test_unmerged_selection_stops_all_archive_mutations) ... ok
+test_unrelated_historical_prose_is_not_an_inbound_link (__main__.PreservationTest.test_unrelated_historical_prose_is_not_an_inbound_link) ... ok
+test_unsupported_escaped_link_fails_closed (__main__.PreservationTest.test_unsupported_escaped_link_fails_closed) ... ok
+test_unsupported_literal_contexts_fail_closed (__main__.PreservationTest.test_unsupported_literal_contexts_fail_closed) ... ok
+test_unused_exception_rejected (__main__.PreservationTest.test_unused_exception_rejected) ... ok
+test_whole_file_exception_rejected (__main__.PreservationTest.test_whole_file_exception_rejected) ... ok
+test_wrong_correction_hash_rejected (__main__.PreservationTest.test_wrong_correction_hash_rejected) ... ok
+test_wrong_valid_link_target_rejected (__main__.PreservationTest.test_wrong_valid_link_target_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 47 tests in 23.707s
+
+OK

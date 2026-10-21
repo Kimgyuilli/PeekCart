@@ -1,5 +1,8 @@
 현재 완료된 작업을 TASKS.md / progress / ADR 에 반영합니다.
 
+편집 전에 비교 base 커밋을 고정한다(보통 PR base SHA, 연속 로컬 기록은 최종 PR의 base).
+완료 행·계획 이동 계약과 manifest 형식은 `docs/conventions/docs-preservation.md`를 따른다.
+
 다음을 수행하세요:
 
 1. `docs/TASKS.md`를 읽어 현재 진행 중(`🔄`)인 Task를 확인합니다.
@@ -19,4 +22,6 @@
    - 결정 사항은 3번 분류에 따라 ADR 참조 또는 직접 기록
    - "Phase N 완료 시 체크리스트" 중 이번 작업으로 달성된 항목이 있다면 `[ ]` → `[x]`로 업데이트
 8. **Layer 1 문서 정합성 점검**: 이번 작업이 환경/아키텍처/요구사항에 영향을 줬다면 해당 Layer 1 문서(01~07)도 갱신해야 합니다. 단 결정 근거(Why)는 ADR 에, Layer 1 은 현재 상태(What)만 기술하고 ADR 참조로 연결합니다.
-9. 변경 내용을 요약 보고합니다 (생성/전환된 ADR 이 있으면 별도로 명시).
+9. 완료 행의 마지막 상태 cell만 변경하고 원래 본문은 보존한다. 여러 행은 비교 base의 TASKS 원래 순서대로 done 기존 행 뒤에 추가한다. 기존 footer/정정 이력도 보존한다. 경로가 달라진 상대 Markdown 링크만 같은 대상·앵커로 고친다. 역사 사실 정정은 좁은 hash-bound manifest가 필요하다.
+10. 명시 경로와 새 manifest를 stage한 뒤 `python3 -B scripts/docs-preservation-ci.py --base <비교-base>`를 실행한다. 실패하면 보존 위반을 수정하며 예외로 파일 전체를 제외하지 않는다. 일반 현행 문서의 내용 수정은 이 이동 계약과 구분한다.
+11. 변경 내용을 요약 보고합니다 (생성/전환된 ADR 이 있으면 별도로 명시).
