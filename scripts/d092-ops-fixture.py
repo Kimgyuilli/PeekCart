@@ -132,8 +132,8 @@ def check_reissue_fixture():
         (4, 'published-1', json.dumps({'eventId': 'published-1'}), 'PUBLISHED', 5, 't3', 't3', 'DOMAIN'),
         (5, 'replay-1', json.dumps({'eventId': 'replay-payload'}), 'FAILED', 5, 't1', None, 'REPLAY'),
         (6, 'mismatch-1', json.dumps({'eventId': 'other-id'}), 'FAILED', 5, 't1', None, 'DOMAIN'),
-        (7, 'duplicate-row', json.dumps({'eventId': 'duplicate-payload'}), 'FAILED', 5, 't1', None, 'DOMAIN'),
-        (8, 'duplicate-payload', json.dumps({'eventId': 'duplicate-payload'}), 'FAILED', 5, 't1', None, 'DOMAIN'),
+        (7, 'duplicate-payload', json.dumps({'eventId': 'duplicate-payload'}), 'FAILED', 5, 't1', None, 'DOMAIN'),
+        (8, 'duplicate-other', json.dumps({'eventId': 'duplicate-payload'}), 'FAILED', 5, 't1', None, 'DOMAIN'),
         (9, 'published-marker', json.dumps({'eventId': 'published-marker'}), 'FAILED', 5, 't1', 't3', 'DOMAIN'),
     ]
     connection.executemany('INSERT INTO outbox_events VALUES (?, ?, ?, ?, ?, ?, ?, ?)', rows)
@@ -164,6 +164,14 @@ def check_reissue_fixture():
     # Payload-eventId duplicates fail the read-only preflight, so the mutation is never attempted.
     duplicate_count = connection.execute(duplicate_count_sql, {'payload_event_id': 'duplicate-payload'}).fetchone()[0]
     assert duplicate_count == 2
+    for row_id in (7, 8):
+        assert snapshot(row_id) == before[row_id]
+
+    # Mutation control: dropping the cross-row count gate lets the otherwise valid target through.
+    connection.execute('BEGIN IMMEDIATE')
+    unsafe_mutant = connection.execute(update_sql, {'id': 7, 'event_id': 'duplicate-payload'})
+    assert unsafe_mutant.rowcount == 1, 'duplicate-preflight removal must be detected by this control'
+    connection.rollback()
     for row_id in (7, 8):
         assert snapshot(row_id) == before[row_id]
 

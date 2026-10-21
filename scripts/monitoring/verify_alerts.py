@@ -262,6 +262,14 @@ def main():
         notification_text = json.dumps(notifications, ensure_ascii=False).lower()
         assert notifications, 'matched operations alerts must reach the local receiver stub'
         assert 'outbox' in notification_text and 'dlq' in notification_text, notification_text
+        routed_signals = {
+            alert.get('labels', {}).get('signal')
+            for notification in notifications
+            for alert in notification.get('alerts', [])
+        }
+        assert routed_signals == {'outbox-publish', 'dlq'}, (
+            'operations receiver must get both matched signals and no default-route signal', routed_signals
+        )
         set_mode('healthy')
         resolved = sample_for('resolved', 390)
         assert all_normal(resolved[-1]), 'Recovery must be healthy zero, never absent/NoData'
