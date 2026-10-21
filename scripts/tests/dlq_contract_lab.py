@@ -340,7 +340,8 @@ VALUES('fixture',1,'order.created',0,99,'fixture-group','RESOLVED_ORIGIN',NULL,N
             writer.stdin.write("START TRANSACTION; UPDATE dead_letter_records SET root_record_id=id WHERE id=10; UPDATE outbox_events SET record_kind='DOMAIN' WHERE id=10; SELECT SLEEP(3); COMMIT;")
             writer.stdin.close()
             writer.stdin = None
-            deadline = time.monotonic() + 3
+            # docker exec 기동 시간이 포함되므로 SLEEP 길이보다 넉넉히 기다린다.
+            deadline = time.monotonic() + 15
             while time.monotonic() < deadline:
                 active = self.sql("SELECT COUNT(*) FROM information_schema.INNODB_TRX WHERE trx_query LIKE 'SELECT SLEEP(3)%'", root=True).stdout.strip()
                 if active == '1':
