@@ -1,0 +1,31 @@
+# D-065 DLQ 실패 진단 audit
+
+## 2026-10-21 — 계획과 실패 경계 확인
+
+- 작업 tree /private/tmp/peakcart-worker-c-dlq-diagnostic, branch debt/d065-dlq-listener-diagnostic, base main4a4a36a.
+- 별도 Codex 리뷰 미호출. 원본 CI run39572731873/head57af/checkoutac426be/seed1792572889718을 확인했다.
+- E의 DB목록[] 해석을 exact source로 재대조했다. head와 checkout source SHA f365af... 모두 line193 DLT records, DB195. E와 root가 이전 해석을 철회했다. timestamp equality 미도달, 해당 마지막 poll의 원장 상태 미측정으로 기록한다.
+- 계획 단계에 Docker/Gradle은 실행하지 않았다. root가 reviewer의 cleanup delta 재현에 heavy를 배정 중이며 다음 실행 전에 슬롯을 요청한다.
+
+## 2026-10-21 — 첫 baseline과 환경 차이 정정
+
+- exact4a4/f365 소스 무변경, session15192, seed1792572889718 전체 payment54 suites/334tests PASS, 3m48s. Dlq 첫 timestamp2.953s/trace1.807s/route2.027s. XML 전체와 stdout203845bytes는 /private/tmp/d065-dlq-baseline-1792572889718/에 보존했다. 전체 Docker inventory 전후 byte동일이다.
+- CI와 local 각54 XML timestamp/filename 순서를 직접 비교한 결과 동일했다. Dlq 직전 ApprovalFenceRecoveryIntegrationTest이며 앞선 suite sequence도 동일하다.
+- **환경 정정**: 첫 local 명령에 SPRING_PROFILES_ACTIVE가 없었고 실제 로그는 profile local이었다. CI workflow와 raw 실행 로그는 test를 지정한다. 따라서 첫 PASS는 CI동등 재현이 아니며 원본 실패 해결 증거가 아니다. test profile에는 logback appender가 없어 banner295bytes와 local203845bytes 차이를 설명할 수 있다. 이전 loggingcontext 가설은 이 환경차이보다 우선하지 않는다.
+- 테스트 관측 Java/XML/patch는 /private/tmp/d065-dlq-observation-patch에 보존하고 원본 Java SHA256f365af380d7fbcfb90c4be33ffb52a8d8ece19ebe5b9b8e91d40062f8ebc2eef 복원 후 CI profile baseline을 시작했다(session14441). root heavy승인, SPRING_PROFILES_ACTIVE=test +cleanTest/test+원seed+기존한도. CI :build 중 assemble은 제외한다. 결과는 아직 기재하지 않는다.
+
+## 2026-10-21 — CI profile baseline
+
+- session14441 exit0, 1m29s, 54 suites334tests PASS. timestamp첫2.534s/trace1.769s/route1.769s. DLQ stdout295bytes가 원CI와 동일하며54 XML의 timestamp/filename 순서도 실제 동일하다. 원실패는 재현되지 않았다.
+- SPRING_PROFILES_ACTIVE=test를 명시했고 Java원본 f365로 실행했다. CI Temurin17.0.20-1/x64 대비 로컬17.0.11+9/macOS, CI :build 대비 :test 범위 차이는 남는다.
+- 전체 XML/log/순서 /private/tmp/d065-dlq-baseline-test-1792572889718 보존. Docker전체inventory 전후byte동일, 소유fixtures 모두정리. heavy반환 후 승인된 test-only 관측패치를 다시 적용했다.
+
+## 2026-10-21 — 관측·음성·retention 증거와 최종 범위
+
+- 관측Java dc00bbfa/XML4e9e3f, session17766 full334PASS/1m35s. 원20s,send10s,assignment30s와정확header/ledger조건 유지. observerdrop session53209 단일expectedfail21.084s; 실제Admin 약61ms, 원topicstart1=end1/DLTstart0,end1/verifiercommitted1. loopback무응답 session80130 단일expectedfail22.403s; Admin약1.020s후ExecutionException/loopbackclosed, 원AssertionError[]보존. outerexception만 출력해내부cause유형은직접기록하지않았으며 그한계를유지한다. 두임시변이제거/정상dc00bbfa복원.
+- retention probe session32296 exit0/52s,1test36.336s. Spring없이 자기Kafka3.8.1기본정책으로old/recent같은offset0ack후old만retention삭제/recent정확값읽기를검증. 실제config/시계열/명시적삭제로그/source보존. internalinitialdelay는Admin미반환으로실측값이라고쓰지않는다. 공식3.8.1소스기본30s는가설설명이며 containerstart→삭제32.94s관측과구분한다.
+- reviewer_general의읽기전용독립memo는13경계/allpaymenttest가PR201전후불변이고원장allocator가독립verifierqueue직접경로가아님을확인했다. @Primarytesthandler가ledgerfactory에도선택될수있다는기존wiring한계는별도원인증거가아니다. 원CIcause미확정유지.
+- root승인으로최종fixture timestamp만실행시한번샘플링한now-60s로바꾸고정확값단언/원20s유지. 최종Java SHA256eb40e48d3c6133add9adec035b879acd2a50fa91d31e99dbdb05be3bb568dc80. 이전full334검증dc00과의차이는이표현식/설명주석뿐이다. 사용자Actions우선지시를따라추가로컬full은미실행, 최종정상CI+별도원seedLinux17.0.20:build대기.
+- 별도workflow는고정seed/manual입력없음/pull_request paths와contentsread/timeout15/alwaysartifact. 실행전전체IDsnapshot은성공시atomicrename후인정하고cleanup은신규Testcontainerslabel+immutableID만선택한다. hermeticownership/manifest없는earlyfailure2대조PASS, 실제Actionscleanup은CI결과대기. 기존CIrandomization불변.
+- 프로토타입retention회귀는30초기본cleanup과별도브로커생명주기를요하므로이번PR자동job에반복추가하지않았다. 실행가능원문/설정/삭제로그를보존하며최종기존DLQtest는재발행시각과구별되는정확값을검증한다. arithmetic를복제하는별도unit은추가하지않았다.
+- integration-test-container-lint/consistency/shippreflight/diffcheck PASS. 모든ownedfixtures정리/전체Dockerinventory전후동일. heavy반환. Root소유TASKS/master/PHASE는수정하지않으며D065완료로표기하지않는다.
