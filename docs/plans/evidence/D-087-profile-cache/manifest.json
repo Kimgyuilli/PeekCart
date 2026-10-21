@@ -68,6 +68,24 @@
       "raw_bytes": 65808,
       "raw_sha256": "489c8dcbd943ca55accb60f4f3ad76a1fe5cbbf50d9d1f47d8ce8925dbd3f155",
       "stored_sha256": "489c8dcbd943ca55accb60f4f3ad76a1fe5cbbf50d9d1f47d8ce8925dbd3f155"
+    },
+    {
+      "file": "pr216-ab429-user.log.gz",
+      "raw_bytes": 275008,
+      "raw_sha256": "ef109dc7f74723da86544bfd89cdd0ac9b4b55befb0a311f0e4793dde75cb1d5",
+      "stored_sha256": "621a714de0ab55eba62104647506775c021329147d4fb3c815ebef1584555b04"
+    },
+    {
+      "file": "pr216-ab429-artifacts.json.gz",
+      "raw_bytes": 14445,
+      "raw_sha256": "ab12363ddc93ca27e97bb6173859e3ec78ef28da37b23f3c6ad8dbf0404776c6",
+      "stored_sha256": "e4bacbe887ee36362b34426ede3a1de765483b238ff20a9a8413050b69fdf877"
+    },
+    {
+      "file": "pr216-ab429-user-artifact.zip",
+      "raw_bytes": 79623,
+      "raw_sha256": "e64b44f7d4b9ea585581731feb19a7632b3ecb642bae9bd78d6224be6af8f9f8",
+      "stored_sha256": "e64b44f7d4b9ea585581731feb19a7632b3ecb642bae9bd78d6224be6af8f9f8"
     }
   ]
 }

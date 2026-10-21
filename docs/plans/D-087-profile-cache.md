@@ -29,3 +29,11 @@ Root 승인 좁은 M 범위: export에 runtime과 동일 cache-from1줄, 기존 
 첫 PR216 run39607970017은6images가 실패했다. user119249939912에서 두 CLI의 cache-from/builder는 같고 live export vertex34는CACHED지만, saved history plain은 layer extraction/download 후 DONE9.0s로 끝나고 Gradle task 출력이 없다. profile origin1792588312..1792588347은 image window1792589294..1792589318보다 앞선다. 이는 원PR214 실제Gradle35.92s 재실행과 다르며 같은원인으로 기록하지 않는다. 원8019 log/ZIP을 추가 보존한다.
 
 Root 승인 후 동일 recorded buildref의 공식 rawjson solve events를 추가 수집한다. 단일 bootJar vertex digest를 runtime/export 간 대조하며 export의 cached:true+완료 event와 해당vertex 실행출력없음을 요구한다. missing/malformed/cachefalse/differentvertex/logpresent/미완료는 실패한다. origin/checksum/window 검증은 유지하고 plain DONE materialization시간은 Gradle 실행시간으로 쓰지 않는다. 새 Buildx0.38 실제 --help와 rawjson 호출 결과는 Actions에서 보존한다. 공식 CLI형식은 [history logs](https://docs.docker.com/reference/cli/docker/buildx/history/logs/)와 [v0.38 source](https://github.com/docker/buildx/blob/v0.38.0/commands/history/logs.go)에 근거한다. 새 일반 event framework/외부의존성은 없다. 실제 repaired Actions가 성공하기 전 종결하지 않는다.
+
+## ab429 실패 후 최종 단순화 계약
+
+PR216 ab429 user119256095630은 native cache 완료 증거가 양쪽에 있지만 image vertex05621f…/export48ede4…가 달라 거부됐다. 서로 다른 target graph의 vertex digest 동일성은 실제로 성립하지 않으며, 동일cache key라고 추정한 조건을 철회한다. 이 실패의 원log/native events ZIP도 보존한다.
+
+Root 승인 최종 계약: record-image의 실제 raw cache완료/실행log없음을 확인한 cache hit는 profile export를 건너뛰고 cache_hit_unmeasured로 기록한다. Gradle/profile/origin/exportref는 null이며 과거profile을 읽지 않는다. raw증거누락/오류는 실패한다. health/save/identity/최종gate는 그대로다. fresh인 경우에만 export를 실행해 각자 exactref/builder/service/command/native cached 완료/nolog와 현재 image window 내 profile origin/파일hash/HTML을 확인한다. cross-solve digest equality는 요구하지 않는다. fresh의 시간/hash 연결은 기존D087과같은검증경계이며 서로다른solve vertex ID의동일성을증명한다고쓰지않는다.
+
+첫새CI가전부cache hit면새fresh경로의실측은미완이다. 기존PR209의실제6fresh는당시계약근거, 새fresh positive fixture/true-detached음성은새parser의논리검증으로구분한다. 필요시한서비스의좁은Actions fresh positive는Root와별도검토하고 regularCI cache bust는추가하지않는다.
