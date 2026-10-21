@@ -342,13 +342,15 @@ VALUES('fixture',1,'order.created',0,99,'fixture-group','RESOLVED_ORIGIN',NULL,N
             writer.stdin = None
             # docker exec 기동 시간이 포함되므로 SLEEP 길이보다 넉넉히 기다린다.
             deadline = time.monotonic() + 15
-            while time.monotonic() < deadline:
-                active = self.sql("SELECT COUNT(*) FROM information_schema.INNODB_TRX WHERE trx_query LIKE 'SELECT SLEEP(3)%'", root=True).stdout.strip()
+            # INNODB_TRX.trx_query 는 캐시된 스냅샷이라 SLEEP 구간을 놓칠 수 있어 PROCESSLIST 로 본다.
+            while time.monotonic() < deadline and writer.poll() is None:
+                active = self.sql("SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE INFO LIKE 'SELECT SLEEP(3)%'", root=True).stdout.strip()
                 if active == '1':
                     break
                 time.sleep(.05)
             else:
-                raise AssertionError('backfill transaction did not reach observed pause')
+                stdout, stderr = writer.communicate(timeout=10) if writer.poll() is not None else ('', '')
+                raise AssertionError(f'backfill transaction did not reach observed pause (exit={writer.poll()}, stderr={stderr!r})')
             self.sql(old_insert)
             stdout, stderr = writer.communicate(timeout=10)
             assert writer.returncode == 0, stderr
