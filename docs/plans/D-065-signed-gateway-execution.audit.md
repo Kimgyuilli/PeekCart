@@ -23,3 +23,8 @@
 - head53af54e/선행211d882, 전용39589065938 SUCCESS. 실제 checkout43c9b8bcf7618f6c8549004a78b3e5a4b277dbac. 원본 /private/tmp/pr210-signed39589065938 및 전체job log를 보존하고 bundle/hash를 준비했다. 이미지6개 성공과 실제각16HTTP/5snapshot/case completeness를 직접 대조했다.
 - 각 서비스 USER403/위조헤더403/누락·서명·직접평문·내부키·실제만료401, 좁은경로거부와 정상복구를 통과했다. 각5단계 원장/outbox before-after는 동일하고 cleanup각6container/1network/1volume 및 safe scan이 성공했다. Actions의 archivechecksum/loadID 검사는통과했으며로컬에서대형imagearchive를재다운로드하지않았다.
 - root지시대로실제결과먼저보존하고211최신base반영은actualmain병합후최종정렬할수있도록보류한다. 전체CI/독립검토/최종정렬미완이며P6는체크하지않는다. 기대값·timeout·운영replayfalse를바꾸지않았다.
+
+## 2026-10-21 — 실제 선행 병합 정렬
+
+- PR211 정상 병합 main89797c9639e15fb7c362e6be49687e652f80d3b9를 자기 branch에 통합했다. 기존 actual 성공 자료를 docs commit404d450으로 먼저 보존했다. d882fec 대비 작성한 signed fixture 7파일의 patch와 actual897 대비 patch는 byte-identical이며 SHA256은 `593a34f520835716849799373a55680f7d91c8558c157a3e8d7a7854b787f8a4`다. 제품 handler는 이제 base 소유다.
+- source 불변 상태에서 hermetic12 methods, actual897 기준 문서 보존gate, diff 검사가 통과했다. 현재 head의 일반 CI와 전용 signed Actions는 새로 실행하며 아직 미검증이다. 이전53af의 실제 성공을 새 head 실행으로 대신하지 않는다. root의 별도 병합 승인은 없고 P6는 미완이다.
