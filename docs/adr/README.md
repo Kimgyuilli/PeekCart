@@ -63,4 +63,5 @@
 | [0040](./0040-protected-approval-recovery.md) | 보호 승인 대사 복구 — PG 직접 증빙·역할 분리·예약 version·감사 | Accepted | Phase 5 | 03, 05 |
 | [0041](./0041-untrusted-payment-webhook-hints.md) | 일반 결제 웹훅의 제한된 비신뢰 신호 접수 | Accepted | Phase 5 | 03, 06 |
 | [0042](./0042-canonical-pg-order-identity.md) | Checkout부터 복구까지 유지하는 PG 주문 식별자 | Accepted | Phase 5 | 03, 05, 06 |
+| [0043](./0043-dlq-preallocated-lineage-identity.md) | DLQ 최초 INSERT의 lineage와 ID 예약 | Accepted | Phase 5 | 05, 06 |
 <!-- INDEX:END -->
