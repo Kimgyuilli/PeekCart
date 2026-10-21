@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Hermetic controls only; actual signed HTTP evidence is produced by Actions."""
+import ast
+import base64
 import copy
 import hashlib
 import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import yaml
 import evidence
@@ -146,6 +148,25 @@ class OwnershipTest(unittest.TestCase):
                 self.assertEqual(result["failureType"], "TimeoutError")
                 self.assertFalse(result["complete"])
                 self.assertFalse(instance.private.exists())
+
+    def test_direct_plaintext_probe_does_not_include_a_malformed_internal_token(self):
+        # Execute the real baseline body with fake I/O; no DB/JWT library or issuer key is loaded.
+        tree = ast.parse((lab.ROOT / "scripts/signed-gateway/verify.py").read_text())
+        function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "baseline")
+        key = Mock()
+        key.sign.return_value = b"fixture-signature"
+        namespace = {"seed": Mock(), "login": lambda role: "header." + role + ".signature",
+                     "claims": lambda token: {"role": "ADMIN" if ".admin." in token else "USER", "family_id": "fixture"},
+                     "require": lab.require, "check_disabled": Mock(), "rejected": Mock(),
+                     "rsa": Mock(generate_private_key=Mock(return_value=key)), "padding": Mock(), "hashes": Mock(),
+                     "base64": base64, "PATH": "/fixture", "ROOT_ID": 1001, "SERVICE": "order"}
+        exec(compile(ast.Module(body=[function], type_ignores=[]), "actual-baseline", "exec"), namespace)
+        namespace["baseline"]([])
+        direct = next(call for call in namespace["rejected"].call_args_list if call.args[3] == "direct-plaintext-admin")
+        self.assertEqual(direct.args[0], "resource-service")
+        self.assertEqual(direct.args[2], 401)
+        self.assertEqual(set(direct.kwargs["headers"]), {"X-User-Id", "X-User-Role", "X-User-Family-Id"})
+        self.assertEqual(direct.kwargs["headers"]["X-User-Role"], "ADMIN")
 
     def test_workflow_keeps_all_four_resources_and_no_publish(self):
         workflow = yaml.load((lab.ROOT / ".github/workflows/signed-gateway.yml").read_text(), Loader=yaml.BaseLoader)

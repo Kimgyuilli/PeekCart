@@ -155,7 +155,8 @@ def baseline(results):
     signature = attacker.sign((segments[0] + "." + segments[1]).encode(), padding.PKCS1v15(), hashes.SHA256())
     segments[2] = base64.urlsafe_b64encode(signature).decode().rstrip("=")
     rejected("gateway", PATH, 401, "invalid-rsa-signature", results, ".".join(segments))
-    rejected("resource-service", f"/actuator/deadletter/{ROOT_ID}", 401, "direct-plaintext-admin", results, headers=forged)
+    rejected("resource-service", f"/actuator/deadletter/{ROOT_ID}", 401, "direct-plaintext-admin", results,
+             headers={key: value for key, value in forged.items() if key != "X-Internal-Auth"})
     rejected("gateway", f"/api/v1/admin/deadletter/{SERVICE}/not-a-number", 404, "non-numeric-route", results, admin)
     rejected("gateway", "/actuator/deadletter", 404, "gateway-actuator-not-public", results, admin, method="GET")
     rejected("gateway", f"/api/v1/admin/deadletter/{SERVICE}/%2e%2e/health", (400, 404), "encoded-traversal-route", results, admin)
