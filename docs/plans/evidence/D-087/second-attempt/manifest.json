@@ -1,0 +1,117 @@
+{
+  "source_ref": "b1d2dd1ac07c845170293842ead57b09ee7d8ba1",
+  "run": 39588545903,
+  "job": 119183886821,
+  "status": "image and profile export succeeded; analyzer read empty stdout while plain progress was on stderr; no successful analysis",
+  "credential_pattern_matches": 0,
+  "files": [
+    {
+      "path": "notification-job.log.gz",
+      "raw_bytes": 278297,
+      "raw_sha256": "49d0edf70b426608192a9366a491cf452909d48d55f85f61d1a71a6980ce735a",
+      "gzip_sha256": "5d366bda66c7b567dff8191ceb74bc7a04d9dbcce6316b8ea352f41be16bd82d"
+    },
+    {
+      "path": "buildx-version.txt.gz",
+      "raw_bytes": 74,
+      "raw_sha256": "af9e26004e1d709f960d6dda62c5bb9415782f12269f0ccce6c8b918d2326d72",
+      "gzip_sha256": "0f993a8e0505e78b0401951bd7d980a9c8161cd7db78160203e1d11b3735a3f2"
+    },
+    {
+      "path": "context.json.gz",
+      "raw_bytes": 711,
+      "raw_sha256": "1846bde91e8e41ec40703bad1030329ba7c0fa01fa2ecbf602139f4c50923ae6",
+      "gzip_sha256": "5e08832bca08a928ffc5f685d0489732ba6a324731efddcdc16b50047065e37d"
+    },
+    {
+      "path": "docker-version.txt.gz",
+      "raw_bytes": 769,
+      "raw_sha256": "7ba4296d98811b3f6017879e4adb5452f8fe84ab8242b9bfd4fe14e394459098",
+      "gzip_sha256": "204742ed284779f5eb69f29ee0363ea7866f52471e8d13d2ba1ba292812c51e4"
+    },
+    {
+      "path": "export/metadata/profile.json.gz",
+      "raw_bytes": 90,
+      "raw_sha256": "7abbb2f0663ff2cbbbea741fddc2efc714c3c0f4d9326476be2d5bc3850e8901",
+      "gzip_sha256": "516de586b092c1979948bfb16bdb2c329b2d3c2e66d85da06cb06dd3489a1829"
+    },
+    {
+      "path": "export/metadata/report-sha256.txt.gz",
+      "raw_bytes": 121,
+      "raw_sha256": "0a23d9a8895451b1875e55ceec8adec46ceee5457b55abaa088e467fae8dd589",
+      "gzip_sha256": "98a98083ea3889b7a26c3caa3ba56925c8308345e120a1e6215b304860c404d7"
+    },
+    {
+      "path": "export/provenance.json.gz",
+      "raw_bytes": 246538,
+      "raw_sha256": "02ddb4b857516e44aba8493815244e13ba6ffd3931267e216e2f4e385386ff70",
+      "gzip_sha256": "5de0d36492ccd7fa69984c51d92a25fa80598882773ada3d6b792086631efc9a"
+    },
+    {
+      "path": "export/reports/css/base-style.css.gz",
+      "raw_bytes": 2428,
+      "raw_sha256": "e80e92985c9e56c3b3ecb437faf360042a7ff45fde849bf4e9f80fd4e0878743",
+      "gzip_sha256": "246a442f2f24e6345d8728285954c7405a52a821ec15a8bd04918a99c62d7ec5"
+    },
+    {
+      "path": "export/reports/css/style.css.gz",
+      "raw_bytes": 50,
+      "raw_sha256": "b868c03d8e29bde3760407a80e3cce917b2c395486d29fe3f230ef854eded43c",
+      "gzip_sha256": "5a857cb15c6f8b058639cc16c7e53ab1859ea8738f741914cedb6892a1417e7e"
+    },
+    {
+      "path": "export/reports/js/report.js.gz",
+      "raw_bytes": 6243,
+      "raw_sha256": "3365e26776dbfa97b975163b467cc913ca5790b58027473758c8f8dad02e3a31",
+      "gzip_sha256": "c3597a74f885823b8226d138f10e211fbada3ea75d66e40b10c593ac92e67e05"
+    },
+    {
+      "path": "export/reports/profile-2026-10-21-11-00-32.html.gz",
+      "raw_bytes": 76524,
+      "raw_sha256": "70125cf5cdabadb4e43f72b56c2b2a3ffdb96e0713b945b35a4215cfce262746",
+      "gzip_sha256": "ee4e885cf1453ad8f1a7a1e8f2fda670a0d81c56193dbc9bf223225c7dafe72f"
+    },
+    {
+      "path": "export-metadata.json.gz",
+      "raw_bytes": 36679,
+      "raw_sha256": "1ecf721a13a8be6851c6ea8951361719c953055ff38207fe7662d574b63db236",
+      "gzip_sha256": "5c1cdc0a68e2828cb051d95252e2cd81e0006f4ffd62f4d35dcc8894cd5de291"
+    },
+    {
+      "path": "image-build.log.gz",
+      "raw_bytes": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gzip_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "image-build.log.stderr.gz",
+      "raw_bytes": 14188,
+      "raw_sha256": "7f9c28e25c99a1bca6258c273f39c81a940ebf9311c9321f275cd3dc0555fce7",
+      "gzip_sha256": "d85e1e0e163651fe7c213140fec7e51678e54c5955422e00640bc194cf4d5cd7"
+    },
+    {
+      "path": "image-metadata.json.gz",
+      "raw_bytes": 37527,
+      "raw_sha256": "13d3ee6155419d5664c820e828c9a41c6774b2974f858ff802daac89133791df",
+      "gzip_sha256": "b4707da5a41e19df5e7d5c88936aaa2d54413cbdb785ce748134d5a771f1c5a0"
+    },
+    {
+      "path": "image.dockerbuild.gz",
+      "raw_bytes": 37058,
+      "raw_sha256": "260489f29af46ea71ac6e740f15107b29026ee0ff755f1ffec4b237b639fbd27",
+      "gzip_sha256": "63ba63e15d1c9d014d0b3829099070fd2fcb0223ada32365805bbeda0d2411d9"
+    },
+    {
+      "path": "profile-export.log.gz",
+      "raw_bytes": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gzip_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "profile-export.log.stderr.gz",
+      "raw_bytes": 3732,
+      "raw_sha256": "421def19b1b42ac9d3494e0561242b2b2c9ab6aa7d2a4bf5e5555bd8eb83eb94",
+      "gzip_sha256": "cf85ebdfb74b8491e077b3ead1e52858055b6622e554ec80fe13fe300cc9e692"
+    }
+  ]
+}

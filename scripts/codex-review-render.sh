@@ -4,10 +4,10 @@
 #   이 스크립트의 무게중심은 표가 아니라 **실패한 리뷰를 0건과 구분하는 것**이다.
 #
 # `/plan` §6 과 `/work` §6 은 "P0/P1 이 0건이면 자동 통과" 라고 적혀 있다. 그런데
-# 사용량 한도로 죽은 런의 결과도 0건이다. 실측(2026-09-20) 으로 `.cache/codex-reviews/`
-# 의 JSON 282개 중 **45개(16%)가 그 상태**였다 — 빈 파일 44개 + `items: null` 1개이고,
-# 동명 `.stderr` 에는 전부 `ERROR: You've hit your usage limit` 가 찍혀 있었다.
-# 즉 "리뷰가 깨끗했다" 와 "리뷰가 아예 안 돌았다" 가 지금까지 구분되지 않았다. false-green 이다.
+# 실패한 런의 결과도 0건으로 오인될 수 있다. 당시 계획 정정 기록(2026-09-20)은
+# 특정 시점 JSON 282개 중 빈 파일44개/null0개, usage limit9개를 보고한다.
+# 현재 원본 cache corpus가 없어 전수 수치/원인 분류를 재검증한 결과는 아니다.
+# 모집단·시점·초기45/null1 정정 근거는 docs/plans/evidence/D-104/README.md 참조.
 #
 # 그래서 종료 코드를 셋으로 가른다. 호출처는 **2를 0으로 접으면 안 된다.**
 #   0  정상 (지적 0건 포함)
@@ -15,10 +15,10 @@
 #   2  리뷰 실패 — 표를 렌더하지 않는다. 리뷰 상태는 `미결(리뷰 실패: ...)` 이다
 #
 # 선택 필드는 "있을 때만" 컬럼을 만든다. `file`/`line` 은 diff 리뷰에만 있고 plan 리뷰엔
-# 없다. `scope` 와 `suggested_disposition` 은 **과거 이력 1267건 전부에서 결측**이었는데,
-# 스키마의 `required` 에 없어서 Codex 가 내보내지 않았기 때문이다. 같은 작업에서
-# `required` 를 고쳤으므로(P6) 새 리뷰부터는 채워져 온다. 과거 파일은 그대로 비어 있으니
-# 전량 결측이면 컬럼을 내지 않는다 — 빈 칸 줄만 늘기 때문이다.
+# 없다. 당시 초기 집계는1267항목의 scope/disposition 결측을 보고했지만 원raw는 없다.
+# required 누락400과 수정 후 필드를 채운 단일 schema probe는 당시 작업기록에 있다.
+# 그 probe로 과거1267개 결측의 원인 전체를 확정하지 않는다. 과거 선택 필드 생략은
+# 호환을 위해 허용하고 전량 결측이면 컬럼을 내지 않는다(D-103/D-104).
 #
 # 사용:
 #   codex-review-render.sh <json> [--round N] [--kind plan|diff|adr]
@@ -85,9 +85,8 @@ esac
 # stderr_excerpt <json_path>
 # 동명 .stderr 에서 실패 사유로 쓸 한 줄을 뽑는다.
 #
-#   "마지막 유의미한 줄" 휴리스틱은 실제 데이터에서 무너진다. 실측(2026-09-20) 으로
-#   실패 44건의 stderr 마지막 줄은 `}` 이거나 **리뷰 대상 diff 에서 echo 된 내용**인 경우가
-#   많았다. 원인 줄은 대개 파일 중간에 있다. 그래서 위치가 아니라 **패턴**으로 찾는다.
+#   "마지막 유의미한 줄" 휴리스틱을 반증한 당시 작업기록(2026-09-20)은 schema400의 닫는 `}` 및 뒤에 echo된 diff 내용의 오인 사례를 보인다.
+#   원raw 전수는 현재 없으므로44건의 빈도 일반화는 하지 않는다. 위치 대신 패턴으로 찾는다.
 #
 # 우선순위:
 #   1. API 에러 본문의 "message" 필드 — `ERROR: {...}` 여러 줄 블록의 알맹이
@@ -120,20 +119,71 @@ fail_review() {
   exit 2
 }
 
-# --- 실패 판별 셋. 전부 exit 2 로 모은다. ---
+# 생산자 envelope/core 계약을 렌더 전에 검사한다. 과거 선택 필드 생략은 허용한다.
 [ -s "$JSON" ] || fail_review '빈 응답 (0바이트)'
-jq -e . "$JSON" >/dev/null 2>&1 || fail_review 'JSON 파싱 실패'
-# 타입까지 본다. `items` 가 객체(`{}`)나 `false` 여도 파이썬 쪽에서 `or []` 로 접혀
-# **빈 배열과 구별되지 않는다** — 실패가 "지적 0건" 으로 새는 바로 그 경로다. 리뷰에서 잡혔다.
-jq -e '(.items | type) == "array"' "$JSON" >/dev/null 2>&1 \
-  || fail_review 'items 가 배열이 아님 (null / 객체 / 누락)'
-
-python3 - "$JSON" "$LABEL" <<'PY'
+rendered="$(python3 - "$JSON" "$LABEL" <<'PYRENDER'
 import io, json, sys
+from decimal import Decimal, InvalidOperation
 
 path, label = sys.argv[1], sys.argv[2]
-doc = json.load(io.open(path, encoding='utf-8'))
-items = doc.get('items') or []
+
+def reject_constant(value):
+    raise ValueError('non-JSON constant: ' + value)
+
+try:
+    with io.open(path, encoding='utf-8') as source:
+        doc = json.load(source, parse_float=Decimal, parse_constant=reject_constant)
+except (OSError, UnicodeError, ValueError, RecursionError, InvalidOperation):
+    print('JSON 파싱 실패')
+    sys.exit(2)
+
+
+def require(condition, reason):
+    if not condition:
+        raise ValueError(reason)
+
+
+def string(value):
+    if not isinstance(value, str):
+        return False
+    value.encode('utf-8')
+    return True
+
+
+def integer(value, minimum):
+    # JSON Schema integer에는 1.0도 속한다. bool은 JSON boolean이므로 제외한다.
+    return type(value) in (int, Decimal) and value >= minimum and (
+        type(value) is int or (value.is_finite() and value == value.to_integral_value()))
+
+try:
+    require(isinstance(doc, dict), '결과가 object가 아님')
+    require(set(doc) == {'run_id', 'summary', 'items'}, '필수 metadata 누락 또는 알 수 없는 필드')
+    require(string(doc['run_id']) and string(doc['summary']), 'run_id/summary가 string이 아님')
+    require(isinstance(doc['items'], list), 'items가 배열이 아님')
+    required = {'id', 'severity', 'category', 'finding', 'suggestion'}
+    optional = {'file', 'line', 'scope', 'suggested_disposition'}
+    enums = {'severity': {'P0', 'P1', 'P2'},
+             'category': {'architecture', 'bug', 'security', 'test', 'doc', 'style', 'convention'},
+             'scope': {'in_scope', 'out_of_scope', 'new_surface'},
+             'suggested_disposition': {'reflect', 'defer', 'reject'}}
+    for index, item in enumerate(doc['items']):
+        prefix = 'items[%d]: ' % index
+        require(isinstance(item, dict), prefix + 'object가 아님')
+        require(required <= set(item) <= required | optional, prefix + '필수 필드 누락 또는 알 수 없는 필드')
+        require(integer(item['id'], 1), prefix + 'id가 양의 integer가 아님')
+        for key in ('finding', 'suggestion', 'file'):
+            if key in item:
+                require(string(item[key]), prefix + key + '가 string이 아님')
+        if 'line' in item:
+            require(integer(item['line'], 0), prefix + 'line이 0 이상 integer가 아님')
+        for key, choices in enums.items():
+            if key in item:
+                require(string(item[key]) and item[key] in choices, prefix + key + '가 허용 enum이 아님')
+except ValueError as error:
+    print('결과 계약 위반: ' + str(error))
+    sys.exit(2)
+
+items = doc['items']
 
 order = ['P0', 'P1', 'P2']
 counts = {s: 0 for s in order}
@@ -152,8 +202,7 @@ if summary:
     print('요약: %s' % ' '.join(summary.split()))
 
 if not items:
-    # 여기 오는 것은 items 가 **빈 배열**일 때뿐이다. null 과 빈 파일은 위에서 exit 2 로
-    # 걸렀으므로, 이 줄은 "모델이 돌았고 지적이 없었다" 만 의미한다.
+    # 검증된 정형 결과의 빈 배열이다. 파일 형식만으로 실제 모델 실행을 증명하지 않는다.
     print()
     print('지적 0건 (자동 통과)')
     sys.exit(0)
@@ -168,8 +217,8 @@ def cell(v):
 def clip(v, n=70):
     """표 칸은 훑는 용도다. 전문은 아래 블록에 그대로 실리므로 여기서 잘라도 잃는 게 없다.
 
-    실측: 실제 이력의 finding 은 평균 400자여서, 자르지 않으면 한 행이 화면을 몇 배
-    넘기고 '훑으면서 처분을 고른다'는 표의 용도 자체가 죽는다.
+    긴 finding이 표 폭을 늘리는 것을 막는다. 과거 평균400자 보고의 원자료는
+    현재 없으므로 여기서는 길이 평균을 검증 근거로 삼지 않는다.
     """
     s = cell(v)
     return s if len(s) <= n else s[:n - 1] + '…'
@@ -223,6 +272,10 @@ for it in rows:
 
 if not has_disp:
     print()
-    print('> 권장 처분(suggested_disposition) 미기재 — 스키마 `required` 확장 이전에 생성된 '
-          '응답이다. 처분은 전부 사람이 판정한다.')
-PY
+    print('> 권장 처분(suggested_disposition) 미기재 — 과거 형식과의 호환을 위해 생략을 허용한다. '
+          '처분은 전부 사람이 판정한다.')
+PYRENDER
+)"
+render_rc=$?
+[ "$render_rc" = 0 ] || fail_review "${rendered:-결과 처리 실패 (exit $render_rc)}"
+printf '%s\n' "$rendered"

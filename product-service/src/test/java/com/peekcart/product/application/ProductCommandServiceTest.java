@@ -65,7 +65,7 @@ class ProductCommandServiceTest {
         assertThat(result.status()).isEqualTo("ON_SALE");
         then(productRepository).should().save(any(Product.class));
         then(inventoryRepository).should().save(any(Inventory.class));
-        // strangler-2: product.updated 발행 (CQRS ⑤)
+        // product.updated 발행 (CQRS 로컬 가격 캐시)
         then(outboxEventPublisher).should().publishProductUpdated(any(Product.class), anyInt());
     }
 

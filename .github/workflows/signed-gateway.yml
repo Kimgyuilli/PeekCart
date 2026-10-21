@@ -1,0 +1,117 @@
+name: Signed gateway admission
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docker-compose.signed-gateway.yml'
+      - 'scripts/signed-gateway/**'
+      - 'scripts/ci-image-identity.sh'
+      - 'scripts/e2e/mysql-init/**'
+      - 'Dockerfile'
+      - '*-service/src/main/**'
+      - 'gateway/src/main/**'
+      - 'common/src/main/**'
+      - 'peekcart-common-*/src/main/**'
+      - 'internal-token-contract/src/main/**'
+      - '**/build.gradle'
+      - 'gradle/**'
+      - 'settings.gradle'
+      - '.github/workflows/signed-gateway.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: signed-gateway-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [user-service, gateway, order-service, product-service, payment-service, notification-service]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          build-args: SERVICE=${{ matrix.service }}
+          tags: ${{ matrix.service }}:ci
+          load: true
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+      - name: Record existing image identity contract
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: |
+          set -euo pipefail
+          mkdir -p image
+          docker save "$SERVICE:ci" | gzip > image/image.tar.gz
+          bash scripts/ci-image-identity.sh record "$SERVICE:ci" image
+          git rev-parse HEAD > image/source-head.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-image-${{ matrix.service }}
+          path: image/
+          retention-days: 2
+          if-no-files-found: error
+
+  admission:
+    needs: images
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [order, product, payment, notification]
+    env:
+      RESOURCE: ${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: signed-image-user-service
+          path: _images/signed-image-user-service
+      - uses: actions/download-artifact@v4
+        with:
+          name: signed-image-gateway
+          path: _images/signed-image-gateway
+      - uses: actions/download-artifact@v4
+        with:
+          name: signed-image-${{ matrix.service }}-service
+          path: _images/signed-image-${{ matrix.service }}-service
+      - name: Hermetic safety controls and exact image load
+        run: |
+          set -euo pipefail
+          python3 -m pip install pyyaml
+          python3 -B scripts/signed-gateway/test_contract.py
+          for image in user-service gateway "$RESOURCE-service"; do
+            test "$(cat "_images/signed-image-$image/source-head.txt")" = "$(git rev-parse HEAD)"
+            bash scripts/ci-image-identity.sh load "$image:ci" "_images/signed-image-$image"
+          done
+          docker build -t signed-gateway-runner:ci scripts/signed-gateway/runner
+      - name: Actual User JWKS Gateway and SIGNED_ONLY resource
+        run: python3 -B scripts/signed-gateway/lab.py run --service "$RESOURCE" --evidence build/signed
+      - name: Recover only this project's resources and scan evidence
+        if: always()
+        timeout-minutes: 2
+        run: python3 -B scripts/signed-gateway/lab.py cleanup --evidence build/signed
+      - name: Verify complete unchanged signed chain evidence
+        run: python3 -B scripts/signed-gateway/evidence.py build/signed "$RESOURCE" "$(git rev-parse HEAD)" _images
+      - name: Final secret scan before upload
+        if: always()
+        id: scan
+        run: python3 -B scripts/signed-gateway/lab.py sanitize --evidence build/signed
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && steps.scan.outcome == 'success' }}
+        with:
+          name: signed-gateway-${{ matrix.service }}
+          path: build/signed/
+          retention-days: 7
+          if-no-files-found: error

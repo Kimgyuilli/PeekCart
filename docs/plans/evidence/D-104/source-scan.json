@@ -1,0 +1,1687 @@
+{
+  "source_commit": "6a5a47bbb8d7f717604883e8b9981430190867aa",
+  "selection": "docs/plans/*.audit.md (direct children only)",
+  "method": "reconstruction from tracked prose; no deduplication; not recovery of original script",
+  "files": [
+    {
+      "path": "docs/plans/task-adr0018-compensation-refund-contract.audit.md",
+      "sha256": "d897345a18b8b13bce0f311dbe21d974403d59a0db332997b0cbeaf31668e24b"
+    },
+    {
+      "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+      "sha256": "d9f65370d96e5d97b105cb9e6b6cc31657b406954dc68556242f338c01c8ebf6"
+    },
+    {
+      "path": "docs/plans/task-ci-test-matrix.audit.md",
+      "sha256": "9de64dee0db602866970dbd32c2a1efe9e8d2414898c75dd9a3fd6ea7d04c500"
+    },
+    {
+      "path": "docs/plans/task-d002-bc-session.audit.md",
+      "sha256": "06b01937f729ec4878bd594ffb195bd30ee6c68aeb9e7d25766c81ed8d863bdc"
+    },
+    {
+      "path": "docs/plans/task-d020-approval-reconciliation.audit.md",
+      "sha256": "23f1a8be71c5563af18a615627174e358ff120374d901bb578cd09b417ee87e2"
+    },
+    {
+      "path": "docs/plans/task-d025-inventory-lock-boundary.audit.md",
+      "sha256": "2388094740211f3b49801a70c363bac410d4a6354d424680c27a2d96e3307ba9"
+    },
+    {
+      "path": "docs/plans/task-impl3-pr3d-b2-cluster-session.audit.md",
+      "sha256": "ca82ea026bb0514997836d8cedcde43b8e6fed91609fb92b444296df9ffd7040"
+    },
+    {
+      "path": "docs/plans/task-impl3-pr3d-internal-token.audit.md",
+      "sha256": "e7c2a0b2c8ff6cc716603d924b6eecceeadd594c4dd356779b7ff77c5f8ea096"
+    },
+    {
+      "path": "docs/plans/task-impl3-pr4-auth-observability.audit.md",
+      "sha256": "ea80a099c9657c937007dd11242350cb8f3db85f052a2b3d0e697986360abb91"
+    },
+    {
+      "path": "docs/plans/task-impl3-spring-cloud-gateway.audit.md",
+      "sha256": "90e7ec1167f8f9488d377e50f2d06397b793ed70c7997a191f1fc458a935808f"
+    },
+    {
+      "path": "docs/plans/task-impl4-c1-refund-path.audit.md",
+      "sha256": "7896955fd89dc90fa9a56f95a9176e889b30ac6252f8b250614bb9a12589d368"
+    },
+    {
+      "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+      "sha256": "be122646306dc87c9931f9ad233cb26c45e2058547e774730aea08455fe3847d"
+    },
+    {
+      "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+      "sha256": "6839a9ea6a3070edffb6c35eb7a1f7be027c57ff8ae6b7b21c5fb2e8a58641ef"
+    },
+    {
+      "path": "docs/plans/task-impl4-choreography-saga.audit.md",
+      "sha256": "56167febc8ec899ed75482b88ef2f948a32026fb99044729cc4c45e1961bd361"
+    },
+    {
+      "path": "docs/plans/task-impl4-d1-saga-metrics.audit.md",
+      "sha256": "7eaeebf85110e5b4e9014a69175909ceba6839bcae972df48ec81a0bcc09d0c5"
+    },
+    {
+      "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+      "sha256": "357b56eb72f48eb58c16ee43a2eb8e6a0d0b1fd377bab0cdd7b0b4f8536e48d1"
+    },
+    {
+      "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+      "sha256": "2e20d8ca0fbc608587324a64d21ba0955bae7cdaa8fa3566c20227ce2fec6f26"
+    },
+    {
+      "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+      "sha256": "63c7d85a4288bcb9c78836b1d9a8d3995110a39c32d504383e4668c6dda4ded9"
+    }
+  ],
+  "results": {
+    "severity": {
+      "pattern": "항목: (\\d+)건 \\(P0:(\\d+), P1:(\\d+), P2:(\\d+)\\)",
+      "count": 56,
+      "matches": [
+        {
+          "path": "docs/plans/task-adr0018-compensation-refund-contract.audit.md",
+          "line": 6,
+          "values": [
+            9,
+            1,
+            5,
+            3
+          ],
+          "matched_text": "항목: 9건 (P0:1, P1:5, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-adr0018-compensation-refund-contract.audit.md",
+          "line": 32,
+          "values": [
+            9,
+            0,
+            7,
+            2
+          ],
+          "matched_text": "항목: 9건 (P0:0, P1:7, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 4,
+          "values": [
+            13,
+            0,
+            9,
+            4
+          ],
+          "matched_text": "항목: 13건 (P0:0, P1:9, P2:4)"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 14,
+          "values": [
+            9,
+            0,
+            5,
+            4
+          ],
+          "matched_text": "항목: 9건 (P0:0, P1:5, P2:4)"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 27,
+          "values": [
+            15,
+            0,
+            12,
+            3
+          ],
+          "matched_text": "항목: 15건 (P0:0, P1:12, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 66,
+          "values": [
+            7,
+            0,
+            6,
+            1
+          ],
+          "matched_text": "항목: 7건 (P0:0, P1:6, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 78,
+          "values": [
+            6,
+            0,
+            5,
+            1
+          ],
+          "matched_text": "항목: 6건 (P0:0, P1:5, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 92,
+          "values": [
+            7,
+            0,
+            5,
+            2
+          ],
+          "matched_text": "항목: 7건 (P0:0, P1:5, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 127,
+          "values": [
+            5,
+            0,
+            3,
+            2
+          ],
+          "matched_text": "항목: 5건 (P0:0, P1:3, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 4,
+          "values": [
+            9,
+            0,
+            4,
+            5
+          ],
+          "matched_text": "항목: 9건 (P0:0, P1:4, P2:5)"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 16,
+          "values": [
+            10,
+            0,
+            6,
+            4
+          ],
+          "matched_text": "항목: 10건 (P0:0, P1:6, P2:4)"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 28,
+          "values": [
+            9,
+            0,
+            6,
+            3
+          ],
+          "matched_text": "항목: 9건 (P0:0, P1:6, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 46,
+          "values": [
+            4,
+            0,
+            2,
+            2
+          ],
+          "matched_text": "항목: 4건 (P0:0, P1:2, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 54,
+          "values": [
+            3,
+            0,
+            1,
+            2
+          ],
+          "matched_text": "항목: 3건 (P0:0, P1:1, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 60,
+          "values": [
+            3,
+            0,
+            2,
+            1
+          ],
+          "matched_text": "항목: 3건 (P0:0, P1:2, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl3-pr3d-internal-token.audit.md",
+          "line": 65,
+          "values": [
+            11,
+            0,
+            9,
+            2
+          ],
+          "matched_text": "항목: 11건 (P0:0, P1:9, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-impl3-spring-cloud-gateway.audit.md",
+          "line": 3,
+          "values": [
+            10,
+            0,
+            8,
+            2
+          ],
+          "matched_text": "항목: 10건 (P0:0, P1:8, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-impl3-spring-cloud-gateway.audit.md",
+          "line": 20,
+          "values": [
+            4,
+            0,
+            2,
+            2
+          ],
+          "matched_text": "항목: 4건 (P0:0, P1:2, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-impl3-spring-cloud-gateway.audit.md",
+          "line": 29,
+          "values": [
+            6,
+            0,
+            4,
+            2
+          ],
+          "matched_text": "항목: 6건 (P0:0, P1:4, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c1-refund-path.audit.md",
+          "line": 6,
+          "values": [
+            17,
+            0,
+            13,
+            4
+          ],
+          "matched_text": "항목: 17건 (P0:0, P1:13, P2:4)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+          "line": 4,
+          "values": [
+            12,
+            0,
+            8,
+            4
+          ],
+          "matched_text": "항목: 12건 (P0:0, P1:8, P2:4)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+          "line": 15,
+          "values": [
+            8,
+            0,
+            7,
+            1
+          ],
+          "matched_text": "항목: 8건 (P0:0, P1:7, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+          "line": 34,
+          "values": [
+            10,
+            0,
+            7,
+            3
+          ],
+          "matched_text": "항목: 10건 (P0:0, P1:7, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 278,
+          "values": [
+            17,
+            0,
+            12,
+            5
+          ],
+          "matched_text": "항목: 17건 (P0:0, P1:12, P2:5)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 290,
+          "values": [
+            9,
+            0,
+            6,
+            3
+          ],
+          "matched_text": "항목: 9건 (P0:0, P1:6, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 329,
+          "values": [
+            8,
+            0,
+            4,
+            4
+          ],
+          "matched_text": "항목: 8건 (P0:0, P1:4, P2:4)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 351,
+          "values": [
+            9,
+            0,
+            8,
+            1
+          ],
+          "matched_text": "항목: 9건 (P0:0, P1:8, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 378,
+          "values": [
+            6,
+            0,
+            5,
+            1
+          ],
+          "matched_text": "항목: 6건 (P0:0, P1:5, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 412,
+          "values": [
+            8,
+            0,
+            5,
+            3
+          ],
+          "matched_text": "항목: 8건 (P0:0, P1:5, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 457,
+          "values": [
+            8,
+            1,
+            6,
+            1
+          ],
+          "matched_text": "항목: 8건 (P0:1, P1:6, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 467,
+          "values": [
+            10,
+            3,
+            6,
+            1
+          ],
+          "matched_text": "항목: 10건 (P0:3, P1:6, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 492,
+          "values": [
+            8,
+            0,
+            6,
+            2
+          ],
+          "matched_text": "항목: 8건 (P0:0, P1:6, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 502,
+          "values": [
+            7,
+            0,
+            3,
+            4
+          ],
+          "matched_text": "항목: 7건 (P0:0, P1:3, P2:4)"
+        },
+        {
+          "path": "docs/plans/task-impl4-choreography-saga.audit.md",
+          "line": 5,
+          "values": [
+            12,
+            2,
+            8,
+            2
+          ],
+          "matched_text": "항목: 12건 (P0:2, P1:8, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-impl4-choreography-saga.audit.md",
+          "line": 33,
+          "values": [
+            5,
+            1,
+            3,
+            1
+          ],
+          "matched_text": "항목: 5건 (P0:1, P1:3, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl4-choreography-saga.audit.md",
+          "line": 72,
+          "values": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "matched_text": "항목: 2건 (P0:0, P1:0, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 4,
+          "values": [
+            13,
+            1,
+            9,
+            3
+          ],
+          "matched_text": "항목: 13건 (P0:1, P1:9, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 15,
+          "values": [
+            11,
+            0,
+            10,
+            1
+          ],
+          "matched_text": "항목: 11건 (P0:0, P1:10, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 28,
+          "values": [
+            12,
+            0,
+            10,
+            2
+          ],
+          "matched_text": "항목: 12건 (P0:0, P1:10, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 70,
+          "values": [
+            10,
+            0,
+            3,
+            7
+          ],
+          "matched_text": "항목: 10건 (P0:0, P1:3, P2:7)"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 80,
+          "values": [
+            5,
+            0,
+            4,
+            1
+          ],
+          "matched_text": "항목: 5건 (P0:0, P1:4, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 117,
+          "values": [
+            4,
+            0,
+            1,
+            3
+          ],
+          "matched_text": "항목: 4건 (P0:0, P1:1, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 3,
+          "values": [
+            7,
+            0,
+            6,
+            1
+          ],
+          "matched_text": "항목: 7건 (P0:0, P1:6, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 14,
+          "values": [
+            10,
+            0,
+            6,
+            4
+          ],
+          "matched_text": "항목: 10건 (P0:0, P1:6, P2:4)"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 26,
+          "values": [
+            4,
+            0,
+            3,
+            1
+          ],
+          "matched_text": "항목: 4건 (P0:0, P1:3, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 45,
+          "values": [
+            3,
+            0,
+            2,
+            1
+          ],
+          "matched_text": "항목: 3건 (P0:0, P1:2, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 57,
+          "values": [
+            4,
+            0,
+            1,
+            3
+          ],
+          "matched_text": "항목: 4건 (P0:0, P1:1, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 87,
+          "values": [
+            2,
+            0,
+            2,
+            0
+          ],
+          "matched_text": "항목: 2건 (P0:0, P1:2, P2:0)"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 104,
+          "values": [
+            2,
+            0,
+            2,
+            0
+          ],
+          "matched_text": "항목: 2건 (P0:0, P1:2, P2:0)"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 130,
+          "values": [
+            3,
+            0,
+            2,
+            1
+          ],
+          "matched_text": "항목: 3건 (P0:0, P1:2, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 4,
+          "values": [
+            12,
+            0,
+            6,
+            6
+          ],
+          "matched_text": "항목: 12건 (P0:0, P1:6, P2:6)"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 14,
+          "values": [
+            10,
+            0,
+            5,
+            5
+          ],
+          "matched_text": "항목: 10건 (P0:0, P1:5, P2:5)"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 25,
+          "values": [
+            8,
+            0,
+            5,
+            3
+          ],
+          "matched_text": "항목: 8건 (P0:0, P1:5, P2:3)"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 37,
+          "values": [
+            6,
+            0,
+            4,
+            2
+          ],
+          "matched_text": "항목: 6건 (P0:0, P1:4, P2:2)"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 50,
+          "values": [
+            6,
+            0,
+            5,
+            1
+          ],
+          "matched_text": "항목: 6건 (P0:0, P1:5, P2:1)"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 76,
+          "values": [
+            5,
+            0,
+            3,
+            2
+          ],
+          "matched_text": "항목: 5건 (P0:0, P1:3, P2:2)"
+        }
+      ],
+      "sums": [
+        442,
+        9,
+        297,
+        136
+      ]
+    },
+    "disposition": {
+      "pattern": "반영 (\\d+)건 / 기각 (\\d+)건",
+      "count": 41,
+      "matches": [
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 5,
+          "values": [
+            13,
+            0
+          ],
+          "matched_text": "반영 13건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 15,
+          "values": [
+            9,
+            0
+          ],
+          "matched_text": "반영 9건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 28,
+          "values": [
+            15,
+            0
+          ],
+          "matched_text": "반영 15건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 66,
+          "values": [
+            7,
+            0
+          ],
+          "matched_text": "반영 7건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 78,
+          "values": [
+            6,
+            0
+          ],
+          "matched_text": "반영 6건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 92,
+          "values": [
+            7,
+            0
+          ],
+          "matched_text": "반영 7건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 127,
+          "values": [
+            5,
+            0
+          ],
+          "matched_text": "반영 5건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+          "line": 5,
+          "values": [
+            12,
+            0
+          ],
+          "matched_text": "반영 12건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+          "line": 16,
+          "values": [
+            8,
+            0
+          ],
+          "matched_text": "반영 8건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 11,
+          "values": [
+            16,
+            0
+          ],
+          "matched_text": "반영 16건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 23,
+          "values": [
+            14,
+            0
+          ],
+          "matched_text": "반영 14건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 36,
+          "values": [
+            10,
+            0
+          ],
+          "matched_text": "반영 10건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 68,
+          "values": [
+            5,
+            0
+          ],
+          "matched_text": "반영 5건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 81,
+          "values": [
+            5,
+            0
+          ],
+          "matched_text": "반영 5건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 94,
+          "values": [
+            2,
+            0
+          ],
+          "matched_text": "반영 2건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 135,
+          "values": [
+            0,
+            0
+          ],
+          "matched_text": "반영 0건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 157,
+          "values": [
+            2,
+            0
+          ],
+          "matched_text": "반영 2건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 165,
+          "values": [
+            0,
+            0
+          ],
+          "matched_text": "반영 0건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 279,
+          "values": [
+            17,
+            0
+          ],
+          "matched_text": "반영 17건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 291,
+          "values": [
+            9,
+            0
+          ],
+          "matched_text": "반영 9건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 330,
+          "values": [
+            8,
+            0
+          ],
+          "matched_text": "반영 8건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 379,
+          "values": [
+            6,
+            0
+          ],
+          "matched_text": "반영 6건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 413,
+          "values": [
+            8,
+            0
+          ],
+          "matched_text": "반영 8건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 5,
+          "values": [
+            13,
+            0
+          ],
+          "matched_text": "반영 13건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 16,
+          "values": [
+            10,
+            1
+          ],
+          "matched_text": "반영 10건 / 기각 1건"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 29,
+          "values": [
+            12,
+            0
+          ],
+          "matched_text": "반영 12건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 71,
+          "values": [
+            10,
+            0
+          ],
+          "matched_text": "반영 10건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 81,
+          "values": [
+            5,
+            0
+          ],
+          "matched_text": "반영 5건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 117,
+          "values": [
+            4,
+            0
+          ],
+          "matched_text": "반영 4건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 4,
+          "values": [
+            7,
+            0
+          ],
+          "matched_text": "반영 7건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 46,
+          "values": [
+            3,
+            0
+          ],
+          "matched_text": "반영 3건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 58,
+          "values": [
+            4,
+            0
+          ],
+          "matched_text": "반영 4건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 88,
+          "values": [
+            2,
+            0
+          ],
+          "matched_text": "반영 2건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 105,
+          "values": [
+            2,
+            0
+          ],
+          "matched_text": "반영 2건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 5,
+          "values": [
+            12,
+            0
+          ],
+          "matched_text": "반영 12건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 15,
+          "values": [
+            10,
+            0
+          ],
+          "matched_text": "반영 10건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 26,
+          "values": [
+            8,
+            0
+          ],
+          "matched_text": "반영 8건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 38,
+          "values": [
+            6,
+            0
+          ],
+          "matched_text": "반영 6건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 51,
+          "values": [
+            6,
+            0
+          ],
+          "matched_text": "반영 6건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 77,
+          "values": [
+            5,
+            0
+          ],
+          "matched_text": "반영 5건 / 기각 0건"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 89,
+          "values": [
+            3,
+            0
+          ],
+          "matched_text": "반영 3건 / 기각 0건"
+        }
+      ],
+      "sums": [
+        306,
+        1
+      ]
+    },
+    "round": {
+      "pattern": "라운드 (\\d+)",
+      "count": 73,
+      "matches": [
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 3,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 13,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 26,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 65,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 77,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 91,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-adr0020-dlq-replay-contract.audit.md",
+          "line": 126,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 3,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 15,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 27,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 45,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 53,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-ci-test-matrix.audit.md",
+          "line": 59,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-d002-bc-session.audit.md",
+          "line": 3,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-d025-inventory-lock-boundary.audit.md",
+          "line": 1,
+          "values": [
+            0
+          ],
+          "matched_text": "라운드 0"
+        },
+        {
+          "path": "docs/plans/task-d025-inventory-lock-boundary.audit.md",
+          "line": 10,
+          "values": [
+            0
+          ],
+          "matched_text": "라운드 0"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+          "line": 3,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+          "line": 14,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+          "line": 17,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2a-dlq-ledger.audit.md",
+          "line": 33,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 8,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 20,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 33,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 67,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 80,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 93,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 138,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 277,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 289,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 303,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 312,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 328,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 350,
+          "values": [
+            4
+          ],
+          "matched_text": "라운드 4"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 377,
+          "values": [
+            5
+          ],
+          "matched_text": "라운드 5"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 402,
+          "values": [
+            6
+          ],
+          "matched_text": "라운드 6"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 411,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 456,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 466,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 477,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 491,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-c2b-dlq-replay.audit.md",
+          "line": 501,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-d1-saga-metrics.audit.md",
+          "line": 3,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-d1-saga-metrics.audit.md",
+          "line": 14,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-d1-saga-metrics.audit.md",
+          "line": 34,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-d1-saga-metrics.audit.md",
+          "line": 46,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-d1-saga-metrics.audit.md",
+          "line": 58,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 3,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 14,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 27,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 69,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 79,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 109,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 116,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 235,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl4-d2-saga-e2e-gate.audit.md",
+          "line": 246,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 1,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 12,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 24,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 43,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 55,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 68,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 70,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 75,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 85,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 100,
+          "values": [
+            4
+          ],
+          "matched_text": "라운드 4"
+        },
+        {
+          "path": "docs/plans/task-impl5-cqrs-cache-fallback.audit.md",
+          "line": 128,
+          "values": [
+            5
+          ],
+          "matched_text": "라운드 5"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 3,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 13,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 24,
+          "values": [
+            3
+          ],
+          "matched_text": "라운드 3"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 36,
+          "values": [
+            4
+          ],
+          "matched_text": "라운드 4"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 49,
+          "values": [
+            5
+          ],
+          "matched_text": "라운드 5"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 75,
+          "values": [
+            1
+          ],
+          "matched_text": "라운드 1"
+        },
+        {
+          "path": "docs/plans/task-impl6-cursor-pagination.audit.md",
+          "line": 87,
+          "values": [
+            2
+          ],
+          "matched_text": "라운드 2"
+        }
+      ],
+      "frequency": {
+        "0": 2,
+        "1": 25,
+        "2": 19,
+        "3": 20,
+        "4": 3,
+        "5": 3,
+        "6": 1
+      }
+    }
+  }
+}

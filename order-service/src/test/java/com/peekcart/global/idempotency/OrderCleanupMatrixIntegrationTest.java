@@ -14,7 +14,7 @@ import org.springframework.test.context.TestPropertySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 서비스×잡 매트릭스 검증 — order (ADR-0012 D5 · 구현 ② PR3).
+ * 서비스×잡 매트릭스 검증 — order (ADR-0012 D5).
  * order 는 발행 서비스 → processed + outbox cleanup bean 둘 다 소유.
  */
 @SpringBootTest

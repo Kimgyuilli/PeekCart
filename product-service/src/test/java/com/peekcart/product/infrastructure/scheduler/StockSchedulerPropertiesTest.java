@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Product sweeper <b>정책값</b> 계약 (계획 P17 · ADR-0007).
+ * Product sweeper <b>정책값</b> 계약 (ADR-0007).
  *
  * <p>배선은 {@code StockSchedulerWiringIntegrationTest} 가 보고, 여기서는 운영 기본값과 불변식을
  * 고정한다. 배선 테스트가 주기를 짧게 덮으므로 그쪽에서는 운영값을 볼 수 없다.

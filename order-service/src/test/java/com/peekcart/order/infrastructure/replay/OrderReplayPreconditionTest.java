@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * V-28d(order 축) — 사전조건 판정표를 {@code reserved} × {@link OrderStatus} <b>8종 전 조합</b>으로 관통한다
- * (계획 리뷰 2R #4 · 3R #4).
+ *
  *
  * <p>초안 표는 `PENDING`/`CANCELLED` 만 정의하고 존재하지도 않는 `PAID` 를 적었다 — 나머지 상태의
  * allow/deny 가 미정이라 무엇을 구현해도 통과했다.

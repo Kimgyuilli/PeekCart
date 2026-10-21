@@ -1,0 +1,6 @@
+test_escaped_pipe_cannot_supply_missing_columns (__main__.HarnessContextTest.test_escaped_pipe_cannot_supply_missing_columns) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.564s
+
+OK

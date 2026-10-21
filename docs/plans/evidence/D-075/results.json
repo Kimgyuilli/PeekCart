@@ -1,0 +1,1091 @@
+{
+  "xml_sha256": "647aebe6c1be2b938b1d271f47a5b8215efd23b253f94c0da6d03f790b162217",
+  "suite": {
+    "name": "D-075 로컬 outbox 병목 분해 (명시 실행 전용)",
+    "tests": "1",
+    "skipped": "0",
+    "failures": "0",
+    "errors": "0",
+    "timestamp": "2026-10-20T19:36:43.167Z",
+    "hostname": "KimGyuills-MacBook-Pro.local",
+    "time": "102.438"
+  },
+  "rows": [
+    {
+      "repetitions": 3,
+      "records": 300,
+      "singleBroker": true,
+      "payloadPaddingBytes": 900,
+      "producer": {
+        "acks": "-1",
+        "enable.idempotence": true,
+        "linger.ms": 0,
+        "batch.size": 16384,
+        "compression.type": "none",
+        "max.in.flight.requests.per.connection": 5,
+        "delivery.timeout.ms": 5000,
+        "request.timeout.ms": 3000,
+        "max.block.ms": 3000
+      },
+      "keys": 32,
+      "backgroundWriters": false,
+      "mysqlImage": "mysql:8.0.46",
+      "kafkaImage": "apache/kafka:3.8.1",
+      "kind": "environment"
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 232861625,
+      "topic": "d075-poll-622d1fb8"
+    },
+    {
+      "saveNs": 191773790,
+      "records": 20,
+      "wallNs": 297577167,
+      "findNs": 34048541,
+      "publishTimerNs": 70653459.0,
+      "topic": "d075-poll-622d1fb8",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "baseline",
+      "repetition": 1,
+      "startInstant": "2026-10-20T19:36:44.909054Z",
+      "batch": 100,
+      "delayMs": 5000,
+      "minLockMs": 4000,
+      "records": 300,
+      "wallNs": 12929134875,
+      "pollBodyNs": 2776819499,
+      "attemptNs": 2904635500,
+      "findNs": 75520041,
+      "saveNs": 1987749748,
+      "findCalls": 3,
+      "saveCalls": 300,
+      "publishTimerNs": 708770338.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 24640834,
+          "endNs": 899530792,
+          "executed": true,
+          "startNs": 2307750,
+          "bodyEndNs": 889534292
+        },
+        {
+          "bodyStartNs": 5964597709,
+          "endNs": 7010075834,
+          "executed": true,
+          "startNs": 5910502334,
+          "bodyEndNs": 7006760000
+        },
+        {
+          "bodyStartNs": 12056111167,
+          "endNs": 12928674042,
+          "executed": true,
+          "startNs": 12020835084,
+          "bodyEndNs": 12925874917
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 10024499375,
+      "lockDispatchOverheadNs": 127816001,
+      "pollResidualNs": 4779372.0,
+      "lockSkips": 0
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 119252125,
+      "topic": "d075-poll-9636ba4f"
+    },
+    {
+      "saveNs": 107184085,
+      "records": 20,
+      "wallNs": 142827709,
+      "findNs": 2873458,
+      "publishTimerNs": 32396916.0,
+      "topic": "d075-poll-9636ba4f",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "delay-only",
+      "repetition": 1,
+      "startInstant": "2026-10-20T19:36:59.336364Z",
+      "batch": 100,
+      "delayMs": 500,
+      "minLockMs": 4000,
+      "records": 300,
+      "wallNs": 9702354375,
+      "pollBodyNs": 2411919500,
+      "attemptNs": 2591828667,
+      "findNs": 57105042,
+      "saveNs": 1803439456,
+      "findCalls": 3,
+      "saveCalls": 300,
+      "publishTimerNs": 547251944.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 2816250,
+          "endNs": 752668583,
+          "executed": true,
+          "startNs": 197458,
+          "bodyEndNs": 749984333
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 1260986542,
+          "executed": false,
+          "startNs": 1254264042,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 1798560167,
+          "executed": false,
+          "startNs": 1771271792,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 2313754333,
+          "executed": false,
+          "startNs": 2308749625,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 2842801958,
+          "executed": false,
+          "startNs": 2824292083,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 3364927625,
+          "executed": false,
+          "startNs": 3349921958,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 3896055917,
+          "executed": false,
+          "startNs": 3876238167,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 4414495250,
+          "endNs": 5266019208,
+          "executed": true,
+          "startNs": 4403160333,
+          "bodyEndNs": 5262206458
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 5796579625,
+          "executed": false,
+          "startNs": 5780377083,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 6310621833,
+          "executed": false,
+          "startNs": 6305916958,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 6830242917,
+          "executed": false,
+          "startNs": 6820420667,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 7336795917,
+          "executed": false,
+          "startNs": 7333636000,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 7846338375,
+          "executed": false,
+          "startNs": 7838109292,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 8353341292,
+          "executed": false,
+          "startNs": 8349662917,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 8882300458,
+          "endNs": 9702165750,
+          "executed": true,
+          "startNs": 8863813000,
+          "bodyEndNs": 9699340667
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 7110525708,
+      "lockDispatchOverheadNs": 179909167,
+      "pollResidualNs": 4123058.0,
+      "lockSkips": 12
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 109770500,
+      "topic": "d075-poll-46d3494f"
+    },
+    {
+      "saveNs": 114576917,
+      "records": 20,
+      "wallNs": 151947417,
+      "findNs": 3066791,
+      "publishTimerNs": 33887291.0,
+      "topic": "d075-poll-46d3494f",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "larger-batch",
+      "repetition": 1,
+      "startInstant": "2026-10-20T19:37:10.416733Z",
+      "batch": 500,
+      "delayMs": 500,
+      "minLockMs": 4000,
+      "records": 300,
+      "wallNs": 1999077541,
+      "pollBodyNs": 1992384292,
+      "attemptNs": 1998605083,
+      "findNs": 11368000,
+      "saveNs": 1560748715,
+      "findCalls": 1,
+      "saveCalls": 300,
+      "publishTimerNs": 416851756.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 3834583,
+          "endNs": 1998905166,
+          "executed": true,
+          "startNs": 300083,
+          "bodyEndNs": 1996218875
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 472458,
+      "lockDispatchOverheadNs": 6220791,
+      "pollResidualNs": 3415821.0,
+      "lockSkips": 0
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 8503334,
+      "topic": "d075-poll-ca37e780"
+    },
+    {
+      "saveNs": 87477790,
+      "records": 20,
+      "wallNs": 113722750,
+      "findNs": 3111042,
+      "publishTimerNs": 22870417.0,
+      "topic": "d075-poll-ca37e780",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "no-min-lock-control",
+      "repetition": 1,
+      "startInstant": "2026-10-20T19:37:13.584013Z",
+      "batch": 100,
+      "delayMs": 500,
+      "minLockMs": 0,
+      "records": 300,
+      "wallNs": 3201270083,
+      "pollBodyNs": 2156608209,
+      "attemptNs": 2192050708,
+      "findNs": 29917708,
+      "saveNs": 1709153745,
+      "findCalls": 3,
+      "saveCalls": 300,
+      "publishTimerNs": 413698755.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 3161083,
+          "endNs": 581272166,
+          "executed": true,
+          "startNs": 208416,
+          "bodyEndNs": 578587375
+        },
+        {
+          "bodyStartNs": 1090691083,
+          "endNs": 1816571791,
+          "executed": true,
+          "startNs": 1082358416,
+          "bodyEndNs": 1812210208
+        },
+        {
+          "bodyStartNs": 2333814583,
+          "endNs": 3201121208,
+          "executed": true,
+          "startNs": 2324347625,
+          "bodyEndNs": 3193477375
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 1009219375,
+      "lockDispatchOverheadNs": 35442499,
+      "pollResidualNs": 3838001.0,
+      "lockSkips": 0
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 11248916,
+      "topic": "d075-producer-914011ff"
+    },
+    {
+      "repetition": 1,
+      "wallNs": 238088666,
+      "window": 1,
+      "records": 300,
+      "brokerVerified": true,
+      "kind": "producer-only"
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 110764917,
+      "topic": "d075-producer-8707fb7c"
+    },
+    {
+      "repetition": 1,
+      "wallNs": 34954375,
+      "window": 32,
+      "records": 300,
+      "brokerVerified": true,
+      "kind": "producer-only"
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 109292542,
+      "topic": "d075-poll-879eb491"
+    },
+    {
+      "saveNs": 107454249,
+      "records": 20,
+      "wallNs": 134793875,
+      "findNs": 2850000,
+      "publishTimerNs": 24132792.0,
+      "topic": "d075-poll-879eb491",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "delay-only",
+      "repetition": 2,
+      "startInstant": "2026-10-20T19:37:19.695340Z",
+      "batch": 100,
+      "delayMs": 500,
+      "minLockMs": 4000,
+      "records": 300,
+      "wallNs": 9407614834,
+      "pollBodyNs": 2091899584,
+      "attemptNs": 2282923375,
+      "findNs": 78255876,
+      "saveNs": 1632296250,
+      "findCalls": 3,
+      "saveCalls": 300,
+      "publishTimerNs": 377632841.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 3738084,
+          "endNs": 583463667,
+          "executed": true,
+          "startNs": 324042,
+          "bodyEndNs": 580129084
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 1095102917,
+          "executed": false,
+          "startNs": 1086472584,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 1627788334,
+          "executed": false,
+          "startNs": 1605459667,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 2153325250,
+          "executed": false,
+          "startNs": 2138505709,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 2677000625,
+          "executed": false,
+          "startNs": 2665968375,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 3200368750,
+          "executed": false,
+          "startNs": 3189927542,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 3717716334,
+          "executed": false,
+          "startNs": 3710659667,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 4249290375,
+          "endNs": 4928616375,
+          "executed": true,
+          "startNs": 4228063709,
+          "bodyEndNs": 4924846667
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 5452653125,
+          "executed": false,
+          "startNs": 5438969000,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 5972806917,
+          "executed": false,
+          "startNs": 5962082542,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 6481736584,
+          "executed": false,
+          "startNs": 6474908334,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 6989962459,
+          "executed": false,
+          "startNs": 6986373250,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 7508686584,
+          "executed": false,
+          "startNs": 7500152500,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 8026163084,
+          "executed": false,
+          "startNs": 8015333875,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 8564407042,
+          "endNs": 9407360000,
+          "executed": true,
+          "startNs": 8536626834,
+          "bodyEndNs": 9404359334
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 7124691459,
+      "lockDispatchOverheadNs": 191023791,
+      "pollResidualNs": 3714617.0,
+      "lockSkips": 12
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 109238458,
+      "topic": "d075-poll-51171017"
+    },
+    {
+      "saveNs": 99416503,
+      "records": 20,
+      "wallNs": 126116375,
+      "findNs": 2564500,
+      "publishTimerNs": 23759168.0,
+      "topic": "d075-poll-51171017",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "larger-batch",
+      "repetition": 2,
+      "startInstant": "2026-10-20T19:37:30.369631Z",
+      "batch": 500,
+      "delayMs": 500,
+      "minLockMs": 4000,
+      "records": 300,
+      "wallNs": 1817644042,
+      "pollBodyNs": 1810404583,
+      "attemptNs": 1817271792,
+      "findNs": 9656625,
+      "saveNs": 1485671876,
+      "findCalls": 1,
+      "saveCalls": 300,
+      "publishTimerNs": 311979381.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 4622625,
+          "endNs": 1817524042,
+          "executed": true,
+          "startNs": 252250,
+          "bodyEndNs": 1815027208
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 372250,
+      "lockDispatchOverheadNs": 6867209,
+      "pollResidualNs": 3096701.0,
+      "lockSkips": 0
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 131133709,
+      "topic": "d075-poll-b3f6f154"
+    },
+    {
+      "saveNs": 172656497,
+      "records": 20,
+      "wallNs": 224186333,
+      "findNs": 8638666,
+      "publishTimerNs": 41203332.0,
+      "topic": "d075-poll-b3f6f154",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "no-min-lock-control",
+      "repetition": 2,
+      "startInstant": "2026-10-20T19:37:33.608740Z",
+      "batch": 100,
+      "delayMs": 500,
+      "minLockMs": 0,
+      "records": 300,
+      "wallNs": 2894791209,
+      "pollBodyNs": 1848758167,
+      "attemptNs": 1882410750,
+      "findNs": 37454208,
+      "saveNs": 1476791462,
+      "findCalls": 3,
+      "saveCalls": 300,
+      "publishTimerNs": 331244372.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 3161667,
+          "endNs": 599738334,
+          "executed": true,
+          "startNs": 259084,
+          "bodyEndNs": 597444959
+        },
+        {
+          "bodyStartNs": 1115674709,
+          "endNs": 1812339292,
+          "executed": true,
+          "startNs": 1101530459,
+          "bodyEndNs": 1809437792
+        },
+        {
+          "bodyStartNs": 2331421917,
+          "endNs": 2894642667,
+          "executed": true,
+          "startNs": 2322520000,
+          "bodyEndNs": 2892133709
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 1012380459,
+      "lockDispatchOverheadNs": 33652583,
+      "pollResidualNs": 3268125.0,
+      "lockSkips": 0
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 115510542,
+      "topic": "d075-poll-4cf240e2"
+    },
+    {
+      "saveNs": 99536542,
+      "records": 20,
+      "wallNs": 128333959,
+      "findNs": 2173042,
+      "publishTimerNs": 26154500.0,
+      "topic": "d075-poll-4cf240e2",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "baseline",
+      "repetition": 2,
+      "startInstant": "2026-10-20T19:37:37.691824Z",
+      "batch": 100,
+      "delayMs": 5000,
+      "minLockMs": 4000,
+      "records": 300,
+      "wallNs": 12254655125,
+      "pollBodyNs": 2126616083,
+      "attemptNs": 2228502626,
+      "findNs": 64515333,
+      "saveNs": 1677671080,
+      "findCalls": 3,
+      "saveCalls": 300,
+      "publishTimerNs": 380491319.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 6395125,
+          "endNs": 516306417,
+          "executed": true,
+          "startNs": 409625,
+          "bodyEndNs": 514137542
+        },
+        {
+          "bodyStartNs": 5572878750,
+          "endNs": 6364962500,
+          "executed": true,
+          "startNs": 5530104708,
+          "bodyEndNs": 6362381708
+        },
+        {
+          "bodyStartNs": 11421944875,
+          "endNs": 12254249500,
+          "executed": true,
+          "startNs": 11376501458,
+          "bodyEndNs": 12251315583
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 10026152499,
+      "lockDispatchOverheadNs": 101886543,
+      "pollResidualNs": 3938351.0,
+      "lockSkips": 0
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 9300084,
+      "topic": "d075-producer-cf2d2d48"
+    },
+    {
+      "repetition": 2,
+      "wallNs": 198022667,
+      "window": 1,
+      "records": 300,
+      "brokerVerified": true,
+      "kind": "producer-only"
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 6593875,
+      "topic": "d075-producer-b79445c4"
+    },
+    {
+      "repetition": 2,
+      "wallNs": 24762042,
+      "window": 32,
+      "records": 300,
+      "brokerVerified": true,
+      "kind": "producer-only"
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 131839375,
+      "topic": "d075-poll-9d3bc7a4"
+    },
+    {
+      "saveNs": 104951543,
+      "records": 20,
+      "wallNs": 134532834,
+      "findNs": 2078250,
+      "publishTimerNs": 27182417.0,
+      "topic": "d075-poll-9d3bc7a4",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "larger-batch",
+      "repetition": 3,
+      "startInstant": "2026-10-20T19:37:52.595602Z",
+      "batch": 500,
+      "delayMs": 500,
+      "minLockMs": 4000,
+      "records": 300,
+      "wallNs": 1825417958,
+      "pollBodyNs": 1810556250,
+      "attemptNs": 1822929000,
+      "findNs": 9452791,
+      "saveNs": 1476359466,
+      "findCalls": 1,
+      "saveCalls": 300,
+      "publishTimerNs": 321861593.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 8250208,
+          "endNs": 1825124000,
+          "executed": true,
+          "startNs": 2195000,
+          "bodyEndNs": 1818806458
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 2488958,
+      "lockDispatchOverheadNs": 12372750,
+      "pollResidualNs": 2882400.0,
+      "lockSkips": 0
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 101201542,
+      "topic": "d075-poll-cf2da86f"
+    },
+    {
+      "saveNs": 88486958,
+      "records": 20,
+      "wallNs": 114449167,
+      "findNs": 1876792,
+      "publishTimerNs": 23785543.0,
+      "topic": "d075-poll-cf2da86f",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "no-min-lock-control",
+      "repetition": 3,
+      "startInstant": "2026-10-20T19:37:55.602160Z",
+      "batch": 100,
+      "delayMs": 500,
+      "minLockMs": 0,
+      "records": 300,
+      "wallNs": 3094363041,
+      "pollBodyNs": 2034045625,
+      "attemptNs": 2076756958,
+      "findNs": 29613208,
+      "saveNs": 1651444329,
+      "findCalls": 3,
+      "saveCalls": 300,
+      "publishTimerNs": 349588039.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 2927583,
+          "endNs": 631112041,
+          "executed": true,
+          "startNs": 195708,
+          "bodyEndNs": 622660000
+        },
+        {
+          "bodyStartNs": 1153031125,
+          "endNs": 1892723458,
+          "executed": true,
+          "startNs": 1141357666,
+          "bodyEndNs": 1887244416
+        },
+        {
+          "bodyStartNs": 2411567166,
+          "endNs": 3094233208,
+          "executed": true,
+          "startNs": 2399758375,
+          "bodyEndNs": 3091667083
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 1017606083,
+      "lockDispatchOverheadNs": 42711333,
+      "pollResidualNs": 3400049.0,
+      "lockSkips": 0
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 5820333,
+      "topic": "d075-poll-a1149cb0"
+    },
+    {
+      "saveNs": 80206251,
+      "records": 20,
+      "wallNs": 101321625,
+      "findNs": 1663625,
+      "publishTimerNs": 19194001.0,
+      "topic": "d075-poll-a1149cb0",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "baseline",
+      "repetition": 3,
+      "startInstant": "2026-10-20T19:37:59.811023Z",
+      "batch": 100,
+      "delayMs": 5000,
+      "minLockMs": 4000,
+      "records": 300,
+      "wallNs": 11996488500,
+      "pollBodyNs": 1921824668,
+      "attemptNs": 1983879542,
+      "findNs": 38802875,
+      "saveNs": 1505364001,
+      "findCalls": 3,
+      "saveCalls": 300,
+      "publishTimerNs": 374444672.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 3633208,
+          "endNs": 566556417,
+          "executed": true,
+          "startNs": 220542,
+          "bodyEndNs": 563937458
+        },
+        {
+          "bodyStartNs": 5586408083,
+          "endNs": 6128299708,
+          "executed": true,
+          "startNs": 5567974875,
+          "bodyEndNs": 6125207167
+        },
+        {
+          "bodyStartNs": 11171117958,
+          "endNs": 11996217792,
+          "executed": true,
+          "startNs": 11138998958,
+          "bodyEndNs": 11993839292
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 10012608958,
+      "lockDispatchOverheadNs": 62054874,
+      "pollResidualNs": 3213120.0,
+      "lockSkips": 0
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 127255459,
+      "topic": "d075-poll-00785889"
+    },
+    {
+      "saveNs": 87002750,
+      "records": 20,
+      "wallNs": 111246959,
+      "findNs": 2747875,
+      "publishTimerNs": 21153252.0,
+      "topic": "d075-poll-00785889",
+      "kind": "poller-warmup"
+    },
+    {
+      "kind": "scheduled",
+      "profile": "delay-only",
+      "repetition": 3,
+      "startInstant": "2026-10-20T19:38:13.099621Z",
+      "batch": 100,
+      "delayMs": 500,
+      "minLockMs": 4000,
+      "records": 300,
+      "wallNs": 8960434000,
+      "pollBodyNs": 1753833793,
+      "attemptNs": 1872817542,
+      "findNs": 18369126,
+      "saveNs": 1424017006,
+      "findCalls": 3,
+      "saveCalls": 300,
+      "publishTimerNs": 308574039.0,
+      "publishTimerCount": 300,
+      "attempts": [
+        {
+          "bodyStartNs": 3076291,
+          "endNs": 708070250,
+          "executed": true,
+          "startNs": 283250,
+          "bodyEndNs": 704038875
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 1225368041,
+          "executed": false,
+          "startNs": 1218809875,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 1741700375,
+          "executed": false,
+          "startNs": 1734512666,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 2263487416,
+          "executed": false,
+          "startNs": 2251979916,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 2779661833,
+          "executed": false,
+          "startNs": 2773818916,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 3288967583,
+          "executed": false,
+          "startNs": 3281643500,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 3798865375,
+          "executed": false,
+          "startNs": 3794032416,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 4311519916,
+          "endNs": 4888166791,
+          "executed": true,
+          "startNs": 4300198083,
+          "bodyEndNs": 4882840916
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 5404223208,
+          "executed": false,
+          "startNs": 5398333166,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 5910252916,
+          "executed": false,
+          "startNs": 5904797833,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 6420517375,
+          "executed": false,
+          "startNs": 6414785416,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 6933910000,
+          "executed": false,
+          "startNs": 6926411375,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 7448321208,
+          "executed": false,
+          "startNs": 7442942833,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 0,
+          "endNs": 7960693666,
+          "executed": false,
+          "startNs": 7952254250,
+          "bodyEndNs": 0
+        },
+        {
+          "bodyStartNs": 8472095166,
+          "endNs": 8959575333,
+          "executed": true,
+          "startNs": 8464160333,
+          "bodyEndNs": 8953645375
+        }
+      ],
+      "brokerVerified": true,
+      "dbVerified": true,
+      "schedulerWaitAndLifecycleNs": 7087616458,
+      "lockDispatchOverheadNs": 118983749,
+      "pollResidualNs": 2873622.0,
+      "lockSkips": 12
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 111345833,
+      "topic": "d075-producer-8c2eacb5"
+    },
+    {
+      "repetition": 3,
+      "wallNs": 249742000,
+      "window": 1,
+      "records": 300,
+      "brokerVerified": true,
+      "kind": "producer-only"
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 95967750,
+      "topic": "d075-producer-27cbc4e8"
+    },
+    {
+      "repetition": 3,
+      "wallNs": 19980917,
+      "window": 32,
+      "records": 300,
+      "brokerVerified": true,
+      "kind": "producer-only"
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 4980125,
+      "topic": "d075-control-536126a6"
+    },
+    {
+      "saveNs": 313970001,
+      "saveCalls": 30,
+      "brokerVerified": true,
+      "records": 30,
+      "injectedPerSaveMs": 5,
+      "kind": "save-delay-control"
+    },
+    {
+      "kind": "warmup",
+      "wallNs": 99674000,
+      "topic": "d075-negative-e2ca6ce6"
+    },
+    {
+      "kind": "duplicate-negative-control",
+      "rejected": true
+    }
+  ]
+}

@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * gateway 가 <b>WebFlux(reactive)</b> 로 부팅하고 servlet 스택이 유입되지 않았음을 고정한다
- * (계획 B6/보강 e · loop2 #1 — `common/build.gradle:12-14` 가 starter-web 을 `api` 로 전이 노출).
+ * (PLAN-BLINDSPOTS B6 — `common/build.gradle` 이 starter-web 을 `api` 로 전이 노출).
  *
  * <p>Gradle 가드({@code assertGatewayHasNoServletDeps})가 의존 선언을, 이 테스트가 <b>런타임 부팅</b>을
  * 각각 막는다. 둘 중 하나만으로는 부족하다 — 가드는 전이 경로를 놓칠 수 있고, 부팅 테스트만으로는

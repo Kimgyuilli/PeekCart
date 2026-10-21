@@ -17,17 +17,17 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * sweeper 조회의 <b>실행계획</b> 증적 (부모 계획 `task-impl4-choreography-saga.md` §5 P13).
+ * sweeper 조회의 <b>실행계획</b> 증적.
  *
- * <p>부모 P13 의 성공 기준은 "인덱스 적용 후 sweeper 조회 실행계획" 인데, 기존
+ * <p>sweeper 조회의 인덱스 사용은 별도로 확인해야 한다. 기존
  * {@code StockReservationLeaseSweepIntegrationTest} 는 <b>limit 과 경계 조건만</b> 검증하고
  * 인덱스가 실제로 쓰이는지는 보지 않았다. 인덱스는 존재하는데 조회가 풀스캔을 타는 회귀
  * (예: 조건식이 함수로 감싸지거나 컬럼 순서가 바뀌는 경우)를 그 테스트는 잡지 못한다.
  *
  * <p>그래서 여기서는 <b>실제 Flyway 가 적용된 MySQL</b> 에 EXPLAIN 을 던져 인덱스 사용을 확인한다.
  *
- * <p><b>정정 기록</b>: 부모 P13 은 인덱스를 {@code (status, reserved_at)} 으로 적었으나, 만료 판정
- * 기준이 고정 TTL 에서 lease 로 바뀌면서 실제 인덱스는 {@code (status, expires_at)} 이 됐다
+ * <p><b>현행 인덱스</b>: 만료 판정은 {@code reserved_at} 기반 고정 TTL 대신
+ * 예약 lease 를 쓰므로 실제 인덱스는 {@code (status, expires_at)} 이다
  * ({@code V3__stock_reservation_lease.sql} 주석이 이 전환을 이미 기록). 검증 대상은 현행 인덱스다.
  */
 @SpringBootTest

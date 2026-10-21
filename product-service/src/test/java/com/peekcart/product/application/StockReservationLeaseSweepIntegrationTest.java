@@ -21,7 +21,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * lease 만료 조회의 경계 검증 (GW-2 #4 · 계획 P4 · P13).
+ * lease 만료 조회의 경계 검증.
  *
  * <p>mock 이 아니라 실 DB 로 확인하는 이유는 두 가지다 — (1) sweeper 회수 대상 판정은 인덱스가 걸린
  * JPQL 조건이라 조건식 회귀가 mock 으로는 안 잡힌다 (2) 유예(grace) 경계와 상태 필터를 동시에

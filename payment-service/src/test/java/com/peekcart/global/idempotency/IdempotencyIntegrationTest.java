@@ -51,7 +51,7 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired ObjectMapper objectMapper;
 
-    // DB-per-service(구현 ② PR2): payment 스키마엔 users/orders 테이블이 없고 교차 FK 도 제거됨(V13) →
+    // DB-per-service: payment 스키마엔 users/orders 테이블이 없고 교차 FK 도 제거됨 →
     // 실제 행을 시드하지 않고 임의 ID 참조만 쓴다(payments.user_id·order_id 는 plain ID).
     private final Long userId = 42L;
     private final java.util.concurrent.atomic.AtomicLong orderIdSeq = new java.util.concurrent.atomic.AtomicLong(1000);

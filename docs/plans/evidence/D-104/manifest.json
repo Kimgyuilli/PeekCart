@@ -1,0 +1,57 @@
+{
+  "predecessor": "2f16266706d0e15c085e9eed6d4f7bbd608c73f4",
+  "recalculation_commit": "6a5a47bbb8d7f717604883e8b9981430190867aa",
+  "limits": "selected prose recalculation and historical reports; original cache corpus absent",
+  "files": [
+    {
+      "path": "scripts/codex-review-render.sh",
+      "bytes": 11609,
+      "sha256": "871850698c3b40d405be09bc90106b279bc22d71bbf2b87794d8070922abfcaa"
+    },
+    {
+      "path": "scripts/codex-review-render-selftest.sh",
+      "bytes": 14933,
+      "sha256": "4b03cb95c01e29e16c54c19cc7692c1fe8b351d5914b88b49d4a336c5fa108a5"
+    },
+    {
+      "path": "docs/conventions/codex-review.md",
+      "bytes": 8746,
+      "sha256": "da7e88c9cb9c1c90cb1feb3eb309374bc2bf05acffe490ea2c57fb95d512ab51"
+    },
+    {
+      "path": "docs/conventions/harness-rationale.md",
+      "bytes": 8552,
+      "sha256": "a6bb6fc4d2735ac366ef724aab43a11e503a4a7a957ad9f8517e2018b66648d8"
+    },
+    {
+      "path": "docs/progress/PHASE4.md",
+      "bytes": 333101,
+      "sha256": "95d442866016a896e9c0dcd684acebcc2d5fc8d73952bba3c47a797c666fdb51"
+    },
+    {
+      "path": "docs/plans/evidence/D-104/recalculate.py",
+      "bytes": 2169,
+      "sha256": "24c044f655811dd39e4ced4df6934a18691cefe13cdbc45b5c0b3af92aeccbbf"
+    },
+    {
+      "path": "docs/plans/evidence/D-104/source-scan.json",
+      "bytes": 42972,
+      "sha256": "0452ab921463290cc11df531432e936f62eb4a19195714a9e382946ab526c60b"
+    },
+    {
+      "path": "docs/plans/evidence/D-104/verify-scope.py",
+      "bytes": 2954,
+      "sha256": "fc6a2b140f77545ce8ce302bfedebf38fb70ffa1e74b1e54bd3f8329f927cd0d"
+    },
+    {
+      "path": "docs/plans/evidence/D-104/scope.txt",
+      "bytes": 209,
+      "sha256": "345229a0fe8e8be187610f0a16a35701f72fc640cb1570bdbddb2919cac5975a"
+    },
+    {
+      "path": "docs/plans/evidence/D-104/renderer-history.json",
+      "bytes": 4148,
+      "sha256": "e2957ebec158736a80bd6922a4a3a67881b82799fb09ddfe0c118861845fac2a"
+    }
+  ]
+}

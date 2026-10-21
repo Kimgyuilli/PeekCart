@@ -35,7 +35,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
- * 내부 토큰 인증 필터 3-state 계약 (계획 P9 · ADR-0017 D3). PR3c 의
+ * 내부 토큰 인증 필터 3-state 계약 (ADR-0017 D3). 기존
  * {@code HeaderAuthenticationFilterTest}(평문 3-state)를 서명 기준으로 재작성한 것이다.
  *
  * <p>핵심 회귀: <b>SIGNED_ONLY 에서 평문 {@code X-User-*} 를 직접 주입해도 신원이 서지 않는다</b> —

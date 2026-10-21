@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * retention floor fail-fast — 부팅 시 컨텍스트 검증 (ADR-0012 D5 · 구현 ② PR3).
+ * retention floor fail-fast — 부팅 시 컨텍스트 검증 (ADR-0012 D5).
  * retention 이 floor max 미만이면 {@code @Validated @ConfigurationProperties} 바인딩이 실패해
  * ApplicationContext 기동이 실패함을 검증한다(Testcontainers 없이 경량).
  */

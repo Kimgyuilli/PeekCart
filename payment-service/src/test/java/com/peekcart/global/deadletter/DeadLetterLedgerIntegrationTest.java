@@ -27,10 +27,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * payment-service 의 DLQ 원장 적재 통합 테스트 (계획 ④-c-2a §6 P6·P7).
+ * payment-service 의 DLQ 원장 적재 통합 테스트.
  *
  * <p><b>실제 Kafka 왕복으로 배선을 고정한다.</b> recorder 직접 호출은 group/factory/토픽이 틀려도
- * 통과한다 — ④-c-1b 에서 확인된 false-green 유형이다.
+ * 통과한다. 그래서 실제 브로커를 거친다.
  *
  * <p>멱등·malformed·종결 전이 등 서비스 무관 동작은 order-service 의 동일 테스트가 전수로 덮으므로
  * 여기서는 <b>이 서비스의 소유권 배선</b>만 본다.

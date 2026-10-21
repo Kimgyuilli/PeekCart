@@ -1,0 +1,18 @@
+{
+  "head": "47457c366ba1d12519b18a356e638f4d02ea13bc",
+  "runId": 39588457231,
+  "jobId": 119183132923,
+  "tests": 3,
+  "failures": 2,
+  "skipped": 0,
+  "files": {
+    "TEST-com.peekcart.global.security.AccessDeniedMvcContractTest.xml": {
+      "rawSha256": "1a44a9f3c2ce193354040f7934c06322c68f9b3eed2f38248f4ed1c5c7efc078",
+      "gzipSha256": "3aedd04bd59f1b535a059fba51e44a816949b1f7ff65937df0cdcc788a12bbd5"
+    },
+    "pr211-original39588457231-platform.log": {
+      "rawSha256": "ad7605662bdc7b31e34f499f169c8114d8006b58c805c41c8d9cc3f05a3efbf4",
+      "gzipSha256": "be2f27ca26ca19dda105566e3365dba7c4fd4c41b582ab8a1d9df0b24735af34"
+    }
+  }
+}
