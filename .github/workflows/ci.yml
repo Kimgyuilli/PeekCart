@@ -68,6 +68,7 @@ jobs:
           # D-043: gate 는 lint/test/guards/images/e2e 전체의 최종 판정자다.
           bash scripts/ci-release-gate-lint.sh
           bash scripts/ci-release-gate-lint.sh --self-test
+          python3 -B scripts/ci-publication-state-selftest.py
           bash scripts/ci-image-identity.sh --self-test
           python3 -B scripts/ci-build-profile-selftest.py
           python3 -B scripts/ci-build-profile-selftest.py --mutants
@@ -695,6 +696,7 @@ jobs:
           name: image-${{ matrix.service }}
 
       - name: Load image
+        id: load
         run: bash scripts/ci-image-identity.sh load ${{ matrix.service }}:ci .
 
       - name: Set up Buildx
@@ -714,6 +716,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push image
+        id: push
         run: |
           set -euo pipefail
           IMG="${{ steps.img.outputs.name }}"
@@ -739,3 +742,67 @@ jobs:
             exit 1
           fi
           echo "pushed: ${IMG}@${DIGEST} (tags: ${{ github.sha }}, latest)"
+
+
+      - name: Preserve publication evidence
+        if: ${{ always() }}
+        env:
+          SERVICE: ${{ matrix.service }}
+          PUSH_OUTCOME: ${{ steps.push.outcome }}
+          LOAD_OUTCOME: ${{ steps.load.outcome }}
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/publish-evidence"
+          mkdir -p "$evidence"
+          printf '%s\n' "$SERVICE" > "$evidence/service.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$evidence/expected-sha.txt"
+          printf '%s\n' "$GITHUB_RUN_ID" > "$evidence/run-id.txt"
+          printf '%s\n' "$GITHUB_RUN_ATTEMPT" > "$evidence/run-attempt.txt"
+          printf '%s\n' "$PUSH_OUTCOME" > "$evidence/push-outcome.txt"
+          printf '%s\n' "$LOAD_OUTCOME" > "$evidence/load-outcome.txt"
+          for file in image-id.txt "$RUNNER_TEMP/ghcr-push.log" "$RUNNER_TEMP/promotion.json"; do
+            if [[ -f "$file" ]]; then cp "$file" "$evidence/"; fi
+          done
+
+      - name: Upload publication evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-evidence-${{ matrix.service }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/publish-evidence/
+          if-no-files-found: error
+          retention-days: 14
+
+  publication-state:
+    needs: [gate, publish]
+    if: ${{ always() && github.event_name == 'push' && needs.gate.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record registry inspection client
+        run: |
+          mkdir -p "$RUNNER_TEMP/publication-state"
+          docker buildx version > "$RUNNER_TEMP/publication-state/buildx-version.txt"
+      - name: Download publication evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: publish-evidence-*
+          path: ${{ runner.temp }}/publication-inputs
+      - name: Observe publication state
+        if: ${{ always() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+        run: python3 -B scripts/ci-publication-state.py "$GITHUB_SHA" "$RUNNER_TEMP/publication-inputs" "$RUNNER_TEMP/publication-state"
+      - name: Upload publication observation
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: publication-state-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/publication-state/
+          if-no-files-found: error
+          retention-days: 14
