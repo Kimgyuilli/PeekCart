@@ -1,0 +1,35 @@
+{
+  "head": "2a3b2fe9ccd724eed922886d9875fdec82ad23b2",
+  "actual_checkout": "a9fccda356e530776f39c880ade5978589fa1d1e",
+  "run": 39622466849,
+  "job": 119299244681,
+  "suite": {
+    "name": "com.peekcart.global.config.SchedulerPoolCapacityTest",
+    "tests": "3",
+    "skipped": "0",
+    "failures": "3",
+    "errors": "0",
+    "timestamp": "2026-10-21T15:08:00.439Z",
+    "hostname": "runnervmxehtw",
+    "time": "0.105"
+  },
+  "cases": [
+    {
+      "name": "configuredPoolFourProgressesWithThreeOccupiedSlots()",
+      "failure_type": "java.lang.AssertionError",
+      "failure_message": "java.lang.AssertionError: \nExpecting actual:\n  com.peekcart.global.config.SchedulerPoolCapacityTest$TickProbe.tick\nto be an instance of:\n  org.springframework.scheduling.support.ScheduledMethodRunnable\nbut was instance of:\n  org.springframework.scheduling.config.Task.OutcomeTrackingRunnable"
+    },
+    {
+      "name": "singleThreadCounterfactualStallsAtOneOccupiedSlotAndRecoversOnRelease()",
+      "failure_type": "java.lang.AssertionError",
+      "failure_message": "java.lang.AssertionError: \nExpecting actual:\n  com.peekcart.global.config.SchedulerPoolCapacityTest$TickProbe.tick\nto be an instance of:\n  org.springframework.scheduling.support.ScheduledMethodRunnable\nbut was instance of:\n  org.springframework.scheduling.config.Task.OutcomeTrackingRunnable"
+    },
+    {
+      "name": "configuredPoolFourStallsAtFourOccupiedSlotsAndRecoversOnRelease()",
+      "failure_type": "java.lang.AssertionError",
+      "failure_message": "java.lang.AssertionError: \nExpecting actual:\n  com.peekcart.global.config.SchedulerPoolCapacityTest$TickProbe.tick\nto be an instance of:\n  org.springframework.scheduling.support.ScheduledMethodRunnable\nbut was instance of:\n  org.springframework.scheduling.config.Task.OutcomeTrackingRunnable"
+    }
+  ],
+  "capacity_markers": 0,
+  "conclusion": "All3 failed at registration wrapper type assumption before blockers. Prior configuration/core-size/single-scheduler/registration-count assertions passed by source control flow. No capacity result measured."
+}
