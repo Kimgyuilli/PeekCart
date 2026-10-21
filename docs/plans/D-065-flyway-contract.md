@@ -26,7 +26,7 @@ mysql CLI가 SQL을 적용한 결과만으로 Flyway 실패 이력이나 재시�
 
 파일 범위는 payment build의 전용 task/tag, `FlywayContractIntegrationTest` 및 새 JVM용 test helper, fixture SQL, 별도 `flyway-contract.yml`, 이 plan/audit/evidence다. 기존 ci.yml은 수정하지 않는다. 일반 test에서 제외하는 것은 새 `flyway-contract-lab` tag뿐이며 기존 테스트를 제외하거나 randomization을 제거하지 않는다. 전용 task는 이 tag만 실행하며 0 tests/누락 서비스는 artifact 검증에서 실패해야 한다.
 
-각 Flyway 호출은 test helper를 별도 Java 프로세스로 실행해 JVM 재시작과 단순 객체 재생성을 구분한다. 명령은 migrate/validate/info로 한정하고 repair/clean/baseline을 제공하지 않는다. 제한된 프로세스 대기, JDBC connect/socket/query timeout, 자기 MySQL restart 후 유한 readiness 대기를 둔다. helper 오류는 exit/result로 보존하고 진단이나 cleanup이 원 실패를 덮지 않는다. 계정 비밀번호는 자기 fixture에서 생성해 자식 환경으로만 전달하고 로그·명령 인자에 넣지 않는다.
+각 Flyway 호출은 test helper를 별도 Java 프로세스로 실행해 JVM 재시작과 단순 객체 재생성을 구분한다. 명령은 migrate/validate로 한정하고 repair/clean/baseline을 제공하지 않는다. 제한된 프로세스 대기, JDBC connect/socket/query timeout, 자기 MySQL restart 후 유한 readiness 대기를 둔다. helper 오류는 exit/result로 보존하고 진단이나 cleanup이 원 실패를 덮지 않는다. 계정 비밀번호는 자기 fixture에서 생성해 자식 환경으로만 전달하고 로그·명령 인자에 넣지 않는다.
 
 ## 3. 작업 항목
 

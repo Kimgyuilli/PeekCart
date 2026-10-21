@@ -35,3 +35,9 @@
 - 전체증거bundle/개별rawhashmanifest를repo에보존했다. cleanupstep은새Testcontainers4제거SUCCESS다. 로컬중량실행없음. 다음actualmain d506통합과최신일반CI·전용workflow/독립검토가남는다.
 
 - actual main d506f7eef5d29e9894342a6d47b93b89a34266b2 정상통합. 기존bdc→bf704bd 작성patch와새base→mergeheadpatch가byte동일(SHA256ba4deeff4046927175f22d31acf91d8d9b7234be0849f7d35363e1a114e8c8d3)이다. 추가main은PR205 timestampfixture/관측test·workflow·증거이며Flyway실행source는불변이다. 일반334명단도불변이고최신Actions로함께검증한다.
+
+## 2026-10-21 — 최종 실행과 불필요한 명령 제거
+
+- main d506 통합 head883f81b의 전용 Actions39584969218도 SUCCESS다. 원본artifact를 직접 내려받아 같은 검사기로 ordinary334/dedicated1/4서비스/76child를 재검증했다. lab107.084초/실패0/skip0, 실제port32775에서32776변경/재시작보존/cleanup4개제거를 확인했다. 원본은 /private/tmp/pr207-flyway39584969218에 보존했다.
+- 사용자의 최소복잡성 지시와 독립 reviewer의 P3에 따라 helper의 미사용 info명령과분기5줄을 제거했다. 실행 중인 migrate/validate 경로와76경계는 바꾸지 않는다. 서비스당 fresh3/upgrade2/callback2/checksum2/partialDDL과차단4/restart6이며 단순 재시도는 없다.
+- 이 좁은 삭제도 새 exacthead의 일반CI/전용Actions 및 독립delta 검토를 받는다. 과거head의PASS를 최종head의실행으로 바꾸어 적지 않는다. 운영·제품migration 변경 없음.
