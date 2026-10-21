@@ -24,7 +24,11 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import com.peekcart.payment.application.dto.PaymentStatusHint;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -53,7 +57,7 @@ class PaymentControllerTest {
                 .willReturn(PaymentFixture.approvedPaymentDetailDto());
 
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(
-                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT);
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
 
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -72,7 +76,7 @@ class PaymentControllerTest {
                 .willReturn(PaymentFixture.failedPaymentDetailDto());
 
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(
-                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT);
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
 
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -90,7 +94,7 @@ class PaymentControllerTest {
                 .willReturn(PaymentFixture.pendingPaymentDetailDto());
 
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(
-                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT);
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
 
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -105,12 +109,35 @@ class PaymentControllerTest {
     @DisplayName("POST /confirm: paymentKey가 빈 문자열이면 400을 반환한다")
     void confirmPayment_blankPaymentKey_returns400() throws Exception {
         ConfirmPaymentRequest request = new ConfirmPaymentRequest(
-                "", PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT);
+                "", PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
 
         mockMvc.perform(post("/api/v1/payments/confirm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockLoginUser
+    void prepareReturnsCanonicalIdAndServerAmount() throws Exception {
+        given(paymentQueryService.preparePayment(1L, 1L)).willReturn(
+                new com.peekcart.payment.application.dto.PaymentCheckoutDto(1L, PaymentFixture.DEFAULT_PG_ORDER_ID, 100000));
+        mockMvc.perform(post("/api/v1/payments/1/prepare"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.pgOrderId").value(PaymentFixture.DEFAULT_PG_ORDER_ID))
+                .andExpect(jsonPath("$.data.amount").value(100000));
+    }
+
+    @Test
+    @WithMockLoginUser
+    void malformedPgOrderIdIsRejectedBeforeAdmission() throws Exception {
+        for (String id : new String[]{"1", "pc invalid", "a".repeat(65)}) {
+            var request = new ConfirmPaymentRequest("key", 1L, 100000, id);
+            mockMvc.perform(post("/api/v1/payments/confirm").contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+        org.mockito.Mockito.verifyNoInteractions(paymentCommandService);
     }
 
     // ── GET /api/v1/payments/{orderId} ──
@@ -132,7 +159,7 @@ class PaymentControllerTest {
     @WithMockLoginUser
     void cancelledPaymentStillExposesUnresolvedApproval() throws Exception {
         var dto = new com.peekcart.payment.application.dto.PaymentDetailDto(
-                1L, PaymentFixture.DEFAULT_ORDER_ID, "key", 1000L, "CANCELLED", "UNRESOLVED",
+                1L, PaymentFixture.DEFAULT_ORDER_ID, PaymentFixture.DEFAULT_PG_ORDER_ID, "key", 1000L, "CANCELLED", "UNRESOLVED",
                 null, null, java.time.LocalDateTime.now());
         given(paymentQueryService.getPaymentByOrderId(1L, PaymentFixture.DEFAULT_ORDER_ID)).willReturn(dto);
         mockMvc.perform(get("/api/v1/payments/{orderId}", PaymentFixture.DEFAULT_ORDER_ID))
@@ -155,32 +182,67 @@ class PaymentControllerTest {
     // ── POST /api/v1/payments/webhook ──
 
     @Test
-    @DisplayName("POST /webhook: 정상 웹훅 수신 시 200을 반환한다")
-    void handleWebhook_success_returns200() throws Exception {
-        String payload = "{\"paymentKey\":\"pk-123\",\"eventType\":\"PAYMENT_DONE\"}";
-
-        mockMvc.perform(post("/api/v1/payments/webhook")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Toss-Signature", "valid-signature")
-                        .header("Idempotency-Key", "idem-1")
-                        .content(payload))
-                .andExpect(status().isOk());
+    void unsignedOfficialWebhookUsesNestedPaymentKeyAndIgnoresExternalIds() throws Exception {
+        String payload = """
+                {"eventType":"PAYMENT_STATUS_CHANGED","createdAt":"2026-10-21T11:00:00.000000",
+                 "data":{"paymentKey":"pk-123","status":"DONE","totalAmount":999999}}
+                """;
+        mockMvc.perform(post("/api/v1/payments/webhook").contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "attacker-selected").header("Toss-Signature", "irrelevant")
+                        .content(payload)).andExpect(status().isOk());
+        verify(webhookService).processWebhook(new PaymentStatusHint("PAYMENT_STATUS_CHANGED", "pk-123", "DONE"));
     }
 
-    @Test
-    @DisplayName("POST /webhook: 서명 검증 실패 시 401을 반환한다")
-    void handleWebhook_invalidSignature_returns401() throws Exception {
-        String payload = "{\"paymentKey\":\"pk-123\",\"eventType\":\"PAYMENT_DONE\"}";
-
-        doThrow(new PaymentException(ErrorCode.PAY_006))
-                .when(webhookService).processWebhook(any(), any(), any(), any(), any());
-
-        mockMvc.perform(post("/api/v1/payments/webhook")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Toss-Signature", "invalid")
-                        .content(payload))
-                .andExpect(status().isUnauthorized());
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "", "null", "[]", "{", "{}",
+            "{\"eventType\":\"PAYMENT_STATUS_CHANGED\",\"paymentKey\":\"pk\",\"status\":\"DONE\"}",
+            "{\"eventType\":\"payout.changed\",\"data\":{\"paymentKey\":\"pk\",\"status\":\"DONE\"}}",
+            "{\"eventType\":1,\"data\":{\"paymentKey\":\"pk\",\"status\":\"DONE\"}}",
+            "{\"eventType\":\"PAYMENT_STATUS_CHANGED\",\"data\":{\"paymentKey\":1,\"status\":\"DONE\"}}",
+            "{\"eventType\":\"PAYMENT_STATUS_CHANGED\",\"data\":{\"paymentKey\":\" \",\"status\":\"DONE\"}}",
+            "{\"eventType\":\"PAYMENT_STATUS_CHANGED\",\"data\":{\"paymentKey\":\"pk\",\"status\":\"UNKNOWN\"}}",
+            "{\"eventType\":\"PAYMENT_STATUS_CHANGED\",\"data\":{\"paymentKey\":\"pk\",\"status\":true}}",
+            "{\"eventType\":\"PAYMENT_STATUS_CHANGED\",\"data\":{\"paymentKey\":\"pk\",\"status\":\"DONE\"}} {}",
+            "{\"eventType\":\"OTHER\",\"eventType\":\"PAYMENT_STATUS_CHANGED\",\"data\":{\"paymentKey\":\"pk\",\"status\":\"DONE\"}}"
+    })
+    void malformedOrUnsupportedWebhookCreatesNoWork(String payload) throws Exception {
+        mockMvc.perform(post("/api/v1/payments/webhook").contentType(MediaType.APPLICATION_JSON)
+                .content(payload)).andExpect(status().isBadRequest());
+        verifyNoInteractions(webhookService);
     }
+
+    @Test void excessivePaymentKeyIsRejected() throws Exception {
+        String payload = "{\"eventType\":\"PAYMENT_STATUS_CHANGED\",\"data\":{\"paymentKey\":\""
+                + "k".repeat(201) + "\",\"status\":\"DONE\"}}";
+        mockMvc.perform(post("/api/v1/payments/webhook").contentType(MediaType.APPLICATION_JSON)
+                .content(payload)).andExpect(status().isBadRequest());
+        verifyNoInteractions(webhookService);
+    }
+
+    @Test void oversizedBodyIsRejectedBeforeParsing() throws Exception {
+        mockMvc.perform(post("/api/v1/payments/webhook").contentType(MediaType.APPLICATION_JSON)
+                .content(" ".repeat(16 * 1024 + 1))).andExpect(status().isPayloadTooLarge());
+        verifyNoInteractions(webhookService);
+    }
+
+    @Test void unknownLengthStreamIsBoundedBeforeAllocation() throws Exception {
+        var controller = new PaymentController(paymentCommandService, paymentQueryService, webhookService, objectMapper);
+        var request = org.mockito.Mockito.mock(jakarta.servlet.http.HttpServletRequest.class);
+        org.mockito.Mockito.when(request.getContentLengthLong()).thenReturn(-1L);
+        var bytesRead = new java.util.concurrent.atomic.AtomicInteger();
+        var stream = new jakarta.servlet.ServletInputStream() {
+            @Override public int read() { bytesRead.incrementAndGet(); return ' '; }
+            @Override public boolean isFinished() { return false; }
+            @Override public boolean isReady() { return true; }
+            @Override public void setReadListener(jakarta.servlet.ReadListener listener) { }
+        };
+        org.mockito.Mockito.when(request.getInputStream()).thenReturn(stream);
+        org.assertj.core.api.Assertions.assertThat(controller.handleWebhook(request).getStatusCode().value()).isEqualTo(413);
+        org.assertj.core.api.Assertions.assertThat(bytesRead.get()).isEqualTo(16 * 1024 + 1);
+        verifyNoInteractions(webhookService);
+    }
+
     @Test
     @WithMockLoginUser
     void invalidPathIdReturns400() throws Exception {

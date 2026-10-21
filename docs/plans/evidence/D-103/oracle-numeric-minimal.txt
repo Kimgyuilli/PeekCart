@@ -1,0 +1,6 @@
+test_independent_oracle_raw_numbers (__main__.RendererContractTest.test_independent_oracle_raw_numbers) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.500s
+
+OK

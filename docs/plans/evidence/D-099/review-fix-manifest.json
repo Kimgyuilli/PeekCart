@@ -1,0 +1,40 @@
+{
+  "comparison_base": "4a4a36a12a3d914d6bc0379ded94bc0123c4d370",
+  "verification": {
+    "local": "original two counterexample methods PASS; additional shape method PASS",
+    "actions": "41 methods and 16 mutants pending"
+  },
+  "files": [
+    {
+      "path": "scripts/harness-context.sh",
+      "bytes": 11723,
+      "sha256": "1807f82e91dfc339a0e35f1ee720e2ada684d9abb801c1d392e6990d0c4f1ef5"
+    },
+    {
+      "path": "scripts/harness-context-selftest.py",
+      "bytes": 17218,
+      "sha256": "48566579f4a142b63e0c47581d2bc1b5c6b7224d469b309f02002f8d50bb88d9"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 32108,
+      "sha256": "77aeb6e55f9009c6e37439e61d32a2091a797557a7976ec552564731a6fc323a"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/check-mutants.py",
+      "bytes": 4677,
+      "sha256": "4a23936bb8272c97d837406b953fb929029ab5d18e333f4ac3d9b753a3d6847c"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/review-fix-minimal.txt",
+      "bytes": 368,
+      "sha256": "a539a6a75b36021e579d69256da89492c8f0355a633e4b33a9731cce6b084382"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/review-shape-minimal.txt",
+      "bytes": 230,
+      "sha256": "2398c6068a6a963870e31bebcffe6d3695f503e9c4f370c14fc3fb5a0f5cea3d"
+    }
+  ],
+  "integration_base": "f4ee03b97b0bec0c9be7cd3077911fb67b578b74"
+}

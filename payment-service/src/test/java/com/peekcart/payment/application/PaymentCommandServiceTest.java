@@ -22,7 +22,7 @@ class PaymentCommandServiceTest {
                 .confirmPayment(PaymentFixture.DEFAULT_USER_ID, command);
         assertThat(result.status()).isEqualTo("PENDING");
         verify(approvalService).beginApproval(PaymentFixture.DEFAULT_USER_ID, command.orderId(),
-                command.paymentKey(), command.amount());
+                command.paymentKey(), command.amount(), command.pgOrderId());
         verifyNoMoreInteractions(approvalService);
     }
 }

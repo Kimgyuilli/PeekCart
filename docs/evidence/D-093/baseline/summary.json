@@ -1,0 +1,15 @@
+{
+  "result": "BASELINE_PASS",
+  "startedAt": 1792518909.309411,
+  "finishedAt": 1792519098.615288,
+  "sourceSHA": "b89b4f73ad5228c25d6e348358cec5bd20df6b21",
+  "rules": [
+    "peekcart-compensation-backlog",
+    "peekcart-dlq-backlog",
+    "peekcart-outbox-failed",
+    "peekcart-cache-fallback-get",
+    "peekcart-cache-fallback-evict"
+  ],
+  "baselineSamples": 8,
+  "scope": "Initial evaluation readiness and 120s baseline only; no lifecycle/delivery claim"
+}

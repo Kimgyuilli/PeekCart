@@ -1,0 +1,12 @@
+{
+  "head": "d882fecf830e261e78fb6b890aca27b73911cc86",
+  "runId": 39588911211,
+  "jobId": 119184872320,
+  "tests": 3,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "commonAuthTests": 60,
+  "rawSha256": "c6dca4bf7f71ac3df03f27207e8ae84bdd9c3fae8b30df9eaf7a38925357d5f8",
+  "gzipSha256": "0685231126b092cc9f332d034317e97b87937b4f4d8ee57aba7d3a1bfc9a7818"
+}

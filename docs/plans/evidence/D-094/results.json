@@ -1,0 +1,71 @@
+{
+  "baseline_code": "af60cd6d9dceac541b6f457062093df70753f3ce",
+  "date": "2026-10-21",
+  "command": "SPRING_PROFILES_ACTIVE=test ./gradlew :product-service:test --tests 'com.peekcart.product.infrastructure.ProductCacheFallbackIntegrationTest.unresponsiveRedis_isBoundedByCommandTimeout' --offline --no-daemon --no-parallel --max-workers=1 --console=plain --rerun-tasks",
+  "bound_millis": 3500,
+  "scope": "isolated local timing probes; not production load or per-command causal decomposition",
+  "runs": [
+    {
+      "probe": "baseline",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "testcase": "V3 — 무응답 Redis 에서도 조회가 3.5s 이내에 끝나고 두 캐시의 get·put fallback 이 모두 발동한다",
+      "observation": [
+        "Redis V3 observation: elapsed=2075ms, commandTimeout=500ms, product/get=1.0, product/put=1.0, productStock/get=1.0, productStock/put=1.0"
+      ],
+      "failure_details": [],
+      "source_sha256": "f30b7a2cd8d107d4cf9b716cbf690eb0dace1003e88b108cd2c802715a31113f",
+      "gradle_exit_code": 0
+    },
+    {
+      "probe": "delay-1800ms",
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "testcase": "V3 — 무응답 Redis 에서도 조회가 3.5s 이내에 끝나고 두 캐시의 get·put fallback 이 모두 발동한다",
+      "observation": [
+        "Redis V3 observation: elapsed=3885ms, commandTimeout=500ms, product/get=1.0, product/put=1.0, productStock/get=1.0, productStock/put=1.0"
+      ],
+      "failure_details": [
+        {
+          "type": "java.lang.AssertionError",
+          "message": "java.lang.AssertionError: [무응답 Redis 상세 조회는 3500ms 미만이어야 한다. 관측: elapsed=3885ms, commandTimeout=500ms, product/get=1.0, product/put=1.0, productStock/get=1.0, productStock/put=1.0\n상세 조회는 product + productStock 두 캐시를 탄다(ADR-0026 D2).\n각 get·put이 timeout 500ms를 소비하면 4회 예산은 2000ms다.\n이 경과에는 DB 조회·JVM 정지·runner 경합 등도 섞이므로 초과 원인을 단정하지 않는다.\ntimeout 변경, 캐시 경로 변화, DB/JVM/runner 지연을 함께 확인한다.\n경로 카운터는 fallback 횟수이며 timeout 원인이나 시간 기여를 직접 증명하지 않는다.] \nExpecting actual:\n  3.885825041S\nto be less than:\n  3.5S "
+        }
+      ],
+      "source_sha256": "4af1dbb2e4cb171855b5140c646a7c0899b76268179899077ccfa3aa95fa038f",
+      "gradle_exit_code": 1
+    },
+    {
+      "probe": "timeout-1s",
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "testcase": "V3 — 무응답 Redis 에서도 조회가 3.5s 이내에 끝나고 두 캐시의 get·put fallback 이 모두 발동한다",
+      "observation": [
+        "Redis V3 observation: elapsed=4070ms, commandTimeout=1000ms, product/get=1.0, product/put=1.0, productStock/get=1.0, productStock/put=1.0"
+      ],
+      "failure_details": [
+        {
+          "type": "java.lang.AssertionError",
+          "message": "java.lang.AssertionError: [무응답 Redis 상세 조회는 3500ms 미만이어야 한다. 관측: elapsed=4070ms, commandTimeout=1000ms, product/get=1.0, product/put=1.0, productStock/get=1.0, productStock/put=1.0\n상세 조회는 product + productStock 두 캐시를 탄다(ADR-0026 D2).\n각 get·put이 timeout 500ms를 소비하면 4회 예산은 2000ms다.\n이 경과에는 DB 조회·JVM 정지·runner 경합 등도 섞이므로 초과 원인을 단정하지 않는다.\ntimeout 변경, 캐시 경로 변화, DB/JVM/runner 지연을 함께 확인한다.\n경로 카운터는 fallback 횟수이며 timeout 원인이나 시간 기여를 직접 증명하지 않는다.] \nExpecting actual:\n  4.070404417S\nto be less than:\n  3.5S "
+        }
+      ],
+      "source_sha256": "644c5b8f02cea74b92c0a99f4d0397b68789efd5f3f78bdf1f210ad16079de0a",
+      "gradle_exit_code": 1
+    },
+    {
+      "probe": "restored",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "testcase": "V3 — 무응답 Redis 에서도 조회가 3.5s 이내에 끝나고 두 캐시의 get·put fallback 이 모두 발동한다",
+      "observation": [
+        "Redis V3 observation: elapsed=2056ms, commandTimeout=500ms, product/get=1.0, product/put=1.0, productStock/get=1.0, productStock/put=1.0"
+      ],
+      "failure_details": [],
+      "source_sha256": "f30b7a2cd8d107d4cf9b716cbf690eb0dace1003e88b108cd2c802715a31113f",
+      "gradle_exit_code": 0
+    }
+  ]
+}
