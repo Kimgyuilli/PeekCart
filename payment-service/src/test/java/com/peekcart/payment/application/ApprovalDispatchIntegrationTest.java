@@ -176,7 +176,8 @@ class ApprovalDispatchIntegrationTest extends AbstractIntegrationTest {
 
     private void accept() {
         assertThat(commandService.confirmPayment(PaymentFixture.DEFAULT_USER_ID,
-                PaymentFixture.confirmPaymentCommand()).status()).isEqualTo("PENDING");
+                new com.peekcart.payment.application.dto.ConfirmPaymentCommand(PaymentFixture.DEFAULT_PAYMENT_KEY,
+                        ORDER, PaymentFixture.DEFAULT_AMOUNT, payments.findByOrderId(ORDER).orElseThrow().getPgOrderId())).status()).isEqualTo("PENDING");
     }
 
     private void expireDeadline() {

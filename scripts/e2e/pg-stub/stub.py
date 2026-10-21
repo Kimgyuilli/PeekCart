@@ -35,6 +35,7 @@ TIMEOUT_SLEEP = float(os.environ.get("PG_STUB_TIMEOUT_SLEEP", "60"))
 _lock = threading.Lock()
 _ledger = []
 _resolved_approvals = set()
+_approvals = {}
 
 CANCEL_RE = re.compile(r"^/v1/payments/([^/]+)/cancel$")
 FIND_RE = re.compile(r"^/v1/payments/([^/]+)$")
@@ -53,7 +54,7 @@ def script_of(payment_key):
     return None   # 미등록 키 — 조용히 성공시키지 않는다
 
 
-def record(method, path, payment_key, idempotency_key):
+def record(method, path, payment_key, idempotency_key, identity=None):
     with _lock:
         _ledger.append({
             "seq": len(_ledger) + 1,
@@ -61,6 +62,7 @@ def record(method, path, payment_key, idempotency_key):
             "path": path,
             "paymentKey": payment_key,
             "idempotencyKey": idempotency_key,
+            **(identity or {}),
         })
 
 
@@ -98,10 +100,16 @@ class Handler(BaseHTTPRequestHandler):
             self._send(500, {"code": "STUB_UNSCRIPTED_KEY", "message": payment_key})
             return
 
+        with _lock:
+            approval = dict(_approvals[payment_key]) if payment_key in _approvals else None
+            resolved = payment_key in _resolved_approvals
+        if approval is not None:
+            if script == "fence" and resolved:
+                approval["status"] = "ABORTED"
+            self._send(200, approval)
+            return
         if script == "fence":
-            with _lock:
-                resolved = payment_key in _resolved_approvals
-            self._send(200, {"status": "ABORTED" if resolved else "READY"})
+            self._send(404, {"code": "STUB_UNKNOWN_APPROVAL"})
             return
 
         if script == "already-fail":
@@ -155,7 +163,12 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(400, {"code": "NOT_FENCE_SCRIPT"})
                 return
             with _lock:
-                _resolved_approvals.add(payment_key)
+                known = payment_key in _approvals
+                if known:
+                    _resolved_approvals.add(payment_key)
+            if not known:
+                self._send(404, {"code": "STUB_UNKNOWN_APPROVAL"})
+                return
             self._send(200, {"status": "ABORTED"})
             return
         raw = self._read_body() or b"{}"
@@ -165,9 +178,32 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(raw.decode("utf-8") or "{}")
             except ValueError:
                 payload = {}
+            if not isinstance(payload, dict):
+                payload = {}
             payment_key = payload.get("paymentKey", "")
-            record("POST", self.path, payment_key, self.headers.get("Idempotency-Key"))
+            if not isinstance(payment_key, str):
+                payment_key = ""
+            record("POST", self.path, payment_key, self.headers.get("Idempotency-Key"),
+                   {"orderId": payload.get("orderId"), "amount": payload.get("amount")})
             script = script_of(payment_key)
+            if payment_key and script is not None:
+                order_id, amount = payload.get("orderId"), payload.get("amount")
+                if (not isinstance(order_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{6,64}", order_id)
+                        or type(amount) is not int or amount <= 0):
+                    self._send(400, {"code": "STUB_INVALID_IDENTITY"})
+                    return
+                approval = {"paymentKey": payment_key, "orderId": order_id, "totalAmount": amount,
+                            "status": "READY" if script == "fence" else "ABORTED" if script == "cfail" else "DONE",
+                            "method": "간편결제", "approvedAt": "2026-08-27T12:00:00+09:00"}
+                with _lock:
+                    previous = _approvals.get(payment_key)
+                    mismatch = previous is not None and any(previous[k] != approval[k]
+                                                              for k in ("orderId", "totalAmount"))
+                    if not mismatch:
+                        _approvals.setdefault(payment_key, approval)
+                if mismatch:
+                    self._send(409, {"code": "STUB_IDENTITY_MISMATCH"})
+                    return
             if not payment_key:
                 # **미등록 키와 구별한다.** 둘 다 500 으로 뭉개면 본문을 못 읽고 있다는
                 # 사실이 "승인 실패" 로 보여 시나리오가 통과해 버린다(실제로 그랬다).
@@ -185,13 +221,7 @@ class Handler(BaseHTTPRequestHandler):
                 # 남고 주문 취소·재고 복구가 일어나지 않는다(D-020 의 수정 내용 그 자체다).
                 self._send(400, {"code": "REJECT_CARD_COMPANY", "message": "카드사 거절 script"})
             else:
-                self._send(200, {
-                    "paymentKey": payment_key,
-                    "orderId": str(payload.get("orderId", "")),
-                    "status": "DONE",
-                    "method": "간편결제",
-                    "approvedAt": "2026-08-27T12:00:00+09:00",
-                })
+                self._send(200, approval)
             return
 
         m = CANCEL_RE.match(self.path)
@@ -207,7 +237,13 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if script in ("ok", "cfail"):
-            self._send(200, {"status": "CANCELED", "cancels": [{"cancelAmount": AMOUNT}]})
+            with _lock:
+                approval = _approvals.get(payment_key)
+                if approval is not None:
+                    approval.update(status="CANCELED", balanceAmount=0,
+                                    cancels=[{"cancelAmount": approval["totalAmount"]}])
+                canceled = dict(approval) if approval is not None else None
+            self._send(200, canceled or {"status": "CANCELED", "cancels": [{"cancelAmount": AMOUNT}]})
         elif script == "4xx":
             self._send(400, {"code": "NOT_CANCELABLE_AMOUNT", "message": "취소 불가 금액"})
         elif script == "transient":
@@ -282,7 +318,7 @@ def _self_test():
 
     print("pg-stub self-test")
 
-    body = '{"paymentKey":"e2e-cfail-x-1","orderId":"1","amount":10000}'
+    body = '{"paymentKey":"e2e-cfail-x-1","orderId":"pc_test_1","amount":10000}'
 
     # 핵심 — chunked 로 보내도 script 가 먹어야 한다.
     status, payload = post(CONFIRM_PATH, body, chunked=True)
@@ -295,7 +331,7 @@ def _self_test():
           (400, "REJECT_CARD_COMPANY"))
 
     status, payload = post(CONFIRM_PATH,
-                           '{"paymentKey":"e2e-ok-x-1","orderId":"1","amount":10000}', chunked=True)
+                           '{"paymentKey":"e2e-ok-x-1","orderId":"pc_test_1","amount":10000}', chunked=True)
     check("chunked confirm: 성공 script", (status, payload.get("status")), (200, "DONE"))
 
     # 본문을 못 읽는 상태를 **미등록 키와 구별**한다. 뭉개면 위 함정이 되살아난다.
@@ -303,11 +339,11 @@ def _self_test():
     check("본문 없음 → STUB_EMPTY_BODY", (status, payload.get("code")), (500, "STUB_EMPTY_BODY"))
 
     status, payload = post(CONFIRM_PATH,
-                           '{"paymentKey":"typo-key","orderId":"1","amount":10000}', chunked=True)
+                           '{"paymentKey":"typo-key","orderId":"pc_test_1","amount":10000}', chunked=True)
     check("미등록 키 → STUB_UNSCRIPTED_KEY", (status, payload.get("code")),
           (500, "STUB_UNSCRIPTED_KEY"))
 
-    status, payload = post(CONFIRM_PATH, '{"paymentKey":"e2e-fence-x-1","orderId":"1"}', chunked=True)
+    status, payload = post(CONFIRM_PATH, '{"paymentKey":"e2e-fence-x-1","orderId":"pc_test_1","amount":10000}', chunked=True)
     check("fence confirm: 결과 불명", status, 500)
     status, payload = get("/v1/payments/e2e-fence-x-1")
     check("fence lookup: 확정 전 READY", payload.get("status"), "READY")
@@ -331,6 +367,12 @@ def _self_test():
 if __name__ == "__main__":
     import sys
     if "--self-test" in sys.argv:
-        raise SystemExit(_self_test())
+        result = _self_test()
+        if result == 0:
+            # CI의 기존 진입점에서 identity/환불 대조군도 함께 실행한다.
+            import subprocess
+            from pathlib import Path
+            result = subprocess.run([sys.executable, str(Path(__file__).with_name("self-test.py"))]).returncode
+        raise SystemExit(result)
     port = int(os.environ.get("PG_STUB_PORT", "8080"))
     ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()

@@ -57,6 +57,8 @@ public enum ErrorCode {
     // PAY-012 는 실패가 아니다 (ADR-0023 D8) — 과금이 성립했을 수 있는 건을 PAY-005 로 돌려주면
     // 사용자에게 "결제 안 됐다"고 단언하게 된다. 결과는 reconciliation 이 확정한다.
     PAY_012(HttpStatus.CONFLICT, "PAY-012", "결제 결과를 확인 중입니다. 잠시 후 결제 내역을 확인해주세요."),
+    PAY_014(HttpStatus.CONFLICT, "PAY-014", "결제 인증 주문 식별자가 저장된 주문과 일치하지 않습니다."),
+    PAY_015(HttpStatus.CONFLICT, "PAY-015", "새 주문으로 결제 준비를 다시 진행해주세요."),
     PAY_013(HttpStatus.CONFLICT, "PAY-013", "이미 진행 중이거나 완료된 결제 승인입니다."),
 
     // System
