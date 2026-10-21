@@ -8,7 +8,7 @@ The first two runs failed and remain failed evidence. The third product shard pa
 | 39628723409 / 1881ddd | Four failures,108 rows, all nonoptimistic, no inventory arrival. Invalid44-character eventId versus VARCHAR36; precise old exception chain unavailable. Run later superseded. | second-product.xml.gz, second-product-job.log.gz, second-failure.json |
 | 39630546332 / b933806 | Product job119327788981 SUCCESS,47 suites/240 cases/zero failure/error/skip; target4/0,81 rows. | third-product-xml.tar.gz (all47 original XMLs), third-product-job.log.gz, third-observation.json |
 
-Third checkout is `b09fd148271c5ea7f57a9fd334e655bee4dbb9cb`, merging measured source `b933806004801b10e0617c32626af691bea4df76` into actual CI base `7320ffdd4a72a1bdde77bc9424c8d11ecff18ba3`. Author branch originally starts at8f0d2ee. Seed1792598420536 controls class order only; actual runner JDK17.0.20.1 is in the job log. Test uses real MySQL8.0.46/Kafka3.8.1/Redis7 singleton fixtures and the real listener/transaction/handler/sleeper. No external Slack/PG call.
+Third checkout is `b09fd148271c5ea7f57a9fd334e655bee4dbb9cb`, merging measured source `b933806004801b10e0617c32626af691bea4df76` into actual CI base `7320ffdd4a72a1bdde77bc9424c8d11ecff18ba3`. Author branch originally starts at8f0d2ee. Seed1792598420536 controls class order only; actual runner Temurin17.0.20+1 is in the job log. Test uses real MySQL8.0.46/Kafka3.8.1/Redis7 singleton fixtures and the real listener/transaction/handler/sleeper. No external Slack/PG call.
 
 | Scenario, one observation per mode | Fixed | Jitter |
 | --- | --- | --- |
