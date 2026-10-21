@@ -28,3 +28,9 @@
 
 - PR211 정상 병합 main89797c9639e15fb7c362e6be49687e652f80d3b9를 자기 branch에 통합했다. 기존 actual 성공 자료를 docs commit404d450으로 먼저 보존했다. d882fec 대비 작성한 signed fixture 7파일의 patch와 actual897 대비 patch는 byte-identical이며 SHA256은 `593a34f520835716849799373a55680f7d91c8558c157a3e8d7a7854b787f8a4`다. 제품 handler는 이제 base 소유다.
 - source 불변 상태에서 hermetic12 methods, actual897 기준 문서 보존gate, diff 검사가 통과했다. 현재 head의 일반 CI와 전용 signed Actions는 새로 실행하며 아직 미검증이다. 이전53af의 실제 성공을 새 head 실행으로 대신하지 않는다. root의 별도 병합 승인은 없고 P6는 미완이다.
+
+## 2026-10-21 — 실제 main 병합 후 확인
+
+최종 head `0be5aa32ec9159cdbc86f351475443fa090aec7f`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/210#issuecomment-6315032985)는 새 전용 Actions39592715075의 실제64HTTP/20DB snapshot/112files와 네 fixture 정리를 확인했다. 일반 CI39592715276도 성공했다. [PR210](https://github.com/Kimgyuilli/PeekCart/pull/210)을 보호 우회 없이 직렬 병합한 실제 main은 `7894dcc9cf0de3dd966f62777d1b463a1d9313dc`다. [main CI39595168219](https://github.com/Kimgyuilli/PeekCart/actions/runs/39595168219)의 테스트·E2E·gate와 여섯 publish 모두 SUCCESS를 Root가 직접 조회했다.
+
+이 기록은 무료 signed gateway 경로 검증의 완료다. 운영 replay는 계속 false이며 D-065 전체는 부분 완료다. 실제 운영 표본·GKE·NOT NULL 적용, 별도 수집기/제약/Flyway PR의 최신 병합 검증을 대신하지 않는다. 이미지 archive의 독립 로컬 재다운로드 검증은 수행하지 않았고 Actions checksum/loadID 검사와 구분한다.

@@ -797,3 +797,9 @@ PR CI39586719840 attempt1의 payment bootJar 의존성 해석 실패는 테스�
 [PR211](https://github.com/Kimgyuilli/PeekCart/pull/211) 최종 head `3cf31328b3490b0885be68b5491e3534f259a6ed`, merge `89797c9639e15fb7c362e6be49687e652f80d3b9`. 공통 MVC 예외 처리에서 AccessDeniedException을 기존 보안 필터로 전달해 USER403·무인증401을 보존하고 다른 예외500은 유지한다. 실제 기존 결함 음성은 3개 중 2실패였고 수정 뒤 실제 313 platform tests가 통과했다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/211#issuecomment-6314585933)는 정확한 SHA와 원 XML·변경 영향을 검토했다.
 
 PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgyuilli/PeekCart/actions/runs/39592220364)의 모든 테스트·E2E·gate·여섯 publish SUCCESS를 Root가 확인했다. D-065의 실제 signed 전체 체인은 별도 PR210이며 운영 replay는 비개방 상태다. 운영 표본·GKE·NOT NULL 적용 등 남은 조건을 완료로 바꾸지 않는다.
+
+## 2026-10-21 — D-065 signed gateway 부분 범위 병합 후 확인
+
+최종 head `0be5aa32ec9159cdbc86f351475443fa090aec7f`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/210#issuecomment-6315032985)는 새 전용 Actions39592715075의 실제64HTTP/20DB snapshot/112files와 네 fixture 정리를 확인했다. 일반 CI39592715276도 성공했다. [PR210](https://github.com/Kimgyuilli/PeekCart/pull/210)을 보호 우회 없이 직렬 병합한 실제 main은 `7894dcc9cf0de3dd966f62777d1b463a1d9313dc`다. [main CI39595168219](https://github.com/Kimgyuilli/PeekCart/actions/runs/39595168219)의 테스트·E2E·gate와 여섯 publish 모두 SUCCESS를 Root가 직접 조회했다.
+
+이 기록은 무료 signed gateway 경로 검증의 완료다. 운영 replay는 계속 false이며 D-065 전체는 부분 완료다. 실제 운영 표본·GKE·NOT NULL 적용, 별도 수집기/제약/Flyway PR의 최신 병합 검증을 대신하지 않는다. 이미지 archive의 독립 로컬 재다운로드 검증은 수행하지 않았고 Actions checksum/loadID 검사와 구분한다.
