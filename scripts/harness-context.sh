@@ -52,7 +52,7 @@ def debt_rows(text, label):
     for line in text.splitlines():
         if not re.match(r'^\s*\|\s*D-', line, re.I): continue
         match = re.match(r'^\s*\|\s*(D-[0-9]{3,})\s*\|', line)
-        if not match or len(line.strip().strip('|').split('|')) < 5:
+        if not match or len(cells(line)) < 5:
             problems.append('%s: 손상된 D행 형식' % label)
             continue
         rows.append((match.group(1), line))

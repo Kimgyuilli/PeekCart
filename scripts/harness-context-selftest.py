@@ -112,6 +112,20 @@ class HarnessContextTest(unittest.TestCase):
             self.write(DONE, DONE_HEADER + row.rstrip('\n') + '|\n' + OLD2 + FOOTER)
             self.check(3, base=True)
 
+    def test_escaped_pipe_cannot_supply_missing_columns(self):
+        valid = (r'| D-800 | Docs | a \| b | source | ✅ |',
+                 r'| D-800 | Docs \\| body | source | ✅ |')
+        invalid = (r'| D-800 | a \| b \| c | ✅ |',
+                   r'| D-800 | a \\\| b \\\| c | ✅ |')
+        for row in valid:
+            with self.subTest(valid=row):
+                self.write(DONE, DONE_HEADER + row + '\n' + OLD2 + FOOTER)
+                self.check(base=True)
+        for row in invalid:
+            with self.subTest(invalid=row):
+                self.write(DONE, DONE_HEADER + row + '\n' + OLD2 + FOOTER)
+                self.check(3, base=True)
+
     def workflow(self, state='false', query_rc=0, fetch_rc=0, tool_rc=0, base='fixture-base'):
         import yaml
         source = Path(os.environ.get('HARNESS_CONTEXT_TEST_WORKFLOW', ROOT / '.github/workflows/ci.yml'))
