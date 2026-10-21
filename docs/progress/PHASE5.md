@@ -815,3 +815,9 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 [PR216](https://github.com/Kimgyuilli/PeekCart/pull/216) 최종 head `613aa478b645e1dcc56862f177aee951b8e16527`은 이미지의 bootJar cache hit를 실제 raw 기록으로 확인하면 profile export를 생략하고 `cache_hit_unmeasured`와 null 수치를 기록한다. fresh 경로의 검증 및 재빌드 거부는 유지한다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/216#issuecomment-6318077175)는 12개 검사·16개 변이와 여섯 실제 cache-hit 이미지의 원자료·health를 직접 확인했다. 새 CI에서 fresh 시간은 측정하지 않았으며 PR209의 여섯 fresh 실측은 당시 실행의 근거로만 남긴다.
 
 [PR CI39611388133](https://github.com/Kimgyuilli/PeekCart/actions/runs/39611388133)의 필수 검사·E2E·gate 성공 후 정상 병합 SHA는 `797fc30d1661353aaf3d0d878c0e34f3d0347007`이다. 실제 [main CI39613985180](https://github.com/Kimgyuilli/PeekCart/actions/runs/39613985180)는 여섯 publish를 포함해 모두 성공했다. D-087의 무료 직접 계측·잘못된 구간 해석 정정·cache-hit 안전 처리를 완료로 기록한다. 단일 실행의 수치를 성능 개선이나 운영 천장으로 일반화하지 않는다.
+
+## 2026-10-22 — D-065 수집 판정 무료 범위 부분 병합
+
+[PR189](https://github.com/Kimgyuilli/PeekCart/pull/189) 최종 head `a9dd257374bcee3eeb886a938db72e62662a753d`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/189#issuecomment-6318807417)는 최신 main 통합의 작성 patch 동일성과 실제 16개 판정·9개 수집 검사·9개 drift 대조를 확인했다. [PR CI39614158821](https://github.com/Kimgyuilli/PeekCart/actions/runs/39614158821) 전체 성공 뒤 정상 병합 SHA는 `7915f266500a25be457ce2ec67fc18526d437c5c`다. 실제 [main CI39619377710](https://github.com/Kimgyuilli/PeekCart/actions/runs/39619377710)은 성공으로 종료됐고 여섯 publish가 각각 성공했다. GitHub API의 payment 이미지 job 상태는 내부 `Complete job` 성공·후속 payment publish 성공에도 `in_progress`로 지연 표시돼 그 차이를 보존한다.
+
+이 범위는 replay preflight 수집 판정 보강이며 실제 MySQL/Kafka adapter #212·제약 #202·Flyway #207은 별도 최신 병합 검증이 남았다. 운영 P22/GKE·NOT NULL 실제 적용과 replay 개방은 수행하지 않았고 D-065 전체는 부분 완료다.
