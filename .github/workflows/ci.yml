@@ -67,6 +67,8 @@ jobs:
           bash scripts/ci-release-gate-lint.sh
           bash scripts/ci-release-gate-lint.sh --self-test
           bash scripts/ci-image-identity.sh --self-test
+          python3 -B scripts/ci-build-profile-selftest.py
+          python3 -B scripts/ci-build-profile-selftest.py --mutants
           # D-033: 시나리오와 음성 대조군을 병렬로 돌리되 PR 에서 둘 다 필수로 유지한다.
           bash scripts/ci-e2e-parallel-lint.sh
           bash scripts/ci-e2e-parallel-lint.sh --self-test
@@ -405,12 +407,21 @@ jobs:
       # D-031: buildx + GitHub Actions 레이어 캐시. 6개 이미지를 매 실행 밑바닥부터
       # 빌드하고 있었다(실측 run 35731821466 에서 최장 173초).
       - name: Set up Buildx
+        id: image-builder
         uses: docker/setup-buildx-action@v3
 
+      - name: Begin image profile evidence
+        env:
+          PROFILE_BUILDER: ${{ steps.image-builder.outputs.name }}
+        run: python3 -B scripts/ci-build-profile.py begin ${{ runner.temp }}/build-profile --service ${{ matrix.service }}
+
       - name: Build image
+        id: image-build
         uses: docker/build-push-action@v6
         with:
           context: .
+          builder: ${{ steps.image-builder.outputs.name }}
+          target: runtime
           build-args: SERVICE=${{ matrix.service }}
           tags: ${{ matrix.service }}:ci
           # load 가 필수다 — docker-container 드라이버는 빌드 결과를 로컬 daemon 에
@@ -421,6 +432,45 @@ jobs:
           # 캐시를 덮어써 마지막 하나만 남는다.
           cache-from: type=gha,scope=image-${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=image-${{ matrix.service }}
+
+      - name: Capture exact image build record
+        if: always() && steps.image-build.outcome != 'skipped'
+        env:
+          BUILD_METADATA: ${{ steps.image-build.outputs.metadata }}
+        run: python3 -B scripts/ci-build-profile.py record-image ${{ runner.temp }}/build-profile
+
+      - name: Export Gradle profile from the image build cache
+        id: profile-export
+        uses: docker/build-push-action@v6
+        env:
+          # The image build record is preserved separately; this target only exports files.
+          DOCKER_BUILD_RECORD_UPLOAD: false
+          DOCKER_BUILD_SUMMARY: false
+        with:
+          context: .
+          builder: ${{ steps.image-builder.outputs.name }}
+          target: gradle-profile
+          build-args: SERVICE=${{ matrix.service }}
+          outputs: type=local,dest=${{ runner.temp }}/build-profile/export
+          # Same local builder state; do not export a second gha cache or bust RUN cache.
+
+      - name: Capture profile export record and validate timings
+        env:
+          BUILD_METADATA: ${{ steps.profile-export.outputs.metadata }}
+        run: |
+          set -euo pipefail
+          python3 -B scripts/ci-build-profile.py record-export ${{ runner.temp }}/build-profile
+          python3 -B scripts/ci-build-profile.py analyze ${{ runner.temp }}/build-profile
+
+      - name: Upload Docker build profile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-profile-${{ matrix.service }}
+          path: ${{ runner.temp }}/build-profile/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Health smoke
         run: bash scripts/docker-health-smoke.sh ${{ matrix.service }}:ci

@@ -45,10 +45,21 @@ COPY product-service/ product-service/
 COPY order-service/ order-service/
 COPY payment-service/ payment-service/
 COPY gateway/ gateway/
-RUN ./gradlew :${SERVICE}:bootJar -x test --no-daemon
+# Report metadata belongs to this RUN; no CI nonce invalidates its cache key.
+RUN mkdir -p /tmp/ci-gradle-profile && rm -rf build/reports/profile \
+    && profile_started="$(date +%s)" \
+    && ./gradlew :${SERVICE}:bootJar -x test --no-daemon --profile \
+    && printf '{"service":"%s","started_epoch":%s,"finished_epoch":%s}\n' \
+       "$SERVICE" "$profile_started" "$(date +%s)" > /tmp/ci-gradle-profile/profile.json \
+    && sha256sum build/reports/profile/profile-*.html > /tmp/ci-gradle-profile/report-sha256.txt
+
+# Export build evidence only. The default final target remains the runtime image.
+FROM scratch AS gradle-profile
+COPY --from=build /app/build/reports/profile/ /reports/
+COPY --from=build /tmp/ci-gradle-profile/ /metadata/
 
 # Stage 2: Runtime
-FROM eclipse-temurin:17-jre@sha256:d226a3132511d057267330beeca73804275899aacdea331b7bd8313bb1506a7a
+FROM eclipse-temurin:17-jre@sha256:d226a3132511d057267330beeca73804275899aacdea331b7bd8313bb1506a7a AS runtime
 WORKDIR /app
 
 ARG SERVICE
