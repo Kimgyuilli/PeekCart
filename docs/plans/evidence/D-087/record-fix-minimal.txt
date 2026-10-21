@@ -1,0 +1,4 @@
+Command: python3 -B scripts/ci-build-profile-selftest.py ProfileTest.test_record_command_failure_is_propagated
+Source: 23cc772
+Actual result: 1 method / 5 paired subcases PASS in 1.395s
+Scope: local mocked Docker executable only; full suite/9 mutants/actual Docker execution deferred to Actions.

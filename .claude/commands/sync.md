@@ -10,9 +10,10 @@ scripts/plans-archive.sh
 만드는 시점이라 아직 머지 전이므로 그때는 판정할 수 없다. 머지는 대개 세션 사이에
 일어나기 때문에, **다음 작업을 시작하는 이 자리가 판정 시점**이다.
 
-- `완료 0` 이면 조용히 넘어간다. 보고하지 않는다
-- 이동할 것이 있으면 목록을 제시하고 `scripts/plans-archive.sh --apply` 여부를 확인받는다.
-  스크립트가 계획서와 audit 을 `done/` 으로 옮기고 **인바운드 참조도 함께 고친다**
+- `후보 0` 이면 조용히 넘어간다. 보고하지 않는다.
+- merged PR은 이동 후보 신호이며 전체 계획 완료의 증거는 아니다. D-084처럼 부분 PR만 완료된 계획은 선택하지 않는다. 기존 세션에서 전체 완료 및 이동이 승인됐으면 그 범위로 진행한다.
+- 전체 완료를 확인한 계획 stem만 선택한다. `scripts/plans-archive.sh --apply --select <stem1,stem2> --base <최종-PR-base-SHA> --manifest docs/preservation/<고유이름>.json`을 실행한다. 무선택 전체 apply는 금지한다.
+  스크립트는 plan/audit 원문·추기를 보존하고 Markdown 상대 링크만 재작성한다. manifest와 명시 이동 파일을 stage하고 `python3 -B scripts/docs-preservation-ci.py --base <같은-base>`를 통과해야 한다. 지원 범위/좁은 사실 정정은 `docs/conventions/docs-preservation.md` 참조.
 - `보류` 는 계획서 안에 PR 링크가 없어 자동 판정이 안 되는 경우다. 증거 없이 옮기지
   않는 것이 설계 의도이므로, 목록만 보고하고 사람의 판단을 기다린다. 실제로 끝난
   작업이면 **PR 을 추적해 계획서에 링크를 적은 뒤** 다시 돌리면 잡힌다. 추적은

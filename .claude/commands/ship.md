@@ -60,6 +60,8 @@ git log --oneline "$(git merge-base HEAD origin/main)"..HEAD
 
 ### 2. Consistency precheck
 
+완료 행·계획 이동이 있으면 비교 base는 최종 PR base SHA로 고정한다. 명시 파일과 새 manifest를 stage한 뒤 `python3 -B scripts/docs-preservation-ci.py --base <PR-base-SHA>`를 통과해야 한다. 상세 계약은 `docs/conventions/docs-preservation.md`를 따른다. `/done` 후에도 같은 base로 다시 실행한다. base를 편집 후 HEAD로 바꿔 위반을 숨기지 않는다.
+
 ```bash
 bash -c 'set -uo pipefail
 source .claude/scripts/shared-logic.sh
@@ -259,7 +261,9 @@ gh pr create --base "$(hpx_base_branch_name)" --head "$BRANCH" \
    **등급 S 는 audit 파일이 없으므로 이 단계를 건너뛴다** — PR URL 은 `docs/progress/TASKS-done.md` 와
    progress 에 이미 남는다. 없는 파일을 만들자고 audit 을 되살리지 않는다
 
-갱신분은 별도 커밋 후 push 한다.
+완료 이동은 마지막 상태 cell 이외 본문과 원래 TASKS 행 순서, 기존 done/footer를 보존한다. 여러 완료 행을 별도 커밋으로 쌓았어도 최종 PR base의 원래 순서대로 append한다. 계획 이동은 전체 완료를 확인한 선택 목록과 manifest가 필요하며 부분 완료 계획은 이동하지 않는다.
+
+갱신분과 새 manifest를 명시 stage하고 같은 base의 보존 검사를 다시 통과한 뒤 별도 커밋/push 한다.
 
 ### 9. 완료 보고
 
@@ -284,12 +288,17 @@ Branch:  <branch> (origin 동기화됨)
 bash -c 'source .claude/scripts/shared-logic.sh; hpx_ship_resume_point "<TASK_ID>"'
 ```
 
-1행이 재개할 Step 번호(`0` 이면 완료), 2행이 근거다. 아래 표는 그 판정 규칙의 정본이다.
+1행이 재개할 Step 번호(`0` 이면 완료) 또는 `unknown`, 2행이 근거다.
+`unknown` 은 exit 1 이며 실패한 명령과 종료 코드를 출력하고 원인 stderr 를 보존한다.
+**exit 가 0 이 아니거나 1행이 `unknown` 이면 재개를 중단한다.** push/PR 생성 등 어떤 단계도
+실행하지 않고 원인을 해결한 뒤 판정을 다시 실행한다. 빈 stdout 만으로 부재를 추정하지 않는다.
+아래 표는 그 판정 규칙의 정본이다.
 
 | 확인 | 판정 | 재개 지점 |
 |---|---|---|
-| `git status --porcelain` 비어있지 않음 | 커밋 안 된 변경 있음 | Step 3 |
-| `git ls-remote --heads origin <branch>` 없음 | 미push | Step 6 |
-| `gh pr list --head <branch> --state open` 비어있음 | PR 없음 | Step 7 |
+| 브랜치/status/원격/PR 조회 실패 또는 현재 브랜치가 비어 있음 | 미확정 (`unknown`, exit 1) | 중단 |
+| `git status --porcelain` 성공, 비어있지 않음 | 커밋 안 된 변경 있음 | Step 3 |
+| `git ls-remote --heads origin <branch>` 성공, 결과 없음 | 미push | Step 6 |
+| `gh pr list --head <branch> --state open` 성공, 결과 없음 | PR 없음 | Step 7 |
 | PR 있고 `TASKS.md` · `TASKS-done.md` 어디에도 PR 링크 없음 | `/done` 미적용 | Step 8 |
 | 위 전부 충족 | 완료 | 보고만 |

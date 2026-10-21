@@ -1,0 +1,13 @@
+# Payment DLQ timestamp fixture evidence
+
+Original run39572731873/seed1792572889718 failed the verifier queue assertion at exact source f365af line193. The ledger assertion and exact timestamp comparison were not reached in the final poll. The historical failure cause remains unknown.
+
+The first local-profile run passed334 tests but differed from CI. A second unchanged-source run used CI's test profile and passed334, with the same54-class XML timestamp order and the same295-byte banner-only DLQ stdout. Both local runs used Temurin17.0.11/macOS; original CI used17.0.20/Linux.
+
+Observation source dc00bbfa passed334. `negative-drop.xml.gz` records an intentional observer-only drop: the unchanged20-second assertion failed while the real observer group committed offset1. `negative-admin-timeout.xml.gz` adds a test-owned loopback socket that does not answer Kafka; inspection returned after about1.020 seconds, socket cleanup ran, and the original queue AssertionError remained. These controls prove diagnostic behavior, not the historical failure cause.
+
+`retention-probe.java.txt` is the executable source of a temporary JUnit probe, removed from the final test tree. It uses a separate unmodified `apache/kafka:3.8.1` container and two default-config topics because payment does not declare foreign `order.created` as its own NewTopic. `retention-probe.txt` records actual settings, producer acknowledgments, offset ranges and consumer reads. `broker-retention.txt` explicitly records deletion of the expired timestamp segment. The recent sample remained readable with its exact timestamp. This independently reproduces an invalid fixture assumption; it does not establish what happened in the historical CI broker.
+
+Kafka3.8.1 schedules retention using an initial delay in [LogManager](https://github.com/apache/kafka/blob/3.8.1/core/src/main/scala/kafka/log/LogManager.scala#L567), whose source default is30 seconds in [ServerLogConfigs](https://github.com/apache/kafka/blob/3.8.1/server-common/src/main/java/org/apache/kafka/server/config/ServerLogConfigs.java#L160). The internal initial-delay value was absent from Admin results; source default and measured container-start-to-deletion32.94 seconds are distinct evidence.
+
+The final test samples `now - 60 seconds` once and retains exact header/ledger assertions and the20-second budget. Final Java source eb40e48d differs from locally tested dc00bbfa only in that expression and comments. Final normal CI and the additional original-seed Linux/Temurin17.0.20 build are pending. The30-second broker probe is preserved rather than added to every CI run. No deployment, production replay, live data or production schema change occurred.

@@ -49,15 +49,16 @@ def main():
 
     print("PG stub self-test @ %s" % base)
 
-    status, body = call(base, "POST", "/v1/payments/confirm", body={"paymentKey": "e2e-ok-9", "orderId": 9})
+    status, body = call(base, "POST", "/v1/payments/confirm", body={"paymentKey": "e2e-ok-9", "orderId": "pc_test_9", "amount": 20000})
     check("confirm ok script → 200 + approvedAt/method",
-          status == 200 and body["method"] and body["approvedAt"], "got %s %s" % (status, body))
+          status == 200 and body["method"] and body["approvedAt"]
+          and body["orderId"] == "pc_test_9" and body["totalAmount"] == 20000, "got %s %s" % (status, body))
 
-    status, body = call(base, "POST", "/v1/payments/confirm", body={"paymentKey": "e2e-cfail-9", "orderId": 9})
+    status, body = call(base, "POST", "/v1/payments/confirm", body={"paymentKey": "e2e-cfail-9", "orderId": "pc_test_9", "amount": 20000})
     check("confirm cfail script → 400 (시나리오 A 의 실패 지점)",
           status == 400 and body["code"] == "REJECT_CARD_COMPANY", "got %s %s" % (status, body))
 
-    status, body = call(base, "POST", "/v1/payments/confirm", body={"paymentKey": "typo-key", "orderId": 9})
+    status, body = call(base, "POST", "/v1/payments/confirm", body={"paymentKey": "typo-key", "orderId": "pc_test_9", "amount": 20000})
     check("미등록 키 confirm → 500 STUB_UNSCRIPTED_KEY — 조용한 성공 차단",
           status == 500 and body["code"] == "STUB_UNSCRIPTED_KEY", "got %s %s" % (status, body))
 
@@ -96,6 +97,33 @@ def main():
 
     status, _ = call(base, "GET", "/v1/payments/e2e-already-fail-1")
     check("already-fail 조회 → 500", status == 500, "got %s" % status)
+
+    # 승인 결과의 identity는 최초 confirm에서만 얻는다. 조회/재시도가 덮어쓰지 않는다.
+    status, body = call(base, "GET", "/v1/payments/e2e-ok-9")
+    original = {"paymentKey": "e2e-ok-9", "orderId": "pc_test_9", "totalAmount": 20000}
+    check("confirmed identity persisted in query", status == 200 and all(body.get(k) == v for k, v in original.items()))
+    for field, value in (("orderId", "pc_other_9"), ("amount", 19999)):
+        changed = {"paymentKey": "e2e-ok-9", "orderId": "pc_test_9", "amount": 20000, field: value}
+        status, body = call(base, "POST", "/v1/payments/confirm", body=changed)
+        check("repeat cannot overwrite " + field, status == 409 and body["code"] == "STUB_IDENTITY_MISMATCH")
+    _, body = call(base, "GET", "/v1/payments/e2e-ok-9")
+    check("mismatch preserves original identity", all(body.get(k) == v for k, v in original.items()))
+    for invalid in ({"orderId": "1"}, {"orderId": 123456}, {"amount": "20000"}, {"amount": True}, {"amount": -1}):
+        request = {"paymentKey": "e2e-ok-invalid", "orderId": "pc_invalid", "amount": 20000, **invalid}
+        status, body = call(base, "POST", "/v1/payments/confirm", body=request)
+        check("invalid identity rejected " + repr(invalid), status == 400 and body["code"] == "STUB_INVALID_IDENTITY")
+    status, body = call(base, "GET", "/v1/payments/e2e-fence-unseen")
+    check("unseen approval has no invented identity", status == 404 and body["code"] == "STUB_UNKNOWN_APPROVAL")
+    fence = {"paymentKey": "e2e-fence-identity", "orderId": "pc_fence_9", "amount": 20000}
+    status, _ = call(base, "POST", "/v1/payments/confirm", body=fence)
+    check("fence pending confirm", status == 500)
+    for expected in ("READY", "ABORTED"):
+        if expected == "ABORTED":
+            call(base, "POST", "/__resolve-approval/e2e-fence-identity")
+        status, body = call(base, "GET", "/v1/payments/e2e-fence-identity")
+        check("fence identity retained " + expected, status == 200 and body.get("status") == expected
+              and body.get("paymentKey") == fence["paymentKey"] and body.get("orderId") == fence["orderId"]
+              and body.get("totalAmount") == fence["amount"])
 
     # 원장: paymentKey 별 script 이므로 서로 다른 키의 호출이 섞이지 않는다
     _, ledger = call(base, "GET", "/__ledger")

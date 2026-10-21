@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 STATE = os.environ.get('FIXTURE_STATE', '/fixture/state.json')
 INSTANCE = os.environ.get('FIXTURE_INSTANCE', 'fixture-a')
+NOTIFICATIONS = os.environ.get('NOTIFICATIONS', '/fixture/notifications.jsonl')
 last = time.monotonic()
 counters = {}
 
@@ -59,6 +60,20 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'text/plain; version=0.0.4')
         self.end_headers()
         self.wfile.write(payload)
+
+    def do_POST(self):
+        if self.path != '/ops':
+            self.send_error(404)
+            return
+        size = int(self.headers.get('Content-Length', '0'))
+        payload = self.rfile.read(size)
+        # This fixture is the only notification receiver in the local Grafana stack.
+        # The production webhook variable is overwritten with this loopback target by verify_alerts.py.
+        with open(NOTIFICATIONS, 'ab') as capture:
+            capture.write(payload + b'\n')
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'ok')
 
     def log_message(self, *args):
         pass

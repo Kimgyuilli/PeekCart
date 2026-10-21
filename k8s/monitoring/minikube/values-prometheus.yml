@@ -1,5 +1,6 @@
 # kube-prometheus-stack Helm values — minikube 경량 설정
 # minikube 8GB 환경: 모니터링 총 ~1.2GB 이내
+# D-092: Grafana ops Slack URL 은 선택적 monitoring/grafana-ops-webhook Secret 의 `url` key 로 주입한다.
 
 prometheus:
   prometheusSpec:
@@ -36,6 +37,12 @@ grafana:
     # 업그레이드 시 기본값 변경에 따른 dashboard/alert (`uid: prometheus`) 회귀 차단.
     datasources:
       uid: prometheus
+  envValueFrom:
+    PEAKCART_OPS_SLACK_WEBHOOK_URL:
+      secretKeyRef:
+        name: grafana-ops-webhook
+        key: url
+        optional: true
   service:
     type: NodePort
     nodePort: 30030

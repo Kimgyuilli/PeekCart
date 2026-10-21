@@ -1,0 +1,3 @@
+[2026-10-21 09:36:37,387] INFO [LocalLog partition=probe-expired-timestamp-0, dir=/tmp/kafka-logs] Rolled new log segment at offset 1 in 7 ms. (kafka.log.LocalLog)
+[2026-10-21 09:36:37,393] INFO [UnifiedLog partition=probe-expired-timestamp-0, dir=/tmp/kafka-logs] Incremented log start offset to 1 due to segment deletion (kafka.log.UnifiedLog)
+[2026-10-21 09:36:37,395] INFO [UnifiedLog partition=probe-expired-timestamp-0, dir=/tmp/kafka-logs] Deleting segment LogSegment(baseOffset=0, size=82, lastModifiedTime=1792575368456, largestRecordTimestamp=1757000123456) due to log retention time 604800000ms breach based on the largest record timestamp in the segment (kafka.log.UnifiedLog)

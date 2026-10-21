@@ -1,0 +1,11 @@
+{
+  "base_sha": "a7ffa11f24be2bd281d8952ac5fc5d351fb6119c",
+  "source_sha256": "f50c400e81fc9df9e2935a144f14e1d7e3808da5751a85207e28e81fdfca7772",
+  "first_compile_source_sha256": "30847933a77a26808376397a7880c033e3a3e2488f1fa32e3b8cf89e7a6c0266",
+  "first_compile_exit": 1,
+  "measurement_exit": 0,
+  "test_seed": "1792524981440",
+  "command": "SPRING_PROFILES_ACTIVE=test PEEKCART_OUTBOX_BENCHMARK=true ./gradlew :order-service:test --tests 'com.peekcart.global.outbox.OutboxThroughputLocalProbeTest' --offline --no-daemon --no-parallel --max-workers=1 --console=plain --rerun-tasks",
+  "scope": "Local-only, bounded300recorddrains,3repetitions; not steady-statecapacity/SLO/GKEevidence",
+  "cleanup": "Afterprocesscompletion dockerps showed onlyoriginal3momens containers; fixturecontainersandRyuk removed."
+}

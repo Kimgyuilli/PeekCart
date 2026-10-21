@@ -8,6 +8,7 @@ namespace: monitoring
 
 resources:
   - grafana-alerts.yml
+  - grafana-notification-routing.yml
 
 configMapGenerator:
   - name: grafana-dashboard-api-jvm

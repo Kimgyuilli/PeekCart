@@ -46,7 +46,7 @@ class ApprovalRecoveryIntegrationTest extends AbstractIntegrationTest {
         var payment = PaymentFixture.pendingPayment();
         payment.markReadyForPayment(LocalDateTime.now().plusMinutes(10));
         payments.save(payment);
-        approvalService.beginApproval(PaymentFixture.DEFAULT_USER_ID, 1L, PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_AMOUNT);
+        approvalService.beginApproval(PaymentFixture.DEFAULT_USER_ID, 1L, PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_AMOUNT, PaymentFixture.DEFAULT_PG_ORDER_ID);
         approvalService.applyStockApprovalResult(1L, true);
         var claimed = approvalService.claimForDispatch(1L).orElseThrow();
         approvalService.finalizeApproval(1L, claimed.getGeneration(), ApprovalOutcome.unresolved("timeout"), 1);
@@ -59,7 +59,7 @@ class ApprovalRecoveryIntegrationTest extends AbstractIntegrationTest {
                 name, "n/a", List.of(new SimpleGrantedAuthority("ROLE_" + role))));
     }
     private void negativePg() {
-        String body = "{\"paymentKey\":\"" + PaymentFixture.DEFAULT_PAYMENT_KEY + "\",\"orderId\":\"1\","
+        String body = "{\"paymentKey\":\"" + PaymentFixture.DEFAULT_PAYMENT_KEY + "\",\"orderId\":\"" + PaymentFixture.DEFAULT_PG_ORDER_ID + "\","
                 + "\"totalAmount\":" + PaymentFixture.DEFAULT_AMOUNT + ",\"balanceAmount\":0,\"status\":\"ABORTED\"}";
         when(pg.find(PaymentFixture.DEFAULT_PAYMENT_KEY)).thenReturn(Optional.of(new TossPaymentSnapshot("ABORTED", 0, body)));
     }
@@ -263,7 +263,7 @@ class ApprovalRecoveryIntegrationTest extends AbstractIntegrationTest {
     void lateDoneNeverReleasesAndHistoricalFailedUsesOrphanRefundPath() {
         jdbc.update("UPDATE payment_approvals SET status='FAILED', failure_code='MANUALLY_RESOLVED' WHERE order_id=1");
         jdbc.update("UPDATE payments SET status='FAILED' WHERE order_id=1");
-        String body = "{\"paymentKey\":\"" + PaymentFixture.DEFAULT_PAYMENT_KEY + "\",\"orderId\":\"1\","
+        String body = "{\"paymentKey\":\"" + PaymentFixture.DEFAULT_PAYMENT_KEY + "\",\"orderId\":\"" + PaymentFixture.DEFAULT_PG_ORDER_ID + "\","
                 + "\"totalAmount\":" + PaymentFixture.DEFAULT_AMOUNT + ",\"balanceAmount\":" + PaymentFixture.DEFAULT_AMOUNT + ",\"status\":\"DONE\"}";
         when(pg.find(anyString())).thenReturn(Optional.of(new TossPaymentSnapshot("DONE", 0, body)),
                 Optional.of(new TossPaymentSnapshot("ABORTED", 0, "{\"orderId\":\"other\"}")));
@@ -277,7 +277,7 @@ class ApprovalRecoveryIntegrationTest extends AbstractIntegrationTest {
     }
 
     private void canceledPg() {
-        String body = "{\"paymentKey\":\"" + PaymentFixture.DEFAULT_PAYMENT_KEY + "\",\"orderId\":\"1\","
+        String body = "{\"paymentKey\":\"" + PaymentFixture.DEFAULT_PAYMENT_KEY + "\",\"orderId\":\"" + PaymentFixture.DEFAULT_PG_ORDER_ID + "\","
                 + "\"totalAmount\":" + PaymentFixture.DEFAULT_AMOUNT + ",\"balanceAmount\":0,\"status\":\"CANCELED\","
                 + "\"cancels\":[{\"cancelAmount\":" + PaymentFixture.DEFAULT_AMOUNT + "}]}";
         when(pg.find(anyString())).thenReturn(Optional.of(new TossPaymentSnapshot("CANCELED", PaymentFixture.DEFAULT_AMOUNT, body)));

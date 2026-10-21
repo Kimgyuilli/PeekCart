@@ -1,0 +1,8 @@
+actual XML: PASS
+junit-failure: REJECTED
+missing-row: REJECTED
+duplicate-repetition: REJECTED
+broker-not-verified: REJECTED
+wrong-timer-count: REJECTED
+reversed-attempt-time: REJECTED
+PASS: normal actual XML accepted, 6 analysis-corruption controls rejected.

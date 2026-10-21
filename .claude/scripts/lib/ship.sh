@@ -69,19 +69,39 @@ hpx_ship_preflight() {
 }
 
 # hpx_ship_resume_point <task_id>
-# 재진입 지점을 git/gh 사실로 판정한다. 출력 1행: 재개할 Step 번호, 2행: 근거.
-hpx_ship_resume_point() {
-  local task_id="${1-}" branch
-  branch="$(git branch --show-current 2>/dev/null)"
+# 재진입 지점을 git/gh 사실로 판정한다. 출력 1행: Step 번호 또는 unknown, 2행: 근거.
+# unknown 은 exit 1 이며 어떤 ship 단계도 진행하지 않는다. 원인 stderr 는 보존한다.
+# subshell 의 EXIT trap 으로 모든 반환 경로에서 임시 stderr 파일을 제거한다.
+hpx_ship_resume_point() (
+  local task_id="${1-}" branch status remote pr err ec
+  err="$(mktemp)" || { printf 'unknown\nstderr 임시 파일 생성 실패\n'; return 1; }
+  trap 'rm -f "$err"' EXIT
 
-  if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+  if branch="$(git branch --show-current 2>"$err")"; then :; else
+    ec=$?; printf 'unknown\ngit branch (exit %s) 조회 실패. 재개 중단\n' "$ec"
+    cat "$err" >&2; return 1
+  fi
+  if [ -z "$branch" ]; then
+    printf 'unknown\n현재 브랜치가 비어 있다 (detached HEAD). 재개 중단\n'; return 1
+  fi
+  if status="$(git status --porcelain 2>"$err")"; then :; else
+    ec=$?; printf 'unknown\ngit status (exit %s) 조회 실패. 재개 중단\n' "$ec"
+    cat "$err" >&2; return 1
+  fi
+  if [ -n "$status" ]; then
     printf '3\n커밋 안 된 변경이 있다\n'; return 0
   fi
-  if [ -z "$(git ls-remote --heads origin "$branch" 2>/dev/null)" ]; then
+  if remote="$(git ls-remote --heads origin "$branch" 2>"$err")"; then :; else
+    ec=$?; printf 'unknown\ngit ls-remote (exit %s) 조회 실패. 재개 중단\n' "$ec"
+    cat "$err" >&2; return 1
+  fi
+  if [ -z "$remote" ]; then
     printf '6\n원격에 브랜치가 없다 (미push)\n'; return 0
   fi
-  local pr
-  pr="$(gh pr list --head "$branch" --state open --json url -q '.[0].url' 2>/dev/null)"
+  if pr="$(gh pr list --head "$branch" --state open --json url -q '.[0].url' 2>"$err")"; then :; else
+    ec=$?; printf 'unknown\ngh pr list (exit %s) 조회 실패. 재개 중단\n' "$ec"
+    cat "$err" >&2; return 1
+  fi
   if [ -z "$pr" ]; then
     printf '7\n열린 PR 이 없다\n'; return 0
   fi
@@ -91,7 +111,7 @@ hpx_ship_resume_point() {
     printf '8\nPR %s 는 있는데 TASKS.md · TASKS-done.md 에 링크가 없다 (/done 미적용)\n' "$pr"; return 0
   fi
   printf '0\n완료. 보고만 한다 (PR %s)\n' "$pr"
-}
+)
 
 # hpx_commit_category <path>
 # 파일 경로 하나를 커밋 분류로 사상한다. adr | docs | test | chore | src

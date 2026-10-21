@@ -1,5 +1,7 @@
 package com.peekcart.payment.application;
 
+import com.peekcart.payment.application.dto.PaymentCheckoutDto;
+
 import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.payment.application.dto.PaymentDetailDto;
 import com.peekcart.payment.domain.exception.PaymentException;
@@ -20,6 +22,20 @@ public class PaymentQueryService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentApprovalRepository approvalRepository;
+    private final PaymentApprovalProperties properties;
+
+    public PaymentCheckoutDto preparePayment(Long userId, Long orderId) {
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new PaymentException(ErrorCode.PAY_003));
+        payment.verifyOwner(userId);
+        payment.ensureCanonicalCheckout();
+        payment.ensureConfirmable(properties.getLeaseApprovalMargin());
+        if (approvalRepository.findByOrderId(orderId).isPresent()) {
+            throw new PaymentException(ErrorCode.PAY_013);
+        }
+        return new PaymentCheckoutDto(
+                orderId, payment.effectivePgOrderId(), payment.getAmount());
+    }
 
     /**
      * @throws PaymentException 결제 정보 미존재 시 {@code PAY-003}, 본인 주문이 아니면 {@code PAY-007}
