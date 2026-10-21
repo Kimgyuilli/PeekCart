@@ -72,8 +72,8 @@ class Lab:
         deadline = time.monotonic() + 60
         while time.monotonic() < deadline:
             ping = command(['docker', 'exec', self.name, 'mysqladmin', '--user=root', 'ping'],
-                           timeout=3, check=False)
-            initialization = command(['docker', 'logs', self.name], timeout=3, check=False)
+                           timeout=10, check=False)
+            initialization = command(['docker', 'logs', self.name], timeout=10, check=False)
             if ping.returncode == 0 and 'MySQL init process done. Ready for start up.' in initialization.stdout:
                 break
             time.sleep(.5)
@@ -337,14 +337,14 @@ VALUES('fixture',1,'order.created',0,99,'fixture-group','RESOLVED_ORIGIN',NULL,N
         writer = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE, text=True)
         try:
-            writer.stdin.write("START TRANSACTION; UPDATE dead_letter_records SET root_record_id=id WHERE id=10; UPDATE outbox_events SET record_kind='DOMAIN' WHERE id=10; SELECT SLEEP(3); COMMIT;")
+            writer.stdin.write("START TRANSACTION; UPDATE dead_letter_records SET root_record_id=id WHERE id=10; UPDATE outbox_events SET record_kind='DOMAIN' WHERE id=10; SELECT SLEEP(20); COMMIT;")
             writer.stdin.close()
             writer.stdin = None
-            # docker exec 기동 시간이 포함되므로 SLEEP 길이보다 넉넉히 기다린다.
-            deadline = time.monotonic() + 15
-            # INNODB_TRX.trx_query 는 캐시된 스냅샷이라 SLEEP 구간을 놓칠 수 있어 PROCESSLIST 로 본다.
+            # runner 의 docker exec 는 한 번에 3초를 넘길 수 있다. 폴링 간격보다 긴 SLEEP 으로 정지 구간을 잡는다.
+            deadline = time.monotonic() + 60
+            # PROCESSLIST 는 writer 가 지금 실행 중인 문장을 보여준다.
             while time.monotonic() < deadline and writer.poll() is None:
-                active = self.sql("SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE INFO LIKE 'SELECT SLEEP(3)%'", root=True).stdout.strip()
+                active = self.sql("SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE INFO LIKE 'SELECT SLEEP(20)%'", root=True).stdout.strip()
                 if active == '1':
                     break
                 time.sleep(.05)
@@ -355,7 +355,7 @@ VALUES('fixture',1,'order.created',0,99,'fixture-group','RESOLVED_ORIGIN',NULL,N
                 raise AssertionError(f'backfill transaction did not reach observed pause (exit={writer.poll()}, '
                                      f'stderr={stderr!r}, server={state.stdout!r})')
             self.sql(old_insert)
-            stdout, stderr = writer.communicate(timeout=10)
+            stdout, stderr = writer.communicate(timeout=40)
             assert writer.returncode == 0, stderr
         finally:
             if writer.poll() is None:
