@@ -1,0 +1,6 @@
+  ok  task-merged.md -> DONE
+  ok  task-open.md -> IN_FLIGHT
+  ok  task-closed.md -> NO_EVIDENCE
+  ok  task-bare.md -> NO_EVIDENCE
+  ok  task-unchecked.md -> DONE
+  ok  PLAN-BLINDSPOTS.md 제외
