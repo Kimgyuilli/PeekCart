@@ -150,6 +150,8 @@ class ProfileTest(unittest.TestCase):
         self.assertEqual(image['cache-to'], 'type=gha,mode=max,scope=image-${{ matrix.service }}')
         self.assertEqual(image['builder'], export['builder']); self.assertEqual(image['build-args'], export['build-args'])
         self.assertEqual(export['target'], 'gradle-profile'); self.assertNotIn('cache-to', export)
+        self.assertEqual(image['cache-from'], 'type=gha,scope=image-${{ matrix.service }}')
+        self.assertEqual(export['cache-from'], image['cache-from'])
         dockerfile = Path(os.environ.get('CI_PROFILE_TEST_DOCKERFILE', ROOT / 'Dockerfile')).read_text()
         runtime = dockerfile[dockerfile.index('# Stage 2: Runtime'):].replace(' AS runtime', '')
         expected = '''# Stage 2: Runtime
@@ -213,7 +215,25 @@ def mutants():
             result = subprocess.run([sys.executable, '-B', __file__, 'ProfileTest.' + test], env=env, text=True, capture_output=True)
             assert result.returncode and ('FAIL: ' + test) in result.stderr, (name, result.stdout, result.stderr)
             print(name + ': REJECTED')
-    print('PASS: 10 wrong-implementation controls rejected; no Gradle/Docker invocation')
+    # Exercise the actual workflow checker against missing/mismatched remote imports.
+    import copy
+    import yaml
+    with tempfile.TemporaryDirectory(prefix='build-profile-workflow-') as directory:
+        root = Path(directory)
+        (root / 'scripts').mkdir(); (root / '.github/workflows').mkdir(parents=True)
+        check = root / 'scripts/ci-build-profile-selftest.py'; check.write_text(Path(__file__).read_text())
+        (root / 'Dockerfile').write_bytes((ROOT / 'Dockerfile').read_bytes())
+        workflow = yaml.safe_load((ROOT / '.github/workflows/ci.yml').read_text())
+        for name, value in [('export-cache-import-missing', None), ('export-cache-scope-mismatch', 'type=gha,scope=other')]:
+            changed = copy.deepcopy(workflow)
+            export = next(s for s in changed['jobs']['images']['steps'] if s.get('id') == 'profile-export')['with']
+            if value is None: export.pop('cache-from', None)
+            else: export['cache-from'] = value
+            (root / '.github/workflows/ci.yml').write_text(yaml.safe_dump(changed, sort_keys=False))
+            result = subprocess.run([sys.executable, '-B', str(check), 'ProfileTest.test_workflow_and_final_runtime_contract'], text=True, capture_output=True)
+            assert result.returncode and ('test_workflow_and_final_runtime_contract' in result.stderr), (name, result.stdout, result.stderr)
+            print(name + ': REJECTED')
+    print('PASS: 12 wrong-implementation controls rejected; no Gradle/Docker invocation')
 
 
 if __name__ == '__main__':

@@ -472,7 +472,8 @@ jobs:
           target: gradle-profile
           build-args: SERVICE=${{ matrix.service }}
           outputs: type=local,dest=${{ runner.temp }}/build-profile/export
-          # Same local builder state; do not export a second gha cache or bust RUN cache.
+          cache-from: type=gha,scope=image-${{ matrix.service }}
+          # Reuse the image's remote cache too; do not export a second cache or bust RUN cache.
 
       - name: Capture profile export record and validate timings
         env:
