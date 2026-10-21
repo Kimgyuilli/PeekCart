@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 113개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 115개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -77,17 +77,18 @@
 | [task-d042-verification-responsibility](./task-d042-verification-responsibility.md) | task-d042-verification-responsibility | [#153](https://github.com/Kimgyuilli/PeakCart/pull/153) | 2026-09-28 | 있음 |
 | [task-d047-jvm-gap-coverage](./task-d047-jvm-gap-coverage.md) | D-047 — e2e 만 보는 로직 3건을 JVM 테스트로 채운다 | [#154](https://github.com/Kimgyuilli/PeakCart/pull/154) | 2026-09-28 | 있음 |
 | [task-d027-grade-audit](./task-d027-grade-audit.md) | D-027 ③ — 등급 사후 검증 | [#159](https://github.com/Kimgyuilli/PeakCart/pull/159) | 2026-09-29 | 있음 |
-| [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-09-29 |  |
 | [task-d048-e2e-stack-startup](./task-d048-e2e-stack-startup.md) | task-d048-e2e-stack-startup | [#156](https://github.com/Kimgyuilli/PeakCart/pull/156) | 2026-09-29 |  |
 | [task-d002-bc-session](./task-d002-bc-session.md) | D-002 잔여 3축 측정 세션 (b' / c + a 천장 분리) | [#119](https://github.com/Kimgyuilli/PeakCart/pull/119) | 2026-10-17 | 있음 |
 | [task-d032-integration-test-container-singleton](./task-d032-integration-test-container-singleton.md) | D-032 — 통합 테스트 컨테이너 모듈 싱글톤 전환 (order-service) | [#138](https://github.com/Kimgyuilli/PeakCart/pull/138) | 2026-10-17 | 있음 |
+| [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-10-21 |  |
 
-## 기타 (51)
+## 기타 (53)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
 | [D-051](./D-051.md) | D-051 | [#163](https://github.com/Kimgyuilli/PeakCart/pull/163) |  |  |
 | [D-054](./D-054.md) | D-054 | [#164](https://github.com/Kimgyuilli/PeakCart/pull/164) |  |  |
+| [D-087-profile-cache](./D-087-profile-cache.md) | D-087 profile export cache 후속 | [#216](https://github.com/Kimgyuilli/PeakCart/pull/216) |  | 있음 |
 | [task-phase5-baseline](./task-phase5-baseline.md) | task-phase5-baseline | [#134](https://github.com/Kimgyuilli/PeakCart/pull/134) |  |  |
 | [task-publish-diagnostics](./task-publish-diagnostics.md) | Publish 실패 출력 보존 | [#179](https://github.com/Kimgyuilli/PeakCart/pull/179) |  |  |
 | [task-hpa-manifest](./task-hpa-manifest.md) | HPA 매니페스트 작성 |  | 2026-04-21 | 있음 |
@@ -130,6 +131,7 @@
 | [D-082](./D-082.md) | 자율 writer 수명 lint (D-081 공동 구현) | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
 | [D-083](./D-083.md) | D-083 Kafka cleanup 실패 전파 | [#177](https://github.com/Kimgyuilli/PeakCart/pull/177) | 2026-10-17 | 있음 |
 | [D-085](./D-085.md) | D-085: CI gate 실패 전파 의미 검사 | [#185](https://github.com/Kimgyuilli/PeakCart/pull/185) | 2026-10-21 | 있음 |
+| [D-087](./D-087.md) | D-087: Docker Gradle 구간의 실제 CI profile 보존 | [#209](https://github.com/Kimgyuilli/PeakCart/pull/209) | 2026-10-21 | 있음 |
 | [D-090](./D-090.md) | D-090: Outbox FAILED 알림 실행 계약 검사 | [#186](https://github.com/Kimgyuilli/PeakCart/pull/186) | 2026-10-21 | 있음 |
 | [D-094](./D-094.md) | D-094: Redis 조회 상한 실패 진단 정정 | [#198](https://github.com/Kimgyuilli/PeakCart/pull/198) | 2026-10-21 |  |
 | [D-097](./D-097.md) | D-097: 실제 앱 런타임 프로젝트 산출물의 global FQCN 검사 | [#187](https://github.com/Kimgyuilli/PeakCart/pull/187) | 2026-10-21 | 있음 |

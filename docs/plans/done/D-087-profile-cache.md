@@ -37,3 +37,14 @@ PR216 ab429 user119256095630은 native cache 완료 증거가 양쪽에 있지�
 Root 승인 최종 계약: record-image의 실제 raw cache완료/실행log없음을 확인한 cache hit는 profile export를 건너뛰고 cache_hit_unmeasured로 기록한다. Gradle/profile/origin/exportref는 null이며 과거profile을 읽지 않는다. raw증거누락/오류는 실패한다. health/save/identity/최종gate는 그대로다. fresh인 경우에만 export를 실행해 각자 exactref/builder/service/command/native cached 완료/nolog와 현재 image window 내 profile origin/파일hash/HTML을 확인한다. cross-solve digest equality는 요구하지 않는다. fresh의 시간/hash 연결은 기존D087과같은검증경계이며 서로다른solve vertex ID의동일성을증명한다고쓰지않는다.
 
 첫새CI가전부cache hit면새fresh경로의실측은미완이다. 기존PR209의실제6fresh는당시계약근거, 새fresh positive fixture/true-detached음성은새parser의논리검증으로구분한다. 필요시한서비스의좁은Actions fresh positive는Root와별도검토하고 regularCI cache bust는추가하지않는다.
+
+## 최종 검증과 병합
+
+초기 P1/P2 체크박스는 첫 cache-from 가설의 역사적 계약으로 보존한다. 실제 8019·ab429 실패로 그 계약을 수정했으므로 아래 최종 범위로 완료 판정한다.
+
+- [x] 최종 P1. 동일 scope cache-from과 실제 cache-hit의 export 생략·미측정 기록, fresh 검증·detached-rebuild 거부 및 정상·결함 대조.
+- [x] 최종 P2. 원 실패 자료 보존, 정확 head 여섯 이미지의 cache/health/save/gate와 병합 후 main CI·여섯 publish 확인.
+
+PR216 최종 head `613aa478b645e1dcc56862f177aee951b8e16527`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/216#issuecomment-6318077175)는 12개 검사·16개 변이와 여섯 실제 이미지 artifact를 직접 재분석해 `cache_hit_unmeasured` 및 profile/origin/exportref null을 확인했다. 이 CI의 여섯 이미지에서는 새 fresh 측정이 없었다. 과거 PR209의 여섯 fresh 보고서를 새 실행의 수치로 대체하지 않는다.
+
+[PR CI39611388133](https://github.com/Kimgyuilli/PeekCart/actions/runs/39611388133)는 lint·테스트·여섯 이미지·E2E·gate 성공, 정상 병합 SHA는 `797fc30d1661353aaf3d0d878c0e34f3d0347007`이다. 실제 [main CI39613985180](https://github.com/Kimgyuilli/PeekCart/actions/runs/39613985180)는 모든 필수 job과 여섯 publish가 성공했다. 운영 빌드 시간의 개선이나 처리량 천장은 이 근거로 주장하지 않는다.

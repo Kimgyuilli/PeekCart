@@ -809,3 +809,9 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 [PR209](https://github.com/Kimgyuilli/PeekCart/pull/209) head `20532aca4ec3b4ccbd1f314bc65e9ef2e064df97`, merge `c9e12d695e21c348a82da78c6577eac7b2dd4d89`. 독립 [최신 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/209#issuecomment-6315314079)는 실제6서비스 profile raw·해석과 최신main 실행 delta를 검토했다. PR CI39595421179 성공, 실제 [main CI39605505984](https://github.com/Kimgyuilli/PeekCart/actions/runs/39605505984)는 23잡 전부 성공했고 여섯 publish도 성공했다. 단일 실행의 profile 숫자를 성능 개선이나 새main 천장으로 확장하지 않는다.
 
 이후 PR189/214의 일반 CI에서 여섯 이미지가 모두 `profile was rebuilt after image; detached measurement`로 실패했다. 이미지 빌드는 원격 gha cache의 bootJar layer를 사용했지만 profile export는 같은 cache 입력이 없어 해당 RUN을 다시 실행했다. 검사기의 거부는 올바르며, D-087 전체 완료는 보류한다. [후속 PR216](https://github.com/Kimgyuilli/PeekCart/pull/216)의 첫 수정 CI39607970017도 이미지 잡이 실패해 원인 분리 중이다. 원 D-039 로그의 `jar` 헤더는 28.06초이며 앞선 `compileJava/processResources/classes` 세 헤더만 27.96초다. 역사 본문은 보존하고 이 정정을 상태·진행 기록에 명시한다.
+
+## 2026-10-21 — D-087 cache-hit 계측 보정 병합 후 완료
+
+[PR216](https://github.com/Kimgyuilli/PeekCart/pull/216) 최종 head `613aa478b645e1dcc56862f177aee951b8e16527`은 이미지의 bootJar cache hit를 실제 raw 기록으로 확인하면 profile export를 생략하고 `cache_hit_unmeasured`와 null 수치를 기록한다. fresh 경로의 검증 및 재빌드 거부는 유지한다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/216#issuecomment-6318077175)는 12개 검사·16개 변이와 여섯 실제 cache-hit 이미지의 원자료·health를 직접 확인했다. 새 CI에서 fresh 시간은 측정하지 않았으며 PR209의 여섯 fresh 실측은 당시 실행의 근거로만 남긴다.
+
+[PR CI39611388133](https://github.com/Kimgyuilli/PeekCart/actions/runs/39611388133)의 필수 검사·E2E·gate 성공 후 정상 병합 SHA는 `797fc30d1661353aaf3d0d878c0e34f3d0347007`이다. 실제 [main CI39613985180](https://github.com/Kimgyuilli/PeekCart/actions/runs/39613985180)는 여섯 publish를 포함해 모두 성공했다. D-087의 무료 직접 계측·잘못된 구간 해석 정정·cache-hit 안전 처리를 완료로 기록한다. 단일 실행의 수치를 성능 개선이나 운영 천장으로 일반화하지 않는다.
