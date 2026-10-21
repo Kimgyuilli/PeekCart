@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 완료된 계획서를 docs/plans/done/ 으로 옮기고 인바운드 참조를 고친다.
 #
-#   판정 신호는 **PR 머지 여부**다. 체크박스가 아니다.
+#   후보 신호는 PR 머지 여부다. 전체 완료는 선택자가 별도로 확인한다.
 #
 # 체크박스를 쓰지 않는 이유는 실측이다. 루트 계획서 22개 중 체크박스로 완료 판정되는 것은
 # 8개뿐인데 참조된 PR 16개는 전부 머지 상태였다. `task-impl3-spring-cloud-gateway` 는
@@ -17,7 +17,8 @@
 #
 # 사용:
 #   plans-archive.sh              dry-run. 무엇을 옮길지만 보고한다 (기본)
-#   plans-archive.sh --apply      실제로 git mv + 참조 재작성
+#   plans-archive.sh --apply --select D-085,D-090 --base origin/main \
+#     --manifest docs/preservation/campaign.json   선택 git mv + 링크/보존 검사
 #   plans-archive.sh --self-test  판정 로직이 의도대로 도는지 (fixture)
 set -uo pipefail
 
@@ -44,7 +45,7 @@ plan_prs() {
   } 2>/dev/null | grep -oE 'pull/[0-9]+' | sed 's|pull/||' | sort -un
 }
 
-# 판정: 머지된 PR 이 하나라도 있으면 완료. 없으면 옮기지 않는다.
+# 후보: merged PR이 있고 open PR이 없어도 부분 작업일 수 있다. 명시 선택 없이 이동하지 않는다.
 # "증거 없음"과 "미완"을 구분해서 보고한다 — 전자는 사람이 봐야 한다.
 classify() {
   local plan="$1" prs state
@@ -70,101 +71,60 @@ classify() {
   fi
 }
 
-# 인바운드 참조 재작성. docs/plans/<base> 를 docs/plans/done/<base> 로 바꾼다.
-# 경로 없는 백틱 언급은 링크가 아니라 산문이므로 건드리지 않는다.
-# docs/progress/evidence/ 는 제외한다 — 외부 원문(PR 본문 등)을 그대로 떠 둔 스냅샷이라
-# 고치면 출처와 어긋난다. D-026 이동 때 PR #124 본문 스냅샷이 실제로 변조됐다.
-rewrite_refs() {
-  local base="$1"
-  python3 - "$base" <<'PY'
-import io, os, re, subprocess, sys
-base = sys.argv[1]
-files = subprocess.run(
-    ['grep', '-rlF', 'docs/plans/%s' % base, '--exclude-dir=.git', '.'],
-    capture_output=True, text=True).stdout.split()
-n = 0
-for f in files:
-    if f.startswith('./.claude/scripts/tests'):
-        continue
-    if f.startswith('./docs/progress/evidence/'):
-        continue
-    try:
-        s = io.open(f, encoding='utf-8').read()
-    except Exception:
-        continue
-    new = re.sub(r'docs/plans/(?!done/)' + re.escape(base), 'docs/plans/done/' + base, s)
-    if new != s:
-        io.open(f, 'w', encoding='utf-8').write(new)
-        n += 1
-print(n)
-PY
-}
-
-archive_one() {
-  local plan="$1" apply="$2"
-  local base; base="$(basename "$plan")"
-  local stem="${base%.md}"
-  local audit="${PLANS}/${stem}.audit.md"
-  local moved=0 refs=0
-
-  if [ "$apply" = "yes" ]; then
-    mkdir -p "$DONE"
-    git mv "$plan" "${DONE}/${base}" && moved=$((moved+1))
-    refs=$(rewrite_refs "$base")
-    if [ -f "$audit" ]; then
-      git mv "$audit" "${DONE}/${stem}.audit.md" && moved=$((moved+1))
-      refs=$(( refs + $(rewrite_refs "${stem}.audit.md") ))
-    fi
-  else
-    moved=1; [ -f "$audit" ] && moved=2
-    refs=$(grep -rlF "docs/plans/${base}" --exclude-dir=.git . 2>/dev/null \
-           | grep -v '^./.claude/scripts/tests' | wc -l | tr -d ' ')
-  fi
-  printf '%s\t%s\n' "$moved" "$refs"
-}
+# Apply is always selected and goes through the ordered-content manifest checker.
+SELECTED=()
+MANIFEST=""
+BASE=""
 
 run() {
-  local apply="$1"
-  local n_done=0 n_flight=0 n_noev=0 f_moved=0 f_refs=0
-  printf '=== 계획서 아카이브 (%s) ===\n\n' "$([ "$apply" = yes ] && echo 실행 || echo dry-run)"
-
-  local plan base verdict prs res
+  local apply="$1" plan base verdict prs n_done=0 n_flight=0 n_noev=0 files=0
+  local selection found chosen=()
+  if [ "$apply" = yes ]; then
+    [ "${#SELECTED[@]}" -gt 0 ] && [ -n "$MANIFEST" ] && [ -n "$BASE" ] || {
+      echo "--apply requires --select <stems> --base <comparison-commit> --manifest docs/preservation/<name>.json" >&2
+      return 2
+    }
+  fi
+  for selection in "${SELECTED[@]}"; do
+    [[ "$selection" =~ ^[A-Za-z0-9._-]+$ ]] && [[ "$selection" != .* ]] && [[ "$selection" != -* ]] \
+      && [[ "$selection" != *..* ]] && [[ "$selection" != *.audit ]] \
+      && [ -f "$PLANS/$selection.md" ] || { echo "invalid/missing selected plan: $selection" >&2; return 2; }
+  done
+  printf '=== 계획서 아카이브 (%s) ===\n\n' "$([ "$apply" = yes ] && echo 선택실행 || echo dry-run)"
   for plan in "$PLANS"/*.md; do
     base="$(basename "$plan")"
-    case "$base" in
-      *.audit.md) continue ;;
-      "$KEEP_ALWAYS") continue ;;
-    esac
+    case "$base" in *.audit.md|"$KEEP_ALWAYS") continue ;; esac
+    if [ "${#SELECTED[@]}" -gt 0 ]; then
+      found=no
+      for selection in "${SELECTED[@]}"; do [ "$base" = "$selection.md" ] && found=yes; done
+      [ "$found" = yes ] || continue
+    fi
     IFS=$'\t' read -r verdict prs <<EOF
 $(classify "$plan")
 EOF
     case "$verdict" in
       DONE)
-        IFS=$'\t' read -r m r <<EOF
-$(archive_one "$plan" "$apply")
-EOF
-        printf '  이동   %-46s PR %s (파일 %s · 참조 %s곳)\n' "$base" "$prs" "$m" "$r"
-        n_done=$((n_done+1)); f_moved=$((f_moved+m)); f_refs=$((f_refs+r))
-        ;;
+        chosen+=("${base%.md}")
+        files=$((files+1)); [ ! -f "${plan%.md}.audit.md" ] || files=$((files+1))
+        printf '  후보   %-46s PR %s (전체 완료는 선택자가 확인)\n' "$base" "$prs"
+        n_done=$((n_done+1)) ;;
       IN_FLIGHT)
         printf '  진행중 %-46s PR %s 미머지\n' "$base" "$prs"
-        n_flight=$((n_flight+1))
-        ;;
+        n_flight=$((n_flight+1)) ;;
       NO_EVIDENCE)
-        if [ -n "$prs" ]; then
-          printf '  보류   %-46s PR %s 가 머지 상태가 아니다\n' "$base" "$prs"
-        else
-          printf '  보류   %-46s PR 참조 없음. 사람이 판단한다\n' "$base"
-        fi
-        n_noev=$((n_noev+1))
-        ;;
+        printf '  보류   %-46s PR 근거 없음/미머지 %s\n' "$base" "$prs"
+        n_noev=$((n_noev+1)) ;;
     esac
   done
-
-  printf '\n완료 %d · 진행중 %d · 보류 %d' "$n_done" "$n_flight" "$n_noev"
-  [ "$apply" = yes ] && printf ' · 이동 파일 %d · 참조 수정 %d곳' "$f_moved" "$f_refs"
-  printf '\n'
-  [ "$apply" != yes ] && [ "$n_done" -gt 0 ] && printf '실제 이동: scripts/plans-archive.sh --apply\n'
+  printf '\n후보 %d · 진행중 %d · 보류 %d · 후보 파일 %d\n' "$n_done" "$n_flight" "$n_noev" "$files"
+  if [ "$apply" = yes ]; then
+    [ "${#chosen[@]}" -eq "${#SELECTED[@]}" ] || {
+      echo "선택 목록 전체가 후보가 아니므로 아무 파일도 이동하지 않는다" >&2; return 1; }
+    python3 "$ROOT/scripts/docs-archive-apply.py" --root "$PWD" --base "$BASE" \
+      --manifest "$MANIFEST" --select "${chosen[@]}" || return $?
+  elif [ "$n_done" -gt 0 ]; then
+    echo '실행에는 전체 완료를 확인한 --select, 비교 --base, 보존 --manifest가 필요하다. 전체 일괄 apply는 없다.'
+  fi
   return 0
 }
 
@@ -223,11 +183,24 @@ STUB
   return "$rc"
 }
 
-cd "$ROOT" 2>/dev/null || true
-case "${1:-}" in
-  --apply)     run yes ;;
-  --self-test) self_test ;;
-  ""|--dry-run) run no ;;
-  -h|--help)   sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' ;;
-  *) echo "알 수 없는 인자: $1" >&2; exit 2 ;;
-esac
+cd "$ROOT" || exit 2
+MODE=no
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --apply) MODE=yes ;;
+    --dry-run) MODE=no ;;
+    --self-test) self_test; exit $? ;;
+    --select)
+      [ "$#" -ge 2 ] || { echo "--select needs comma-separated plan stems" >&2; exit 2; }
+      IFS=',' read -r -a selection_args <<< "$2"
+      SELECTED+=("${selection_args[@]}"); shift ;;
+    --base|--manifest)
+      [ "$#" -ge 2 ] || { echo "$1 needs a value" >&2; exit 2; }
+      if [ "$1" = --base ]; then BASE="$2"; else MANIFEST="$2"; fi
+      shift ;;
+    -h|--help) sed -n '2,25p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "알 수 없는 인자: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+run "$MODE"

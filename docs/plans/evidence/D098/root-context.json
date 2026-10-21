@@ -1,0 +1,18 @@
+{
+  "comparison_base": "4a4a36a12a3d914d6bc0379ded94bc0123c4d370",
+  "before": {
+    "head": "4ff3b92ff4f93d68fbd66abdbaa77f1c1d4bb819",
+    "task_document_sha256": {
+      "docs/TASKS.md": "aa0b7523df4f93872c5aa3ce06abcc5ca5db59b0eddcf973f0458fdf76ce7380",
+      "docs/progress/TASKS-done.md": "46c35317355624ccf120e97d383a55eecb790aa5319427a9c83e4720f1697dc9"
+    }
+  },
+  "after": {
+    "head": "4ff3b92ff4f93d68fbd66abdbaa77f1c1d4bb819",
+    "task_document_sha256": {
+      "docs/TASKS.md": "aa0b7523df4f93872c5aa3ce06abcc5ca5db59b0eddcf973f0458fdf76ce7380",
+      "docs/progress/TASKS-done.md": "46c35317355624ccf120e97d383a55eecb790aa5319427a9c83e4720f1697dc9"
+    }
+  },
+  "note": "Read-only working tree check; no entire dirty-tree immutable-checkout claim."
+}
