@@ -120,20 +120,71 @@ fail_review() {
   exit 2
 }
 
-# --- 실패 판별 셋. 전부 exit 2 로 모은다. ---
+# 생산자 envelope/core 계약을 렌더 전에 검사한다. 과거 선택 필드 생략은 허용한다.
 [ -s "$JSON" ] || fail_review '빈 응답 (0바이트)'
-jq -e . "$JSON" >/dev/null 2>&1 || fail_review 'JSON 파싱 실패'
-# 타입까지 본다. `items` 가 객체(`{}`)나 `false` 여도 파이썬 쪽에서 `or []` 로 접혀
-# **빈 배열과 구별되지 않는다** — 실패가 "지적 0건" 으로 새는 바로 그 경로다. 리뷰에서 잡혔다.
-jq -e '(.items | type) == "array"' "$JSON" >/dev/null 2>&1 \
-  || fail_review 'items 가 배열이 아님 (null / 객체 / 누락)'
-
-python3 - "$JSON" "$LABEL" <<'PY'
+rendered="$(python3 - "$JSON" "$LABEL" <<'PYRENDER'
 import io, json, sys
+from decimal import Decimal, InvalidOperation
 
 path, label = sys.argv[1], sys.argv[2]
-doc = json.load(io.open(path, encoding='utf-8'))
-items = doc.get('items') or []
+
+def reject_constant(value):
+    raise ValueError('non-JSON constant: ' + value)
+
+try:
+    with io.open(path, encoding='utf-8') as source:
+        doc = json.load(source, parse_float=Decimal, parse_constant=reject_constant)
+except (OSError, UnicodeError, ValueError, RecursionError, InvalidOperation):
+    print('JSON 파싱 실패')
+    sys.exit(2)
+
+
+def require(condition, reason):
+    if not condition:
+        raise ValueError(reason)
+
+
+def string(value):
+    if not isinstance(value, str):
+        return False
+    value.encode('utf-8')
+    return True
+
+
+def integer(value, minimum):
+    # JSON Schema integer에는 1.0도 속한다. bool은 JSON boolean이므로 제외한다.
+    return type(value) in (int, Decimal) and value >= minimum and (
+        type(value) is int or (value.is_finite() and value == value.to_integral_value()))
+
+try:
+    require(isinstance(doc, dict), '결과가 object가 아님')
+    require(set(doc) == {'run_id', 'summary', 'items'}, '필수 metadata 누락 또는 알 수 없는 필드')
+    require(string(doc['run_id']) and string(doc['summary']), 'run_id/summary가 string이 아님')
+    require(isinstance(doc['items'], list), 'items가 배열이 아님')
+    required = {'id', 'severity', 'category', 'finding', 'suggestion'}
+    optional = {'file', 'line', 'scope', 'suggested_disposition'}
+    enums = {'severity': {'P0', 'P1', 'P2'},
+             'category': {'architecture', 'bug', 'security', 'test', 'doc', 'style', 'convention'},
+             'scope': {'in_scope', 'out_of_scope', 'new_surface'},
+             'suggested_disposition': {'reflect', 'defer', 'reject'}}
+    for index, item in enumerate(doc['items']):
+        prefix = 'items[%d]: ' % index
+        require(isinstance(item, dict), prefix + 'object가 아님')
+        require(required <= set(item) <= required | optional, prefix + '필수 필드 누락 또는 알 수 없는 필드')
+        require(integer(item['id'], 1), prefix + 'id가 양의 integer가 아님')
+        for key in ('finding', 'suggestion', 'file'):
+            if key in item:
+                require(string(item[key]), prefix + key + '가 string이 아님')
+        if 'line' in item:
+            require(integer(item['line'], 0), prefix + 'line이 0 이상 integer가 아님')
+        for key, choices in enums.items():
+            if key in item:
+                require(string(item[key]) and item[key] in choices, prefix + key + '가 허용 enum이 아님')
+except ValueError as error:
+    print('결과 계약 위반: ' + str(error))
+    sys.exit(2)
+
+items = doc['items']
 
 order = ['P0', 'P1', 'P2']
 counts = {s: 0 for s in order}
@@ -152,8 +203,7 @@ if summary:
     print('요약: %s' % ' '.join(summary.split()))
 
 if not items:
-    # 여기 오는 것은 items 가 **빈 배열**일 때뿐이다. null 과 빈 파일은 위에서 exit 2 로
-    # 걸렀으므로, 이 줄은 "모델이 돌았고 지적이 없었다" 만 의미한다.
+    # 검증된 정형 결과의 빈 배열이다. 파일 형식만으로 실제 모델 실행을 증명하지 않는다.
     print()
     print('지적 0건 (자동 통과)')
     sys.exit(0)
@@ -223,6 +273,10 @@ for it in rows:
 
 if not has_disp:
     print()
-    print('> 권장 처분(suggested_disposition) 미기재 — 스키마 `required` 확장 이전에 생성된 '
-          '응답이다. 처분은 전부 사람이 판정한다.')
-PY
+    print('> 권장 처분(suggested_disposition) 미기재 — 과거 형식과의 호환을 위해 생략을 허용한다. '
+          '처분은 전부 사람이 판정한다.')
+PYRENDER
+)"
+render_rc=$?
+[ "$render_rc" = 0 ] || fail_review "${rendered:-결과 처리 실패 (exit $render_rc)}"
+printf '%s\n' "$rendered"
