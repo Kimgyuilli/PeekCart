@@ -777,3 +777,9 @@ D-075는 부분 완료로 남는다. P1 목표 TPS/backlog/초과 대응, P3 정
 [일반 CI39581901199](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901199)와 [고정 seed CI39581901183](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901183)가 성공한 뒤 정상 병합 SHA는 `d506f7eef5d29e9894342a6d47b93b89a34266b2`다. [main CI39584187702](https://github.com/Kimgyuilli/PeekCart/actions/runs/39584187702)는 E2E·gate와 여섯 publish 모두 성공했다.
 
 오래된 timestamp fixture의 retention 삭제는 독립 실험으로 확인했지만 PR194의 과거 CI 실패 원인은 당시 broker 증거가 없어 미확정이다. 이 변경은 D-065의 운영 표본·실제 GKE·NOT NULL 적용·replay 개방이나 D-078의 별도 실패 분석을 완료하지 않는다. 운영 배포와 실제 replay는 수행하지 않았다.
+
+## 2026-10-21 — D-099 독립 검토·병합 후 확인 완료
+
+PR [#204](https://github.com/Kimgyuilli/PeekCart/pull/204) 최종 head `48fca6eeaa6e65ba16f6e1cf75bc7dc473865c70`, merge `43a1745a548b24eb85a88ba3e5ecd77bc0742326`. 독립 [최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/204#issuecomment-6313836584)에서 세 P2 수정과 최신 main 통합을 확인했다. Actions의 실제 41 methods/16 mutants, 역사 덮어쓰기 거부·복구 허용, 정확 YAML 조회/fetch 실패 전파를 검토했다. PR CI39584448650과 실제 main CI39586582112/여섯 publish 모두 SUCCESS를 Root가 조회했다.
+
+명시 base의 ID 감소와 현재 빈/중복/손상 archive를 검사한다. standalone만으로 겉보기 정상인 감소를 알아내거나, 부채 전체 완료의 의미를 검증한다는 뜻은 아니다. TASKS 행은 원본문·순서를 보존해 이동했고 이 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.
