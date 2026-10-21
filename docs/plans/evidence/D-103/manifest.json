@@ -4,8 +4,8 @@
   "files": [
     {
       "path": "scripts/codex-review-render.sh",
-      "bytes": 11593,
-      "sha256": "3c92ff7077dd036030666763a8ced1fc6c0bfa8344125a23b50eba33c9f5fb3a"
+      "bytes": 11609,
+      "sha256": "737fcdcd3a386fc34df5a4640303df24b92be3ca981f28ddc3c169bd979d1fd5"
     },
     {
       "path": "scripts/codex-review-render-selftest.sh",
@@ -14,8 +14,8 @@
     },
     {
       "path": "scripts/codex-review-render-contract-selftest.py",
-      "bytes": 9153,
-      "sha256": "e4dd389367614b6ae9d420296318d56a7424c016bf11772687ee5e2b54038ca5"
+      "bytes": 9184,
+      "sha256": "b0635ab93f706a78aca367bbe43c762fa1e37c4242a337d99d7b7779caf5e40c"
     },
     {
       "path": "docs/plans/evidence/D-103/minimal.txt",
@@ -27,5 +27,6 @@
       "bytes": 4743,
       "sha256": "236ee1477f352922e900c2cf623e0c0590b0620cb6d89c667e071b0c603b86e8"
     }
-  ]
+  ],
+  "integration_base": "bdc370a80e0bfa6adefb6a436a5f608f878d1b69"
 }
