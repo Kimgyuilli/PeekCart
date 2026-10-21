@@ -768,3 +768,12 @@ TASKS 완료 행은 상태 외 본문과 비교 base의 순서를 보존해 이�
 [PR CI39579299737](https://github.com/Kimgyuilli/PeekCart/actions/runs/39579299737) 성공 후 병합 SHA는 `bdc370a80e0bfa6adefb6a436a5f608f878d1b69`다. [main CI39581607992](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581607992)는 E2E·gate와 여섯 publish 모두 성공했다. 운영 배포·설정 변경은 없었다.
 
 D-075는 부분 완료로 남는다. P1 목표 TPS/backlog/초과 대응, P3 정책 선택, P4 선택 정책 검증은 사용자 결정과 후속 근거가 필요하다. 유한 로컬 drain을 지속 TPS나 GKE 천장으로 환산하지 않는다. D-078의 무료 jitter/DLQ 및 실제 scheduler pool4 검증은 별도 후속이며 이 분석으로 완료되지 않았다.
+
+
+## 2026-10-21 — DLQ fixture·진단 변경 병합 후 확인
+
+[PR205](https://github.com/Kimgyuilli/PeekCart/pull/205) 최종 head `b8cde5d722391a3d42366db15018c17dd9d84230`의 [독립 통합 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/205#issuecomment-6313390929)는 기존 코드·음성 대조 증거의 보존과 고정 seed Actions의 실제 54 suites/334 PASS 및 cleanup을 확인했다. 원20초 단언과 최대5초 best-effort 진단 경계는 유지했다.
+
+[일반 CI39581901199](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901199)와 [고정 seed CI39581901183](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901183)가 성공한 뒤 정상 병합 SHA는 `d506f7eef5d29e9894342a6d47b93b89a34266b2`다. [main CI39584187702](https://github.com/Kimgyuilli/PeekCart/actions/runs/39584187702)는 E2E·gate와 여섯 publish 모두 성공했다.
+
+오래된 timestamp fixture의 retention 삭제는 독립 실험으로 확인했지만 PR194의 과거 CI 실패 원인은 당시 broker 증거가 없어 미확정이다. 이 변경은 D-065의 운영 표본·실제 GKE·NOT NULL 적용·replay 개방이나 D-078의 별도 실패 분석을 완료하지 않는다. 운영 배포와 실제 replay는 수행하지 않았다.
