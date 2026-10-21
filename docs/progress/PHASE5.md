@@ -752,3 +752,10 @@ Phase 4 가 종결([#133](https://github.com/Kimgyuilli/PeakCart/pull/133))되�
 ### 후속 PR 기록 (2026-10-17)
 
 [#176](https://github.com/Kimgyuilli/PeekCart/pull/176)에 D-060 후속 보강과 D-074·D-079·D-081·D-082를 포함했다. 승인 보호 운영 복구의 남은 범위는 D-084로 추적한다. 기존 사용자 TASKS 편집 중 미완료 부채 D-072·D-073·D-075·D-076·D-077·D-078·D-080·D-083 등록도 포함했다. D-059 계획서는 #174 머지에 따라 done 디렉터리로 이동하고 인덱스를 재생성했다. 새로 등록한 부채 8건의 구현은 미완료 상태로 유지한다. PR은 생성했으며 머지는 하지 않았다.
+
+
+## 2026-10-21 — D-098 독립 검토·병합 후 확인 완료
+
+[PR203](https://github.com/Kimgyuilli/PeekCart/pull/203) 최종 head `2e7251b6b855009ce14adccd0c71a46d23a5ddf8`의 [독립 재검토](https://github.com/Kimgyuilli/PeekCart/pull/203#issuecomment-6312472715)는 세 P2 반례 해소, 직접 52개 fixture 및 실제 원문 분리·archive 정상/음성 대조를 확인했다. 수정 제거 변이 세 개도 각각 실패했다. [PR CI39575261544](https://github.com/Kimgyuilli/PeekCart/actions/runs/39575261544)가 성공한 뒤 정상 병합 SHA는 `f4ee03b97b0bec0c9be7cd3077911fb67b578b74`다. [main CI39578683569](https://github.com/Kimgyuilli/PeekCart/actions/runs/39578683569)는 E2E·gate와 여섯 publish 모두 성공했다. 운영 배포와 실제 계획 archive는 수행하지 않았다.
+
+TASKS 완료 행은 상태 외 본문과 비교 base의 순서를 보존해 이동한다. 일반 문서의 사실 정확성·전체 링크 건강이나 D-099 현행 corpus 검증을 완료했다고 주장하지 않는다. 이 완료 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.
