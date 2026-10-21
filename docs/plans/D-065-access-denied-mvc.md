@@ -18,7 +18,7 @@ catch-all에서 AccessDeniedException만 그대로 rethrow하여 기존 Exceptio
 ## 3. 작업과 검증
 
 - [x] P1. actual4서비스 실패와 공통 handler/Security 경로를 대조하고 좁은 수정 계획을 정한다.
-- [ ] P2. actual GlobalExceptionHandler, ExceptionTranslationFilter, 프로젝트 두 Security handler를 쓰는 standalone MVC 회귀로 USER403/anonymous401/unrelated500을 검증한다. 원 handler에서 회귀 실패를 Actions로 먼저 보존한다.
+- [x] P2. actual GlobalExceptionHandler, ExceptionTranslationFilter, 프로젝트 두 Security handler를 쓰는 standalone MVC 회귀로 USER403/anonymous401/unrelated500을 검증한다. 원 handler에서 회귀 실패를 Actions로 먼저 보존한다.
 - [ ] P3. AccessDeniedException만 rethrow한 뒤 동일 회귀와 전체CI를 통과한다. 기존 오류 메시지나 요청 내용이 추가로 노출되지 않아야 한다.
 - [ ] P4. 독립 검토와 PR210 위 stack의 네 실제 signed HTTP 경로를 검증하고 증거 범위를 기록한다.
 
