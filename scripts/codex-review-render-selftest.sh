@@ -92,7 +92,7 @@ echo '{"run_id":"x","summary":"s","items":null}' > "${TMP}/plan-v2.json"
 check 'V2 items:null → exit 2' 2 "${TMP}/plan-v2.json" '리뷰 실패'
 refute 'V2 가 총 0건으로 렌더되지 않는다' 2 "${TMP}/plan-v2.json" '총 0건'
 
-# V3 — 빈 배열. 모델은 돌았고 지적이 없었다. V1·V2 와 달라야 한다.
+# V3 — 필수 metadata를 갖춘 정형 빈 배열. 실제 모델 실행 여부의 증명은 아니다.
 echo '{"run_id":"x","summary":"s","items":[]}' > "${TMP}/plan-v3.json"
 check 'V3 빈 배열 → exit 0 + 자동 통과' 0 "${TMP}/plan-v3.json" '지적 0건 (자동 통과)' '총 0건'
 
@@ -183,12 +183,63 @@ argcase 'V15 위치 인자 중복 → exit 1' 1 '위치 인자는 하나뿐' "${
 argcase 'V15 인자 없음 → exit 1' 1 '사용:'
 argcase 'V15 없는 파일 → exit 1' 1 '파일 없음' "${TMP}/nope.json"
 
+# 독립 oracle은 renderer Python과 다른 jq predicate를 사용한다.
+# 실제 cache가 없어도 아래 합성 정상/음성 자료로 이 경로를 실행한다.
+expected_valid() {
+python3 - "$1" <<'STRICTJSON' 2>/dev/null && jq -e '
+      def integer_at_least($n): type == "number" and isfinite and . >= $n and floor == .;
+      def text: type == "string";
+      def enum($values): . as $value | text and ($values | index($value)) != null;
+      def optional($key; test): if has($key) then .[$key] | test else true end;
+      try (
+        type == "object" and keys == ["items", "run_id", "summary"] and
+        (.run_id | text) and (.summary | text) and (.items | type == "array") and
+        (.items | all(
+          type == "object" and
+          ((keys - ["id", "severity", "category", "finding", "suggestion", "file", "line", "scope", "suggested_disposition"]) | length == 0) and
+          has("id") and has("severity") and has("category") and has("finding") and has("suggestion") and
+          (.id | integer_at_least(1)) and (.severity | enum(["P0", "P1", "P2"])) and
+          (.category | enum(["architecture", "bug", "security", "test", "doc", "style", "convention"])) and
+          (.finding | text) and (.suggestion | text) and optional("file"; text) and
+          optional("line"; integer_at_least(0)) and optional("scope"; enum(["in_scope", "out_of_scope", "new_surface"])) and
+          optional("suggested_disposition"; enum(["reflect", "defer", "reject"]))
+        ))
+      ) catch false' "$1" >/dev/null 2>&1
+import json, sys
+
+def invalid(value):
+    raise ValueError(value)
+
+def unicode_strings(value):
+    if isinstance(value, str): value.encode('utf-8')
+    elif isinstance(value, list):
+        for item in value: unicode_strings(item)
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            key.encode('utf-8'); unicode_strings(item)
+with open(sys.argv[1], encoding='utf-8') as source:
+    unicode_strings(json.load(source, parse_constant=invalid))
+STRICTJSON
+}
+
+for f in "$TMP"/*.json; do
+  if expected_valid "$f"; then want=0; else want=2; fi
+  "$RENDER" "$f" >/dev/null 2>&1; got=$?
+  if [ "$got" = "$want" ]; then
+    pass=$((pass+1))
+    printf '  ok   계약 oracle 합성 대조 %s (exit %s)\n' "$(basename "$f")" "$got"
+  else
+    fail=$((fail+1))
+    printf '  FAIL 계약 oracle 합성 대조 %s (기대 %s, 실제 %s)\n' "$(basename "$f")" "$want" "$got"
+  fi
+done
+
 # V9 — 실제 이력 회귀.
 #
 #   건수를 하드코딩하지 않는다. 초안은 238/44 를 박아두었는데, 리뷰를 한 번 더 돌리자마자
 #   .cache 가 늘어 그 자리에서 깨졌다. 스냅샷은 계약이 아니다.
 #   대신 **불변식**을 건다 — 종료 코드는 0 아니면 2 뿐이고(1=사용법 오류는 나오면 안 된다),
-#   exit 2 인 집합은 "빈 파일 또는 파싱 불가 또는 items null" 과 정확히 일치해야 한다.
+#   exit 2 인 집합은 문서화한 envelope/core/선택 필드 계약 위반과 일치해야 한다.
 #   기대값을 렌더러가 아닌 별도 경로(test + jq)로 계산해 대조한다.
 CACHE="${ROOT}/.cache/codex-reviews"
 if [ -d "$CACHE" ] && ls "${CACHE}"/*.json >/dev/null 2>&1; then
@@ -197,11 +248,7 @@ if [ -d "$CACHE" ] && ls "${CACHE}"/*.json >/dev/null 2>&1; then
     # 기대값을 렌더러와 무관하게 계산한다.
     # 기대값은 렌더러와 **다른 표현**으로 계산한다. 같은 jq 식을 복붙하면 둘 다 틀려도
     # 통과한다 — 라운드 1에서 실제로 그랬다(items 가 객체여도 양쪽 다 정상으로 봤다).
-    if [ ! -s "$f" ] || [ "$(jq -r 'try (.items|type) catch "ERR"' "$f" 2>/dev/null)" != "array" ]; then
-      want=2
-    else
-      want=0
-    fi
+    if expected_valid "$f"; then want=0; else want=2; fi
     "$RENDER" "$f" >/dev/null 2>&1; got=$?
     case "$got" in 0) ok9=$((ok9+1)) ;; 2) f9=$((f9+1)) ;; *) other9=$((other9+1)) ;; esac
     if [ "$got" != "$want" ]; then
@@ -219,6 +266,10 @@ else
   # 조용히 통과시키지 않는다. .cache/ 는 gitignore 대상이라 CI 에는 없다.
   printf '  skip V9 실제 이력 회귀 — %s 없음\n' "$CACHE"; skip=$((skip+1))
 fi
+
+# D-103: 전체 계약 fixture/음성 대조. 어느 쪽 실패도 기존 CI step에 전파한다.
+python3 -B "$ROOT/scripts/codex-review-render-contract-selftest.py" || exit "$?"
+python3 -B "$ROOT/scripts/codex-review-render-contract-selftest.py" --mutants || exit "$?"
 
 printf '\n통과 %d · 실패 %d · 건너뜀 %d\n' "$pass" "$fail" "$skip"
 [ "$fail" = 0 ]
