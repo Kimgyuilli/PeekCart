@@ -50,6 +50,24 @@
       "raw_bytes": 67002,
       "raw_sha256": "5363306d0441862e93e489fe0611ae57b39faefd96e74e99dbb4ad36266f1d49",
       "stored_sha256": "5363306d0441862e93e489fe0611ae57b39faefd96e74e99dbb4ad36266f1d49"
+    },
+    {
+      "file": "pr216-8019-user.log.gz",
+      "raw_bytes": 271744,
+      "raw_sha256": "d70f27cdfe64af3c0d6efd89ce3ec5828f2f49b35e590aecfe4945607c72213b",
+      "stored_sha256": "84d56a73ffeb6205811a8ce620e7b603ef3edc380d5a33a1e46107f065d66cd4"
+    },
+    {
+      "file": "pr216-8019-artifacts.json.gz",
+      "raw_bytes": 14445,
+      "raw_sha256": "38134919276e423bb6b5e3972a45f176f7cca1d50210bdd1d359c1a1fdc633f1",
+      "stored_sha256": "882276ab4787d59d30aa96c9c3319e2767b66195c20e13b53a6856ad38917802"
+    },
+    {
+      "file": "pr216-8019-user-artifact.zip",
+      "raw_bytes": 65808,
+      "raw_sha256": "489c8dcbd943ca55accb60f4f3ad76a1fe5cbbf50d9d1f47d8ce8925dbd3f155",
+      "stored_sha256": "489c8dcbd943ca55accb60f4f3ad76a1fe5cbbf50d9d1f47d8ce8925dbd3f155"
     }
   ]
 }
