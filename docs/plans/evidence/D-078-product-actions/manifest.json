@@ -1,0 +1,23 @@
+{
+  "contract": "Original downloaded artifact ZIP unchanged; gzip files preserve exact decompressed bytes. Bounded GitHub token/JWT/private-key pattern scan:0matches, not a universal secret guarantee.",
+  "files": [
+    {
+      "file": "first-job.log.gz",
+      "raw_bytes": 214303,
+      "raw_sha256": "01993b4ab386b281cde2da8bb4f61f332daabcfdbb578942d30bbe7aa38ef9d7",
+      "stored_sha256": "03fc028d7c5778bfee3c54e53993df6289dbdcfd034d57f30d6ca4419413c0da"
+    },
+    {
+      "file": "first-artifacts.json.gz",
+      "raw_bytes": 748,
+      "raw_sha256": "ed8575744a6c9780777996f846da818bc2cb913d8c03605f4027774d6370e6a7",
+      "stored_sha256": "f65ac6cd12adf71c98c0008f59a7143e38d0b2dd46e33e98b483f0f5cbccbf74"
+    },
+    {
+      "file": "first-artifact.zip",
+      "raw_bytes": 182967,
+      "raw_sha256": "6ffdfa07caff364d4bc55a60422079c1349e22afbd27c346297f5d669e686838",
+      "stored_sha256": "6ffdfa07caff364d4bc55a60422079c1349e22afbd27c346297f5d669e686838"
+    }
+  ]
+}

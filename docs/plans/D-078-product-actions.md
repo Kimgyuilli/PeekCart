@@ -35,3 +35,9 @@ Root가 M계획과 최소성 조건을 승인했다. 첫실행은 별도 init/li
 ## 재개 시 비교 기준
 
 최종PR base는 main216 797fc30d1661353aaf3d0d878c0e34f3d0347007이다. 기존3WIP 파일을 보존해 fast-forward했고 Java hash083784…는 동일하다. 대상 barrier testcase 누락/skip을 성공으로 취급하지 않는 작은 stdlib XML 확인을 Actions 안에 추가한다. 새 진단/참여자억제 음성은 재구현하지 않는다.
+
+## 첫 실행과 승인된 좁은 후속
+
+PR218 ce2c964 원seed Actions39614791169의 Gradle은46XMLsuites/236testcases/0failures·errors, barrier4/0으로통과했다. job실패는후단XML guard가실제DisplayName을놓친것이며원barrier 재현이아니다. actualcheckout41e0f7e4cf1e1f8816501fc598cc9544447f78e8/JDK17.0.20.1/원XML·log·명령·cleanup을evidence에보존한다.236은XMLtestcase수이며고유Java method수로해석하지않는다.
+
+실제XML/classname 기반좁은guard를교정했다. --info는20class의출력header만보여전체진입순서가부족했다. Root 승인후다음별도실행에작은Gradle beforeTest START1행listener를추가한다. 테스트본문과진단은불변이며추가기록이타이밍을바꿀수있으므로첫무계측PASS와분리한다. START는Gradle class/test식별자의시작이벤트이며worker의동시barrier도착/같은generation을자동증명하지않는다.

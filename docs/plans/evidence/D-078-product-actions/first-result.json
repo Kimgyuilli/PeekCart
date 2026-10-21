@@ -1,0 +1,26 @@
+{
+  "run": 39614791169,
+  "job": 119272822736,
+  "branch_head": "ce2c96435effe7b70c0ea42522a356fec42d0274",
+  "actual_checkout": "41e0f7e4cf1e1f8816501fc598cc9544447f78e8",
+  "java_version": "openjdk version \"17.0.20.1\" 2026-08-18\nOpenJDK Runtime Environment Temurin-17.0.20.1+1 (build 17.0.20.1+1)\nOpenJDK 64-Bit Server VM Temurin-17.0.20.1+1 (build 17.0.20.1+1, mixed mode, sharing)",
+  "test_source_sha256": "083784f244e6bdb7c7348a7be420d7f61c6be6aa3928fd590e51ea698c4ad19c",
+  "xml_suites": 46,
+  "tests": 236,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "gradle_result": "BUILD SUCCESSFUL in2m47s",
+  "workflow_result": "FAILURE: postbuild XML guard expected method name but actual XML uses DisplayName",
+  "class_method_order": "Only20 stdout-bearing class labels observed in info log, not a complete start sequence. XML names/timestamps preserved; no claim they fully reconstruct chronology.",
+  "barrier_suite": {
+    "name": "D-025 — consumer 경계 재고 동시성 계약 (ADR-0025 D1)",
+    "tests": "4",
+    "skipped": "0",
+    "failures": "0",
+    "errors": "0",
+    "timestamp": "2026-10-21T14:14:12.190Z",
+    "hostname": "runnervmxehtw",
+    "time": "3.221"
+  }
+}

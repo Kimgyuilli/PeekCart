@@ -1,0 +1,11 @@
+# D-078 original product seed evidence
+
+[First original-seed run39614791169](https://github.com/Kimgyuilli/PeekCart/actions/runs/39614791169), job119272822736, used branch ce2c964 and actual PR checkout41e0f7e4cf1e1f8816501fc598cc9544447f78e8. Its unchanged Java SHA256083784f244e6bdb7c7348a7be420d7f61c6be6aa3928fd590e51ea698c4ad19c, original class-order seed1792523372921, test profile, Temurin17.0.20.1, command and cleanup6newTestcontainers are preserved in the original artifact.
+
+Gradle BUILD SUCCESSFUL in2m47s:46 XML suites/236test cases,0failures/errors. The barrier suite4cases passed; concurrent case0.076s. The first job still failed because the new postbuild XML guard expected the Java method name, while actual XML uses the existing Korean DisplayName. This is a collection-guard defect, not recurrence of1Timeout+4BrokenBarrier. [first-result.json](first-result.json) records exact populations, skips and environment. The raw log and ZIP remain unchanged with [manifest hashes](manifest.json).
+
+Original uninstrumented seed PASS is one later observation, not historical root-cause resolution. Existing known participant-suppression/SQL-error negatives are prior evidence; they were not rerun here. Five pre-await logs do not prove simultaneous arrival or a common generation. The current test already has barrier identity/waiters/generation and bounded5second diagnostics, which are left unchanged.
+
+The first info log has21stdout/stderr headers from20class labels, not a complete236-case start sequence. XML order/timestamps are retained without claiming they reconstruct every actual start. After this result, Root approved a tiny Gradle beforeTest START listener for a separate next run. It records Gradle class/test identifiers and may affect scheduling/timing; its result must remain separate from the first no-listener observation. No Java, timeout or stock/conflict criteria change.
+
+The corrected guard accepts only this class's actual DisplayName or method-form identifier, rejects missing/wrong-class/wrong-case/skipped/failed results, and preserves original failed workflow status. The actual first XML passes the corrected guard;5paired invalid XML variants reject in minimal development checks. Next matching-head Actions and independent review remain pending.
