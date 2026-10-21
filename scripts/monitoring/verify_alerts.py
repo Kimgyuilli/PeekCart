@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import time
@@ -118,6 +119,39 @@ def assert_alerting_instances(uid, rule):
         assert {a['labels'].get('cache') for a in rule['alerts']} == {'product', 'products', 'productStock'}, uid
 
 
+def slack_message_fields(notification):
+    """Return only Slack message text and attachment text/field values."""
+    values = [notification.get('text', '')]
+    for attachment in notification.get('attachments', []):
+        if not isinstance(attachment, dict):
+            continue
+        values.extend((attachment.get('title', ''), attachment.get('text', '')))
+        for field in attachment.get('fields', []):
+            if isinstance(field, dict):
+                values.extend((field.get('title', ''), field.get('value', '')))
+    return '\n'.join(str(value) for value in values if value)
+
+
+def assert_operations_routes_are_separate(notifications, expected):
+    """Require each operations signal in its own captured Slack request."""
+    messages = [slack_message_fields(notification) for notification in notifications]
+    signal_sets = [
+        {match.group(1).strip() for match in re.finditer(
+            r'(?im)(?:^|\s)signal\s*=\s*([^\r\n]+)', message
+        )}
+        for message in messages
+    ]
+    assert signal_sets and all(signal_set for signal_set in signal_sets), (
+        'each operations Slack request must expose its signal label', messages
+    )
+    assert set().union(*signal_sets) == expected, (
+        'operations Slack requests must contain exactly the matched signals', signal_sets, expected
+    )
+    assert all(len(signal_set) == 1 for signal_set in signal_sets), (
+        'each operations Slack request must contain only one signal', signal_sets
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path)
@@ -142,6 +176,24 @@ def main():
     for directory in ('provisioning/alerting', 'provisioning/datasources'):
         (out / directory).mkdir(parents=True)
     (out / 'provisioning/alerting/alerts.yaml').write_text(original)
+    routing_path = ROOT / 'k8s/monitoring/shared/grafana-notification-routing.yml'
+    routing_bytes = routing_path.read_bytes()
+    routing = yaml.safe_load(routing_bytes)
+    routing_data = routing['data']
+    points = yaml.safe_load(routing_data['contact-points.yaml'])['contactPoints']
+    policies = yaml.safe_load(routing_data['notification-policies.yaml'])['policies']
+    assert len(points) == 1 and points[0]['name'] == 'peekcart-operations'
+    assert points[0]['receivers'][0]['settings']['url'] == '${PEAKCART_OPS_SLACK_WEBHOOK_URL}'
+    assert len(policies) == 1 and policies[0]['receiver'] == 'grafana-default-email'
+    assert policies[0]['routes'] == [{
+        'receiver': 'peekcart-operations',
+        'object_matchers': [['signal', '=~', '^(outbox-publish|dlq)$']],
+        'continue': False,
+    }]
+    for filename, body in routing_data.items():
+        (out / 'provisioning/alerting' / filename).write_text(body)
+    (out / 'capture').mkdir()
+    (out / 'capture/notifications.jsonl').write_text('')
     (out / 'provisioning/datasources/prometheus.yaml').write_text(yaml.safe_dump({
         'apiVersion': 1, 'datasources': [{'name': 'Prometheus', 'uid': 'prometheus', 'type': 'prometheus',
                                        'access': 'proxy', 'url': 'http://prometheus:9090', 'isDefault': True}]}))
@@ -157,12 +209,17 @@ def main():
         'grafana': {'image': IMAGES['grafana'], 'ports': ['127.0.0.1::3000'],
                     'environment': {'GF_SECURITY_ADMIN_USER': 'local-fixture', 'GF_SECURITY_ADMIN_PASSWORD': 'local-fixture',
                                     'GF_ANALYTICS_REPORTING_ENABLED': 'false', 'GF_ANALYTICS_CHECK_FOR_UPDATES': 'false',
-                                    'GF_UNIFIED_ALERTING_ENABLED': 'true'},
+                                    'GF_UNIFIED_ALERTING_ENABLED': 'true',
+                                    # Local receiver only; never sourced from live secret material.
+                                    'PEAKCART_OPS_SLACK_WEBHOOK_URL': 'http://fixture-a:8000/ops'},
                     'volumes': ['./provisioning:/etc/grafana/provisioning:ro']},
     }
     for instance in ('fixture-a', 'fixture-b'):
-        services[instance] = {'image': IMAGES['fixture'], 'environment': {'FIXTURE_INSTANCE': instance},
-                              'volumes': ['.:/fixture:ro'], 'command': ['python', '/fixture/fixture_exporter.py']}
+        services[instance] = {'image': IMAGES['fixture'],
+                              'environment': {'FIXTURE_INSTANCE': instance,
+                                              'NOTIFICATIONS': '/capture/notifications.jsonl'},
+                              'volumes': ['.:/fixture:ro', './capture:/capture'],
+                              'command': ['python', '/fixture/fixture_exporter.py']}
     (out / 'compose.yml').write_text(yaml.safe_dump({'services': services}, sort_keys=False))
     manifest = {'sourceSHA': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                 'sourceDirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT)),
@@ -290,6 +347,30 @@ def main():
             for alert in firing['alerts']:
                 if uid.startswith('peekcart-cache-fallback'):
                     assert alert['labels']['signal'] == uid.removeprefix('peekcart-')
+        notifications = [json.loads(line) for line in (out / 'capture/notifications.jsonl').read_text().splitlines()]
+        notification_text = json.dumps(notifications, ensure_ascii=False).lower()
+        assert notifications, 'matched operations alerts must reach the local receiver stub'
+        assert 'outbox' in notification_text and 'dlq' in notification_text, notification_text
+        expected_signals = {'outbox-publish', 'dlq'}
+        # Grafana's Slack contact point sends a Slack message payload, not the webhook
+        # notifier's `alerts[].labels` schema. Inspect only Slack text/attachment fields
+        # and require separate requests so grouping both signals cannot false-pass.
+        assert_operations_routes_are_separate(notifications, expected_signals)
+        negative_notifications = [
+            [{'text': 'signal = outbox-publish-extra'}, {'text': 'signal = dlq'}],
+            [{'text': 'signal = outbox-publish'}],
+            [{'text': 'signal = outbox-publish\nsignal = dlq'}],
+            [{'text': 'signal = outbox-publish'}, {'text': 'signal = dlq'}, {'text': 'signal = other'}],
+            [{'text': 'signal = outbox-publish.extra'}, {'text': 'signal = dlq'}],
+            [{'text': 'signal = outbox-publish'}, {'text': 'signal = dlq/other'}],
+            [{'text': 'signal = outbox-publish'}, {'text': 'signal = DLQ'}],
+        ]
+        for candidate in negative_notifications:
+            try:
+                assert_operations_routes_are_separate(candidate, expected_signals)
+            except AssertionError:
+                continue
+            raise AssertionError('route assertion accepted an invalid Slack request grouping', candidate)
         set_mode('healthy')
         resolved = sample_for('resolved', 390)
         assert all_normal(resolved[-1]), 'Recovery must be healthy zero, never absent/NoData'
@@ -297,6 +378,7 @@ def main():
         summary = {'result': 'PASS', 'startedAt': started, 'finishedAt': time.time(),
                    'rules': list(CONTRACT), 'originalForSeconds': {k: v[1] for k, v in CONTRACT.items()},
                    'negativeControls': ['wrong application/status', 'put operation', 'zero values', 'non-sustained breach'],
+                   'operationsDelivery': 'Outbox and DLQ matched to the local receiver stub; no external endpoint',
                    'replicas': ['fixture-a', 'fixture-b'], 'sourceSHA': manifest['sourceSHA']}
         (out / 'summary.json').write_text(json.dumps(summary, indent=2))
         print(json.dumps(summary), flush=True)
