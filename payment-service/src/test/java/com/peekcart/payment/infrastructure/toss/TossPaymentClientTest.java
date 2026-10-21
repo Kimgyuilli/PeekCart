@@ -95,6 +95,19 @@ class TossPaymentClientTest {
                 .isEqualTo(TossOutcome.Kind.TRANSIENT);
     }
 
+    @ParameterizedTest
+    @CsvSource({"409, IDEMPOTENT_REQUEST_PROCESSING, TRANSIENT",
+            "409, OTHER_CONFLICT, PERMANENT_FAILURE",
+            "400, IDEMPOTENT_REQUEST_PROCESSING, PERMANENT_FAILURE"})
+    void confirmationInProgressRequiresExactStatusAndCode(int status, String code, TossOutcome.Kind expected) {
+        server.expect(requestTo(CONFIRM_URL))
+                .andExpect(header("Idempotency-Key", "approve-100001"))
+                .andRespond(withStatus(HttpStatus.valueOf(status)).contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"code\":\"" + code + "\"}"));
+        assertThat(client.confirm(PAYMENT_KEY, "100001", 10_000L, "approve-100001").kind()).isEqualTo(expected);
+        server.verify();
+    }
+
     @Test
     @DisplayName("승인 ALREADY_PROCESSED_PAYMENT 는 실패가 아니라 별도 분류다 (조회로 가른다)")
     void confirmAlreadyProcessed_isSeparateKind() {

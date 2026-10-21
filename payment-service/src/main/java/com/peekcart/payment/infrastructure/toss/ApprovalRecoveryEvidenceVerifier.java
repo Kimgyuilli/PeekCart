@@ -19,10 +19,7 @@ public class ApprovalRecoveryEvidenceVerifier {
         return client.find(approval.getPaymentKey()).flatMap(snapshot -> {
             try {
                 JsonNode body = mapper.readTree(snapshot.rawResponse());
-                if (!approval.getPaymentKey().equals(body.path("paymentKey").asText())
-                        || !approval.getOrderId().toString().equals(body.path("orderId").asText())
-                        || !body.path("totalAmount").isIntegralNumber() || !body.path("totalAmount").canConvertToLong()
-                        || body.path("totalAmount").longValue() != approval.getAmount()) {
+                if (!TossPaymentIdentity.matches(approval, body)) {
                     return Optional.empty();
                 }
                 String status = body.path("status").asText();

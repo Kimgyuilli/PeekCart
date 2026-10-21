@@ -45,7 +45,7 @@ import static org.mockito.Mockito.reset;
  * 한 predicate 를 지워도 다른 predicate 가 잡아 <b>변이가 관측되지 않는다</b>.
  *
  * <p><b>음성 기대값을 "행이 생겼다" 로만 쓰지 않는다.</b> 집계 쿼리는 전환 호환성 때문에
- * {@code root_record_id IS NULL} 도 root 로 세므로, 상관 실패 분기에서 {@code assignSelfRoot()} 를
+ * {@code root_record_id IS NULL} 도 root 로 세므로, 상관 실패 시 self root 기록을
  * 빠뜨려도 행 존재·backlog 단언은 전부 green 이고 "root 행은 자기 id 를 가진다" 계약만 조용히 깨진다.
  * 그래서 <b>{@code root_record_id == 자기 id}</b> 를 음성 공통 단언에 넣는다.
  *
@@ -657,7 +657,7 @@ class DlqReplayCorrelationIntegrationTest extends AbstractIntegrationTest {
                 .orElseThrow();
 
         // **"행이 생겼다" 로는 부족하다** — 집계가 root_record_id IS NULL 도 root 로 세므로
-        // assignSelfRoot() 를 빠뜨려도 backlog 단언은 green 이다.
+        // self root 기록을 빠뜨려도 backlog 단언은 green 이다.
         assertThat(newest.getRootRecordId()).isNotNull();
         assertThat(newest.getRootRecordId()).isEqualTo(newest.getId());
         assertThat(correlationCount("independent", expectedReason)).isEqualTo(1.0);

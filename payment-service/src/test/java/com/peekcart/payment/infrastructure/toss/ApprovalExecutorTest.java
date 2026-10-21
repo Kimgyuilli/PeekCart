@@ -27,7 +27,7 @@ import static org.mockito.Mockito.never;
 class ApprovalExecutorTest {
 
     private static final String DONE_BODY = """
-            {"paymentKey":"toss-payment-key-123","status":"DONE","method":"카드",
+            {"paymentKey":"toss-payment-key-123","orderId":"1","totalAmount":100000,"status":"DONE","method":"카드",
              "approvedAt":"2026-03-25T14:00:00+09:00"}
             """;
 
@@ -35,9 +35,13 @@ class ApprovalExecutorTest {
     private ApprovalExecutor executor;
     private PaymentApproval approval;
 
+    private static String body(String status) {
+        return DONE_BODY.replace("DONE", status);
+    }
+
     @BeforeEach
     void setUp() {
-        executor = new ApprovalExecutor(tossPaymentClient);
+        executor = new ApprovalExecutor(tossPaymentClient, new com.fasterxml.jackson.databind.ObjectMapper());
         approval = PaymentFixture.claimedApproval();
     }
 
@@ -112,7 +116,7 @@ class ApprovalExecutorTest {
     @DisplayName("verify: 조회만 하고 승인을 재호출하지 않는다 — 재호출은 없던 과금을 만드는 행위다")
     void verify_neverReconfirms() {
         given(tossPaymentClient.find(anyString()))
-                .willReturn(Optional.of(new TossPaymentSnapshot("ABORTED", 0L, "{}")));
+                .willReturn(Optional.of(new TossPaymentSnapshot("ABORTED", 0L, body("ABORTED"))));
 
         ApprovalExecutor.CallResult result = executor.verify(approval);
 
@@ -137,7 +141,7 @@ class ApprovalExecutorTest {
     @DisplayName("verify: 중간/미상 상태는 UNRESOLVED 유지 — 닫으면 뒤늦게 성립한 과금과 영구히 어긋난다")
     void verify_intermediateStates_stayUnresolved(String status) {
         given(tossPaymentClient.find(anyString()))
-                .willReturn(Optional.of(new TossPaymentSnapshot(status, 0L, "{}")));
+                .willReturn(Optional.of(new TossPaymentSnapshot(status, 0L, body(status))));
 
         assertThat(executor.verify(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.UNRESOLVED);
     }
@@ -147,7 +151,7 @@ class ApprovalExecutorTest {
     @DisplayName("부분 취소는 취소 합계와 무관하게 보호 승인을 닫지 않는다")
     void partialCancellationNeverReleasesProtectedApproval(long canceledAmount) {
         given(tossPaymentClient.find(anyString()))
-                .willReturn(Optional.of(new TossPaymentSnapshot("PARTIAL_CANCELED", canceledAmount, "{}")));
+                .willReturn(Optional.of(new TossPaymentSnapshot("PARTIAL_CANCELED", canceledAmount, body("PARTIAL_CANCELED"))));
 
         assertThat(executor.verify(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.UNRESOLVED);
         then(tossPaymentClient).should(never()).confirm(any(), any(), anyLong(), any());
@@ -158,11 +162,11 @@ class ApprovalExecutorTest {
     void canceledRequiresExactFullAmount() {
         for (long amount : new long[]{0, approval.getAmount() - 1, approval.getAmount() + 1}) {
             given(tossPaymentClient.find(anyString()))
-                    .willReturn(Optional.of(new TossPaymentSnapshot("CANCELED", amount, "{}")));
+                    .willReturn(Optional.of(new TossPaymentSnapshot("CANCELED", amount, body("CANCELED"))));
             assertThat(executor.verify(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.UNRESOLVED);
         }
         given(tossPaymentClient.find(anyString()))
-                .willReturn(Optional.of(new TossPaymentSnapshot("CANCELED", approval.getAmount(), "{}")));
+                .willReturn(Optional.of(new TossPaymentSnapshot("CANCELED", approval.getAmount(), body("CANCELED"))));
         assertThat(executor.verify(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.FAILED);
     }
 
@@ -181,8 +185,8 @@ class ApprovalExecutorTest {
     @DisplayName("approvedAt 파싱 실패는 성공을 미확정으로 되돌리지 않는다 — 현재 시각으로 대체한다")
     void malformedApprovedAt_stillSucceeds() {
         given(tossPaymentClient.find(anyString()))
-                .willReturn(Optional.of(new TossPaymentSnapshot("DONE", 0L, "{}")));
-        given(tossPaymentClient.parseConfirmed("{}")).willReturn(
+                .willReturn(Optional.of(new TossPaymentSnapshot("DONE", 0L, DONE_BODY)));
+        given(tossPaymentClient.parseConfirmed(DONE_BODY)).willReturn(
                 new TossConfirmResponse(null, null, "DONE", "카드", "not-a-timestamp"));
 
         ApprovalOutcome outcome = executor.verify(approval).outcome();
@@ -190,4 +194,34 @@ class ApprovalExecutorTest {
         assertThat(outcome.kind()).isEqualTo(ApprovalOutcome.Kind.SUCCEEDED);
         assertThat(outcome.approvedAt()).isNotNull();
     }
+    @ParameterizedTest
+    @ValueSource(strings = {"DONE", "ABORTED", "EXPIRED", "CANCELED"})
+    void mismatchedIdentityNeverFinalizesEvenWithTerminalStatus(String status) {
+        String valid = body(status);
+        for (String invalid : new String[]{
+                valid.replace("toss-payment-key-123", "foreign-key"),
+                valid.replace("\"orderId\":\"1\"", "\"orderId\":\"another-order\""),
+                valid.replace("\"orderId\":\"1\"", "\"orderId\":1"),
+                valid.replace("100000", "99999"),
+                valid.replace("100000", "\"100000\""),
+                valid.replace("100000", "100000.0"), "{}", "[null]", "invalid-json"}) {
+            given(tossPaymentClient.find(anyString()))
+                    .willReturn(Optional.of(new TossPaymentSnapshot(status, approval.getAmount(), invalid)));
+            assertThat(executor.verify(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.UNRESOLVED);
+        }
+        then(tossPaymentClient).should(never()).confirm(any(), any(), anyLong(), any());
+    }
+
+    @Test
+    void canonicalSnapshotOverridesNumericOrderIdAndLegacyNullStillUsesOriginal() {
+        org.springframework.test.util.ReflectionTestUtils.setField(approval, "pgOrderId", "pc_canonical");
+        given(tossPaymentClient.confirm(PaymentFixture.DEFAULT_PAYMENT_KEY, "pc_canonical",
+                PaymentFixture.DEFAULT_AMOUNT, "approve-1")).willReturn(TossOutcome.unknown("timeout"));
+        assertThat(executor.execute(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.UNRESOLVED);
+        org.springframework.test.util.ReflectionTestUtils.setField(approval, "pgOrderId", null);
+        given(tossPaymentClient.confirm(PaymentFixture.DEFAULT_PAYMENT_KEY, "1",
+                PaymentFixture.DEFAULT_AMOUNT, "approve-1")).willReturn(TossOutcome.unknown("timeout"));
+        assertThat(executor.execute(approval).outcome().kind()).isEqualTo(ApprovalOutcome.Kind.UNRESOLVED);
+    }
+
 }

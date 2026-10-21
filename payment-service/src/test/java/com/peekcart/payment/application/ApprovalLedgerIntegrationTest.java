@@ -192,7 +192,8 @@ class ApprovalLedgerIntegrationTest extends AbstractIntegrationTest {
 
     private PaymentApproval beginApproval() {
         approvalService.beginApproval(PaymentFixture.DEFAULT_USER_ID, PaymentFixture.DEFAULT_ORDER_ID,
-                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_AMOUNT);
+                PaymentFixture.DEFAULT_PAYMENT_KEY, PaymentFixture.DEFAULT_AMOUNT,
+                paymentRepository.findByOrderId(PaymentFixture.DEFAULT_ORDER_ID).orElseThrow().getPgOrderId());
         approvalService.applyStockApprovalResult(PaymentFixture.DEFAULT_ORDER_ID, true);
         return approvalService.claimForDispatch(PaymentFixture.DEFAULT_ORDER_ID).orElseThrow();
     }
