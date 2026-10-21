@@ -26,3 +26,9 @@ Root가 실제 product ConfigData/production SchedulingConfig/Boot auto-configur
 ## 3. 해석과 후속
 
 결과는 해당 fixture의 유한 capacity 경계다. 실제7잡 비용/동시 scheduler contention/운영 적정성/허용 TPS나 지연 기준은 미측정이다. D078⑥ 전체해결이나 GKE/노드/Billing 결론이 아니다. 실제 sweeper DB/락/회수 계약은 기존 검사와 구분하고, jitter/DLQ 측정은 별도 PR로 남긴다. root 소유 TASKS/PHASE/master는 수정하지 않는다. 별도 Codex 리뷰 미호출.
+
+## 첫 Actions와 좁은 등록 검사 교정
+
+2a3b2fe/run39622466849의target3case는모두line75의Runnable타입가정에서실패했다. 실제wrapper는Task.OutcomeTrackingRunnable이며기존config/core/단일빈/등록수assertion까지는통과했다. 점유검사/D078_SCHEDULER marker는0으로capacity결과는미측정이다. 원XML/log/API metadata/hash를보존한다.
+
+Root 승인교정은공개Runnable.run으로등록작업이정확probe.tick을호출하는지검사하는것이다. 현재검사thread만별도counter에세어다른schedulerthread의자동tick으로target검사가오탐하지않게한다. 다른probe/빈등록음성은거부하고, 직접검사이후새자동tick을따로확인한다. fragilewrapper타입/private delegate검사는없다. 기존3/4blocker/pool1/release기준은불변이며새Actions3case실측전P1–P3미완유지다.
