@@ -106,6 +106,7 @@ class Handler(BaseHTTPRequestHandler):
         if approval is not None:
             if script == "fence" and resolved:
                 approval["status"] = "ABORTED"
+                approval["balanceAmount"] = 0
             self._send(200, approval)
             return
         if script == "fence":
@@ -347,9 +348,11 @@ def _self_test():
     check("fence confirm: 결과 불명", status, 500)
     status, payload = get("/v1/payments/e2e-fence-x-1")
     check("fence lookup: 확정 전 READY", payload.get("status"), "READY")
+    check("fence unresolved has no invented no-charge balance", "balanceAmount" in payload, False)
     post("/__resolve-approval/e2e-fence-x-1", "", chunked=False)
     status, payload = get("/v1/payments/e2e-fence-x-1")
     check("fence lookup: 명시 확정 후 ABORTED", payload.get("status"), "ABORTED")
+    check("fence resolved exact no-charge balance", (type(payload.get("balanceAmount")), payload.get("balanceAmount")), (int, 0))
 
     # 원장이 빈 키를 기록하면 시나리오의 호출 대조가 전부 무의미해진다.
     _, ledger = get("/__ledger")
@@ -360,7 +363,7 @@ def _self_test():
     if fails:
         print("self-test 실패 %d건" % fails)
         return 1
-    print("self-test 통과 (9종)")
+    print("self-test 통과 (11종)")
     return 0
 
 

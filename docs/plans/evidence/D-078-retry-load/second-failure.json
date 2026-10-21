@@ -1,0 +1,23 @@
+{
+  "run_id": 39628723409,
+  "job_id": 119321327775,
+  "artifact_id": 12357673900,
+  "head": "1881dddee87baef17938822b0d9698a46cd6a460",
+  "cases": 4,
+  "failures": 4,
+  "diagnostic_rows": 108,
+  "observed": "All failures nonoptimistic; no inventory arrival; transient stock100 vs expected97. Persistent cases4deliveries with real delays; no optimistic success claim.",
+  "source_defect": "generated44character eventId exceeds36char DB columns; retrospective exception cause unavailable",
+  "files": {
+    "second-product.xml.gz": {
+      "raw_sha256": "a1f0c4f201fc454bb67b95b4b137cb217989648c263e9eae00190f9d336d18a7",
+      "raw_bytes": 39254,
+      "gzip_sha256": "58268c141c0bdae2aa02b3c37cdc94508de0e76039178c771f244da432071b94"
+    },
+    "second-product-job.log.gz": {
+      "raw_sha256": "9efffdc417db1687040cbc15b6d0a06c8d1f5295c3538a02feb4c867cc08e50b",
+      "raw_bytes": 26951,
+      "gzip_sha256": "08f4b388f9257d1d225953860ad53f2e27bfc6652561646c103cb31b1977b2e7"
+    }
+  }
+}

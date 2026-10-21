@@ -1,0 +1,127 @@
+package com.peekcart.global.kafka;
+
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.OffsetSpec;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.config.ConfigResource;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.kafka.KafkaContainer;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/** Temporary isolated probe; copied to evidence and removed before shipping. */
+class DlqRetentionProbeTest {
+    @Test
+    void defaultRetentionSeparatesExpiredAndRecentExactTimestamps() throws Exception {
+        Path evidence = Path.of("/private/tmp/d065-dlq-retention-probe");
+        Files.createDirectories(evidence);
+        long oldTimestamp = 1_757_000_123_456L;
+        String oldTopic = "probe-expired-timestamp";
+        String recentTopic = "probe-recent-timestamp";
+        TopicPartition old = new TopicPartition(oldTopic, 0);
+        TopicPartition recent = new TopicPartition(recentTopic, 0);
+        try (KafkaContainer kafka = new KafkaContainer("apache/kafka:3.8.1")) {
+            kafka.start();
+            try {
+                log("container-start=" + kafka.getCurrentContainerInfo().getState().getStartedAt());
+                String bootstrap = kafka.getBootstrapServers();
+                try (Admin admin = Admin.create(Map.of("bootstrap.servers", bootstrap,
+                        "request.timeout.ms", "2000", "default.api.timeout.ms", "2000"))) {
+                    // order.created is not a payment-owned NewTopic; preserve actual broker defaults.
+                    admin.createTopics(List.of(new NewTopic(oldTopic, 1, (short) 1),
+                            new NewTopic(recentTopic, 1, (short) 1))).all().get(3, TimeUnit.SECONDS);
+                    String brokerId = Integer.toString(admin.describeCluster().nodes().get(3, TimeUnit.SECONDS)
+                            .iterator().next().id());
+                    var resources = List.of(new ConfigResource(ConfigResource.Type.BROKER, brokerId),
+                            new ConfigResource(ConfigResource.Type.TOPIC, oldTopic),
+                            new ConfigResource(ConfigResource.Type.TOPIC, recentTopic));
+                    var configs = admin.describeConfigs(resources).all().get(3, TimeUnit.SECONDS);
+                    List<String> names = List.of("log.initial.task.delay.ms", "log.retention.check.interval.ms",
+                            "log.retention.hours", "log.retention.ms", "retention.ms", "segment.ms", "cleanup.policy",
+                            "message.timestamp.type", "message.timestamp.before.max.ms");
+                    configs.forEach((resource, config) -> names.forEach(name -> {
+                        var entry = config.get(name);
+                        if (entry != null) log("config " + resource.name() + " " + name + "=" + entry.value()
+                                + " source=" + entry.source());
+                    }));
+                    long recentTimestamp = System.currentTimeMillis() - 60_000;
+                    try (KafkaProducer<String, String> producer = new KafkaProducer<>(Map.of(
+                            "bootstrap.servers", bootstrap,
+                            "key.serializer", "org.apache.kafka.common.serialization.StringSerializer",
+                            "value.serializer", "org.apache.kafka.common.serialization.StringSerializer",
+                            "acks", "all", "max.block.ms", "3000", "delivery.timeout.ms", "5000",
+                            "request.timeout.ms", "3000"))) {
+                        log("ack old=" + producer.send(new ProducerRecord<>(oldTopic, 0, oldTimestamp,
+                                "expired", "fixture")).get(5, TimeUnit.SECONDS) + " timestamp=" + oldTimestamp);
+                        log("ack recent=" + producer.send(new ProducerRecord<>(recentTopic, 0, recentTimestamp,
+                                "recent", "fixture")).get(5, TimeUnit.SECONDS) + " timestamp=" + recentTimestamp);
+                    }
+                    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(45);
+                    String previous = "";
+                    boolean expired = false;
+                    while (System.nanoTime() < deadline) {
+                        var starts = admin.listOffsets(Map.of(old, OffsetSpec.earliest(), recent, OffsetSpec.earliest()))
+                                .all().get(3, TimeUnit.SECONDS);
+                        var ends = admin.listOffsets(Map.of(old, OffsetSpec.latest(), recent, OffsetSpec.latest()))
+                                .all().get(3, TimeUnit.SECONDS);
+                        String ranges = "old=" + starts.get(old).offset() + "/" + ends.get(old).offset()
+                                + " recent=" + starts.get(recent).offset() + "/" + ends.get(recent).offset();
+                        if (!previous.equals(ranges)) { log("ranges " + ranges); previous = ranges; }
+                        if (starts.get(old).offset() == 1) {
+                            assertThat(ends.get(old).offset()).isEqualTo(1);
+                            assertThat(starts.get(recent).offset()).isZero();
+                            assertThat(ends.get(recent).offset()).isEqualTo(1);
+                            expired = true;
+                            break;
+                        }
+                        Thread.sleep(250);
+                    }
+                    assertThat(expired).as("expired record removed under actual default cleanup").isTrue();
+                    try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(Map.of(
+                            "bootstrap.servers", bootstrap,
+                            "key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer",
+                            "value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer",
+                            "enable.auto.commit", "false", "auto.offset.reset", "earliest",
+                            "default.api.timeout.ms", "2000", "request.timeout.ms", "2000"))) {
+                        consumer.assign(List.of(old, recent));
+                        consumer.seekToBeginning(List.of(old, recent));
+                        long readDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                        int oldCount = 0, recentCount = 0;
+                        while (System.nanoTime() < readDeadline) {
+                            var records = consumer.poll(Duration.ofMillis(250));
+                            for (var record : records) {
+                                if (record.topic().equals(oldTopic)) oldCount++;
+                                else {
+                                    assertThat(record.timestamp()).isEqualTo(recentTimestamp);
+                                    recentCount++;
+                                }
+                            }
+                            if (recentCount > 0) break;
+                        }
+                        log("read old=" + oldCount + " recent=" + recentCount);
+                        assertThat(oldCount).isZero();
+                        assertThat(recentCount).isEqualTo(1);
+                    }
+                }
+            } finally {
+                String filtered = kafka.getLogs().lines().filter(line ->
+                        (line.contains("probe-expired-timestamp") || line.contains("probe-recent-timestamp"))
+                                && (line.contains("Delet") || line.contains("Increment") || line.contains("Roll")))
+                        .reduce("", (a, b) -> a + b + "\n");
+                Files.writeString(evidence.resolve("broker-retention.log"), filtered);
+            }
+        }
+    }
+    private static void log(String message) { System.out.println("RETENTION-PROBE " + Instant.now() + " " + message); }
+}

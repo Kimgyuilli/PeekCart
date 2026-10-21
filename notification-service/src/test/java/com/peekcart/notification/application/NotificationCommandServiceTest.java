@@ -1,6 +1,6 @@
 package com.peekcart.notification.application;
 
-import com.peekcart.global.port.SlackPort;
+import com.peekcart.notification.application.port.UserNotificationPort;
 import com.peekcart.notification.domain.model.Notification;
 import com.peekcart.notification.domain.model.NotificationType;
 import com.peekcart.notification.domain.repository.NotificationRepository;
@@ -23,7 +23,7 @@ class NotificationCommandServiceTest {
 
     @InjectMocks NotificationCommandService notificationCommandService;
     @Mock NotificationRepository notificationRepository;
-    @Mock SlackPort slackPort;
+    @Mock UserNotificationPort userNotificationPort;
 
     @Test
     @DisplayName("createNotification: 알림이 저장된다")
@@ -49,6 +49,6 @@ class NotificationCommandServiceTest {
         notificationCommandService.createNotification(
                 NotificationFixture.DEFAULT_USER_ID, NotificationType.ORDER_CREATED, NotificationFixture.DEFAULT_MESSAGE);
 
-        then(slackPort).should().send(NotificationFixture.DEFAULT_MESSAGE);
+        then(userNotificationPort).should().send(NotificationFixture.DEFAULT_MESSAGE);
     }
 }
