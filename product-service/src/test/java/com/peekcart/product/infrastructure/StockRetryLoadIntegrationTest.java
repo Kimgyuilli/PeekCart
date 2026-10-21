@@ -151,6 +151,7 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
                 row("failure coordinate=" + record.topic() + "/" + record.partition() + "/"
                         + record.offset() + " key=" + record.key() + " attempt=" + attempt
                         + " optimistic=" + optimistic + " type=" + exception.getClass().getName());
+                if (!optimistic && attempt == 1) exception.printStackTrace(System.out);
             }
         });
         doAnswer(invocation -> {
@@ -307,14 +308,20 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
     }
 
     private String payload(int partition) {
-        return "{\"eventId\":\"" + run + "-" + partition + "\",\"payload\":{\"orderId\":"
+        return "{\"eventId\":\"" + eventId(partition) + "\",\"payload\":{\"orderId\":"
                 + (10_000 + partition) + ",\"items\":[{\"productId\":" + productId + ",\"quantity\":1}]}}";
+    }
+
+    private String eventId(int partition) {
+        // Production event IDs are UUIDs; both processed_events and reservations allow 36 characters.
+        return UUID.nameUUIDFromBytes((run + ":" + partition).getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     private RecordMetadata send(int partition, String key, String value) {
         RecordMetadata sent = template.send(new ProducerRecord<>(TOPIC, partition, key, value))
                 .orTimeout(10, TimeUnit.SECONDS).join().getRecordMetadata();
-        row("ack coordinate=" + sent.topic() + "/" + sent.partition() + "/" + sent.offset() + " key=" + key);
+        row("ack coordinate=" + sent.topic() + "/" + sent.partition() + "/" + sent.offset() + " key=" + key
+                + " event=" + eventId(partition));
         return sent;
     }
 
