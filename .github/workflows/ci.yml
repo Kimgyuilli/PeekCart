@@ -157,6 +157,30 @@ jobs:
           fi
 
 
+      - name: Verify local DLQ contract safety
+        timeout-minutes: 8
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .cache/dlq-contract
+          python3 scripts/tests/test_dlq_contract_preflight.py
+          python3 scripts/tests/dlq_contract_lab.py --evidence-dir .cache/dlq-contract/evidence 2>&1 | tee .cache/dlq-contract/lab.log
+          python3 -O scripts/tests/test_dlq_contract_cleanup.py 2>&1 | tee .cache/dlq-contract/cleanup-controls.log
+
+      - name: Clean up owned DLQ contract fixture
+        if: always()
+        timeout-minutes: 2
+        run: python3 scripts/tests/dlq_contract_lab.py --cleanup --evidence-dir .cache/dlq-contract/evidence
+
+      - name: Upload DLQ contract evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dlq-contract-safety-${{ github.sha }}
+          path: .cache/dlq-contract/
+          if-no-files-found: ignore
+          retention-days: 7
+
       # shard 커버리지 — settings.gradle 의 모듈이 test 매트릭스에 정확히 1회 나타나는가.
       # 누락되면 그 모듈 테스트가 조용히 사라지고, 중복되면 merge-multiple(last-writer-wins)이
       # 증적을 덮는다. dockerfile-module-sync-lint 와 같은 종류의 실패를 막는다.
@@ -445,8 +469,8 @@ jobs:
       fail-fast: false
       matrix:
         # 도메인 5서비스(ADR-0010 §5) + 인프라 게이트웨이 1 = 6 (구현 ③ PR3a).
-        # 주의: image-contract-lint 의 matrix 추출은 연속된 '- item' 행만 읽는다 — 항목 사이에
-        # 주석을 끼우면 그 뒤가 잘려 canonical 대조가 조용히 어긋난다.
+        # 주의: image-contract-lint 는 연속된 '- item' 행만 추출한다. 항목 사이에 주석을 넣으면
+        # 추출 목록이 canonical 과 달라져 lint 가 불일치와 exit 1 을 보고한다.
         service:
           - notification-service
           - user-service
@@ -650,8 +674,8 @@ jobs:
       fail-fast: false
       matrix:
         # 도메인 5서비스(ADR-0010 §5) + 인프라 게이트웨이 1 = 6 (구현 ③ PR3a).
-        # 주의: image-contract-lint 의 matrix 추출은 연속된 '- item' 행만 읽는다 — 항목 사이에
-        # 주석을 끼우면 그 뒤가 잘려 canonical 대조가 조용히 어긋난다.
+        # 주의: image-contract-lint 는 publish matrix 도 고정 canonical 집합과 대조한다. 항목 사이에
+        # 주석을 넣으면 뒤 항목이 추출되지 않아 lint 가 불일치와 exit 1 을 보고한다.
         service:
           - notification-service
           - user-service
