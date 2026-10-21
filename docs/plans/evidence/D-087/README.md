@@ -24,7 +24,7 @@ python3 -B scripts/ci-build-profile-selftest.py
 python3 -B scripts/ci-build-profile-selftest.py --mutants
 ```
 
-전체10 method/8 wrong-implementation control은 Actions 실행 대상이다. `minimal.txt`는 정상 fresh/별도 export 시간의 최소 로컬1 method PASS이며 전체 통과 증거가 아니다. 로컬 Gradle/Docker 실행은 없다. exact CI policy body를 mock하는 정상/각 child rc23 대조도 전체 suite에 포함돼 새 fixture와 mutants의 실패 전파를 확인한다.
+첫 Actions39587257345(d0ec) lint의10 method/8 control은 통과했다. 이미지 build 뒤 collector의 full ref 인자 오류로6 images가 실패했고 실제 profile/export/health smoke는 미실행이다. 수정 후 전체10 method/9 wrong-implementation control은 새 Actions 실행 대상이다. `minimal.txt`는 정상 fresh/별도 export 시간의 최소 로컬1 method PASS이며 전체 통과 증거가 아니다. 로컬 Gradle/Docker 실행은 없다. exact CI policy body를 mock하는 정상/각 child rc23 대조도 전체 suite에 포함돼 새 fixture와 mutants의 실패 전파를 확인한다.
 
 현재 실제 새 CI profile은 아직 수집 전이다. 분석 결과/실행 SHA/6서비스의 fresh·cached 상태는 Actions 산출물을 읽은 뒤 추가하며, 지금 새 비중이나 최적화 결론을 확정하지 않는다.
 
@@ -40,3 +40,9 @@ python3 -B scripts/ci-build-profile-selftest.py --mutants
 - [build-push-action v6 source](https://raw.githubusercontent.com/docker/build-push-action/v6/src/main.ts): build metadata 및 record/summary 동작을 확인했다. ref는 실제 원 job metadata에도 있다.
 
 별도 Codex 리뷰 미호출. 전체 CI와 정확 head 독립 검토는 대기이며 shared TASKS/PHASE/master는 root 소유다.
+
+## 첫 실제 실행 실패와 수정
+
+`first-attempt/manifest.json`은 d0ec/run39587257345/job119180029499의 원 notification log와 artifact bytes를 gzip/hash로 보존한다. credential 패턴 검출0을 확인했다. 원 이미지 build는 성공했지만 collector가 `builder/node/id` 전체를 CLI record ID로 넘겨 `no record found`로 실패했다. 같은 job의 action post는 `--builder <builder> <id>`로 정상 export했다. 이것은 계측 구현 오류이며 새 profile 측정은 아니다.
+
+수정은 qualified ref의 builder/native record ID를 분리해 명시적으로 전달한다. 전체 ref는 증거에 그대로 보존하고 latest-record fallback은 없다. 기존 record method 안에서 image/export 성공 argv와 각각 logs/export rc23의 실패 전파를 검사하며, 원 오류를 되살리는9번째 mutant를 추가했다. 로컬은 이1method(5 paired cases)만 PASS이며 전체 suite/9mutants/실제6 images는 Actions에서 검증한다. 초기 `manifest.json`은 source_ref c5b33 시점의 기록이며 수정 source hash로 오해하지 않는다.
