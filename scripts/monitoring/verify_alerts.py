@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import time
@@ -58,6 +59,38 @@ def assert_alerting_instances(uid, rule):
     assert {a['labels'].get('application') for a in rule['alerts']} == CONTRACT[uid][0], uid
     if uid.startswith('peekcart-cache-fallback'):
         assert {a['labels'].get('cache') for a in rule['alerts']} == {'product', 'products', 'productStock'}, uid
+
+
+def slack_message_fields(notification):
+    """Return only Slack message text and attachment text/field values."""
+    values = [notification.get('text', '')]
+    for attachment in notification.get('attachments', []):
+        if not isinstance(attachment, dict):
+            continue
+        values.extend((attachment.get('title', ''), attachment.get('text', '')))
+        for field in attachment.get('fields', []):
+            if isinstance(field, dict):
+                values.extend((field.get('title', ''), field.get('value', '')))
+    return '\n'.join(str(value) for value in values if value)
+
+
+def assert_operations_routes_are_separate(notifications, expected, default_signals):
+    """Require each operations signal in its own captured Slack request."""
+    messages = [slack_message_fields(notification) for notification in notifications]
+    routed = {}
+    for signal in expected:
+        matches = [i for i, message in enumerate(messages)
+                   if re.search(rf'(?i)signal\s*=\s*{re.escape(signal)}\b', message)]
+        assert matches, ('operations Slack payload is missing a matched signal', signal, messages)
+        routed[signal] = matches[0]
+    assert len(set(routed.values())) == len(expected), (
+        'matched signals must arrive in separate Slack requests', routed, messages
+    )
+    for signal in default_signals:
+        assert not any(re.search(rf'(?i)signal\s*=\s*{re.escape(signal)}\b', message)
+                       for message in messages), (
+            'default-route signal leaked into operations Slack payload', signal
+        )
 
 
 def main():
@@ -262,14 +295,24 @@ def main():
         notification_text = json.dumps(notifications, ensure_ascii=False).lower()
         assert notifications, 'matched operations alerts must reach the local receiver stub'
         assert 'outbox' in notification_text and 'dlq' in notification_text, notification_text
-        routed_signals = {
-            alert.get('labels', {}).get('signal')
-            for notification in notifications
-            for alert in notification.get('alerts', [])
-        }
-        assert routed_signals == {'outbox-publish', 'dlq'}, (
-            'operations receiver must get both matched signals and no default-route signal', routed_signals
-        )
+        expected_signals = {'outbox-publish', 'dlq'}
+        default_signals = {
+            rule['labels']['signal']
+            for uid, rule in rules.items()
+            if uid in CONTRACT and rule['labels'].get('signal')
+        } - expected_signals
+        # Grafana's Slack contact point sends a Slack message payload, not the webhook
+        # notifier's `alerts[].labels` schema. Inspect only Slack text/attachment fields
+        # and require separate requests so grouping both signals cannot false-pass.
+        assert_operations_routes_are_separate(notifications, expected_signals, default_signals)
+        try:
+            assert_operations_routes_are_separate(
+                [{'text': 'signal = outbox-publish\nsignal = dlq'}], expected_signals, default_signals
+            )
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('route assertion accepted both signals in one Slack request')
         set_mode('healthy')
         resolved = sample_for('resolved', 390)
         assert all_normal(resolved[-1]), 'Recovery must be healthy zero, never absent/NoData'
