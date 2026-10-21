@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- This test alone retains consumer lifecycle evidence; no config dumps or record payloads. -->
+<configuration>
+    <appender name="DLQ_LIFECYCLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder><pattern>%date{ISO8601} [%thread] %logger - %msg%n</pattern></encoder>
+    </appender>
+    <logger name="org.apache.kafka.clients.consumer.internals.ConsumerCoordinator" level="INFO" additivity="false">
+        <appender-ref ref="DLQ_LIFECYCLE"/>
+    </logger>
+    <logger name="org.apache.kafka.clients.consumer.internals.SubscriptionState" level="INFO" additivity="false">
+        <appender-ref ref="DLQ_LIFECYCLE"/>
+    </logger>
+    <logger name="org.apache.kafka.clients.consumer.internals.ConsumerRebalanceListenerInvoker" level="INFO" additivity="false">
+        <appender-ref ref="DLQ_LIFECYCLE"/>
+    </logger>
+    <root level="OFF"/>
+</configuration>
