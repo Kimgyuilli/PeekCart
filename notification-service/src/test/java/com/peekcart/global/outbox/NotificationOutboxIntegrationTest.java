@@ -106,6 +106,69 @@ class NotificationOutboxIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("D-092 runbook 재개 SQL은 MySQL에서 FAILED domain 한 행만 바꾸고 JSON payload 중복은 보류한다")
+    void failedDomainRecoverySqlIsGuardedByMySql() {
+        insertRecoveryFixture(9001L, "d092-domain-1", "d092-domain-1", "FAILED", "DOMAIN");
+        insertRecoveryFixture(9002L, "d092-duplicate-payload", "d092-duplicate-payload", "FAILED", "DOMAIN");
+        insertRecoveryFixture(9003L, "d092-duplicate-other", "d092-duplicate-payload", "FAILED", "DOMAIN");
+        insertRecoveryFixture(9004L, "d092-pending-1", "d092-pending-1", "PENDING", "DOMAIN");
+        insertRecoveryFixture(9005L, "d092-replay-1", "d092-replay-payload", "FAILED", "REPLAY");
+
+        String duplicateCountSql = """
+                SELECT COUNT(*) FROM outbox_events
+                 WHERE JSON_UNQUOTE(JSON_EXTRACT(payload, '$.eventId')) = ?
+                """;
+        String recoverySql = """
+                UPDATE outbox_events
+                   SET status = 'PENDING', retry_count = 0, last_attempted_at = NULL
+                 WHERE id = ?
+                   AND event_id = ?
+                   AND status = 'FAILED'
+                   AND published_at IS NULL
+                   AND (record_kind IS NULL OR record_kind = 'DOMAIN')
+                   AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.eventId')) = event_id
+                """;
+
+        assertThat(reissueIfUnique(duplicateCountSql, recoverySql, "d092-domain-1", 9001L,
+                "d092-domain-1")).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForMap(
+                "SELECT status, retry_count, event_id, payload FROM outbox_events WHERE id = 9001"))
+                .containsEntry("status", "PENDING")
+                .containsEntry("retry_count", 0)
+                .containsEntry("event_id", "d092-domain-1")
+                .containsEntry("payload", "{\"eventId\":\"d092-domain-1\"}");
+
+        assertThat(reissueIfUnique(duplicateCountSql, recoverySql, "d092-duplicate-payload", 9002L,
+                "d092-duplicate-payload")).isZero(); // read-only preflight rejects before UPDATE
+        assertThat(jdbcTemplate.queryForList(
+                "SELECT status FROM outbox_events WHERE id IN (9002, 9003) ORDER BY id", String.class))
+                .containsExactly("FAILED", "FAILED");
+        // Mutation control: the conditional UPDATE alone accepts the otherwise valid target row.
+        // Therefore removing the cross-row duplicate preflight makes the recovery path unsafe.
+        assertThat(jdbcTemplate.update(recoverySql, 9002L, "d092-duplicate-payload")).isEqualTo(1);
+        assertThat(jdbcTemplate.update(recoverySql, 9004L, "d092-pending-1")).isZero();
+        assertThat(jdbcTemplate.update(recoverySql, 9005L, "d092-replay-1")).isZero();
+    }
+
+    private void insertRecoveryFixture(long id, String eventId, String payloadEventId,
+                                       String status, String recordKind) {
+        jdbcTemplate.update("""
+                INSERT INTO outbox_events
+                    (id, aggregate_type, aggregate_id, event_type, event_id, payload, status,
+                     retry_count, created_at, record_kind)
+                VALUES (?, 'D092', ?, 'd092.fixture', ?, ?, ?, 5, CURRENT_TIMESTAMP(6), ?)
+                """, id, eventId, eventId, "{\"eventId\":\"" + payloadEventId + "\"}", status, recordKind);
+    }
+
+    private int reissueIfUnique(String duplicateCountSql, String recoverySql,
+                                String payloadEventId, long id, String eventId) {
+        Integer matchingRows = jdbcTemplate.queryForObject(
+                duplicateCountSql, Integer.class, payloadEventId);
+        if (matchingRows == null || matchingRows != 1) return 0;
+        return jdbcTemplate.update(recoverySql, id, eventId);
+    }
+
+    @Test
     @DisplayName("app.outbox.* 는 base yml 이 소유한다 — 프로파일 override 없이 값이 바인딩된다 (ADR-0007)")
     void outboxSettingsAreOwnedByBaseYaml() {
         // 이 값들이 프로파일로 새면 환경마다 발행 정책이 갈라진다. 동작 정책은 base 소유가 계약이다.

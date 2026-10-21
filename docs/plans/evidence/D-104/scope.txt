@@ -1,0 +1,2 @@
+PASS: Bash comments only; Python AST identical excluding clip docstring; D103 helper/workflow unchanged
+PASS: PHASE4 outside the two PR3d paragraphs and delegated measurement/renderer-history ranges unchanged

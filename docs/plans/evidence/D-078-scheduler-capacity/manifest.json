@@ -1,0 +1,36 @@
+{
+  "run": 39622466849,
+  "job": 119299244681,
+  "artifact": 12355052825,
+  "artifact_member": "product-service/build/test-results/test/TEST-com.peekcart.global.config.SchedulerPoolCapacityTest.xml",
+  "original_downloaded_zip_sha256": "d3df8c0c86b9dc0834561c5339d0939fafbb33ddabd355aea16b0a5175e090fa",
+  "contract": "Original target XML/job log/API metadata preserved as gzip without decompressed-byte edits; full unrelated shard ZIP not copied.",
+  "original_test_source_sha256": "c5e8a5fa5491ea1443c3efe7ccda9f3ff86c0f4e382e2b79ebcade8970062c2d",
+  "bounded_sensitive_pattern_scan": "GitHub token/JWT/private-key patterns found0matches in saved target XML and job log; not universal secret proof.",
+  "files": [
+    {
+      "file": "first-scheduler.xml.gz",
+      "raw_bytes": 8240,
+      "raw_sha256": "44d59764ffa7f64e0f7dbea378727afe661c890d5d06c20ff8b2a5fabc422289",
+      "stored_sha256": "d45a912392df5e6a66348b221b06fa2c0539ba8ba4701da26db58d0ed7ac75c5"
+    },
+    {
+      "file": "first-product.log.gz",
+      "raw_bytes": 26317,
+      "raw_sha256": "166691c78f0bb9dddc9a7af9f5b5aed6831a6f83aeba487a4c82611df701d950",
+      "stored_sha256": "1f9535c0dcebe40ad95b7dc8f2ec15c16ca2d2e401f62cf21ea651f7483e0f6e"
+    },
+    {
+      "file": "first-jobs.json.gz",
+      "raw_bytes": 49557,
+      "raw_sha256": "75e2e383af95bf7230ab071d5db985f7d64fa55b39da66cd11efd8ff6efe7d43",
+      "stored_sha256": "28aba22b50e3bdaa4acb99b971764fa411dbd5204af49f35d1329a452ccacc63"
+    },
+    {
+      "file": "first-artifacts.json.gz",
+      "raw_bytes": 17315,
+      "raw_sha256": "7f7c2f40fb1f3bdc51d61ed59b9bbc1a75f6f5b923fbea7ed483c2c2c1dc5293",
+      "stored_sha256": "8cf5b9ca022cc2b1c735b42659e58f9ba4b59a92c92d100159789fa2d4727a25"
+    }
+  ]
+}

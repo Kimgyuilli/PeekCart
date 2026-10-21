@@ -31,7 +31,7 @@
 
 | # | 주장하는 불변식 | 주입 수단 | 실패 지점 | 부재 창 | 복원 확인 |
 |---|---|---|---|---|---|
-| ① | 시작 이벤트는 실제 outbox poller 를 지나야 예약에 닿는다 | ShedLock 행 선점 (해제는 `lock_until` UPDATE, DELETE 금지) | `reservation` + outbox `PENDING` 유지 | 30초 (poller 5초 × 6) | 행 삭제 후 같은 주문 예약 |
+| ① | 시작 이벤트는 실제 outbox poller 를 지나야 예약에 닿는다 | ShedLock 행 선점 (해제는 `lock_until` UPDATE, DELETE 금지) | `reservation` + outbox `PENDING` 유지 | 30초 (poller 5초 × 6) | `lock_until` 을 과거로 UPDATE 한 뒤 같은 주문 예약 |
 | ② | 예약은 product-service 의 소비로만 성립한다 | product-service 정지 | `reservation` + outbox `PUBLISHED` | 30초 | 재기동 후 밀린 예약 도착 |
 | ④ | readiness 는 업무 listener 부재를 group 검사로 잡는다 | ② 의 정지 상태 재사용 | `consumer-group` | 60초 (세션 타임아웃 45초 + 여유) | 재기동 후 readiness 통과 |
 | ③ | 시나리오 B 의 단언은 아무 취소가 아니라 예약 실패 취소를 본다 | 재고 100 으로 주문 | 예약 성공 관측 후 취소 부재 | 45초 고정 (유도 근거 없음) | — |
@@ -40,10 +40,23 @@
 
 ⑤·⑥ 은 compose 토폴로지 자체가 대상이라 스택 밖 경계로 옮길 수 없다.
 
+scenario_e는 `stock_reservations.expires_at` 저장값을 과거로 바꿔 만료 경로를 실행한다. 이는 영속 입력을
+바꾸는 것이며 애플리케이션 전체 시계를 제어하는 것은 아니다.
+
 **e2e 와 JVM 의 책임 경계 (see ADR-0032).** 실제 스택은 배선(토픽·group·HTTP 경로, 이미지에 실린
 설정·migration·스케줄러)을 맡고, JVM 은 도착한 입력으로 상태를 만드는 로직을 맡는다. e2e 단언은 배선을
 싣는 한 남기고, 로직이 e2e 에만 있으면 JVM 테스트를 더한다. "JVM 이 이미 덮는다" 는 그 결함을 주입해
-지목 테스트가 실패할 때만 인정한다. 대조군은 자기가 검증하는 단언을 따라간다.
+지목 테스트가 실패할 때만 인정한다. 대조군은 자기가 검증하는 단언을 따라간다. `common` DTO 를 공유하면
+같은 Java 타입을 컴파일하는 보장은 있지만, 직렬화된 JSON 필드명이나 서비스별 mapper 호환성까지 보장하지는
+않는다. 이를 주장하려면 실제 직렬화 결과와 소비자 필드 해석을 검증해야 한다. `userId` 를 `recipientId` 로
+직렬화하는 변이는 양쪽 `compileJava` 를 통과했지만 `JsonNode.get("userId")` 검증에서 실패했다. 이는 JSON
+계약 검증의 필요성을 보이는 사례이며 Pact 도입이 필요하다는 결론은 아니다.
+
+시간 수치는 측정 당시와 범위를 함께 읽는다. 2026-09-27 run
+[36338959413](https://github.com/Kimgyuilli/PeekCart/actions/runs/36338959413)의 scenarios 잡에서 인프라·토픽·앱
+기동은 합계 157초(36+49+72), 당시 네 시나리오는 82초(18+14+12+38)였다. 2026-10-17 run
+[38991415193](https://github.com/Kimgyuilli/PeekCart/actions/runs/38991415193)의 여섯 시나리오 잡은 시작부터
+끝까지 714초였다. 전자는 개별 단계 합계이고 후자는 잡 wall time이므로 같은 측정값처럼 비교하지 않는다.
 
 **PR 필수 체크 `gate` 는 최종 집계자다 (see ADR-0030).** `lint`·`test`·`guards`·
 `images`(6개 health smoke)·`e2e`(시나리오와 음성 대조군)의 실패·skip 중 하나라도
@@ -78,6 +91,10 @@
 ### 13-4. DLQ ID 예약과 트랜잭션
 
 실제 MySQL/Spring repository로 첫 INSERT의 self/parent root, 동시 같은·다른 좌표 적재, RR snapshot 이후 current read, 외부 트랜잭션 rollback 및 catch한 제약 예외의 rollback-only를 검증한다. PK 충돌과 같은 ID·좌표 재사용을 정상 좌표 중복 또는 새 적재로 ack하지 않는지 확인한다. attempt overflow/NULL 거절과 rollback 뒤 정상 재시도도 검사한다. 테스트 전용 NOT NULL 제약은 post-insert root 배정이 통과할 수 없게 한다. 별도 SQL prototype의 정상 재시작 결과는 JPA·비정상 crash·운영 전환 증거와 구분한다(see ADR-0043).
+
+### 13-5. 실제 signed Gateway의 닫힌 replay 진입점
+
+별도 Actions fixture는 실제 User signup/login/JWKS, Gateway RSA 내부 서명, 네 SIGNED_ONLY 리소스를 연결한다. 각 리소스에서 ADMIN의 exact disabled 응답, USER403, 위조·만료·직접 평문·잘못된 내부 공개키 거부와 정상 경로 복구를 확인한다. 다섯 단계마다 전체 ledger/outbox 불변을 대조하며 replay는 항상 꺼져 있다. 따라서 이 검증은 lastReplayBy 영속이나 실제 replay 발행·drain, 운영 키·GKE 경로의 증거가 아니다(see ADR-0017, ADR-0022).
 
 ---
 

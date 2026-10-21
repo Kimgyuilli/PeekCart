@@ -1,0 +1,19 @@
+RETENTION-PROBE 2026-10-21T09:36:07.557802Z container-start=2026-10-21T09:36:04.458310172Z
+RETENTION-PROBE 2026-10-21T09:36:08.244438Z config 1 log.retention.check.interval.ms=300000 source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.244567Z config 1 log.retention.hours=168 source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245017Z config 1 log.retention.ms=null source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245120Z config probe-recent-timestamp retention.ms=604800000 source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245174Z config probe-recent-timestamp segment.ms=604800000 source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245220Z config probe-recent-timestamp cleanup.policy=delete source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245263Z config probe-recent-timestamp message.timestamp.type=CreateTime source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245301Z config probe-recent-timestamp message.timestamp.before.max.ms=9223372036854775807 source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245345Z config probe-expired-timestamp retention.ms=604800000 source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245385Z config probe-expired-timestamp segment.ms=604800000 source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245423Z config probe-expired-timestamp cleanup.policy=delete source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245457Z config probe-expired-timestamp message.timestamp.type=CreateTime source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.245501Z config probe-expired-timestamp message.timestamp.before.max.ms=9223372036854775807 source=DEFAULT_CONFIG
+RETENTION-PROBE 2026-10-21T09:36:08.476201Z ack old=probe-expired-timestamp-0@0 timestamp=1757000123456
+RETENTION-PROBE 2026-10-21T09:36:08.484196Z ack recent=probe-recent-timestamp-0@0 timestamp=1792575308245
+RETENTION-PROBE 2026-10-21T09:36:08.515683Z ranges old=0/1 recent=0/1
+RETENTION-PROBE 2026-10-21T09:36:37.578303Z ranges old=1/1 recent=0/1
+RETENTION-PROBE 2026-10-21T09:36:37.815288Z read old=0 recent=1

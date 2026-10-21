@@ -1,0 +1,10 @@
+{
+  "kind": "hermetic real Bash loop with Docker-like stdin client; no actual Docker",
+  "fixedSourceSha256": "c6ad8616b83e714bd6b1f384fd75c01ca9c2dfafbecb2e0ee8ab59a59bc3b453",
+  "originalSemantics": "expected FAIL: only order-target observed",
+  "fixedSemantics": "six methods PASS including two groups and SQL input preservation",
+  "files": {
+    "pr212-stdin-original-negative.log": "d9b9877046215472f2fa215d4de74c31355bcfdb39692baf9bf355471630d9ce",
+    "pr212-stdin-fixed-positive.log": "105b13512e7c6c80f48d51a16eb744cd969b20cb317789f635587e0e824b426e"
+  }
+}

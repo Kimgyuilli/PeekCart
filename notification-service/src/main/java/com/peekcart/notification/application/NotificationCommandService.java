@@ -1,6 +1,6 @@
 package com.peekcart.notification.application;
 
-import com.peekcart.global.port.SlackPort;
+import com.peekcart.notification.application.port.UserNotificationPort;
 import com.peekcart.notification.domain.model.Notification;
 import com.peekcart.notification.domain.model.NotificationType;
 import com.peekcart.notification.domain.repository.NotificationRepository;
@@ -16,11 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationCommandService {
 
     private final NotificationRepository notificationRepository;
-    private final SlackPort slackPort;
+    private final UserNotificationPort userNotificationPort;
 
     public void createNotification(Long userId, NotificationType type, String message) {
         Notification notification = Notification.create(userId, type, message);
         notificationRepository.save(notification);
-        slackPort.send(message);
+        userNotificationPort.send(message);
     }
 }
