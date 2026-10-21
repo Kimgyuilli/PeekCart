@@ -133,7 +133,7 @@ def reject_constant(value):
 try:
     with io.open(path, encoding='utf-8') as source:
         doc = json.load(source, parse_constant=reject_constant)
-except (OSError, UnicodeError, ValueError):
+except (OSError, UnicodeError, ValueError, RecursionError):
     print('JSON 파싱 실패')
     sys.exit(2)
 

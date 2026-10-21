@@ -77,7 +77,7 @@ class RendererContractTest(unittest.TestCase):
 
     def test_empty_malformed_and_non_json_constants(self):
         for value in ('', ' ', '{', '{"items":', 'null', '[]',
-                      '{"run_id":"r","summary":"s","items":NaN}'):
+                      '{"run_id":"r","summary":"s","items":NaN}', '[' * 1500 + '0' + ']' * 1500):
             self.invalid(value, raw=True)
 
     def test_legacy_and_current_success(self):
