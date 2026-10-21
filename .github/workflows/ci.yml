@@ -161,6 +161,26 @@ jobs:
           bash scripts/ci-test-matrix-lint.sh
           bash scripts/ci-test-matrix-lint.sh --self-test
 
+      - name: Harness archive health
+        env:
+          HARNESS_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          [ -n "${HARNESS_BASE:-}" ] || { echo 'HARNESS_BASE is empty' >&2; exit 2; }
+          harness_shallow="$(git rev-parse --is-shallow-repository)" || {
+            harness_query_rc=$?
+            echo "Cannot read shallow state (exit $harness_query_rc)" >&2
+            exit "$harness_query_rc"
+          }
+          case "$harness_shallow" in
+            true) git fetch --unshallow --no-tags origin || exit "$?" ;;
+            false) ;;
+            *) echo "Unexpected shallow state: $harness_shallow" >&2; exit 2 ;;
+          esac
+          bash scripts/harness-context.sh --check --base "$HARNESS_BASE"
+          python3 -B scripts/harness-context-selftest.py
+          python3 -B docs/plans/evidence/D-099/check-mutants.py
+
   # ── test: 모듈 shard 매트릭스. 분해 전 단일 build 는 32m23s 였다(run 33314020601) ──
   # shard→모듈 매핑의 **단일 정본은 matrix.include[].modules** 다. Gradle 명령과
   # ci-test-matrix-lint 가 같은 필드를 읽는다 — 실행식과 검증식이 갈리면 lint 가

@@ -1,0 +1,10 @@
+empty-archive-allowed: REJECTED by test_empty_archive_and_digest_are_failures
+duplicate-id-allowed: REJECTED by test_duplicate_archive_id_is_failure
+base-ignored: REJECTED by test_relative_decrease_requires_explicit_base
+requested-base-replaced-by-head: REJECTED by test_explicit_older_base_is_not_replaced_with_current_head
+bad-revision-ignored: REJECTED by test_unknown_base_does_not_fall_back_to_current
+bad-source-ignored: REJECTED by test_git_source_failure_is_propagated
+archive-return-to-active-allowed: REJECTED by test_archive_return_to_active_preserves_total_but_is_regression
+always-success: REJECTED by test_header_only_archive_is_failure
+always-reject: REJECTED by test_normal_standalone_explicitly_reports_no_base
+PASS: 9 wrong-implementation controls rejected; source worktree untouched.
