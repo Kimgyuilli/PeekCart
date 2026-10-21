@@ -350,7 +350,10 @@ VALUES('fixture',1,'order.created',0,99,'fixture-group','RESOLVED_ORIGIN',NULL,N
                 time.sleep(.05)
             else:
                 stdout, stderr = writer.communicate(timeout=10) if writer.poll() is not None else ('', '')
-                raise AssertionError(f'backfill transaction did not reach observed pause (exit={writer.poll()}, stderr={stderr!r})')
+                state = self.sql('SELECT ID,COMMAND,TIME,STATE,INFO FROM information_schema.PROCESSLIST; '
+                                 'SELECT * FROM sys.innodb_lock_waits\\G', root=True, check=False)
+                raise AssertionError(f'backfill transaction did not reach observed pause (exit={writer.poll()}, '
+                                     f'stderr={stderr!r}, server={state.stdout!r})')
             self.sql(old_insert)
             stdout, stderr = writer.communicate(timeout=10)
             assert writer.returncode == 0, stderr
