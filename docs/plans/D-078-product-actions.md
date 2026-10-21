@@ -1,0 +1,37 @@
+---
+grade: M
+---
+# D-078 product barrier Actions 재현
+
+## 1. 명제와 코드 전제
+
+focused PASS나후속성공으로 원 barrier 실패원인을 해결했다고 쓰면 미완이다. 원 seed의 full product 실행, 실제 환경/순서/원 XML/log를 먼저 보존하고 실패하면 기존 진단을 읽는다. 30초 barrier·낙관충돌 최소1·재고 정합 기준은 바꾸지 않는다.
+
+| 코드 전제 | 확인 |
+|---|---|
+| base | main209 c9e12d695e21c348a82da78c6577eac7b2dd4d89에서 own tree 생성 |
+| 테스트 | product-service/src/test/java/com/peekcart/product/infrastructure/StockReservationLockBoundaryIntegrationTest.java SHA256083784f244e6bdb7c7348a7be420d7f61c6be6aa3928fd590e51ea698c4ad19c, 독립메모와 동일 |
+| 기존 진단 | before/after repository save, barrier identity/waiters/broken/generation, monotonic phaseHistory, 5초 DB wait/TRX/thread snapshot 및 제한된 query/socket 검증이 이미 있다. 재구현하지 않는다. |
+| 실행 | product-service/build.gradle이 testSeed를 받아 ClassOrderer.Random에 전달하고 scheduling/listener 기본off다. main CI는 Temurin17, SPRING_PROFILES_ACTIVE=test, :product-service:build를 실행한다. |
+| 재사용 | 기존 payment-dlq-reproduction.yml의 별도 Actions/원로그 tee/always artifact/새Testcontainers만 cleanup 형태를 좁게 재사용한다. shared ci.yml·제품·기존테스트는 수정하지 않는다. |
+
+CI 실행/증거 표면 때문에 M. 새 정책·의존성·아키텍처 결정이 없어 새 ADR은 없다. Root 소유 메모 docs/plans/evidence/D-078-product-barrier-review/README.md를 읽었으며 원실패1Timeout+4Broken과 후속 PASS/의도된 음성을 별개로 유지한다. 원5waiting만으로 동시 도착/같은 generation을 주장하지 않는다.
+
+## 2. 작업 항목
+
+- [ ] P1. 별도 .github/workflows/product-barrier-reproduction.yml을 추가한다. 이 workflow만 PR path trigger, workflow_dispatch 지원, contents:read다. 기존 CI/gate/publish는 바꾸지 않는다.
+- [ ] P2. 원seed1792523372921로 full :product-service:build를 한 번 실행한다. Temurin17/test profile, sourceHEAD/대상file hash/java-version/환경/실행명령을 기록한다. 먼저 기존 --info/runner log/XML에서 실제 class/method 순서를 확인하며 테스트 본문/진단은 그대로 유지한다. 순서 자료가 부족할 때만 작은 init 기록을 후속으로 검토한다. focused 실행/로컬Gradle/Docker/추가 자동retry는 없다.
+- [ ] P3. 원 Gradle log/XML/HTML과 신규 Testcontainers cleanup 증거를 always artifact로 보존한다. 실패 rc는 pipefail로 workflow에 전파한다. 이번job 시작 전에 없던 Testcontainers만 정리하며 운영 명령/외부PG/GKE는 없다.
+- [ ] P4. 첫 Actions의 exact checkout/JDK/profile/실제순서/원결과를 기록한다. 재현 시 기존 5초진단/phaseHistory부터 읽고 모호할 때만 catch 시각+barrier state 좁은 후속을 제안한다. PASS는 한 조건의 관측이고 원인해소/부하검증이 아니다.
+
+## 3. 검증과 후속 분리
+
+로컬은 YAML 구조·고정 source hash·명령/실패전파의 경량 확인만 한다. 실제 product 실행은 첫 Actions에서 한다. 원상태 유지와 관측실패/빈 결과를 성공으로 취급하지 않는지 확인한다. 별도 Codex 리뷰 미호출.
+
+D-078⑤ jitter/Kafka retry·DLQ 부하와⑥ 실제 scheduler pool4 stress는 각각 별도 reviewable PR로 계획/실행한다. 이 barrier 테스트는 proxied consumer 직접호출이며 Kafka 재시도/DLQ 체인 검증이 아니다. PR199의 cache collector 변경은 이 작업에 포함하지 않는다. MySQL2000m 천장/노드경합/GKE적용/Billing 및 원원인 미확정은 그대로 남긴다. TASKS/PHASE/master는 Root 소유다.
+
+Root가 M계획과 최소성 조건을 승인했다. 첫실행은 별도 init/listener 없이 기존 --info/XML/원runner로그만 사용한다. 완전한 실제 실행순서를 확보하지 못하면 그 한계를 명시하고 후속기록 범위를 좁힌다.
+
+## 재개 시 비교 기준
+
+최종PR base는 main216 797fc30d1661353aaf3d0d878c0e34f3d0347007이다. 기존3WIP 파일을 보존해 fast-forward했고 Java hash083784…는 동일하다. 대상 barrier testcase 누락/skip을 성공으로 취급하지 않는 작은 stdlib XML 확인을 Actions 안에 추가한다. 새 진단/참여자억제 음성은 재구현하지 않는다.
