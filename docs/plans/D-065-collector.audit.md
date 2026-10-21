@@ -20,3 +20,10 @@
 - ship preflight: ok, grade M, consistency precheck: ok, 분류 검사: scripts 3개 chore / 계획·audit 2개 docs, commit/title/body writing lint와 diff 검사 통과.
 - 전체 GitHub Actions는 대기 중이다. draft를 유지하며 별도 승인 전 병합하지 않는다.
 - TASKS/progress/master plan 갱신과 D-065 부분 완료 기록은 주 작업자가 담당한다. 로컬 실제 DB/Kafka/GKE와 replay 개방은 수행하지 않았다.
+
+## 2026-10-21 — 실제 main4a4 통합
+
+- root 요청으로 e8de clean tree에서 실제 main4a4를 정상 merge하여 7c597cd 생성. 기존 authored patch 전체가 byte 동일, SHA256 7827c0b96be74122cb340186e2fe9b7f2c559897ec7f10ae4ca988d23439e1f8.
+- session97118: 판정16 + adapter65/9methods PASS(218.951초), entrypoint lint/drift9 PASS. shell syntax/diff/consistency PASS. Python syntax 첫 명령의 경로 오타로 파일 없음이 나왔고 실제 경로 scripts/tests/replay-drain-collector-test.py로 바로 재실행하여 PASS. 오타 실패를 실행 PASS로 숨기지 않았다.
+- collector 실행 소스 변경 없음. PR201 writer가 main에 병합되었음을 미해결 설명에 반영했고 NOT NULL/실제 adapter/서명 gateway/운영 P22/GKE/replay개방은 분리 유지한다.
+- PR189 최신 전체 CI와 독립 exact-head delta 검토 대기. 이번 통합은 병합 승인이 아니며 추가 root 승인 없이 merge하지 않는다.
