@@ -18,6 +18,36 @@
       "raw_bytes": 182967,
       "raw_sha256": "6ffdfa07caff364d4bc55a60422079c1349e22afbd27c346297f5d669e686838",
       "stored_sha256": "6ffdfa07caff364d4bc55a60422079c1349e22afbd27c346297f5d669e686838"
+    },
+    {
+      "file": "second-job.log.gz",
+      "raw_bytes": 251815,
+      "raw_sha256": "e6ad3d275c6decfeb562b55ee5167d2f98ba6cb45c3ee373d199682b5b8516db",
+      "stored_sha256": "d232f5d3221268201737c414fde78f12159e54537817f75ac4320ac7bc1aa688"
+    },
+    {
+      "file": "second-artifacts.json.gz",
+      "raw_bytes": 748,
+      "raw_sha256": "63708a1986fab6f09913c1bf38009543a27309d4534b23910b27633f439401f3",
+      "stored_sha256": "134a10377f6a237c20fb2ff59e410403b53cb1c969ffcb06c565eda2b9e2e712"
+    },
+    {
+      "file": "second-jobs.json.gz",
+      "raw_bytes": 2639,
+      "raw_sha256": "0984da5da6d067ed4cd355d0712d6108a56a5410055a6344c24f598eefff0512",
+      "stored_sha256": "79bf0cc2d2027f141696a5970ed856a9a22478761d7aa815ad2f25a84dc27f10"
+    },
+    {
+      "file": "second-general-ci.json.gz",
+      "raw_bytes": 99,
+      "raw_sha256": "b0807f5568c3406156df70d9e344f21f90ef41d4afc6ac82c1d4f6da3f33d3a0",
+      "stored_sha256": "d9b3b3ba763d5e20fcf836d0f0181fddba0bd93d8f1200ac32f69a26a18eef3a"
+    },
+    {
+      "file": "second-artifact.zip",
+      "raw_bytes": 188171,
+      "raw_sha256": "d7e963e40624e37adb9039c7559096146d6d8112b021fbc2b9f4395a7ca9ba39",
+      "stored_sha256": "d7e963e40624e37adb9039c7559096146d6d8112b021fbc2b9f4395a7ca9ba39"
     }
   ]
 }

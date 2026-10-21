@@ -1,0 +1,80 @@
+{
+  "branch_head": "b4c374aaa00ff377b913a9d4bbaf41342d813307",
+  "dedicated_run": 39615964190,
+  "job": 119276965457,
+  "artifact": 12352517766,
+  "general_ci_run": 39615963575,
+  "actual_checkout": "370f04df83727cfd2d988e29caa70417bb3dda31",
+  "test_source_sha256": "083784f244e6bdb7c7348a7be420d7f61c6be6aa3928fd590e51ea698c4ad19c",
+  "java_version": "openjdk version \"17.0.20.1\" 2026-08-18\nOpenJDK Runtime Environment Temurin-17.0.20.1+1 (build 17.0.20.1+1)\nOpenJDK 64-Bit Server VM Temurin-17.0.20.1+1 (build 17.0.20.1+1, mixed mode, sharing)",
+  "command": "./gradlew -I build/product-barrier-reproduction/order.init.gradle :product-service:build -PtestSeed=1792523372921 --no-daemon --no-parallel --max-workers=1 --console=plain --info",
+  "environment": "SPRING_PROFILES_ACTIVE=test\ntestSeed=1792523372921",
+  "cleanup": "new testcontainers removed=6",
+  "gradle_result": "BUILD SUCCESSFUL in 3m 10s",
+  "workflow_result": "SUCCESS including corrected XML guard",
+  "xml_suites": 46,
+  "tests": 236,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "start_rows": 236,
+  "unique_start_rows": 236,
+  "classes": 46,
+  "start_xml_class_count_multisets_equal": true,
+  "barrier_suite": {
+    "name": "D-025 — consumer 경계 재고 동시성 계약 (ADR-0025 D1)",
+    "tests": "4",
+    "skipped": "0",
+    "failures": "0",
+    "errors": "0",
+    "timestamp": "2026-10-21T14:22:20.730Z",
+    "hostname": "runnervm8k3b6",
+    "time": "3.298"
+  },
+  "barrier_cases": [
+    {
+      "name": "diagnosticQueryHasFiniteTimeout()",
+      "classname": "com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest",
+      "time": "1.069"
+    },
+    {
+      "name": "동시 예약은 낙관락으로 수렴한다 — 오버셀링 0, 충돌은 재시도 대상",
+      "classname": "com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest",
+      "time": "0.115"
+    },
+    {
+      "name": "diagnosticSocketReadHasFiniteTimeout()",
+      "classname": "com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest",
+      "time": "2.034"
+    },
+    {
+      "name": "회귀 가드 — 차감·선검사·복구 3경로 모두 분산 락을 잡지 않는다",
+      "classname": "com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest",
+      "time": "0.077"
+    }
+  ],
+  "barrier_start_rows": [
+    {
+      "ordinal": 58,
+      "identifier": "com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest#diagnosticQueryHasFiniteTimeout()"
+    },
+    {
+      "ordinal": 59,
+      "identifier": "com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest#concurrentReservations_convergeByOptimisticLock()"
+    },
+    {
+      "ordinal": 60,
+      "identifier": "com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest#diagnosticSocketReadHasFiniteTimeout()"
+    },
+    {
+      "ordinal": 61,
+      "identifier": "com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest#inventoryPathsTakeNoDistributedLock()"
+    }
+  ],
+  "raw_phase_observations": {
+    "RESERVATION_DIAGNOSTIC": 0,
+    "barrier generation completed": 0,
+    "waiting pre-commit barrier": 0
+  },
+  "limit": "START is Gradle beforeTest callback order, not worker arrival or barrier generation telemetry. PASS preserves existing assertions but does not explain prior1Timeout+4Broken. Logging may perturb timing; no causal/performance comparison to first no-listener run."
+}

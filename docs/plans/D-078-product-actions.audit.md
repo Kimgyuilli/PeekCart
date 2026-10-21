@@ -17,3 +17,9 @@
 - PR218 https://github.com/Kimgyuilli/PeekCart/pull/218 , ce2c964, dedicated39614791169/일반39614790989를시작했다. firstdedicated GradleSUCCESS46suites/236cases/0failures·errors,barrier4/0. 실제원XML은DisplayName이라후단guard만실패했다. 원jobFAIL/테스트PASS를분리해first-result/rawZIP/log/hash에보존했다.
 - 실제첫XML로교정guard 양성PASS,wrongclass/wrongcase/skipped/failure/noXML5음성REJECTED. class+실제DisplayName/동일method형태만허용하며skip/failure를허용하지않는다.
 - 원--info의20class출력만으로전체시작순서를증명할수없어Root가작은beforeTest START listener를별도다음실행에승인했다. Java/30초/기존5초진단·정합기준불변. listener타이밍영향/첫무계측PASS를구분하고다음Actions결과는대기다. 별도 Codex 리뷰 미호출. 공유완료기록미편집.
+
+## b4c374a Actions 결과와 docs-only 추기
+
+- 전용39615964190/job119276965457/artifact12352517766,일반39615963575 모두SUCCESS를직접확인했다. exactcheckout370f04df83727cfd2d988e29caa70417bb3dda31/source083784…/JDK17.0.20.1/test/seed를원ZIP에서읽었다.46XMLsuites236cases0failure/error/skip,barrier4/0·동시0.115s,guard/cleanup6성공이다.
+- START236unique/46classes와XMLcase class별multiset일치,barrier순서58–61/동시59를raw에서계산했다. START는Gradle callback이며workerarrival/generation직접증거가아니다. fastPASS에는phaseHistory/identity/generation/5초snapshot출력이없다. 기존assertionsPASS만확인하고원1Timeout4Broken원인은미확정으로유지한다. loggingtiming/두case시간차인과·성능결론없다.
+- first/second원ZIP/log/API metadata/hash를보존했다. source/runtimeworkflow는b4c374a와불변인docs-only결과추기다. 전용Actions새실행/Java변경/로컬heavy없음. 좁은P1–P4실행·분석항목만완료표시하며D078전체/후속jitter·DLQ/pool4/GKE·Billing은완료아니다. 새docshead독립리뷰/일반CI는별도다. 별도 Codex 리뷰 미호출.
