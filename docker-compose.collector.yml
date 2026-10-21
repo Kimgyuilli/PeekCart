@@ -1,0 +1,32 @@
+# Narrow overlay for existing e2e infrastructure; no app or PG service is started.
+services:
+  mysql:
+    labels:
+      peekcart.collector.nonce: ${COLLECTOR_NONCE:?}
+  kafka:
+    labels:
+      peekcart.collector.nonce: ${COLLECTOR_NONCE:?}
+    environment:
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      CLUSTER_ID: ${COLLECTOR_CLUSTER_ID:?}
+    healthcheck:
+      test: [CMD-SHELL, '/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server kafka:9092 >/dev/null 2>&1']
+networks:
+  internal:
+    labels:
+      peekcart.collector.nonce: ${COLLECTOR_NONCE:?}
+  external-control:
+    internal: true
+    labels:
+      peekcart.collector.nonce: ${COLLECTOR_NONCE:?}
+volumes:
+  mysql-data:
+    labels:
+      peekcart.collector.nonce: ${COLLECTOR_NONCE:?}
+  redis-data:
+    labels:
+      peekcart.collector.nonce: ${COLLECTOR_NONCE:?}
+  kafka-data:
+    labels:
+      peekcart.collector.nonce: ${COLLECTOR_NONCE:?}
