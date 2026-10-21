@@ -146,6 +146,8 @@ jobs:
           # 실제로 실패하는지 19종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
           # 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, outbox FAILED 삭제/status 변조, dashboard 드리프트 3종.
           bash scripts/observability-promql-lint.sh --self-test
+          # D-092: Grafana operations route와 FAILED Outbox conditional re-entry를 무료 fixture로 검증한다.
+          python3 -B scripts/d092-ops-fixture.py
           # PR3c sweep — 단일 'peekcart' 관측성 식별자(application/service) 잔존 0 강제.
           # escaped-quote(JSON/embedded-yaml) + 형제 라벨(service) 양쪽 매치(PLAN-BLINDSPOTS B11).
           # uid/tags 의 peekcart-* 브랜드 문자열은 라벨 값(="peekcart")이 아니므로 매치 대상 외.
@@ -182,6 +184,36 @@ jobs:
           bash scripts/harness-context.sh --check --base "$HARNESS_BASE"
           python3 -B scripts/harness-context-selftest.py
           python3 -B docs/plans/evidence/D-099/check-mutants.py
+
+  # D-092 PR217 only: the task-scoped real Grafana fixture validates the provisioned
+  # operations route through its loopback receiver. The existing rule-timing scenario
+  # takes about 35 minutes, so isolate it from normal lint/test jobs and bound it.
+  d092-grafana-routing:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 217 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install fixture dependency
+        run: python3 -m pip install --user pyyaml
+      - name: Verify operations delivery and default-route isolation
+        run: |
+          set -euo pipefail
+          python3 -B scripts/monitoring/verify_alerts.py --run --output "$RUNNER_TEMP/d092-grafana"
+      - name: Upload bounded Grafana evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: d092-grafana-routing-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/d092-grafana/manifest.json
+            ${{ runner.temp }}/d092-grafana/summary.json
+            ${{ runner.temp }}/d092-grafana/capture/notifications.jsonl
+            ${{ runner.temp }}/d092-grafana/cleanup.log
+          if-no-files-found: warn
+          retention-days: 7
 
   # ── test: 모듈 shard 매트릭스. 분해 전 단일 build 는 32m23s 였다(run 33314020601) ──
   # shard→모듈 매핑의 **단일 정본은 matrix.include[].modules** 다. Gradle 명령과
