@@ -57,6 +57,16 @@ scripts/codex-review-render.sh "$RAW" --round <N>
 | 0 | 정상 (지적 0건 포함) | 아래 선택지로 진행 |
 | 2 | **리뷰 실패** (빈 응답·파싱 실패 — 대개 사용량 한도) | 표를 만들지 않는다. 리뷰 상태는 `미결(리뷰 실패: <stderr 인용>)` 이고 미충족 항목에 오른다(§리뷰 상태). **`P0/P1 = 0` 을 주장하지 않는다** |
 
+### 렌더러 입력 수용 계약 (D-103)
+
+정상 결과의 envelope는 `run_id`/`summary` string과 `items` array다. 세 필드는 초기 생산자 schema부터 필수이며 추가 metadata는 요구하지 않는다. 누락/알 수 없는 속성은 거부한다. 정형 빈 배열은 입력 계약을 충족한 지적 0건이지 모델 실행 자체의 증거는 아니다.
+
+각 item은 object이며 `id`(integer 최소1), `severity`(P0/P1/P2), `category`(architecture/bug/security/test/doc/style/convention), `finding`/`suggestion` string이 필수다. 초기 schema와 현재 schema에 없는 string 최소 길이나 ID 유일성 조건을 새로 요구하지 않는다. JSON number `1.0`은 integer 값이고 boolean은 integer가 아니다.
+
+과거 형식의 `file`/`line`/`scope`/`suggested_disposition` 생략은 허용한다. 있으면 file string, line integer 최소0, scope in_scope/out_of_scope/new_surface, disposition reflect/defer/reject를 검사한다. 이 union 계약은 generic renderer의 호환 범위이며 현재 plan/diff 생산자 schema의 required를 완화하는 변경은 아니다. 알려지지 않은 item 속성은 거부한다.
+
+빈/손상 JSON, envelope 또는 item 계약 위반은 표 출력 전에 exit2로 전달한다. null/잘못된 타입/알 수 없는 severity를 지적 0건이나 사용법 오류 exit1로 처리하지 않는다. 인자/없는 파일 등의 사용법 오류는 exit1이다. 기존 CI policy selftest가 합성 정상/음성 fixture와 잘못된 구현 대조를 실행하고 실패를 전달한다. 실제 cache가 없는 환경의 역사 회귀 skip은 별도 표시하며 합성 검증으로 원자료 모집단을 복원했다고 주장하지 않는다.
+
 exit 2 를 0 으로 접지 않는다. "리뷰가 깨끗했다"와 "리뷰가 안 돌았다"는 다른 말이다.
 
 렌더 결과에 이어 선택지를 준다:
