@@ -138,14 +138,6 @@ V-9 는 회귀 방지가 아니라 **목표 달성 확인**이다. 미달이면 
 변경 후   lint 51s  ->  images 206s  ->  e2e 949s          (test 는 경로 밖)
 ```
 
-### 2026-10-21 D-086 원본 job 재대조
-
-위 변경 후 요약에서 206초는 order-service 이미지 job 하나의 시간이다. run
-[35744585147](https://github.com/Kimgyuilli/PeakCart/actions/runs/35744585147)에서 notification-service
-이미지 job 이 242초로 가장 길었고, e2e 는 그 종료 3초 뒤 시작했다. 따라서 matrix barrier 를
-포함한 경로는 `lint 51s → images matrix 242s → e2e 949s` 로 읽어야 한다. 206초를 이미지
-matrix 전체의 임계경로 시간으로 쓴 것은 부정확했다.
-
 목표 20분 미달의 원인은 **e2e 단독**이다. e2e 949초가 전체 21분51초의 72%를 차지한다.
 이것은 ADR-0028 §후속 ① 이 예측한 상태이고 D-033 의 표적이다. P1/P5 의 재판정 사유가
 아니므로 이 계획서에서 더 줄이지 않는다.
@@ -190,3 +182,11 @@ P1~P6 이 전부 체크되고, V-1~V-8 이 통과하며, V-9 의 실측값이 �
 
 **판정 (2026-09-22): 완료.** V-7 은 D-034 판정으로 통과가 확정됐다.
 V-9 는 조건1 충족·조건2 미달이며, 미달 원인이 이 계획서의 범위 밖(e2e)이라 재판정하지 않는다.
+
+### 2026-10-21 D-086 원본 job 재대조
+
+위 변경 후 요약에서 206초는 order-service 이미지 job 하나의 시간이다. run
+[35744585147](https://github.com/Kimgyuilli/PeakCart/actions/runs/35744585147)에서 notification-service
+이미지 job 이 242초로 가장 길었고, e2e 는 그 종료 3초 뒤 시작했다. 따라서 matrix barrier 를
+포함한 경로는 `lint 51s → images matrix 242s → e2e 949s` 로 읽어야 한다. 206초를 이미지
+matrix 전체의 임계경로 시간으로 쓴 것은 부정확했다.
