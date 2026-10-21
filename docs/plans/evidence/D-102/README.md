@@ -32,3 +32,15 @@ PASS: 204 Java test files; 116 changed files; exact compiler tokens and existing
 C의 merchant 계약 frozen head `651044aa669032cf4fdecbaefcc3c58208ddcef7`와 비교했다. ApprovalLedgerIntegrationTest의 C 변경은 beginApproval 인자(192행 이후), D-102는 33/37행 주석이며 서로 다르다. TossPaymentClientTest의 D-102 변경도 31행 주석뿐이다. 해당 구현 커밋은 이 branch에 포함하지 않았다.
 
 초기 regex 검증기는 operator 경계와 Java Unicode 전처리 및 escaped text block에서 false-green이 확인돼 교체했다. compiler 기반 재검사에서도 committed inventory의 247개 before/after와 최종 accepted 20행이 정확히 일치했다. 실제 Java test comment diff는 이 검증기 보완에서 바꾸지 않았다.
+
+## main 201 통합 대조 (2026-10-21)
+
+새 비교 base는 `4a4a36a12a3d914d6bc0379ded94bc0123c4d370`이다. 그 사이 추가된 기능/테스트를 원래 be535와 같다고 주장하지 않는다. 원래 204파일/247 inventory/20 accepted 결과는 당시 population 기록이다. 아래 별도 명령은 현재 전체 208 Java test 파일, main 대비 주석 변경 116파일의 token kind/raw spelling 및 기존 source ID 부분집합을 확인한다.
+
+```sh
+python3 -B docs/plans/evidence/D-102/check-integration.py --base 4a4a36a12a3d914d6bc0379ded94bc0123c4d370
+```
+
+원래 새로 풀어 쓴 comment 줄도 각각 원래 클래스에 남아 있는지 확인한다. 이 추가 확인은 줄 존재 확인이며 중복 개수·의미의 독립 oracle이 아니다. 결과는 [integration-results.txt](integration-results.txt)에 보존했다. 현재 broad scan은 여전히 20개이고 기존 처분 근거와 같다.
+
+수동 충돌은 ProductCacheFallbackIntegrationTest의 V3 fallback assertion 블록 한 곳이다. main의 D-094 timeout/경과/4delta observation과 실행 assertion 전부를 보존하고 누적값이 이전 테스트 잔여로 통과할 수 있다는 유용한 comment를 유지했다. ApprovalLedgerIntegrationTest, TossPaymentClientTest, DlqReplayCorrelationIntegrationTest는 자동 통합됐으며 이들도 전체 token/source-ID 대조에 포함된다. 원래 독립 review를 새 head의 승인으로 간주하지 않으며 정확한 통합 head 재검토와 전체 CI를 기다린다. Gradle/Docker 재실행은 없다.
