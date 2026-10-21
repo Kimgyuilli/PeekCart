@@ -1,0 +1,953 @@
+[
+  {
+    "id": 1,
+    "uid": "peekcart-high-error-rate",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "High Error Rate (5xx > 5%)",
+    "condition": "C",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "sum by (application)(rate(http_server_requests_seconds_count{application=~\"gateway|notification-service|order-service|payment-service|product-service|user-service\", status=~\"5..\"}[5m]))",
+          "instant": false,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": true
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "sum by (application)(rate(http_server_requests_seconds_count{application=~\"gateway|notification-service|order-service|payment-service|product-service|user-service\"}[5m]))",
+          "instant": false,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": true
+        }
+      },
+      {
+        "refId": "C",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "($B > 0) && (($A / $B) * 100 > 5)",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "2m",
+    "annotations": {
+      "description": "{{ $labels.application }} \uc758 \ucd5c\uadfc 5\ubd84\uac04 5xx \uc5d0\ub7ec\uc728\uc774 5%\ub97c \ucd08\uacfc\ud588\uc2b5\ub2c8\ub2e4.",
+      "summary": "PeekCart 5xx \uc5d0\ub7ec\uc728 5% \ucd08\uacfc \u2014 {{ $labels.application }}"
+    },
+    "labels": {
+      "severity": "critical"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 2,
+    "uid": "peekcart-slow-response",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Slow API Response (p95 > 2s)",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=~\"gateway|notification-service|order-service|payment-service|product-service|user-service\", uri!~\"/actuator.*\"}[5m])) by (le, application))",
+          "instant": false,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": true
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [
+                  2
+                ],
+                "type": "gt"
+              }
+            }
+          ],
+          "expression": "A",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "threshold"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "2m",
+    "annotations": {
+      "description": "{{ $labels.application }} \uc758 \ucd5c\uadfc 5\ubd84\uac04 API p95 \uc751\ub2f5\uc2dc\uac04\uc774 2\ucd08\ub97c \ucd08\uacfc\ud588\uc2b5\ub2c8\ub2e4.",
+      "summary": "PeekCart API p95 \uc751\ub2f5\uc2dc\uac04 2\ucd08 \ucd08\uacfc \u2014 {{ $labels.application }}"
+    },
+    "labels": {
+      "severity": "warning"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 3,
+    "uid": "peekcart-target-down",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Peekcart Target Down (up == 0)",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "count by (service)(up{namespace=\"peekcart\"} == 0) or on() vector(0)",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "2m",
+    "annotations": {
+      "description": "{{ $labels.service }} \uc758 \ud0c0\uac9f\uc744 Prometheus \uac00 \uc2a4\ud06c\ub7a9 \uc2dc\ub3c4\ud588\uc73c\ub098 \uc2e4\ud328 (\ub124\ud2b8\uc6cc\ud06c, \uc778\uc99d, /actuator/prometheus 500 \ub4f1). up \uc2dc\uacc4\uc5f4\uc740 \uc874\uc7ac\ud558\ub418 0. Error Rate \ud328\ub110\uc758 \uac15\uc81c 0% \ud45c\uc2dc\uc640 \uad6c\ubd84\ud558\ub294 \uc2e0\ud638.",
+      "summary": "PeekCart \ud0c0\uac9f \uc2a4\ud06c\ub7a9 \uc2e4\ud328 (up == 0) \u2014 {{ $labels.service }}"
+    },
+    "labels": {
+      "severity": "critical"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 4,
+    "uid": "peekcart-scrape-absent-notification",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Peekcart Metrics Scrape Absent \u2014 notification-service",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "absent(up{namespace=\"peekcart\", service=\"notification-service\"}) or on() vector(0)",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "2m",
+    "annotations": {
+      "description": "notification-service \uc758 up \uba54\ud2b8\ub9ad series \ubd80\uc7ac. ServiceMonitor selector \ubbf8\uc2a4\ub9e4\uce58, \uc11c\ube44\uc2a4 \uc0ad\uc81c, Prometheus \uc124\uc815 \ubb38\uc81c \ub4f1 \uad6c\uc870\uc801 \ubd80\uc7ac. \uc2a4\ud06c\ub7a9 \uc2e4\ud328(up == 0) \ub294 peekcart-target-down \uc5d0\uc11c \uac10\uc9c0.",
+      "summary": "PeekCart up \uc2dc\uacc4\uc5f4 \ubd80\uc7ac \u2014 notification-service (ServiceMonitor \ubbf8\ub9e4\uce6d / \uc11c\ube44\uc2a4 \uc0ad\uc81c)"
+    },
+    "labels": {
+      "service": "notification-service",
+      "severity": "critical"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 5,
+    "uid": "peekcart-scrape-absent-order-service",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Peekcart Metrics Scrape Absent \u2014 order-service",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "absent(up{namespace=\"peekcart\", service=\"order-service\"}) or on() vector(0)",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "2m",
+    "annotations": {
+      "description": "order-service \uc758 up \uba54\ud2b8\ub9ad series \ubd80\uc7ac. ServiceMonitor selector \ubbf8\uc2a4\ub9e4\uce58, \uc11c\ube44\uc2a4 \uc0ad\uc81c, Prometheus \uc124\uc815 \ubb38\uc81c \ub4f1 \uad6c\uc870\uc801 \ubd80\uc7ac. \uc2a4\ud06c\ub7a9 \uc2e4\ud328(up == 0) \ub294 peekcart-target-down \uc5d0\uc11c \uac10\uc9c0.",
+      "summary": "PeekCart up \uc2dc\uacc4\uc5f4 \ubd80\uc7ac \u2014 order-service (ServiceMonitor \ubbf8\ub9e4\uce6d / \uc11c\ube44\uc2a4 \uc0ad\uc81c)"
+    },
+    "labels": {
+      "service": "order-service",
+      "severity": "critical"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 6,
+    "uid": "peekcart-scrape-absent-payment-service",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Peekcart Metrics Scrape Absent \u2014 payment-service",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "absent(up{namespace=\"peekcart\", service=\"payment-service\"}) or on() vector(0)",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "2m",
+    "annotations": {
+      "description": "payment-service \uc758 up \uba54\ud2b8\ub9ad series \ubd80\uc7ac. ServiceMonitor selector \ubbf8\uc2a4\ub9e4\uce58, \uc11c\ube44\uc2a4 \uc0ad\uc81c, Prometheus \uc124\uc815 \ubb38\uc81c \ub4f1 \uad6c\uc870\uc801 \ubd80\uc7ac. \uc2a4\ud06c\ub7a9 \uc2e4\ud328(up == 0) \ub294 peekcart-target-down \uc5d0\uc11c \uac10\uc9c0.",
+      "summary": "PeekCart up \uc2dc\uacc4\uc5f4 \ubd80\uc7ac \u2014 payment-service (ServiceMonitor \ubbf8\ub9e4\uce6d / \uc11c\ube44\uc2a4 \uc0ad\uc81c)"
+    },
+    "labels": {
+      "service": "payment-service",
+      "severity": "critical"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 7,
+    "uid": "peekcart-scrape-absent-product-service",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Peekcart Metrics Scrape Absent \u2014 product-service",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "absent(up{namespace=\"peekcart\", service=\"product-service\"}) or on() vector(0)",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "2m",
+    "annotations": {
+      "description": "product-service \uc758 up \uba54\ud2b8\ub9ad series \ubd80\uc7ac. ServiceMonitor selector \ubbf8\uc2a4\ub9e4\uce58, \uc11c\ube44\uc2a4 \uc0ad\uc81c, Prometheus \uc124\uc815 \ubb38\uc81c \ub4f1 \uad6c\uc870\uc801 \ubd80\uc7ac. \uc2a4\ud06c\ub7a9 \uc2e4\ud328(up == 0) \ub294 peekcart-target-down \uc5d0\uc11c \uac10\uc9c0.",
+      "summary": "PeekCart up \uc2dc\uacc4\uc5f4 \ubd80\uc7ac \u2014 product-service (ServiceMonitor \ubbf8\ub9e4\uce6d / \uc11c\ube44\uc2a4 \uc0ad\uc81c)"
+    },
+    "labels": {
+      "service": "product-service",
+      "severity": "critical"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 8,
+    "uid": "peekcart-scrape-absent-user-service",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Peekcart Metrics Scrape Absent \u2014 user-service",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "absent(up{namespace=\"peekcart\", service=\"user-service\"}) or on() vector(0)",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "2m",
+    "annotations": {
+      "description": "user-service \uc758 up \uba54\ud2b8\ub9ad series \ubd80\uc7ac. ServiceMonitor selector \ubbf8\uc2a4\ub9e4\uce58, \uc11c\ube44\uc2a4 \uc0ad\uc81c, Prometheus \uc124\uc815 \ubb38\uc81c \ub4f1 \uad6c\uc870\uc801 \ubd80\uc7ac. \uc2a4\ud06c\ub7a9 \uc2e4\ud328(up == 0) \ub294 peekcart-target-down \uc5d0\uc11c \uac10\uc9c0.",
+      "summary": "PeekCart up \uc2dc\uacc4\uc5f4 \ubd80\uc7ac \u2014 user-service (ServiceMonitor \ubbf8\ub9e4\uce6d / \uc11c\ube44\uc2a4 \uc0ad\uc81c)"
+    },
+    "labels": {
+      "service": "user-service",
+      "severity": "critical"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 9,
+    "uid": "peekcart-scrape-absent-gateway-metrics",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Peekcart Metrics Scrape Absent \u2014 gateway-metrics",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "absent(up{namespace=\"peekcart\", service=\"gateway-metrics\"}) or on() vector(0)",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "2m",
+    "annotations": {
+      "description": "gateway \uad00\ub9ac \ud3ec\ud2b8(8081) scrape \ub300\uc0c1\uc778 gateway-metrics Service \uc758 up \uba54\ud2b8\ub9ad series \uac00 \uc5c6\uc2b5\ub2c8\ub2e4. \uc778\uc99d \uc2e4\ud328\u00b7rate limit \uba54\ud2b8\ub9ad(S9)\uc774 \ud1b5\uc9f8\ub85c \uc218\uc9d1\ub418\uc9c0 \uc54a\ub294 \uc0c1\ud0dc\uc785\ub2c8\ub2e4. ServiceMonitor selector \ubbf8\uc2a4\ub9e4\uce58(\ub450 \ub77c\ubca8 \ub17c\ub9ac\uacf1), Service \uc0ad\uc81c, Prometheus \uc124\uc815 \ubb38\uc81c\ub97c \ud655\uc778\ud558\uc2ed\uc2dc\uc624.",
+      "summary": "PeekCart up \uc2dc\uacc4\uc5f4 \ubd80\uc7ac \u2014 gateway-metrics (ServiceMonitor \ubbf8\ub9e4\uce6d / \uc11c\ube44\uc2a4 \uc0ad\uc81c)"
+    },
+    "labels": {
+      "service": "gateway-metrics",
+      "severity": "critical"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 10,
+    "uid": "peekcart-compensation-backlog",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Saga Compensation Backlog (\ubbf8\ud574\uc18c \ubcf4\uc0c1 \uc6d0\uc7a5)",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "sum by (application)(saga_compensation_backlog{application=~\"order-service\", status=~\"open|refund_failed\"})",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "15m",
+    "annotations": {
+      "description": "order_compensations \uc5d0 OPEN \ub610\ub294 REFUND_FAILED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. OPEN \uc740 \ud658\ubd88 \uc694\uccad\uc774 \uc544\uc9c1 \uc885\uacb0\ub418\uc9c0 \uc54a\uc740 \uac83\uc774\uace0, REFUND_FAILED \ub294 '\ub2eb\ud614\uc9c0\ub9cc \ud574\uacb0\ub418\uc9c0 \uc54a\uc740' \uc0c1\ud0dc\ub77c \uc0ac\ub78c\uc774 \ucc98\ub9ac\ud574\uc57c \ud569\ub2c8\ub2e4(ADR-0018 D4). for=15m \uc740 \uc815\uc0c1 \ud658\ubd88 \uc655\ubcf5 \uc2dc\uac04\uc744 \ub118\uae34 \uc794\uc874\ub9cc \uc7a1\uae30 \uc704\ud55c \uac12\uc785\ub2c8\ub2e4.",
+      "summary": "PeekCart \ubbf8\ud574\uc18c \ubcf4\uc0c1 \uc6d0\uc7a5 \uc874\uc7ac \u2014 {{ $labels.application }}"
+    },
+    "labels": {
+      "severity": "warning"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 11,
+    "uid": "peekcart-payment-approval-stale",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Payment Approval Stale (\uc2b9\uc778 \ubcf4\ud638 \uc7a5\uae30 \ubbf8\uacb0)",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "max by (application)(payment_approval_oldest_age_seconds{application=~\"payment-service\", status=~\"waiting_stock|ready|claimed|unresolved|recovery_pending\"})",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 900",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "0s",
+    "annotations": {
+      "description": "WAITING_STOCK/READY/CLAIMED/UNRESOLVED \uc2b9\uc778 \uc694\uccad\uc774 15\ubd84 \ub118\uac8c \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. age\ub294 \ud604\uc7ac \uc0c1\ud0dc \uc9c4\uc785\uc2dc\uac01\uc774 \uc544\ub2cc \ucd5c\ucd08 requested_at \uae30\uc900\uc774\uba70, \ube48 \uc0c1\ud0dc\ub294 0\uc785\ub2c8\ub2e4. \ubcf4\ud638 handshake\uc758 Outbox/DLQ, \uc2b9\uc778 dispatcher, PG \uc870\ud68c reconciliation\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. \uacb0\uacfc \ubd88\uba85 \ub3d9\uc548 \uc608\uc57d \ubcf4\ud638\ub97c \uc720\uc9c0\ud558\uba70, \ub098\uc774\ub9cc\uc73c\ub85c \uc790\ub3d9 \ubcf4\ud638 \ud574\uc81c\ud558\uac70\ub098 PG \uc2b9\uc778\uc744 \uc7ac\ud638\ucd9c\ud558\uc9c0 \ub9c8\uc2ed\uc2dc\uc624.",
+      "summary": "PeekCart \uc2b9\uc778 \uc694\uccad 15\ubd84 \ucd08\uacfc \ubbf8\uacb0 \u2014 {{ $labels.application }}"
+    },
+    "labels": {
+      "severity": "warning",
+      "signal": "payment-approval"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 12,
+    "uid": "peekcart-dlq-backlog",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "DLQ Backlog (\ubbf8\uacb0 DLQ \uc6d0\uc7a5)",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "sum by (application)(dlq_backlog{application=~\"notification-service|order-service|payment-service|product-service\"})",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "10m",
+    "annotations": {
+      "description": "dead_letter_records \uc5d0 OPEN/ACKED \uac74\uc774 \ub0a8\uc544 \uc788\uc2b5\ub2c8\ub2e4. DLQ \uc720\uc785\uc740 \uc885\uacb0\uc774 \uc544\ub2c8\ub77c \uc6d0\uc7a5\uc758 \uc785\ub825\uc774\uba70, \uc7ac\ucc98\ub9ac \uc5ec\ubd80\ub294 \uc0ac\ub78c\uc774 \ud310\ub2e8\ud569\ub2c8\ub2e4. \uc870\uce58: docs/runbooks/dlq-recovery.md",
+      "summary": "PeekCart \ubbf8\uacb0 DLQ \uc6d0\uc7a5 \uc874\uc7ac \u2014 {{ $labels.application }}"
+    },
+    "labels": {
+      "severity": "warning",
+      "signal": "dlq"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 13,
+    "uid": "peekcart-outbox-failed",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Outbox Publish Exhausted (\ubc1c\ud589 \uc18c\uc9c4)",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "sum by (application)(outbox_backlog{application=~\"notification-service|order-service|payment-service|product-service\", status=\"failed\"})",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "5m",
+    "annotations": {
+      "description": "outbox_events \uc5d0 \uc7ac\uc2dc\ub3c4\ub97c \uc18c\uc9c4\ud55c FAILED \uc774\ubca4\ud2b8\uac00 \uc788\uc2b5\ub2c8\ub2e4. \uc18c\ube44 \uce21 \uc2e4\ud328(DLQ)\uac00 \uc544\ub2c8\ub77c \ubc1c\ud589 \uc2e4\ud328\uc774\uba70, \uc774\ubca4\ud2b8\ub294 \uc544\uc9c1 Kafka \uc5d0 \ub098\uac00\uc9c0 \uc54a\uc558\uc2b5\ub2c8\ub2e4. FAILED \ub294 \uc790\ub3d9 \uc7ac\uc2dc\ub3c4\uac00 \uc5c6\ub294 \uc885\ucc29 \uc0c1\ud0dc\uc774\ubbc0\ub85c \ube0c\ub85c\ucee4\u00b7\ub124\ud2b8\uc6cc\ud06c\ub97c \ubcf5\uad6c\ud55c \ub4a4 \uc7ac\ubc1c\ud589\ud574\uc57c \ud569\ub2c8\ub2e4.",
+      "summary": "PeekCart Outbox \ubc1c\ud589 \uc18c\uc9c4 \u2014 {{ $labels.application }}"
+    },
+    "labels": {
+      "severity": "warning",
+      "signal": "outbox-publish"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 14,
+    "uid": "peekcart-token-reuse-detected",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Refresh Token Reuse Detected (\ud0c8\ucde8 \uc758\uc2ec)",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "sum by (application)(increase(auth_token_reuse_detected_total{application=~\"user-service\"}[5m]))",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "0s",
+    "annotations": {
+      "description": "\ubb34\ud6a8\ud654\ub418\uc5c8\uac70\ub098 \uc774\ubbf8 \ub85c\ud14c\uc774\uc158\ub41c refresh token \uc774 \uc7ac\uc81c\uc2dc\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \ud574\ub2f9 family \ub294 \uc804\uccb4 \ubb34\ud6a8\ud654\ub418\uace0 access token \uc740 family deny \ub85c \ucc28\ub2e8\ub429\ub2c8\ub2e4(ADR-0013 D4). \uc815\uc0c1 \ub3d9\uc2dc\uc694\uccad\uc740 grace \ucc3d\uc5d0\uc11c \ud761\uc218\ub418\ubbc0\ub85c, \uc774 \uce74\uc6b4\ud130\uac00 \uc624\ub974\ub294 \uac83\uc740 \ud0c8\ucde8 \ub610\ub294 \ud074\ub77c\uc774\uc5b8\ud2b8 \ud1a0\ud070 \uad00\ub9ac \uacb0\ud568\uc744 \ub73b\ud569\ub2c8\ub2e4.",
+      "summary": "PeekCart refresh token reuse \uac10\uc9c0 \u2014 {{ $labels.application }}"
+    },
+    "labels": {
+      "severity": "critical"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 15,
+    "uid": "peekcart-cache-fallback-get",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Product Cache Fallback (get)",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "sum by (application, cache)(rate(cache_fallback_total{application=~\"product-service\", operation=\"get\"}[5m]))",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A > 0",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "10m",
+    "annotations": {
+      "description": "Redis \uc870\ud68c fallback\uc774 10\ubd84 \uc9c0\uc18d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. DB \ubd80\ud558\uc640 Redis \uc5f0\uacb0\uc744 \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a73",
+      "summary": "Product cache get \uc2e4\ud328 \u2014 {{ $labels.cache }}"
+    },
+    "labels": {
+      "operation": "get",
+      "severity": "warning",
+      "signal": "cache-fallback-get"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  },
+  {
+    "id": 16,
+    "uid": "peekcart-cache-fallback-evict",
+    "orgID": 1,
+    "folderUID": "eg1tjgnn6yeioa",
+    "ruleGroup": "PeekCart Alerts",
+    "title": "Product Cache Fallback (evict)",
+    "condition": "B",
+    "data": [
+      {
+        "refId": "A",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "prometheus",
+        "model": {
+          "expr": "sum by (application, cache)(increase(cache_fallback_total{application=~\"product-service\", operation=\"evict\"}[5m]))",
+          "instant": true,
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "range": false
+        }
+      },
+      {
+        "refId": "B",
+        "queryType": "",
+        "relativeTimeRange": {
+          "from": 300,
+          "to": 0
+        },
+        "datasourceUid": "__expr__",
+        "model": {
+          "expression": "$A >= 1",
+          "intervalMs": 1000,
+          "maxDataPoints": 43200,
+          "type": "math"
+        }
+      }
+    ],
+    "updated": "2026-10-20T17:55:14Z",
+    "noDataState": "NoData",
+    "execErrState": "Alerting",
+    "for": "0s",
+    "annotations": {
+      "description": "\uce90\uc2dc \ubb34\ud6a8\ud654\uac00 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4. \uc0c1\uc138 30\ubd84/\ubaa9\ub85d 10\ubd84 stale \ucc3d\uc744 \uc989\uc2dc \ud655\uc778\ud558\uc2ed\uc2dc\uc624. docs/runbooks/redis-cache-fallback.md \u00a74",
+      "summary": "Product cache evict \uc2e4\ud328 \u2014 {{ $labels.cache }}"
+    },
+    "labels": {
+      "operation": "evict",
+      "severity": "warning",
+      "signal": "cache-fallback-evict"
+    },
+    "provenance": "file",
+    "isPaused": false,
+    "notification_settings": null,
+    "record": null
+  }
+]
