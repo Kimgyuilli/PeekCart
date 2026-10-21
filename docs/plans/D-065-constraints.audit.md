@@ -24,3 +24,11 @@
 - CI는 기존 lint job에 새 named execution/always cleanup/always artifact 세 step만 추가했다. E D098은 첫 checkout 뒤 별도 위치를 소유하며 서로 기존 policy body를 수정하지 않았다. timeout8분/cleanup2분, mysql8.0.46 버전 확인과 image ID 기록.
 - 실제 lint: ci release gate 및 self-test55변이, matrix coverage, mysql image pin, migration grant53, consistency PASS. 최신 전체 CI는 별도 필수이며 로컬로 대체하지 않는다.
 - 별도 Codex 리뷰 미호출. 기존 독립 reviewer의 사전 소스 검토는 실행/PASS 평가가 아니며 final PR exact head 리뷰는 별도로 요청한다.
+
+## 2026-10-21 — draft PR 생성
+
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/202, branch debt/d065-constraints-plan, base actual main4a4a36a.
+- 실행 도구/CI commit f3993cf, 계획·실제 증거 commit33614db. 최종 PR에서는 source-manifest의 55개 파일 동일성을 다시 확인한다.
+- ship preflight/grade L/consistency/명시 staging 분류/whitespace/commit lint PASS. PR 본문 첫 문체 검사에서 평서형 어미를 지적받아 규약대로 수정 후 PASS, title PASS.
+- draft PR 생성 후 전체 CI 및 독립 exact-head 검토 대기. 아직 병합 승인 없음. D-065 전체 완료 및 운영 전환 준비 완료를 주장하지 않는다.
+- done 범위: 이 task plan/audit 및 evidence README만 갱신했다. TASKS/master/PHASE는 root 소유이며 별도 최신 사실로 갱신한다. Layer1 운영 계약은 바꾸지 않았다.
