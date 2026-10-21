@@ -33,3 +33,5 @@
 - exactf834a58a1bdfa29dab298feff3f29032db64924f 전용Actions39583989047 SUCCESS. 원artifact다운로드뒤검사기를직접재실행해ordinary334/dedicated1/4서비스/76uniquechild/migrate48·validate28/의도된실패28/Flyway11.7.2를확인했다. 실제lab XML103.298초/실패0/skip0이다.
 - 같은immutableID3e829b1975810a0599c53d6d680155785986e1a5950cacfa6ba1b781c0047c06에서StartedAt10:24:41.965→10:26:01.837,hostport32775→32776이실제inspect로관측됐다. 새endpoint에서잔여24child와before/after schema/data/history/allocator일치가통과했다. 기존실패의port원본은없으므로그실행원인의단정과구분한다.
 - 전체증거bundle/개별rawhashmanifest를repo에보존했다. cleanupstep은새Testcontainers4제거SUCCESS다. 로컬중량실행없음. 다음actualmain d506통합과최신일반CI·전용workflow/독립검토가남는다.
+
+- actual main d506f7eef5d29e9894342a6d47b93b89a34266b2 정상통합. 기존bdc→bf704bd 작성patch와새base→mergeheadpatch가byte동일(SHA256ba4deeff4046927175f22d31acf91d8d9b7234be0849f7d35363e1a114e8c8d3)이다. 추가main은PR205 timestampfixture/관측test·workflow·증거이며Flyway실행source는불변이다. 일반334명단도불변이고최신Actions로함께검증한다.
