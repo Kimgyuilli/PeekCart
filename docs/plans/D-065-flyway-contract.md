@@ -31,11 +31,11 @@ mysql CLI가 SQL을 적용한 결과만으로 Flyway 실패 이력이나 재시�
 ## 3. 작업 항목
 
 - [x] P1. 실제 migration/버전/권한/기존 SQL 실험의 증거 범위와 독립 전용 JVM 설계를 확인한다.
-- [ ] P2. 네 서비스 fresh 및 backfill 직전 upgrade 경로를 최소 권한 actual Flyway로 실행하고 전체 파일 hash/history/schema/data/allocator 계약을 검증한다.
-- [ ] P3. 새 JVM의 반복 migrate·validate와 자기 MySQL 실제 restart 뒤 성공 이력·데이터·schema·allocator 보존을 검증한다.
-- [ ] P4. migration 실행 전 callback 거부는 candidate failed history를 남기지 않고, 명시적 fixture 입력 수정 후 repair 없이 재개 가능한 양성 경계를 검증한다. 이는 운영 preflight/writer 정지 증명이 아니다.
-- [ ] P5. 둘째 DDL 실패는 첫 DDL·앞 DML과 failed history를 남기고 새 JVM/DB restart 후 validate/migrate가 차단되는 음성을 검증한다. history 삭제나 repair는 하지 않는다. 성공한 fixture SQL을 변조한 checksum 음성 및 원문 복원 후 validate 양성을 검증한다.
-- [ ] P6. 별도 Actions 작업과 완전성 검사를 연결한다. 실제 4서비스 결과 및 최소 테스트 수가 없으면 실패하고 일반 payment 테스트의 기존 목록이 빠지지 않았음을 확인한다. 항상 artifact와 자기 fixture 정리를 실행한다.
+- [x] P2. 네 서비스 fresh 및 backfill 직전 upgrade 경로를 최소 권한 actual Flyway로 실행하고 전체 파일 hash/history/schema/data/allocator 계약을 검증한다.
+- [x] P3. 새 JVM의 반복 migrate·validate와 자기 MySQL 실제 restart 뒤 성공 이력·데이터·schema·allocator 보존을 검증한다.
+- [x] P4. migration 실행 전 callback 거부는 candidate failed history를 남기지 않고, 명시적 fixture 입력 수정 후 repair 없이 재개 가능한 양성 경계를 검증한다. 이는 운영 preflight/writer 정지 증명이 아니다.
+- [x] P5. 둘째 DDL 실패는 첫 DDL·앞 DML과 failed history를 남기고 새 JVM/DB restart 후 validate/migrate가 차단되는 음성을 검증한다. history 삭제나 repair는 하지 않는다. 성공한 fixture SQL을 변조한 checksum 음성 및 원문 복원 후 validate 양성을 검증한다.
+- [x] P6. 별도 Actions 작업과 완전성 검사를 연결한다. 실제 4서비스 결과 및 최소 테스트 수가 없으면 실패하고 일반 payment 테스트의 기존 목록이 빠지지 않았음을 확인한다. 항상 artifact와 자기 fixture 정리를 실행한다.
 - [ ] P7. 최종 head 정상 CI/전용 workflow 결과와 독립 검토를 반영해 PR을 준비한다. 실패·미충족을 전체 D065 완료로 바꾸지 않는다.
 
 ## 4. 완료 기준과 증거 한계
@@ -45,3 +45,7 @@ Actions는 Ubuntu/Java17, contents:read, 배포·secret·유료 기능 없이 �
 실패 반례는 예외 발생만 보지 않고 남은 DDL/commit된 DML/failed history 및 다음 프로세스의 차단을 대조해야 한다. callback 이전 거부와 비트랜잭션 migration 실패는 다른 재개 조건이다. checksum 복원은 fixture 파일의 원래 bytes 복원이며 history repair가 아니다. 제품 migration 수정·자동 nullable 복귀·운영 DB rollback/재개 명령은 제공하지 않는다.
 
 로컬 SQL33, writer JPA71, 이 작업의 actual Flyway 결과는 서로 다른 증거다. 실제 운영 writer 중지/전환, 실제 legacy provenance와 표본, 운영 DDL 및 P22/GKE는 여전히 별도다. fresh/upgrade 성공이 mixed writer 안전성이나 운영 rollout 준비를 뜻하지 않는다. 로컬 중량 실행은 하지 않으며 최종 실제 결과는 Actions artifact와 audit에 기록한다.
+
+## 5. 실행 결과
+
+수정headf834의Actions39583989047에서실제4서비스/76child/일반334/전용1/재시작보존검증이통과했다. 첫실패와수정후actualport변경증거는audit와 `evidence/D-065-flyway-contract/README.md`에분리보존했다. P2부터P6은이실제실행범위로완료이며P7의최종main통합CI/독립검토는아직미완이다. 운영계약완료로확대하지않는다.

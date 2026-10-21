@@ -27,3 +27,9 @@
 - 기존13artifactcontrols 재검증은PASS이며actualFlyway재검증은아직미실행이다. 제품migration과운영상태는변경하지않았다.
 
 - 최종 restart 보완은 실제inspect의immutableID/running/StartedAt증가를단언하고그때의3306/tcp hostport로연결한다. 증거검사도동일ID/실제재시작시각/port일치를요구한다. foreignID·restartno-op 추가음성으로artifactcontrols15PASS. containerlint/diffcheck/preservation도PASS, 로컬중량미실행은유지한다.
+
+## 2026-10-21 — 실제 restart 보완 검증
+
+- exactf834a58a1bdfa29dab298feff3f29032db64924f 전용Actions39583989047 SUCCESS. 원artifact다운로드뒤검사기를직접재실행해ordinary334/dedicated1/4서비스/76uniquechild/migrate48·validate28/의도된실패28/Flyway11.7.2를확인했다. 실제lab XML103.298초/실패0/skip0이다.
+- 같은immutableID3e829b1975810a0599c53d6d680155785986e1a5950cacfa6ba1b781c0047c06에서StartedAt10:24:41.965→10:26:01.837,hostport32775→32776이실제inspect로관측됐다. 새endpoint에서잔여24child와before/after schema/data/history/allocator일치가통과했다. 기존실패의port원본은없으므로그실행원인의단정과구분한다.
+- 전체증거bundle/개별rawhashmanifest를repo에보존했다. cleanupstep은새Testcontainers4제거SUCCESS다. 로컬중량실행없음. 다음actualmain d506통합과최신일반CI·전용workflow/독립검토가남는다.
