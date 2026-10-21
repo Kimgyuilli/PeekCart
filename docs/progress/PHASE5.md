@@ -839,3 +839,5 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 ## 2026-10-22 — D-092 사용자·운영 웹훅 분리 부분 병합
 
 [PR219](https://github.com/Kimgyuilli/PeekCart/pull/219) 최종 head `8c55ef3ecfdef8a978fdf15fad8e220ad2514a40`은 사용자 알림과 운영 경보를 별도 필수 URL로 바꾸고 누락·동일 endpoint 설정을 시작 시 거부한다. [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/219#issuecomment-6320677035)는 사용자·운영 loopback 분리, 실패 설정 음성 대조, signed 경로 증거를 직접 확인했다. [일반 CI39629291268](https://github.com/Kimgyuilli/PeekCart/actions/runs/39629291268)과 signed CI39629291259가 성공했다. 정상 병합 SHA는 `b2e862085de695f601725717a7eeae68ca83aecf`이고 실제 main CI39632767287과 여섯 publish는 진행 중이다. 실제 두 Secret의 소유·값·전환 및 외부 Slack/GKE 전달은 여전히 미검증이며 D-092 전체 완료가 아니다.
+
+실제 [main CI39632767287](https://github.com/Kimgyuilli/PeekCart/actions/runs/39632767287)은 테스트·E2E·gate와 여섯 publish가 모두 개별 성공했다. 따라서 웹훅 분리의 무료 코드/로컬 범위는 병합 후 검증까지 마쳤다. 운영 Secret 소유·값·전환 순서, 외부 Slack/GKE 전달과 FAILED 운영 복구는 실제 증빙 전까지 D-092의 잔여 조건이다.
