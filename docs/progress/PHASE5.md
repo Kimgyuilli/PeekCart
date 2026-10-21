@@ -848,6 +848,8 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 
 운영 표본·GKE·NOT NULL 실제 적용·replay 개방은 수행하지 않았다. D-065는 계속 부분 완료이고 replay kill-switch는 닫혀 있다.
 
+실제 [main CI39636215009](https://github.com/Kimgyuilli/PeekCart/actions/runs/39636215009)는 전체 테스트·두 E2E·gate와 여섯 publish가 모두 개별 성공했다. 따라서 PR212의 무료 로컬 수집기 범위는 병합 후 검증까지 완료했다. 운영 표본·GKE·NOT NULL 실제 적용·replay 개방은 여전히 남는다.
+
 ## 2026-10-22 — D-075 후속 정책 결정 보류
 
 사용자가 D-075 티켓의 후속 결정을 보류했다. [PR200](https://github.com/Kimgyuilli/PeekCart/pull/200)의 무료 로컬 병목 분석과 병합 후 검증은 유지한다. 목표 TPS, 최대 backlog, 초과 시 대응 정책은 정하지 않았고, 후속 선택·정책 검증은 사용자가 티켓 재개와 기준을 알려줄 때 진행한다. 이 보류를 전체 완료로 표시하지 않는다.
