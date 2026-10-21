@@ -138,3 +138,15 @@ C3 의 현 코드 토폴로지를 §5 정본으로 확정한다. **단, `order.c
 - `docs/04-design-deep-dive.md §9-3`(L104-111, 재고 차감 트랜잭션) / §9-4(L189-193, Phase 4 Saga 체인) / §16(L362-373, CQRS `product.updated`)
 - `docs/05-data-design.md §Notification DB`(L362-380)
 - 코드: `KafkaConfig.java`(L33-48), `OrderOutboxEventPublisher`, `PaymentOutboxEventPublisher`, `OrderEventConsumer`, `PaymentEventConsumer`, `NotificationConsumer`
+
+
+## Update Log
+
+### 2026-10-21 — 역사 줄번호와 현재 위치의 탐색 경로 보강 (D-101)
+
+**변경 사유**: Context/References의 `02-architecture.md L47-49`·`L95-164`는 본 ADR 결정 전의 설계를 인용한다. Layer 1 아카이브와 멀티모듈 전환 뒤 현재 파일의 같은 줄번호로는 당시 근거를 찾을 수 없다. 기존 본문과 결정은 보존하고 다음 탐색 경로를 덧붙인다.
+
+- 당시 원문: ADR 도입 커밋 `a9c816b`의 부모 `787f74e9f1644fc825035c1b8aa12ca1de3e2daa`에서 [3개 분리 대상 목록 L45-49](https://github.com/Kimgyuilli/PeekCart/blob/787f74e9f1644fc825035c1b8aa12ca1de3e2daa/docs/02-architecture.md#L45-L49), [5개 서비스 다이어그램 L93-170](https://github.com/Kimgyuilli/PeekCart/blob/787f74e9f1644fc825035c1b8aa12ca1de3e2daa/docs/02-architecture.md#L93-L170)을 직접 대조했다. C1/C4의 불일치는 그 시점의 기록이다.
+- 현재 위치: [서비스 분리 대상 §4-5](../02-architecture.md#4-5-msa-분리-대상-서비스-see-adr-0010), [시스템 다이어그램 §5](../02-architecture.md#5-시스템-아키텍처-다이어그램), [현재 배포·모듈 구조 §12](../02-architecture.md#12-패키지-구조). 다이어그램의 4토픽 골격과 현재 토폴로지의 구분은 §5 안내를 따른다.
+
+**커밋**: `c8155a65299e13b0631c2cacaeed5eac20ebff6b` — `fix(adr): 역사 참조 탐색 경로 보강` (자기 참조를 피하기 위해 후속 커밋에서 기록).
