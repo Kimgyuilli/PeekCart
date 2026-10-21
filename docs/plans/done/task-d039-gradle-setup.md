@@ -42,3 +42,7 @@ compileJava/processResources/classes 헤더27.96초와 jar28.06초는 실제 태
 setup-gradle 캐시가 Docker build에 연결되지 않는 구성과 당시 test 잡의 여유는 별개 근거다.
 [후속 D-087](../D-087.md)은 실제 CI 내부 --profile과 원 build record를 연결해 재측정한다.
 새 실제 측정 전에는 대체 비중이나 최적화 결론을 확정하지 않는다. 원문은 역사 기록으로 보존한다.
+
+### 2026-10-21 D-087 실제 profile 후속
+
+원문은 위에 보존한다. run39589286318/branch24d4942/actualcheckout526ac935의6 images는 fresh Gradle profile과 exact BuildKit record/hash를 수집했다. notification은 Gradle total37.232초/startup3.802초/configuring2.677초/common:compileJava18.437초/bootJar task3.225초이며 BuildKit bootJar RUN37.6초/cache export20.0초는 별도 wall time이다. 이들을 합산해 임계경로나 최적화 상한으로 부르지 않는다. 원8/28분해는 지지되지 않는다. 모든6서비스의 원 HTML/log/record 및 수치·한계는 [D-087 evidence](../evidence/D-087/README.md#실제-actions-측정-39589286318)에 있다. 일반 notification test의pretests GET429 실패 때문에 run전체성공으로 기록하지 않는다.

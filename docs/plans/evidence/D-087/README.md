@@ -26,7 +26,7 @@ python3 -B scripts/ci-build-profile-selftest.py --mutants
 
 첫 Actions39587257345(d0ec) lint의10 method/8 control은 통과했다. 이미지 build 뒤 collector의 full ref 인자 오류로6 images가 실패했고 실제 profile/export/health smoke는 미실행이다. 첫 수정 b1d2는 log/export/HTML 추출에 성공했지만 진행 로그의 stderr 출력 때문에 분석에 실패했다. 단일 progress stream 수정 후 전체10 method/10 wrong-implementation control은 새 Actions 실행 대상이다. `minimal.txt`는 정상 fresh/별도 export 시간의 최소 로컬1 method PASS이며 전체 통과 증거가 아니다. 로컬 Gradle/Docker 실행은 없다. exact CI policy body를 mock하는 정상/각 child rc23 대조도 전체 suite에 포함돼 새 fixture와 mutants의 실패 전파를 확인한다.
 
-현재 실제 새 CI profile은 아직 수집 전이다. 분석 결과/실행 SHA/6서비스의 fresh·cached 상태는 Actions 산출물을 읽은 뒤 추가하며, 지금 새 비중이나 최적화 결론을 확정하지 않는다.
+최종 수정 코드의 실제6서비스 profile은 아래 Actions 측정 절에 보존한다. 초기 구현/오류 source snapshot과 성공한 측정 source를 구분하며 전체 CI 성공은 별도로 확인한다.
 
 ## 원래 CI 근거
 
@@ -54,3 +54,39 @@ python3 -B scripts/ci-build-profile-selftest.py --mutants
 collector는 stdout/stderr를 한 canonical progress log로 병합한다. 별도 fallback/중복 raw 파일은 새로 만들지 않는다. 성공 stub이 실제 형식의 progress를 stderr에 쓰도록 바꾸고 수집된 log 내용을 검증한다. stderr를 버리는10번째 mutant를 추가했다. 최소 로컬1 method/5cases PASS(0.934s), 전체 검증은 새 Actions에서 실행한다.
 
 진단용 `/private/tmp/d087-second-adapted-progress` 복사에서 원 stdout+stderr bytes만 단일 log로 합친 뒤 수정 analyzer를 실행하면 notification `fresh_execution`으로 읽혔다. 이는 새 image 실행이나 원 b1d2 pipeline 성공이 아니며, 원자료를 재분석할 수 있다는 좁은 개발 확인이다. 다음 run의 cached 이전 profile을 새 fresh 측정으로 바꾸지 않는다.
+
+## 실제 Actions 측정: 39589286318
+
+측정 branch head는 `24d4942fb2e8c030f47ce8c12c24c3f2788a78f2`, 실제 PR merge checkout은 `526ac935ba8c404b056fb637ff10de68c36ce149`(base43+24d)다. Dockerfile/collector/selftest/workflow4파일은 두 SHA에서 byte동일하다. 각 서비스는 Linux x86_64/4CPU 별도 runner에서 Gradle8.14.4/JDK17로 실행됐다. nonce/no-cache 강제는 없었다.
+
+6개 모두 `fresh_execution`이며 생성 origin이 현재 image window 안에 있었다. report 추출 build의 bootJar는 모두 CACHED였고 원 HTML hash와 연결됐다. 기존 runtime health smoke6개도 통과했다. `actions-39589286318/`는6개 원 artifact 전체와7개 image/lint job log, 별도 notification test 실패/현재 GET 가용성 자료를 gzip+raw/gzip hash로 보존한다. credential 패턴0, 원 analysis의6개 file-hash map 전체를 직접 대조했다. `summary.json`에 모든 task/result와 refs/origin/context가 있다.
+
+단위는 초다. Gradle summary 표는 다음과 같다.
+
+| service | Total | Startup | Settings/buildSrc | Loading | Configuring | Task Execution |
+|---|---:|---:|---:|---:|---:|---:|
+| gateway | 22.890 | 3.401 | 0.383 | 0.349 | 2.539 | 14.321 |
+| notification-service | 37.232 | 3.802 | 0.318 | 0.325 | 2.677 | 26.899 |
+| order-service | 28.262 | 2.801 | 0.245 | 0.281 | 2.198 | 20.108 |
+| payment-service | 29.236 | 2.436 | 0.220 | 0.269 | 2.072 | 21.818 |
+| product-service | 35.555 | 3.168 | 0.287 | 0.279 | 2.628 | 26.108 |
+| user-service | 27.489 | 2.354 | 0.252 | 0.256 | 2.182 | 20.087 |
+
+Artifact Transforms는6개 모두0초다. summary 항목을 더해 Total과 같다고 가정하지 않는다. task 행과 BuildKit wall time도 별도다.
+
+| service | common:compileJava | service:compileJava | service:bootJar task | BuildKit bootJar RUN | gha cache export |
+|---|---:|---:|---:|---:|---:|
+| gateway | 해당 의존 없음 | 7.298 | 1.877 | 23.2 | 10.0 |
+| notification-service | 18.437 | 1.022 | 3.225 | 37.6 | 20.0 |
+| order-service | 13.065 | 1.135 | 2.640 | 29.9 | 20.8 |
+| payment-service | 13.770 | 1.671 | 2.889 | 30.4 | 36.8 |
+| product-service | 16.821 | 1.745 | 3.386 | 36.0 | 34.9 |
+| user-service | 13.880 | 0.937 | 2.929 | 29.3 | 36.0 |
+
+위 task는 모두 이번 실행의 빈 result(실행) 행이다. 다른 task의 Did No Work/NO-SOURCE 결과도 raw/JSON에 보존했다. gateway는 common 대신 internal-token-contract/peekcart-common-observability를 사용한다. 5개 domain의 common compile은13.065~18.437초이며 startup2.354~3.802초/configuring2.072~2.677초다. 원 태스크 헤더를 읽은8초/28초 주장을 이 측정으로 유지할 수 없다. 서로 다른 역사 source/환경의35.6초와 새37.6초를 개선/회귀 실험으로 비교하지 않는다.
+
+현재 권고는 shared compile/cache 재사용 후보와 gha cache export 비용을 분리해 후속 실험하는 것이다. host setup-gradle만 추가해 Docker 내부 측정이 빨라진다는 근거는 없다. 새 설정/배포/성능 정책은 변경하지 않았다. 한 run의 별도6 runner 관측이며 반복 분포·warm/cold 인과·최적화 상한·전체 job 임계경로는 측정하지 않았다. Gradle phase/task/BuildKit 시간을 더하거나 빼서 그 값을 만들지 않는다.
+
+정식 lint의10 methods(1.569초)/10 wrong-implementation controls가 실제 Actions에서 통과했다. 그러나 일반 notification test job119186128277은 Spring Security test6.5.9 POM GET429로 repository가 disabled된 뒤 bootJar/runtimeClasspath에서 실패했고 테스트는 시작하지 않았다. 11개 추가 실패도 동일 원인으로 보고됐다. 해당 POM은11:15:08UTC read-only GET200/2668bytes였고 dependency config는 base43/actual checkout에서 동일하다. 이것을 이전 PR206의 원인과 같다고 단정하지 않는다.
+
+첫/두 번째 계측 자체 오류와 이번 일반 test429는 각각 보존한다. 최종 측정/evidence 문서 commit은 새 head를 만들므로 root 승인으로 오래된 head의 실패 job을 중복 재실행하지 않고 새 전체 Actions로 검증한다. 측정 source는 계속24d/526ac이며 문서 commit을 새 실측으로 부르지 않는다. 전체 CI/정확 final head 독립 검토는 별도 조건이다.
