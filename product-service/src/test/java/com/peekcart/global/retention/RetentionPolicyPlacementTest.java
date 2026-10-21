@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * retention/floor/cleanup 정책키 base-only 배치 가드 (ADR-0007 · 구현 ② PR3).
+ * retention/floor/cleanup 정책키 base-only 배치 가드 (ADR-0007).
  * <p>동작 정책 키는 base {@code application.yml} 소유이고 환경별 프로파일
  * ({@code application-local.yml}/{@code application-k8s.yml})에는 등장하면 안 된다(정책 override 금지).
  * product 를 대표로 검증한다(전 서비스 스윕은 CI/verify grep 이 담당).

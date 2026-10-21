@@ -32,9 +32,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Gateway 검증기 alg allow-list · kid · 응답 분류 회귀 (계획 P12/P19).
+ * Gateway 검증기 alg allow-list · kid · 응답 분류 회귀.
  *
- * <p>servlet {@code JwtTokenVerifierTest} 와 동일한 계약을 reactive 측에서 고정한다.
+ * <p>reactive 검증기의 alg allow-list · kid · 오류 분류를 고정한다.
  * 키는 테스트 런타임 생성 — gateway 는 {@code :common} testFixtures 를 의존할 수 없다
  * (assertGatewayHasNoServletDeps 가 project 의존 자체를 금지).
  */
@@ -178,7 +178,7 @@ class GatewayJwtVerifierTest {
             return Stream.of(
                     Arguments.of("HS256", Jwts.SIG.HS256),
                     Arguments.of("HS384", Jwts.SIG.HS384),
-                    // 레거시 토큰의 실제 alg — PR4 이전에는 스위치 on 시 수용했다
+                    // 거부해야 하는 레거시 토큰의 실제 alg
                     Arguments.of("HS512", Jwts.SIG.HS512));
         }
     }

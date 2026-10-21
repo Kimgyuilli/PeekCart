@@ -23,7 +23,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * product-service 관측성 계약 회귀 (ADR-0009 §45-48 서비스별 복제).
+ * product-service 관측성 계약 회귀 (ADR-0009 Decision S1/S2/S3/S4 서비스별 복제).
  * <p>Product peel 로 root 에서 이관된 두 계약을 product-service 에서 검증한다:
  * (1) 상품 URI({@code /api/v1/products}) http_server_requests histogram bucket(S1) + application=product-service 태그(S2),
  * (2) 상품 목록 캐시("products") hit/miss 메트릭(D-014/L-005 — CacheConfig 이 product-service 소유).

@@ -28,14 +28,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * notification-service 의 outbox 신설 회귀 (구현 ④-c-2b-2 P9 · 계획 §6 V-32 · ADR-0020 §D2·§D8).
+ * notification-service 의 outbox 신설 회귀 (ADR-0020 §D2·§D8).
  *
  * <p><b>왜 소비 전용 서비스에 outbox 가 있는가</b>: DLQ replay 는 원장 소유 서비스가 자기 원장 행을
- * 재발행하는 것이고(D8-3 fence), notification 도 자기 원장을 갖는다. 재발행은 다른 발행과 같은 outbox
- * 경로를 탄다(D3 — 별도 replay_outbox 를 만들지 않는다).
+ * 재발행하는 것이고(ADR-0020 §D8-3 fence), notification 도 자기 원장을 갖는다. 재발행은 다른 발행과 같은 outbox
+ * 경로를 탄다(ADR-0020 §D3 — 별도 replay_outbox 를 만들지 않는다).
  *
- * <p><b>도메인 행으로 관측하는 이유</b>: 이 PR 에는 replay 개시 진입점이 없어(④-c-2b-4) replay 행을
- * 만들 수 없다. 그렇다고 "빈이 존재한다" 로 끝내면 <b>배선됐다 수준의 판정</b>이 된다 — poller 를
+ * <p><b>도메인 행으로 관측하는 이유</b>: 이 테스트는 replay 개시 진입점을 거치지 않고 발행 경로를 분리해
+ * 검증한다. 그렇다고 "빈이 존재한다" 로 끝내면 <b>배선됐다 수준의 판정</b>이 된다 — poller 를
  * 통째로 지워도 통과한다. 그래서 outbox 행을 직접 넣고 <b>broker 에 도착하는지</b>를 본다.
  * 발행 경로 자체는 서비스 무관이므로 그것으로 충분하다.
  */

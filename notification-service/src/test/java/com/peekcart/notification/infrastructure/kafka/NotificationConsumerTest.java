@@ -20,7 +20,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 /**
- * {@code order.cancelled} 취소 사유 분기 단위 테스트 (계획 P6·P7).
+ * {@code order.cancelled} 취소 사유 분기 단위 테스트.
  * <p>Order 가 결제 실패발 취소까지 {@code order.cancelled} 로 발행하게 되면서 생기는 중복 알림을
  * 사유로 차단하되, 사유 필드가 없는 <b>구 메시지</b>는 기존대로 알림을 만들어야 한다(하위호환).
  * <p>{@code payment.failed} 알림 타입도 여기서 본다 — 스킵된 취소 알림을 대신하는 쪽이다 (D-047).

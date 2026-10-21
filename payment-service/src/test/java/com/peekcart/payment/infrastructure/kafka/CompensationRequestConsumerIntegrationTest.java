@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 요청 토픽 2종 소비가 <b>하나의 fence 로 수렴</b>하는지 검증한다 (계획 P14 — ④-c-1b, ADR-0018 D1/D3).
+ * 요청 토픽 2종 소비가 <b>하나의 fence 로 수렴</b>하는지 검증한다 (ADR-0018 D1/D3).
  *
  * <p>ADR-0018 D1 은 cross-topic 순서를 보장하지 않는다고 못박았다 — 따라서 요청 2종과 Payment
  * 로컬 감지의 <b>모든 선후·중복 조합</b>에서 원장이 1행이고 최종 결과가 같아야 한다. 그 수렴
@@ -239,10 +239,10 @@ class CompensationRequestConsumerIntegrationTest extends AbstractIntegrationTest
     }
 
     /**
-     * <b>c1:1 (P0) 회귀</b> — cross-topic 순서가 보장되지 않으므로 {@code payment.refunded} 가
+     * <b>환불 회신 선도착 회귀</b> — cross-topic 순서가 보장되지 않으므로 {@code payment.refunded} 가
      * 소비자의 감지보다 먼저 도착할 수 있다. 그때 소비자는 원장이 없어 회신을 no-op 하고
      * {@code processed_events} 로 봉인하므로, 뒤늦게 만든 원장은 <b>회신을 다시 받아야만</b> 닫힌다.
-     * 재발행이 없으면 그 원장은 영구 미결이고 R-2 가 되돌아간다.
+     * 재발행이 없으면 그 원장은 영구 미결이고 ADR-0018 R-2(원장 OPEN 적체)가 되돌아간다.
      */
     @Test
     @DisplayName("이미 종결된 환불에 뒤늦은 요청이 오면 회신을 재발행한다 (늦은 감지 원장 종결용)")
@@ -276,7 +276,7 @@ class CompensationRequestConsumerIntegrationTest extends AbstractIntegrationTest
     }
 
 
-    // ---------------- P14: listener 배선 (실제 Kafka 왕복) ----------------
+    // ---------------- listener 배선 (실제 Kafka 왕복) ----------------
 
     /**
      * 위 테스트들은 listener 메서드를 직접 호출하므로 <b>토픽명·consumer group·기본

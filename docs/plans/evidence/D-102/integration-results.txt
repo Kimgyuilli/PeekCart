@@ -1,0 +1,2 @@
+PASS: 208 Java test files; 116 changed files; exact compiler tokens and existing source IDs preserved (superset); 9 injected controls
+PASS: every newly rewritten comment line remains in its original class (116 classes); line presence check, not a duplicate-count or semantic oracle.

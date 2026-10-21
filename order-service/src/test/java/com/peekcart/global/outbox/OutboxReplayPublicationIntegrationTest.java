@@ -36,9 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * outbox replay 발행 표면 회귀 (구현 ④-c-2b-2 · 계획 §6 V-30·V-33·V-21b·V-21d · ADR-0020 §D3·§D6-4).
+ * outbox replay 발행 표면 회귀 (ADR-0020 §D3·§D6-4).
  *
- * <p>이 PR 에는 <b>replay 개시 진입점이 없다</b>(④-c-2b-4 소관). 따라서 replay 행과 원장의
+ * <p>이 테스트는 <b>replay 개시 진입점과 발행 경로를 분리한다</b>. replay 행과 원장의
  * {@code REQUESTED} 상태는 fixture 로 구성한다 — 진입점이 만들 <b>DB 상태</b>를 직접 세워
  * 발행 경로·reconciler·cleanup 경쟁 계약을 먼저 고정한다.
  *
@@ -75,7 +75,7 @@ class OutboxReplayPublicationIntegrationTest extends AbstractIntegrationTest {
     private static final String ORIGIN_TOPIC = "payment.completed";
     private static final String ATTEMPT_ID = "3f2a1b7c-8d9e-4a0b-9c1d-2e3f4a5b6c7d";
 
-    /** allowlist 4종을 전부 채운 정상 헤더 (④-c-2b-3a P14-b). */
+    /** allowlist 4종을 전부 채운 정상 헤더. */
     private static final String REPLAY_HEADERS_JSON =
             "{\"" + ReplayHeaders.ATTEMPT_ID + "\":\"" + ATTEMPT_ID + "\","
             + "\"" + ReplayHeaders.LEDGER_OWNER + "\":\"order\","
@@ -147,7 +147,7 @@ class OutboxReplayPublicationIntegrationTest extends AbstractIntegrationTest {
         });
     }
 
-    // ---------- 발행 측 allowlist 강제 (④-c-2b-3a P14-b) ----------
+    // ---------- 발행 측 allowlist 강제 ----------
     //
     // 여기서 막지 않으면 헤더가 모자란 replay 가 발행되고, 재실패 시 상관 축이 없어 독립 incident 로
     // 갈라진다 — 발행 측에서 ADR-0020 §D5-4 를 깨는 경로다.

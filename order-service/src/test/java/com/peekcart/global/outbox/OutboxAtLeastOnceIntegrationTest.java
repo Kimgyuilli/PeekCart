@@ -31,14 +31,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 /**
- * 재발행 보장 수준 = <b>publication at-least-once</b> 실측 (구현 ④-c-2b-2 P13 · 계획 §6 V-27 · ADR-0020 §D1).
+ * 재발행 보장 수준 = <b>publication at-least-once</b> 실측 (ADR-0020 §D1).
  *
  * <p><b>이 테스트는 "중복 발행 0" 을 단언하지 않는다.</b> DB 커밋과 broker ack 를 원자적으로 묶는 수단이
  * 우리 스택에 없다는 것이 ADR-0020 D1 의 결정이고, 여기서는 그 결정이 <b>참임을 관측</b>한다 —
  * 계약을 "중복은 일어날 수 있다 + 소비 효과는 1회" 로 적어두고 검증에서 반대를 주장하면 둘 중 하나가 거짓이다.
  *
  * <h2>왜 save 를 두 번 실패시키는가</h2>
- * 계획 초안은 "save 스텁 예외 1회" 로 중복을 재현하려 했으나 <b>그 설계로는 관측되지 않는다</b>:
+ * "save 스텁 예외 1회" 로는 <b>중복 발행을 관측할 수 없다</b>:
  * {@link OutboxPollingService} 는 ack 직후 {@code markPublished()} 로 인메모리 상태를 이미 PUBLISHED 로
  * 바꾼 뒤 save 하고, 실패하면 {@code handlePublishFailure} 가 <b>같은 객체를 다시 save</b> 한다.
  * 두 번째 save 가 성공하면 PUBLISHED 가 그대로 저장되어 재발행이 없다.

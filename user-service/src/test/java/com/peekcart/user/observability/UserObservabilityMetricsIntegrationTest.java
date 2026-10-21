@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * user-service 관측성 계약 회귀 (ADR-0009 §45-48 서비스별 복제 · PR2b/U8).
+ * user-service 관측성 계약 회귀 (ADR-0009 Decision S1/S2/S3/S4 서비스별 복제).
  * application= 태그 값(S2)·histogram bucket(S1)·prometheus 노출(S3)·health permitAll(S4)·exposure 화이트리스트.
  * <p>User 는 Kafka 미사용(UserApplication 이 KafkaAutoConfiguration 제외). 공유 Kafka 컨테이너는
  * 모듈 싱글톤이라 함께 뜨지만 이 context 는 연결하지 않는다.

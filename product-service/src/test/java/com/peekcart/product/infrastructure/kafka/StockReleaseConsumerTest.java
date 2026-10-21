@@ -17,7 +17,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 /**
- * {@code order.cancelled} 계약 확장(items·reason, 계획 P5·P6)에 대한 소비자 내성 테스트.
+ * {@code order.cancelled} 계약 확장(items·reason)에 대한 소비자 내성 테스트.
  * <p>Product 의 재고 복구는 예약 원장 기반(orderId 단위 CAS)이라 payload 확장과 무관해야 한다 —
  * 신·구 메시지 모두 같은 release 를 부른다.
  */

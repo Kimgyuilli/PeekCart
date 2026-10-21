@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * replay kill-switch 의 <b>기본값</b> 계약 (구현 ④-c-2b-4a P21 · 계획 리뷰 1R #6).
+ * replay kill-switch 의 <b>기본값</b> 계약.
  *
  * <p><b>왜 별도 테스트인가</b>: 진입점 통합테스트는 {@code @BeforeEach} 에서 값을 명시적으로 세팅하므로
  * <b>기본값을 아무도 관측하지 않는다</b>. 실제로 기본값을 {@code true} 로 뒤집는 변이(M1)에서 그 테스트가

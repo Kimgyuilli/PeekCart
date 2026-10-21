@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * {@code action=replay} · {@code action=publication-unknown} 의 권한·감사 주체 계약
- * (구현 ④-c-2b-4a diff 리뷰 1R #3 · ④-c-2b-4b P24).
+ *
  *
  * <p>다른 전이는 원장 상태만 바꾸지만 replay 는 <b>업무 토픽에 실제 메시지를 다시 싣는다</b>.
  * 공통 보안 체인은 {@code anyRequest().authenticated()} 뿐이라 ROLE_USER 도 통과하므로
@@ -97,7 +97,7 @@ class DeadLetterEndpointReplayAuthTest {
         verify(replayService, never()).replay(any(), any());
     }
 
-    // ---------- publication-unknown (④-c-2b-4b P24 · ADR-0022 §D4) ----------
+    // ---------- publication-unknown (ADR-0022 §D4) ----------
 
     @Test
     @DisplayName("ROLE_USER 는 교착 해제를 할 수 없다 — 서비스까지 도달하지 않는다")

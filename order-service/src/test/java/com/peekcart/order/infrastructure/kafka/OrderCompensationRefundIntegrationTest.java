@@ -49,15 +49,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 
 /**
- * Order 측 환불 보상 계약 통합 테스트 (계획 P14 — ④-c-1b).
+ * Order 측 환불 보상 계약 통합 테스트.
  *
  * <p>세 가지를 본다.
  * <ul>
- *   <li><b>P11 원자성</b> — 감지 원장과 요청 Outbox 가 같은 트랜잭션이다. 부분 커밋은
+ *   <li><b>원자성</b> — 감지 원장과 요청 Outbox 가 같은 트랜잭션이다. 부분 커밋은
  *       "감지했는데 아무도 환불하지 않는" 영구 미결을 만든다(ADR-0018 D1)</li>
- *   <li><b>P12 종결</b> — 회신 결과별로 종착이 다르다. {@code FAILED} 를 {@code RESOLVED} 로 닫으면
+ *   <li><b>종결</b> — 회신 결과별로 종착이 다르다. {@code FAILED} 를 {@code RESOLVED} 로 닫으면
  *       그 원장은 거짓말을 한다(D4)</li>
- *   <li><b>P11 backfill 멱등</b> — 재실행 시 추가 발행 0. 이 보장은 <b>producer DB 안의</b>
+ *   <li><b>backfill 멱등</b> — 재실행 시 추가 발행 0. 이 보장은 <b>producer DB 안의</b>
  *       {@code NOT EXISTS} 조건으로만 성립한다(Payment 의 UNIQUE 는 DB 경계를 넘지 못한다)</li>
  * </ul>
  */
@@ -106,7 +106,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         cleanDatabase();
     }
 
-    // ---------------- P11: 트리거 발행 + 원자성 ----------------
+    // ---------------- 트리거 발행 + 원자성 ----------------
 
     @Test
     @DisplayName("감지 시 order.compensation.requested 가 원장과 함께 커밋되고 키·payload 가 계약대로다")
@@ -118,7 +118,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         List<OutboxEvent> requests = findRequestOutbox(orderId);
         assertThat(requests).hasSize(1);
         OutboxEvent event = requests.get(0);
-        // aggregateType/aggregateId 표 고정 — backfill SQL 의 NOT EXISTS 가 같은 키를 쓴다(계획 §2.1-o)
+        // aggregateType/aggregateId 표 고정 — backfill SQL 의 NOT EXISTS 가 같은 키를 쓴다
         assertThat(event.getAggregateType()).isEqualTo("ORDER");
         assertThat(event.getAggregateId()).isEqualTo(orderId.toString());
 
@@ -161,7 +161,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         assertThat(findRequestOutbox(orderId)).hasSize(1);
     }
 
-    // ---------------- P12: 회신 소비 종결 ----------------
+    // ---------------- 회신 소비 종결 ----------------
 
     @Test
     @DisplayName("[SAGA-REFUND-RESULT-ORDER-SUCCEEDED] payment.refunded(SUCCEEDED) → RESOLVED (④-a R-2 가 닫히는 경로)")
@@ -256,7 +256,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         assertThat(ledger.getFailureCode()).isEqualTo("UNKNOWN");
     }
 
-    // ---------------- P14: listener 배선 (실제 Kafka 왕복) ----------------
+    // ---------------- listener 배선 (실제 Kafka 왕복) ----------------
 
     /**
      * 위 회신 테스트들은 listener 를 직접 호출하므로 토픽명·group·factory 배선이 틀려도 통과한다.
@@ -274,12 +274,12 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
                 assertThat(reload(orderId).getStatus()).isEqualTo(CompensationStatus.RESOLVED));
     }
 
-    // ---------------- P11: backfill 멱등 ----------------
+    // ---------------- backfill 멱등 ----------------
 
     @Test
     @DisplayName("backfill DML 2회 실행 → 2회차 0건 (멱등 근거는 producer DB 의 NOT EXISTS)")
     void backfill_isIdempotentAcrossReruns() {
-        Long orderId = seedOpenCompensation();   // 감지만 있고 요청 Outbox 는 없는 상태(④-a 배포 잔여분)
+        Long orderId = seedOpenCompensation();   // 감지만 있고 요청 Outbox 는 없는 상태(감지 marker 만 남은 과거 상태)
 
         assertThat(runBackfillStatement(0)).isEqualTo(1);
         assertThat(runBackfillStatement(0)).isZero();
@@ -288,7 +288,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
     }
 
     /**
-     * <b>c1:5/c2:1/c3:1 (P1) 회귀</b> — 1단계와 2단계 사이의 행이 {@code PENDING} 이면 롤링 배포 중
+     * <b>조립 중 outbox 행의 조기 발행 회귀</b> — 1단계와 2단계 사이의 행이 {@code PENDING} 이면 롤링 배포 중
      * 구 poller 가 <b>필수 필드 없는 payload('{}') 를 발행하고 PUBLISHED 로 봉인</b>해 요청이 영구
      * 유실된다. 조립 중에는 발행 대상 상태가 아니어야 한다.
      */
@@ -459,7 +459,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
         }
     }
 
-    /** 감지만 있고 요청 Outbox 는 없는 상태 — ④-a 배포 이후 쌓인 잔여분을 모사한다. */
+    /** 감지만 있고 요청 Outbox 는 없는 상태 — 감지 marker 만 남은 과거 상태를 모사한다. */
     private Long seedOpenCompensation() {
         Long orderId = seedCancelledOrder();
         EntityManager em = emf.createEntityManager();
