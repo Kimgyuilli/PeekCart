@@ -791,3 +791,9 @@ PR [#206](https://github.com/Kimgyuilli/PeekCart/pull/206) 최종 head `6b99cb90
 PR CI39586719840 attempt1의 payment bootJar 의존성 해석 실패는 테스트 시작 전 발생했고 원로그를 보존했다. 동일 12 URL의 이후 HTTP200·의존성 설정 불변을 확인한 뒤 source 변경 없이 실패 잡만 재실행했다. attempt2에서 실제 payment 54 suites/334 tests/실패·오류·skip0 및 전체 gate SUCCESS를 확인했다. 당시 원인을 나중의 가용성으로 단정하지 않는다. [재실행·병합 근거](https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314417217). 실제 main CI39589440384와 여섯 publish 모두 SUCCESS를 Root가 조회했다.
 
 역사 계약의 선택 필드 생략 호환을 유지하고 필수 metadata/items 내부 계약과 정확 정수 판정을 검증한다. D104의 모집단 정정은 별도 작업이다. TASKS 행은 상태 외 본문·순서를 보존해 이동했다. 이 완료 기록 자체의 최종 PR 검증·병합은 캠페인 기록 작업에 남아 있다.
+
+## 2026-10-21 — signed 경로 권한 예외 수정 병합 후 확인
+
+[PR211](https://github.com/Kimgyuilli/PeekCart/pull/211) 최종 head `3cf31328b3490b0885be68b5491e3534f259a6ed`, merge `89797c9639e15fb7c362e6be49687e652f80d3b9`. 공통 MVC 예외 처리에서 AccessDeniedException을 기존 보안 필터로 전달해 USER403·무인증401을 보존하고 다른 예외500은 유지한다. 실제 기존 결함 음성은 3개 중 2실패였고 수정 뒤 실제 313 platform tests가 통과했다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/211#issuecomment-6314585933)는 정확한 SHA와 원 XML·변경 영향을 검토했다.
+
+PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgyuilli/PeekCart/actions/runs/39592220364)의 모든 테스트·E2E·gate·여섯 publish SUCCESS를 Root가 확인했다. D-065의 실제 signed 전체 체인은 별도 PR210이며 운영 replay는 비개방 상태다. 운영 표본·GKE·NOT NULL 적용 등 남은 조건을 완료로 바꾸지 않는다.
