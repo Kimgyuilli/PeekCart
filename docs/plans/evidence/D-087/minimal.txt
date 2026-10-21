@@ -1,0 +1,6 @@
+test_fresh_profile_and_distinct_cache_export (__main__.ProfileTest.test_fresh_profile_and_distinct_cache_export) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.082s
+
+OK
