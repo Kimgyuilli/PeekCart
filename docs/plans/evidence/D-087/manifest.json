@@ -9,8 +9,8 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "bytes": 33361,
-      "sha256": "873ba16c82c1b0cb04aafca036bdade5d2ac017acd2f987a47ed35d2b4decf88"
+      "bytes": 34280,
+      "sha256": "b8d2b47eac227fd0cfc74d3d1aca1693d4e0251c829ebb53356aa86b03e5d70c"
     },
     {
       "path": "scripts/ci-build-profile.py",
@@ -37,5 +37,7 @@
       "bytes": 32495,
       "sha256": "cb5c0e413df73f249dbb23cf80f7859d6e386d9274d38a0ec7f1ae30568468ba"
     }
-  ]
+  ],
+  "source_ref": "c5b33f873ca4e6a3a6147444ac81b14913dadbca",
+  "integration_base": "43a1745a548b24eb85a88ba3e5ecd77bc0742326"
 }
