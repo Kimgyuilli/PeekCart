@@ -15,3 +15,9 @@ python3 -B scripts/codex-review-render-contract-selftest.py --mutants
 ```
 
 기존 shell selftest의 합성 자료에도 독립 jq oracle을 실행한다. 실제 `.cache/codex-reviews` corpus가 own/root tree에 없어 전체 과거 이력 회귀는 검증하지 못한다. V9는 원자료 없음을 skip으로 표시한다. 합성 자료로 과거282개/1267항목 등의 모집단을 재현했다고 주장하지 않으며 그 집계 사실 정정은 D-104 별도 작업이다. Gradle/Docker/운영/외부모델 요청은 없다. 별도 Codex 리뷰 미호출.
+
+## 숫자 정밀도 독립 검토 반영
+
+초기 f328 source는 binary float 반올림으로 raw id `1.0000000000000001` 또는 line `1e-999`를 integer로 잘못 받아들였다. parser가 Decimal 값을 보존하고 렌더러는 정수값과의 정확한 동등성으로 판정한다. 독립 oracle은 Decimal 부호/계수 digits/exponent와 trailing zero로 별도 판정한 뒤 id/line만 작은 정수 placeholder로 치환해 jq의 float 손실을 피한다. 거대한 지수는 전개하지 않는다. 정상 `1.0`, `10e-1`, `1e999`, `1e1000000`은 정수 호환으로 보존하며 bool/분수/underflow는 거부한다.
+
+현재 전체 대상은 신규9 method와 10 wrong-implementation control(렌더러9/oracle1)이다. renderer float 재도입과 oracle float 재도입을 각각 거부하는 control을 추가했다. 최소 로컬 numeric1 method PASS(1.634s), 별도 oracle1 method PASS(0.500s)만 추가 실행했다. 전체 suite/controls 및 새 정확 head Actions는 아직 대기다. 초기 manifest는 f328에 귀속하고 수정 source/최소 결과는 numeric-review-manifest.json으로 분리한다.

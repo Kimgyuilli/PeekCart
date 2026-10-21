@@ -28,5 +28,7 @@
       "sha256": "236ee1477f352922e900c2cf623e0c0590b0620cb6d89c667e071b0c603b86e8"
     }
   ],
-  "integration_base": "bdc370a80e0bfa6adefb6a436a5f608f878d1b69"
+  "integration_base": "bdc370a80e0bfa6adefb6a436a5f608f878d1b69",
+  "source_ref": "f32837469ab1288e2015d939818c9dd65e6837f4",
+  "phase": "initial implementation; not numeric-review fix source"
 }
