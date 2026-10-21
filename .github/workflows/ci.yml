@@ -650,8 +650,8 @@ jobs:
       fail-fast: false
       matrix:
         # 도메인 5서비스(ADR-0010 §5) + 인프라 게이트웨이 1 = 6 (구현 ③ PR3a).
-        # 주의: image-contract-lint 의 matrix 추출은 연속된 '- item' 행만 읽는다 — 항목 사이에
-        # 주석을 끼우면 그 뒤가 잘려 canonical 대조가 조용히 어긋난다.
+        # 주의: image-contract-lint 는 publish matrix 도 고정 canonical 집합과 대조한다. 항목 사이에
+        # 주석을 넣으면 뒤 항목이 추출되지 않아 lint 가 불일치와 exit 1 을 보고한다.
         service:
           - notification-service
           - user-service
