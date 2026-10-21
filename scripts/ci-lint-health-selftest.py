@@ -146,6 +146,29 @@ class HealthTest(unittest.TestCase):
         self.copy('.claude/commands/ship.md')
         self.write('.github/workflows/ci.yml', 'jobs: null\n'); self.wiring(2, 'workflow jobs missing')
 
+    def test_unsupported_preambles_fail_closed(self):
+        workflow = self.wiring_fixture()
+        step = next(s for s in workflow['jobs']['lint']['steps'] if s.get('name') == 'Run CI policy lints')
+        body = step['run']
+        binary = self.root / 'prefix-bin'; binary.mkdir(); log = self.root / 'prefix-calls'
+        for name in ['bash', 'python3']:
+            p = binary / name; p.write_text('#!/bin/sh\necho called >> "$LINT_PREFIX_CALLS"\n'); p.chmod(0o755)
+        p = binary / 'grep'; p.write_text('#!/bin/sh\nexit 1\n'); p.chmod(0o755)
+        env = os.environ.copy(); env.update(PATH=str(binary) + os.pathsep + env['PATH'], LINT_PREFIX_CALLS=str(log))
+        variants = ['PRE=1 exit 0\n' + body, 'PRE=1 exec true\n' + body,
+                    'builtin exit 0\n' + body, 'unused(){\n' + body + '\n}\n',
+                    'unused (){\n' + body + '\n}\n']
+        positive = body.replace('python3 -B scripts/ci-lint-wiring-lint.py', 'PRE=1 python3 -B scripts/ci-lint-wiring-lint.py')
+        for value in [positive, *variants]:
+            with self.subTest(preamble=value.splitlines()[0]):
+                if log.exists(): log.unlink()
+                actual = subprocess.run(['/bin/bash', '--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', value], cwd=self.root, env=env, text=True, capture_output=True)
+                self.assertEqual(actual.returncode, 0, actual.stderr)
+                self.assertEqual(log.exists(), value == positive)
+                step['run'] = value
+                self.write('.github/workflows/ci.yml', yaml.safe_dump(workflow, sort_keys=False))
+                self.wiring(0 if value == positive else 1)
+
     def test_policy_failure_propagation(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/ci.yml').read_text())
         body = next(s['run'] for s in workflow['jobs']['lint']['steps'] if s.get('name') == 'Run CI policy lints')
@@ -185,7 +208,16 @@ def poisons():
                     raise AssertionError(name + ' poison ' + str(status) + ' escaped fixture: ' + p.stdout + p.stderr)
                 print(name + ' early-exit' + str(status) + ': REJECTED')
             path.write_text(original)
-    print('LINT-HEALTH: 10 poisoned implementations rejected; four actual shell lints plus wiring CLI')
+        original = (ROOT / 'scripts/ci-lint-wiring-lint.py').read_text()
+        changed = original.replace('            break\n', '            continue\n')
+        assert changed != original, 'unsupported-preamble mutation source drift'
+        (root / 'scripts/ci-lint-wiring-lint.py').write_text(changed)
+        test = 'test_unsupported_preambles_fail_closed'
+        p = subprocess.run([sys.executable, '-B', str(root / 'scripts/ci-lint-health-selftest.py'), 'HealthTest.' + test], text=True, capture_output=True)
+        if p.returncode == 0 or ('FAIL: ' + test) not in p.stderr:
+            raise AssertionError('unsupported preamble skipped: ' + p.stdout + p.stderr)
+        print('unsupported-preamble-skipped: REJECTED')
+    print('LINT-HEALTH: 11 poisoned implementations rejected; four actual shell lints plus wiring CLI')
 
 
 if __name__ == '__main__':

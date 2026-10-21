@@ -26,22 +26,23 @@ def commands(body):
     for line, tokens in lines:
         if not tokens:
             continue
-        if tokens[0] in {'if', 'for', 'while', 'until', 'case', 'select', 'function', 'exit', 'return', 'exec'} or '{' in tokens:
-            break
-        if line != line.lstrip() or any(t in {'||', '&&', ';', '&', '|'} for t in tokens):
-            continue
+        # Only the initial uninterrupted sequence of supported direct commands is
+        # evidence. Unknown preambles (functions/builtins/control) stop the scan.
         while tokens and re.fullmatch(r'[A-Za-z_]\w*=.*', tokens[0]):
             tokens = tokens[1:]
+        if not tokens or line != line.lstrip() or any(t in {'||', '&&', ';', '&', '|'} for t in tokens):
+            break
         if tokens[:1] == ['bash']:
             tokens = tokens[1:]
         elif tokens[:1] == ['python3']:
             tokens = tokens[1:]
             if tokens[:1] == ['-B']:
                 tokens = tokens[1:]
-        elif not tokens or not tokens[0].startswith('scripts/'):
-            continue
-        if tokens and re.fullmatch(r'scripts/[\w.-]+', tokens[0]):
-            result.append(tokens)
+        elif not tokens[0].startswith('scripts/'):
+            break
+        if not tokens or re.fullmatch(r'scripts/(?:[\w.-]+/)*[\w.-]+', tokens[0]) is None:
+            break
+        result.append(tokens)
     return result
 
 
@@ -75,7 +76,8 @@ def check(root):
             # documents. This sole exception must retain its actual ship consumer.
             ship = (root / '.claude/commands/ship.md').read_text()
             blocks = re.findall(r'^```[^\n]*\n(.*?)^```', ship, flags=re.M | re.S)
-            ship_calls = [call for block in blocks for call in commands(block)]
+            # The existing ship block creates .cache before its three prose checks.
+            ship_calls = [call for block in blocks for call in commands(block.removeprefix('mkdir -p .cache\n'))]
             if not any(c[0] == name for c in ship_calls):
                 errors.append(name + ': ship-only consumer missing')
             continue
