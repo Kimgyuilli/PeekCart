@@ -827,3 +827,9 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 [PR188](https://github.com/Kimgyuilli/PeekCart/pull/188) 최종 head `560e16b5496ed802d8d5de8bd3c81edf2bf1ac72`는 초기 평가의 실제 vector·Normal을 유한 상한에서 기다리도록 바꾼다. [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/188#issuecomment-6319319025)는 직접 음성 대조와 원본 실행 증거를 확인했고, [PR CI39619631016](https://github.com/Kimgyuilli/PeekCart/actions/runs/39619631016) 필수 검사가 성공했다. 정상 병합한 main은 `8f0d2ee091bc2ce08a4c19e2ca3678d406559d34`다.
 
 실제 [main CI39623073011](https://github.com/Kimgyuilli/PeekCart/actions/runs/39623073011)은 workflow 성공으로 종료됐고 publish 다섯 job은 성공 결론이다. product publish는 Push image와 Complete job을 포함한 모든 단계가 성공했으나 GitHub API의 job 상태는 여전히 `in_progress`/결론 공란이므로 여섯 job 모두 성공 결론이라고 기록하지 않는다. D-092 PR217의 새 Grafana 실행으로 준비 경합 해소와 전달 경로를 재확인하기 전 D-093 전체 완료 표기는 보류한다. 운영 외부 전송·GKE 검증으로 확대하지 않는다.
+
+## 2026-10-22 — D-092 운영 경보 로컬 경로 부분 병합
+
+[PR217](https://github.com/Kimgyuilli/PeekCart/pull/217) 최종 head `85786a4e3f2945b513bcbdf5507ce0ea10412087`의 [전용·일반 CI39623335274](https://github.com/Kimgyuilli/PeekCart/actions/runs/39623335274)는 성공했다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/217#issuecomment-6320151203)는 실제 Grafana→로컬 수신기의 Slack형 요청 네 건을 직접 분석해 Outbox/DLQ 발화·복귀 각각 하나의 신호와 두 신호의 정확한 전체 집합, 기본 경로 격리, fixture 정리를 확인했다. 이 실행에서는 D-093의 초기 평가 준비도 통과했다.
+
+정상 병합 SHA는 `7320ffdd4a72a1bdde77bc9424c8d11ecff18ba3`다. 실제 [main CI39629072400](https://github.com/Kimgyuilli/PeekCart/actions/runs/39629072400) 및 publish 검증은 진행 중이다. 실제 Slack·GKE·운영 DB 전송은 검증하지 않았고, D-092는 사용자/운영 웹훅 분리 PR219와 실제 Secret 소유·전환, 외부 전달·FAILED 복구 조건이 남은 부분 완료다. D-093 완료 기록은 병합 후 확인까지 보류한다.
