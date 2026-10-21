@@ -118,12 +118,24 @@ class ProfileTest(unittest.TestCase):
 
     def test_record_command_failure_is_propagated(self):
         binary = self.root / 'bin'; binary.mkdir(); calls = self.root / 'calls'
-        docker = binary / 'docker'; docker.write_text('#!/bin/sh\necho "$*" >> "$PROFILE_TEST_CALLS"\nexit 23\n'); docker.chmod(0o755)
+        docker = binary / 'docker'
+        docker.write_text('#!/bin/sh\necho "$*" >> "$PROFILE_TEST_CALLS"\nif [ "$3" = "$PROFILE_TEST_FAIL" ]; then exit 23; fi\n')
+        docker.chmod(0o755)
         env = os.environ.copy(); env.update(BUILD_METADATA='{"buildx.build.ref":"builder/node/image"}', PROFILE_TEST_CALLS=str(calls))
         env['PATH'] = str(binary) + os.pathsep + env['PATH']
-        result = subprocess.run([sys.executable, '-B', str(SCRIPT), 'record-image', str(self.root)], env=env, text=True, capture_output=True)
-        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
-        self.assertEqual(len(calls.read_text().splitlines()), 1)
+        logs = 'buildx history logs --builder builder image --progress plain'
+        export = 'buildx history export --builder builder image -o ' + str(self.root / 'image.dockerbuild')
+        for mode, failing, expected in (('record-image', 'none', [logs, export]),
+                                        ('record-export', 'none', [logs]),
+                                        ('record-image', 'logs', [logs]),
+                                        ('record-export', 'logs', [logs]),
+                                        ('record-image', 'export', [logs, export])):
+            with self.subTest(mode=mode, failing=failing):
+                if calls.exists(): calls.unlink()
+                env['PROFILE_TEST_FAIL'] = failing
+                result = subprocess.run([sys.executable, '-B', str(SCRIPT), mode, str(self.root)], env=env, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0 if failing == 'none' else 2, result.stdout + result.stderr)
+                self.assertEqual(calls.read_text().splitlines(), expected)
 
     def test_workflow_and_final_runtime_contract(self):
         import yaml
@@ -184,6 +196,7 @@ def mutants():
         ('summary-incomplete', 'set(summary) == SUMMARY', 'True', 'test_hash_and_profile_shape_fail_closed'),
         ('detached-rebuild-accepted', "vertex(directory / 'profile-export.log', 'bootJar')['cached']", 'True', 'test_export_rebuild_and_incomplete_vertices_rejected'),
         ('checksum-ignored', "manifest == sha(report) + '  build/reports/profile/' + report.name + '\\n'", 'True', 'test_hash_and_profile_shape_fail_closed'),
+        ('qualified-ref-passed-to-cli', "'--builder', builder, record_id", 'ref', 'test_record_command_failure_is_propagated'),
         ('docker-failure-ignored', 'check=True', 'check=False', 'test_record_command_failure_is_propagated'),
         ('always-pass', "context = read_json(directory / 'context.json')", "return", 'test_fresh_profile_and_distinct_cache_export'),
         ('always-reject', "context = read_json(directory / 'context.json')", "raise ValueError('mutant')", 'test_fresh_profile_and_distinct_cache_export'),
@@ -196,7 +209,7 @@ def mutants():
             result = subprocess.run([sys.executable, '-B', __file__, 'ProfileTest.' + test], env=env, text=True, capture_output=True)
             assert result.returncode and ('FAIL: ' + test) in result.stderr, (name, result.stdout, result.stderr)
             print(name + ': REJECTED')
-    print('PASS: 8 wrong-implementation controls rejected; no Gradle/Docker invocation')
+    print('PASS: 9 wrong-implementation controls rejected; no Gradle/Docker invocation')
 
 
 if __name__ == '__main__':

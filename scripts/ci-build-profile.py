@@ -157,14 +157,15 @@ def analyze(directory):
 def record(directory, prefix):
     metadata = json.loads(os.environ['BUILD_METADATA'])
     ref = reference(metadata)
+    builder, _, record_id = ref.split('/')
     save(directory / (prefix + '-metadata.json'), metadata)
     if prefix == 'image':
         context = read_json(directory / 'context.json'); context['image_finished_epoch'] = int(time.time()); save(directory / 'context.json', context)
     name = 'image-build.log' if prefix == 'image' else 'profile-export.log'
     with (directory / name).open('w') as output, (directory / (name + '.stderr')).open('w') as error:
-        subprocess.run(['docker', 'buildx', 'history', 'logs', ref, '--progress', 'plain'], stdout=output, stderr=error, check=True)
+        subprocess.run(['docker', 'buildx', 'history', 'logs', '--builder', builder, record_id, '--progress', 'plain'], stdout=output, stderr=error, check=True)
     if prefix == 'image':
-        subprocess.run(['docker', 'buildx', 'history', 'export', ref, '-o', str(directory / 'image.dockerbuild')], check=True)
+        subprocess.run(['docker', 'buildx', 'history', 'export', '--builder', builder, record_id, '-o', str(directory / 'image.dockerbuild')], check=True)
 
 
 def main():
