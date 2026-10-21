@@ -140,6 +140,8 @@ jobs:
           bash scripts/servicemonitor-selector-lint.sh --self-test
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh
+          # D-093: 초기 NoData/지연과 bounded timeout을 실제 대기 없이 검증한다.
+          python3 -m unittest discover -s scripts/monitoring -p 'test_verify_alerts.py'
           # 구현 ④-d-1 P5 + PR4: alert 라벨/식 계약과 dashboard 변수 집합이 조작 입력에서
           # 실제로 실패하는지 19종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
           # 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, outbox FAILED 삭제/status 변조, dashboard 드리프트 3종.
