@@ -1,0 +1,162 @@
+{
+  "mysql_version": "8.0.46",
+  "image": "sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b",
+  "results": [
+    {
+      "pass": "order: actual migration chain, minimal grants, exact backfill, repeat unchanged",
+      "detail": 14
+    },
+    {
+      "pass": "product: actual migration chain, minimal grants, exact backfill, repeat unchanged",
+      "detail": 13
+    },
+    {
+      "pass": "payment: actual migration chain, minimal grants, exact backfill, repeat unchanged",
+      "detail": 15
+    },
+    {
+      "pass": "notification: actual migration chain, minimal grants, exact backfill, repeat unchanged",
+      "detail": 9
+    },
+    {
+      "pass": "zero root",
+      "detail": "invalid_root_id"
+    },
+    {
+      "pass": "negative root",
+      "detail": "invalid_root_id"
+    },
+    {
+      "pass": "orphan root",
+      "detail": "orphan_root"
+    },
+    {
+      "pass": "cycle",
+      "detail": "noncanonical_root_or_cycle"
+    },
+    {
+      "pass": "multi-hop root",
+      "detail": "noncanonical_root_or_cycle"
+    },
+    {
+      "pass": "unknown kind",
+      "detail": "unknown_record_kind"
+    },
+    {
+      "pass": "domain replay metadata",
+      "detail": "domain_or_legacy_replay_conflict"
+    },
+    {
+      "pass": "default kind",
+      "detail": "unexpected_column_default"
+    },
+    {
+      "pass": "coordinate index missing",
+      "detail": "coordinate_unique_index_missing"
+    },
+    {
+      "pass": "unproven NULL",
+      "detail": "legacy_provenance_required"
+    },
+    {
+      "pass": "NULL replay sentinel despite fixture proof",
+      "detail": "domain_or_legacy_replay_conflict"
+    },
+    {
+      "pass": "NULL lineage with replay metadata",
+      "detail": "ambiguous_legacy_metadata"
+    },
+    {
+      "pass": "stale row proof",
+      "detail": "legacy_provenance_required"
+    },
+    {
+      "pass": "insufficient actual service grant",
+      "detail": "required_schema_grant_missing"
+    },
+    {
+      "pass": "backfill DML error rolls back both tables",
+      "detail": {
+        "mysql_error": 1146,
+        "before_sha256": "1dc815efb62297c7d1bc99e708ee8e47055d708954c5052fa66fbff519eebc88"
+      }
+    },
+    {
+      "pass": "actual duplicate coordinate without unique index",
+      "detail": "coordinate_unique_index_missing"
+    },
+    {
+      "pass": "second ALTER failure does not undo first ALTER",
+      "detail": {
+        "mysql_error": 1054,
+        "rows_sha256": "fc2183a885fe72d3bc9405044758f4ab4cab6c8654b2f538eaa12361b5ce0e61"
+      }
+    },
+    {
+      "pass": "explicit local checkpoint continuation preserves rows",
+      "detail": "fc2183a885fe72d3bc9405044758f4ab4cab6c8654b2f538eaa12361b5ce0e61"
+    },
+    {
+      "pass": "old INSERT IGNORE silently coerces root; old self update cannot repair: STRICT_ALL_TABLES",
+      "detail": {
+        "warning": 1364,
+        "affected_rows": 1,
+        "root": 0
+      }
+    },
+    {
+      "pass": "old INSERT IGNORE silently coerces root; old self update cannot repair: non-strict",
+      "detail": {
+        "warning": 1364,
+        "affected_rows": 1,
+        "root": 0
+      }
+    },
+    {
+      "pass": "strict plain missing-root INSERT fails",
+      "detail": 1364
+    },
+    {
+      "pass": "strict missing-kind INSERT fails without DEFAULT",
+      "detail": 1364
+    },
+    {
+      "pass": "NOT NULL alone also permits ignored empty kind",
+      "detail": 1364
+    },
+    {
+      "pass": "legacy writer after preflight invalidates snapshot",
+      "detail": null
+    },
+    {
+      "pass": "legacy writer after backfill has unproven NULL",
+      "detail": "legacy_provenance_required"
+    },
+    {
+      "pass": "old writer NULL prevents strict ALTER; no automatic repair",
+      "detail": {
+        "mysql_error": "1138"
+      }
+    },
+    {
+      "pass": "ALTER commits preceding DML despite later failure and ROLLBACK",
+      "detail": 1054
+    },
+    {
+      "pass": "concurrent old writer during backfill commits new unproven NULL",
+      "detail": "legacy_provenance_required"
+    },
+    {
+      "pass": "legacy AUTO_INCREMENT consumes reserved ID; upsert count is not coordinate dedup",
+      "detail": {
+        "reserved_id": 22,
+        "affected_rows": 2,
+        "matching_coordinate_rows": 0
+      }
+    }
+  ],
+  "elapsed_seconds": 175.519,
+  "cleaned_up": true,
+  "completed": true,
+  "rollout_ready": false
+}
