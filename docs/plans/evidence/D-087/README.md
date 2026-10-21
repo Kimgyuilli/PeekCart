@@ -24,7 +24,7 @@ python3 -B scripts/ci-build-profile-selftest.py
 python3 -B scripts/ci-build-profile-selftest.py --mutants
 ```
 
-첫 Actions39587257345(d0ec) lint의10 method/8 control은 통과했다. 이미지 build 뒤 collector의 full ref 인자 오류로6 images가 실패했고 실제 profile/export/health smoke는 미실행이다. 수정 후 전체10 method/9 wrong-implementation control은 새 Actions 실행 대상이다. `minimal.txt`는 정상 fresh/별도 export 시간의 최소 로컬1 method PASS이며 전체 통과 증거가 아니다. 로컬 Gradle/Docker 실행은 없다. exact CI policy body를 mock하는 정상/각 child rc23 대조도 전체 suite에 포함돼 새 fixture와 mutants의 실패 전파를 확인한다.
+첫 Actions39587257345(d0ec) lint의10 method/8 control은 통과했다. 이미지 build 뒤 collector의 full ref 인자 오류로6 images가 실패했고 실제 profile/export/health smoke는 미실행이다. 첫 수정 b1d2는 log/export/HTML 추출에 성공했지만 진행 로그의 stderr 출력 때문에 분석에 실패했다. 단일 progress stream 수정 후 전체10 method/10 wrong-implementation control은 새 Actions 실행 대상이다. `minimal.txt`는 정상 fresh/별도 export 시간의 최소 로컬1 method PASS이며 전체 통과 증거가 아니다. 로컬 Gradle/Docker 실행은 없다. exact CI policy body를 mock하는 정상/각 child rc23 대조도 전체 suite에 포함돼 새 fixture와 mutants의 실패 전파를 확인한다.
 
 현재 실제 새 CI profile은 아직 수집 전이다. 분석 결과/실행 SHA/6서비스의 fresh·cached 상태는 Actions 산출물을 읽은 뒤 추가하며, 지금 새 비중이나 최적화 결론을 확정하지 않는다.
 
@@ -46,3 +46,11 @@ python3 -B scripts/ci-build-profile-selftest.py --mutants
 `first-attempt/manifest.json`은 d0ec/run39587257345/job119180029499의 원 notification log와 artifact bytes를 gzip/hash로 보존한다. credential 패턴 검출0을 확인했다. 원 이미지 build는 성공했지만 collector가 `builder/node/id` 전체를 CLI record ID로 넘겨 `no record found`로 실패했다. 같은 job의 action post는 `--builder <builder> <id>`로 정상 export했다. 이것은 계측 구현 오류이며 새 profile 측정은 아니다.
 
 수정은 qualified ref의 builder/native record ID를 분리해 명시적으로 전달한다. 전체 ref는 증거에 그대로 보존하고 latest-record fallback은 없다. 기존 record method 안에서 image/export 성공 argv와 각각 logs/export rc23의 실패 전파를 검사하며, 원 오류를 되살리는9번째 mutant를 추가했다. 로컬은 이1method(5 paired cases)만 PASS이며 전체 suite/9mutants/실제6 images는 Actions에서 검증한다. 초기 `manifest.json`은 source_ref c5b33 시점의 기록이며 수정 source hash로 오해하지 않는다.
+
+## 두 번째 실행의 progress stream 수정
+
+`second-attempt/manifest.json`은 b1d2/run39588545903/job119183886821 원 job log와 전체 artifact(HTML/metadata/build record 포함)를 gzip/hash로 보존한다. 원 history 명령은 성공했으나 stdout은0 bytes, 정상 plain progress는 stderr에 있었다. HTML이 있어도 원 Actions analyzer는 `missing/duplicate bootJar vertex`로 실패했다.
+
+collector는 stdout/stderr를 한 canonical progress log로 병합한다. 별도 fallback/중복 raw 파일은 새로 만들지 않는다. 성공 stub이 실제 형식의 progress를 stderr에 쓰도록 바꾸고 수집된 log 내용을 검증한다. stderr를 버리는10번째 mutant를 추가했다. 최소 로컬1 method/5cases PASS(0.934s), 전체 검증은 새 Actions에서 실행한다.
+
+진단용 `/private/tmp/d087-second-adapted-progress` 복사에서 원 stdout+stderr bytes만 단일 log로 합친 뒤 수정 analyzer를 실행하면 notification `fresh_execution`으로 읽혔다. 이는 새 image 실행이나 원 b1d2 pipeline 성공이 아니며, 원자료를 재분석할 수 있다는 좁은 개발 확인이다. 다음 run의 cached 이전 profile을 새 fresh 측정으로 바꾸지 않는다.
