@@ -1,0 +1,869 @@
+{
+  "run": 39589286318,
+  "attempt": 1,
+  "branch_head": "24d4942fb2e8c030f47ce8c12c24c3f2788a78f2",
+  "actual_checkout": "526ac935ba8c404b056fb637ff10de68c36ce149",
+  "scope": "single Actions run, six separate Linux x86_64/4 CPU runners; Gradle8.14.4/JDK17; no nonce/no-cache forced",
+  "controls": {
+    "methods": 10,
+    "methods_seconds": "1.569",
+    "wrong_implementations_rejected": 10
+  },
+  "rows": [
+    {
+      "service": "gateway",
+      "status": "fresh_execution",
+      "context": {
+        "service": "gateway",
+        "checkout_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "github_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "run_id": "39589286318",
+        "run_attempt": "1",
+        "runtime_target": "runtime",
+        "builder_name": "builder-7b1e7ce1-56e5-4a1d-8463-0339607f1ffa",
+        "runner_arch": "x86_64",
+        "runner_os": "Linux",
+        "runner_cpus": 4,
+        "dockerfile_sha256": "ae4197048727c1de5fef90c56ae29b8efe15f25e92d548b2c1393fcffaa7375c",
+        "gradle_wrapper_sha256": "aef287d114ce3153c3d535697a61928f5034990d570cbb2e93df549e9671483d",
+        "cache_scope": "image-gateway",
+        "cache_export_mode": "max",
+        "started_epoch": 1792580817,
+        "image_finished_epoch": 1792580867
+      },
+      "origin": {
+        "service": "gateway",
+        "started_epoch": 1792580826,
+        "finished_epoch": 1792580849
+      },
+      "image_build_ref": "builder-7b1e7ce1-56e5-4a1d-8463-0339607f1ffa/builder-7b1e7ce1-56e5-4a1d-8463-0339607f1ffa0/370fqycv9atldm8lvx4oyfdvx",
+      "profile_export_build_ref": "builder-7b1e7ce1-56e5-4a1d-8463-0339607f1ffa/builder-7b1e7ce1-56e5-4a1d-8463-0339607f1ffa0/ut2ewokpgzyolm6cn90k8tcii",
+      "bootjar_vertex": {
+        "id": "36",
+        "cached": false,
+        "seconds": "23.2"
+      },
+      "cache_export_vertex": {
+        "id": "41",
+        "cached": false,
+        "seconds": "10.0"
+      },
+      "gradle_profile": {
+        "summary_seconds": {
+          "Total Build Time": "22.890",
+          "Startup": "3.401",
+          "Settings and buildSrc": "0.383",
+          "Loading Projects": "0.349",
+          "Configuring Projects": "2.539",
+          "Artifact Transforms": "0",
+          "Task Execution": "14.321"
+        },
+        "tasks": {
+          ":gateway:compileJava": {
+            "seconds": "7.298",
+            "result": ""
+          },
+          ":gateway:bootJar": {
+            "seconds": "1.877",
+            "result": ""
+          },
+          ":gateway:processResources": {
+            "seconds": "0.017",
+            "result": ""
+          },
+          ":gateway:resolveMainClassName": {
+            "seconds": "0.016",
+            "result": ""
+          },
+          ":gateway:classes": {
+            "seconds": "0.001",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-observability:compileJava": {
+            "seconds": "3.629",
+            "result": ""
+          },
+          ":peekcart-common-observability:jar": {
+            "seconds": "0.013",
+            "result": ""
+          },
+          ":peekcart-common-observability:processResources": {
+            "seconds": "0.002",
+            "result": "NO-SOURCE"
+          },
+          ":peekcart-common-observability:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":internal-token-contract:compileJava": {
+            "seconds": "1.447",
+            "result": ""
+          },
+          ":internal-token-contract:jar": {
+            "seconds": "0.017",
+            "result": ""
+          },
+          ":internal-token-contract:processResources": {
+            "seconds": "0.004",
+            "result": "NO-SOURCE"
+          },
+          ":internal-token-contract:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          }
+        }
+      },
+      "health_smoke": "passed"
+    },
+    {
+      "service": "notification-service",
+      "status": "fresh_execution",
+      "context": {
+        "service": "notification-service",
+        "checkout_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "github_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "run_id": "39589286318",
+        "run_attempt": "1",
+        "runtime_target": "runtime",
+        "builder_name": "builder-11bdd102-ec8b-4771-b7a6-95ba5bac7463",
+        "runner_arch": "x86_64",
+        "runner_os": "Linux",
+        "runner_cpus": 4,
+        "dockerfile_sha256": "ae4197048727c1de5fef90c56ae29b8efe15f25e92d548b2c1393fcffaa7375c",
+        "gradle_wrapper_sha256": "aef287d114ce3153c3d535697a61928f5034990d570cbb2e93df549e9671483d",
+        "cache_scope": "image-notification-service",
+        "cache_export_mode": "max",
+        "started_epoch": 1792580820,
+        "image_finished_epoch": 1792580897
+      },
+      "origin": {
+        "service": "notification-service",
+        "started_epoch": 1792580829,
+        "finished_epoch": 1792580866
+      },
+      "image_build_ref": "builder-11bdd102-ec8b-4771-b7a6-95ba5bac7463/builder-11bdd102-ec8b-4771-b7a6-95ba5bac74630/i5zy1iy7vzwggs001cmon2w5m",
+      "profile_export_build_ref": "builder-11bdd102-ec8b-4771-b7a6-95ba5bac7463/builder-11bdd102-ec8b-4771-b7a6-95ba5bac74630/o2bu9hcfuufrftwq1nibus5dg",
+      "bootjar_vertex": {
+        "id": "36",
+        "cached": false,
+        "seconds": "37.6"
+      },
+      "cache_export_vertex": {
+        "id": "41",
+        "cached": false,
+        "seconds": "20.0"
+      },
+      "gradle_profile": {
+        "summary_seconds": {
+          "Total Build Time": "37.232",
+          "Startup": "3.802",
+          "Settings and buildSrc": "0.318",
+          "Loading Projects": "0.325",
+          "Configuring Projects": "2.677",
+          "Artifact Transforms": "0",
+          "Task Execution": "26.899"
+        },
+        "tasks": {
+          ":common:compileJava": {
+            "seconds": "18.437",
+            "result": ""
+          },
+          ":common:jar": {
+            "seconds": "0.056",
+            "result": ""
+          },
+          ":common:processResources": {
+            "seconds": "0.026",
+            "result": ""
+          },
+          ":common:classes": {
+            "seconds": "0.001",
+            "result": "Did No Work"
+          },
+          ":notification-service:bootJar": {
+            "seconds": "3.225",
+            "result": ""
+          },
+          ":notification-service:compileJava": {
+            "seconds": "1.022",
+            "result": ""
+          },
+          ":notification-service:resolveMainClassName": {
+            "seconds": "0.017",
+            "result": ""
+          },
+          ":notification-service:processResources": {
+            "seconds": "0.011",
+            "result": ""
+          },
+          ":notification-service:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-auth:compileJava": {
+            "seconds": "1.614",
+            "result": ""
+          },
+          ":peekcart-common-auth:jar": {
+            "seconds": "0.015",
+            "result": ""
+          },
+          ":peekcart-common-auth:processResources": {
+            "seconds": "0.005",
+            "result": ""
+          },
+          ":peekcart-common-auth:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-messaging:compileJava": {
+            "seconds": "1.423",
+            "result": ""
+          },
+          ":peekcart-common-messaging:jar": {
+            "seconds": "0.021",
+            "result": ""
+          },
+          ":peekcart-common-messaging:processResources": {
+            "seconds": "0.001",
+            "result": "NO-SOURCE"
+          },
+          ":peekcart-common-messaging:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-observability:compileJava": {
+            "seconds": "0.725",
+            "result": ""
+          },
+          ":peekcart-common-observability:jar": {
+            "seconds": "0.007",
+            "result": ""
+          },
+          ":peekcart-common-observability:processResources": {
+            "seconds": "0.001",
+            "result": "NO-SOURCE"
+          },
+          ":peekcart-common-observability:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":internal-token-contract:compileJava": {
+            "seconds": "0.282",
+            "result": ""
+          },
+          ":internal-token-contract:jar": {
+            "seconds": "0.007",
+            "result": ""
+          },
+          ":internal-token-contract:processResources": {
+            "seconds": "0.003",
+            "result": "NO-SOURCE"
+          },
+          ":internal-token-contract:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          }
+        }
+      },
+      "health_smoke": "passed"
+    },
+    {
+      "service": "order-service",
+      "status": "fresh_execution",
+      "context": {
+        "service": "order-service",
+        "checkout_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "github_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "run_id": "39589286318",
+        "run_attempt": "1",
+        "runtime_target": "runtime",
+        "builder_name": "builder-03ff8f47-a254-4a6e-9a9b-3722c47059cc",
+        "runner_arch": "x86_64",
+        "runner_os": "Linux",
+        "runner_cpus": 4,
+        "dockerfile_sha256": "ae4197048727c1de5fef90c56ae29b8efe15f25e92d548b2c1393fcffaa7375c",
+        "gradle_wrapper_sha256": "aef287d114ce3153c3d535697a61928f5034990d570cbb2e93df549e9671483d",
+        "cache_scope": "image-order-service",
+        "cache_export_mode": "max",
+        "started_epoch": 1792580820,
+        "image_finished_epoch": 1792580893
+      },
+      "origin": {
+        "service": "order-service",
+        "started_epoch": 1792580829,
+        "finished_epoch": 1792580857
+      },
+      "image_build_ref": "builder-03ff8f47-a254-4a6e-9a9b-3722c47059cc/builder-03ff8f47-a254-4a6e-9a9b-3722c47059cc0/ynvdwtny095ap84kn9rrinjh9",
+      "profile_export_build_ref": "builder-03ff8f47-a254-4a6e-9a9b-3722c47059cc/builder-03ff8f47-a254-4a6e-9a9b-3722c47059cc0/tr8n8b7ngsxlqs61rqxsjn4k3",
+      "bootjar_vertex": {
+        "id": "36",
+        "cached": false,
+        "seconds": "29.9"
+      },
+      "cache_export_vertex": {
+        "id": "41",
+        "cached": false,
+        "seconds": "20.8"
+      },
+      "gradle_profile": {
+        "summary_seconds": {
+          "Total Build Time": "28.262",
+          "Startup": "2.801",
+          "Settings and buildSrc": "0.245",
+          "Loading Projects": "0.281",
+          "Configuring Projects": "2.198",
+          "Artifact Transforms": "0",
+          "Task Execution": "20.108"
+        },
+        "tasks": {
+          ":common:compileJava": {
+            "seconds": "13.065",
+            "result": ""
+          },
+          ":common:jar": {
+            "seconds": "0.040",
+            "result": ""
+          },
+          ":common:processResources": {
+            "seconds": "0.016",
+            "result": ""
+          },
+          ":common:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":order-service:bootJar": {
+            "seconds": "2.640",
+            "result": ""
+          },
+          ":order-service:compileJava": {
+            "seconds": "1.135",
+            "result": ""
+          },
+          ":order-service:resolveMainClassName": {
+            "seconds": "0.049",
+            "result": ""
+          },
+          ":order-service:processResources": {
+            "seconds": "0.021",
+            "result": ""
+          },
+          ":order-service:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-auth:compileJava": {
+            "seconds": "1.167",
+            "result": ""
+          },
+          ":peekcart-common-auth:jar": {
+            "seconds": "0.026",
+            "result": ""
+          },
+          ":peekcart-common-auth:processResources": {
+            "seconds": "0.013",
+            "result": ""
+          },
+          ":peekcart-common-auth:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-messaging:compileJava": {
+            "seconds": "1.112",
+            "result": ""
+          },
+          ":peekcart-common-messaging:jar": {
+            "seconds": "0.020",
+            "result": ""
+          },
+          ":peekcart-common-messaging:processResources": {
+            "seconds": "0.004",
+            "result": "NO-SOURCE"
+          },
+          ":peekcart-common-messaging:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-observability:compileJava": {
+            "seconds": "0.592",
+            "result": ""
+          },
+          ":peekcart-common-observability:jar": {
+            "seconds": "0.006",
+            "result": ""
+          },
+          ":peekcart-common-observability:processResources": {
+            "seconds": "0.001",
+            "result": "NO-SOURCE"
+          },
+          ":peekcart-common-observability:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":internal-token-contract:compileJava": {
+            "seconds": "0.192",
+            "result": ""
+          },
+          ":internal-token-contract:jar": {
+            "seconds": "0.007",
+            "result": ""
+          },
+          ":internal-token-contract:processResources": {
+            "seconds": "0.002",
+            "result": "NO-SOURCE"
+          },
+          ":internal-token-contract:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          }
+        }
+      },
+      "health_smoke": "passed"
+    },
+    {
+      "service": "payment-service",
+      "status": "fresh_execution",
+      "context": {
+        "service": "payment-service",
+        "checkout_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "github_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "run_id": "39589286318",
+        "run_attempt": "1",
+        "runtime_target": "runtime",
+        "builder_name": "builder-af53496a-f8ba-41e6-af43-b9f509112d21",
+        "runner_arch": "x86_64",
+        "runner_os": "Linux",
+        "runner_cpus": 4,
+        "dockerfile_sha256": "ae4197048727c1de5fef90c56ae29b8efe15f25e92d548b2c1393fcffaa7375c",
+        "gradle_wrapper_sha256": "aef287d114ce3153c3d535697a61928f5034990d570cbb2e93df549e9671483d",
+        "cache_scope": "image-payment-service",
+        "cache_export_mode": "max",
+        "started_epoch": 1792580829,
+        "image_finished_epoch": 1792580922
+      },
+      "origin": {
+        "service": "payment-service",
+        "started_epoch": 1792580841,
+        "finished_epoch": 1792580870
+      },
+      "image_build_ref": "builder-af53496a-f8ba-41e6-af43-b9f509112d21/builder-af53496a-f8ba-41e6-af43-b9f509112d210/tbb428wkx487j3fydrtenaomb",
+      "profile_export_build_ref": "builder-af53496a-f8ba-41e6-af43-b9f509112d21/builder-af53496a-f8ba-41e6-af43-b9f509112d210/u2fpb9ndadhctx57cybb5fnjp",
+      "bootjar_vertex": {
+        "id": "36",
+        "cached": false,
+        "seconds": "30.4"
+      },
+      "cache_export_vertex": {
+        "id": "41",
+        "cached": false,
+        "seconds": "36.8"
+      },
+      "gradle_profile": {
+        "summary_seconds": {
+          "Total Build Time": "29.236",
+          "Startup": "2.436",
+          "Settings and buildSrc": "0.220",
+          "Loading Projects": "0.269",
+          "Configuring Projects": "2.072",
+          "Artifact Transforms": "0",
+          "Task Execution": "21.818"
+        },
+        "tasks": {
+          ":common:compileJava": {
+            "seconds": "13.770",
+            "result": ""
+          },
+          ":common:jar": {
+            "seconds": "0.035",
+            "result": ""
+          },
+          ":common:processResources": {
+            "seconds": "0.011",
+            "result": ""
+          },
+          ":common:classes": {
+            "seconds": "0.001",
+            "result": "Did No Work"
+          },
+          ":payment-service:bootJar": {
+            "seconds": "2.889",
+            "result": ""
+          },
+          ":payment-service:compileJava": {
+            "seconds": "1.671",
+            "result": ""
+          },
+          ":payment-service:resolveMainClassName": {
+            "seconds": "0.034",
+            "result": ""
+          },
+          ":payment-service:processResources": {
+            "seconds": "0.012",
+            "result": ""
+          },
+          ":payment-service:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-auth:compileJava": {
+            "seconds": "1.407",
+            "result": ""
+          },
+          ":peekcart-common-auth:jar": {
+            "seconds": "0.012",
+            "result": ""
+          },
+          ":peekcart-common-auth:processResources": {
+            "seconds": "0.005",
+            "result": ""
+          },
+          ":peekcart-common-auth:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-messaging:compileJava": {
+            "seconds": "1.090",
+            "result": ""
+          },
+          ":peekcart-common-messaging:jar": {
+            "seconds": "0.016",
+            "result": ""
+          },
+          ":peekcart-common-messaging:processResources": {
+            "seconds": "0.001",
+            "result": "NO-SOURCE"
+          },
+          ":peekcart-common-messaging:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-observability:compileJava": {
+            "seconds": "0.678",
+            "result": ""
+          },
+          ":peekcart-common-observability:jar": {
+            "seconds": "0.006",
+            "result": ""
+          },
+          ":peekcart-common-observability:processResources": {
+            "seconds": "0.001",
+            "result": "NO-SOURCE"
+          },
+          ":peekcart-common-observability:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":internal-token-contract:compileJava": {
+            "seconds": "0.170",
+            "result": ""
+          },
+          ":internal-token-contract:jar": {
+            "seconds": "0.007",
+            "result": ""
+          },
+          ":internal-token-contract:processResources": {
+            "seconds": "0.002",
+            "result": "NO-SOURCE"
+          },
+          ":internal-token-contract:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          }
+        }
+      },
+      "health_smoke": "passed"
+    },
+    {
+      "service": "product-service",
+      "status": "fresh_execution",
+      "context": {
+        "service": "product-service",
+        "checkout_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "github_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "run_id": "39589286318",
+        "run_attempt": "1",
+        "runtime_target": "runtime",
+        "builder_name": "builder-bd57ed8e-9429-462c-aca3-1fbb6780986f",
+        "runner_arch": "x86_64",
+        "runner_os": "Linux",
+        "runner_cpus": 4,
+        "dockerfile_sha256": "ae4197048727c1de5fef90c56ae29b8efe15f25e92d548b2c1393fcffaa7375c",
+        "gradle_wrapper_sha256": "aef287d114ce3153c3d535697a61928f5034990d570cbb2e93df549e9671483d",
+        "cache_scope": "image-product-service",
+        "cache_export_mode": "max",
+        "started_epoch": 1792580822,
+        "image_finished_epoch": 1792580925
+      },
+      "origin": {
+        "service": "product-service",
+        "started_epoch": 1792580843,
+        "finished_epoch": 1792580879
+      },
+      "image_build_ref": "builder-bd57ed8e-9429-462c-aca3-1fbb6780986f/builder-bd57ed8e-9429-462c-aca3-1fbb6780986f0/s0mpzsamcldq9x40y24v1fx6w",
+      "profile_export_build_ref": "builder-bd57ed8e-9429-462c-aca3-1fbb6780986f/builder-bd57ed8e-9429-462c-aca3-1fbb6780986f0/mbva2am1vs19h6ml8s8e1ape0",
+      "bootjar_vertex": {
+        "id": "36",
+        "cached": false,
+        "seconds": "36.0"
+      },
+      "cache_export_vertex": {
+        "id": "41",
+        "cached": false,
+        "seconds": "34.9"
+      },
+      "gradle_profile": {
+        "summary_seconds": {
+          "Total Build Time": "35.555",
+          "Startup": "3.168",
+          "Settings and buildSrc": "0.287",
+          "Loading Projects": "0.279",
+          "Configuring Projects": "2.628",
+          "Artifact Transforms": "0",
+          "Task Execution": "26.108"
+        },
+        "tasks": {
+          ":common:compileJava": {
+            "seconds": "16.821",
+            "result": ""
+          },
+          ":common:jar": {
+            "seconds": "0.050",
+            "result": ""
+          },
+          ":common:processResources": {
+            "seconds": "0.020",
+            "result": ""
+          },
+          ":common:classes": {
+            "seconds": "0.001",
+            "result": "Did No Work"
+          },
+          ":product-service:bootJar": {
+            "seconds": "3.386",
+            "result": ""
+          },
+          ":product-service:compileJava": {
+            "seconds": "1.745",
+            "result": ""
+          },
+          ":product-service:resolveMainClassName": {
+            "seconds": "0.021",
+            "result": ""
+          },
+          ":product-service:processResources": {
+            "seconds": "0.017",
+            "result": ""
+          },
+          ":product-service:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-auth:compileJava": {
+            "seconds": "1.610",
+            "result": ""
+          },
+          ":peekcart-common-auth:jar": {
+            "seconds": "0.025",
+            "result": ""
+          },
+          ":peekcart-common-auth:processResources": {
+            "seconds": "0.005",
+            "result": ""
+          },
+          ":peekcart-common-auth:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-messaging:compileJava": {
+            "seconds": "1.322",
+            "result": ""
+          },
+          ":peekcart-common-messaging:jar": {
+            "seconds": "0.020",
+            "result": ""
+          },
+          ":peekcart-common-messaging:processResources": {
+            "seconds": "0.001",
+            "result": "NO-SOURCE"
+          },
+          ":peekcart-common-messaging:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-observability:compileJava": {
+            "seconds": "0.822",
+            "result": ""
+          },
+          ":peekcart-common-observability:jar": {
+            "seconds": "0.006",
+            "result": ""
+          },
+          ":peekcart-common-observability:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-observability:processResources": {
+            "seconds": "0",
+            "result": "NO-SOURCE"
+          },
+          ":internal-token-contract:compileJava": {
+            "seconds": "0.223",
+            "result": ""
+          },
+          ":internal-token-contract:jar": {
+            "seconds": "0.009",
+            "result": ""
+          },
+          ":internal-token-contract:processResources": {
+            "seconds": "0.004",
+            "result": "NO-SOURCE"
+          },
+          ":internal-token-contract:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          }
+        }
+      },
+      "health_smoke": "passed"
+    },
+    {
+      "service": "user-service",
+      "status": "fresh_execution",
+      "context": {
+        "service": "user-service",
+        "checkout_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "github_sha": "526ac935ba8c404b056fb637ff10de68c36ce149",
+        "run_id": "39589286318",
+        "run_attempt": "1",
+        "runtime_target": "runtime",
+        "builder_name": "builder-202f155d-0570-4d23-b45f-1a7fd28b82ea",
+        "runner_arch": "x86_64",
+        "runner_os": "Linux",
+        "runner_cpus": 4,
+        "dockerfile_sha256": "ae4197048727c1de5fef90c56ae29b8efe15f25e92d548b2c1393fcffaa7375c",
+        "gradle_wrapper_sha256": "aef287d114ce3153c3d535697a61928f5034990d570cbb2e93df549e9671483d",
+        "cache_scope": "image-user-service",
+        "cache_export_mode": "max",
+        "started_epoch": 1792580835,
+        "image_finished_epoch": 1792580941
+      },
+      "origin": {
+        "service": "user-service",
+        "started_epoch": 1792580861,
+        "finished_epoch": 1792580889
+      },
+      "image_build_ref": "builder-202f155d-0570-4d23-b45f-1a7fd28b82ea/builder-202f155d-0570-4d23-b45f-1a7fd28b82ea0/xex3amyzefwdrnp84iluj02os",
+      "profile_export_build_ref": "builder-202f155d-0570-4d23-b45f-1a7fd28b82ea/builder-202f155d-0570-4d23-b45f-1a7fd28b82ea0/3t3wyh6tlu6m53o57rerwjcxd",
+      "bootjar_vertex": {
+        "id": "36",
+        "cached": false,
+        "seconds": "29.3"
+      },
+      "cache_export_vertex": {
+        "id": "41",
+        "cached": false,
+        "seconds": "36.0"
+      },
+      "gradle_profile": {
+        "summary_seconds": {
+          "Total Build Time": "27.489",
+          "Startup": "2.354",
+          "Settings and buildSrc": "0.252",
+          "Loading Projects": "0.256",
+          "Configuring Projects": "2.182",
+          "Artifact Transforms": "0",
+          "Task Execution": "20.087"
+        },
+        "tasks": {
+          ":common:compileJava": {
+            "seconds": "13.880",
+            "result": ""
+          },
+          ":common:jar": {
+            "seconds": "0.037",
+            "result": ""
+          },
+          ":common:processResources": {
+            "seconds": "0.020",
+            "result": ""
+          },
+          ":common:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":user-service:bootJar": {
+            "seconds": "2.929",
+            "result": ""
+          },
+          ":user-service:compileJava": {
+            "seconds": "0.937",
+            "result": ""
+          },
+          ":user-service:resolveMainClassName": {
+            "seconds": "0.012",
+            "result": ""
+          },
+          ":user-service:processResources": {
+            "seconds": "0.005",
+            "result": ""
+          },
+          ":user-service:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-auth:compileJava": {
+            "seconds": "1.350",
+            "result": ""
+          },
+          ":peekcart-common-auth:jar": {
+            "seconds": "0.013",
+            "result": ""
+          },
+          ":peekcart-common-auth:processResources": {
+            "seconds": "0.004",
+            "result": ""
+          },
+          ":peekcart-common-auth:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":peekcart-common-observability:compileJava": {
+            "seconds": "0.689",
+            "result": ""
+          },
+          ":peekcart-common-observability:jar": {
+            "seconds": "0.006",
+            "result": ""
+          },
+          ":peekcart-common-observability:processResources": {
+            "seconds": "0.001",
+            "result": "NO-SOURCE"
+          },
+          ":peekcart-common-observability:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          },
+          ":internal-token-contract:compileJava": {
+            "seconds": "0.194",
+            "result": ""
+          },
+          ":internal-token-contract:jar": {
+            "seconds": "0.007",
+            "result": ""
+          },
+          ":internal-token-contract:processResources": {
+            "seconds": "0.003",
+            "result": "NO-SOURCE"
+          },
+          ":internal-token-contract:classes": {
+            "seconds": "0",
+            "result": "Did No Work"
+          }
+        }
+      },
+      "health_smoke": "passed"
+    }
+  ],
+  "limitation": "One run; separate nested/possibly-overlapping Gradle rows and BuildKit wall times. No summed critical path, optimizer bound or repeated-run speedup claim. Six image jobs and lint succeeded; general notification test failed pretests HTTP429; full CI is not successful."
+}

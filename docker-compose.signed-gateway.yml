@@ -1,0 +1,170 @@
+# One matrix member runs real User -> Gateway -> one resource service.
+# Generated private keys are individual issuer-only mounts, outside evidence.
+x-owned: &owned
+  networks: [internal]
+  labels:
+    peekcart.fixture: signed-gateway
+    peekcart.fixture.nonce: ${SIGNED_NONCE:?}
+  restart: "no"
+
+x-app-env: &app-env
+  SPRING_PROFILES_ACTIVE: local
+  SPRING_DATA_REDIS_HOST: redis
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+  APP_INTERNAL_TOKEN_MODE: SIGNED_ONLY
+  APP_DEAD_LETTER_REPLAY_ENABLED: "false"
+  APP_SCHEDULING_ENABLED: "false"
+  APP_KAFKA_LISTENER_ENABLED: "false"
+  SPRING_JPA_SHOW_SQL: "false"
+  SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "false"
+  LOGGING_LEVEL_COM_PEEKCART: INFO
+  LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: INFO
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+
+x-app: &app
+  <<: *owned
+  mem_limit: 1g
+  depends_on:
+    mysql: {condition: service_healthy}
+    redis: {condition: service_healthy}
+    kafka: {condition: service_healthy}
+  healthcheck:
+    test: [CMD, curl, -fsS, 'http://localhost:8080/actuator/health']
+    interval: 5s
+    timeout: 3s
+    retries: 60
+    start_period: 40s
+
+services:
+  mysql:
+    <<: *owned
+    image: mysql:8.0.46
+    environment:
+      MYSQL_ROOT_PASSWORD: signed_fixture_root
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./scripts/e2e/mysql-init/01-init-databases.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD=signed_fixture_root mysqladmin ping -h127.0.0.1 -uroot --silent']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    mem_limit: 1g
+
+  redis:
+    <<: *owned
+    image: redis:7.2
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 3s
+      timeout: 2s
+      retries: 20
+    mem_limit: 256m
+
+  kafka:
+    <<: *owned
+    image: apache/kafka:3.8.1
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_NUM_PARTITIONS: "1"
+      CLUSTER_ID: ${SIGNED_KAFKA_CLUSTER_ID:?}
+    healthcheck:
+      test: [CMD-SHELL, '/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server kafka:29092 >/dev/null 2>&1']
+      interval: 5s
+      timeout: 5s
+      retries: 40
+    mem_limit: 1g
+
+  user-service:
+    <<: *app
+    image: user-service:${SIGNED_IMAGE_TAG:-ci}
+    environment:
+      <<: *app-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/peekcart_user?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: peekcart_user
+      SPRING_DATASOURCE_PASSWORD: peekcart_user
+      SPRING_APPLICATION_JSON: >-
+        {"app":{"jwt":{"access-token-expiry":${SIGNED_USER_TTL:-1800000},"rs256":{"active-kid":"signed-user","private-key-location":"file:/run/issuer-private.pem","public-keys":[{"kid":"signed-user","location":"file:/run/issuer-public.pem"}]}},"internal-token":{"public-keys":[{"kid":"signed-gateway","location":"file:/run/internal-public.pem"}]}}}
+    volumes:
+      - ${SIGNED_PRIVATE_DIR:?}/user-private.pem:/run/issuer-private.pem:ro
+      - ${SIGNED_PRIVATE_DIR:?}/user-public.pem:/run/issuer-public.pem:ro
+      - ${SIGNED_PRIVATE_DIR:?}/gateway-public.pem:/run/internal-public.pem:ro
+
+  gateway:
+    <<: *owned
+    image: gateway:${SIGNED_IMAGE_TAG:-ci}
+    mem_limit: 768m
+    depends_on:
+      user-service: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+      LOGGING_LEVEL_COM_PEEKCART: INFO
+      SPRING_APPLICATION_JSON: >-
+        {"app":{"gateway":{"jwt":{"jwks-uri":"http://user-service:8080/.well-known/jwks.json"},"upstream":{"user-uri":"http://user-service:8080","${SIGNED_SERVICE:?}-uri":"http://resource-service:8080"},"internal-token":{"active-kid":"signed-gateway","private-key-location":"file:/run/issuer-private.pem"}}}}
+    volumes:
+      - ${SIGNED_PRIVATE_DIR:?}/gateway-private.pem:/run/issuer-private.pem:ro
+    healthcheck:
+      test: [CMD, curl, -fsS, 'http://localhost:8081/actuator/health/readiness']
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 40s
+
+  resource-service:
+    <<: *app
+    image: ${SIGNED_SERVICE:?}-service:${SIGNED_IMAGE_TAG:-ci}
+    environment:
+      <<: *app-env
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/peekcart_${SIGNED_SERVICE:?}?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: peekcart_${SIGNED_SERVICE:?}
+      SPRING_DATASOURCE_PASSWORD: peekcart_${SIGNED_SERVICE:?}
+      TOSS_PAYMENTS_BASE_URL: http://pg-disabled.invalid:9/fixture-never-call
+      TOSS_SECRET_KEY: signed_fixture_placeholder
+      SPRING_APPLICATION_JSON: >-
+        {"app":{"internal-token":{"public-keys":[{"kid":"signed-gateway","location":"file:/run/internal-public.pem"}]}}}
+    volumes:
+      - ${SIGNED_PRIVATE_DIR:?}/resource-public.pem:/run/internal-public.pem:ro
+
+  runner:
+    <<: *owned
+    image: signed-gateway-runner:${SIGNED_IMAGE_TAG:-ci}
+    build: ./scripts/signed-gateway/runner
+    profiles: [tools]
+    environment:
+      SIGNED_SERVICE: ${SIGNED_SERVICE:?}
+      SIGNED_NONCE: ${SIGNED_NONCE:?}
+    volumes:
+      - ./scripts/signed-gateway:/work/scripts:ro
+      - ${SIGNED_OUT_DIR:?}:/work/out
+      - ./${SIGNED_SERVICE:?}-service/src/main/resources/db/migration:/work/migrations/resource:ro
+      - ./user-service/src/main/resources/db/migration:/work/migrations/user:ro
+    entrypoint: [python3, /work/scripts/verify.py]
+    mem_limit: 256m
+
+networks:
+  internal:
+    internal: true
+    labels:
+      peekcart.fixture: signed-gateway
+      peekcart.fixture.nonce: ${SIGNED_NONCE:?}
+
+volumes:
+  mysql-data:
+    labels:
+      peekcart.fixture: signed-gateway
+      peekcart.fixture.nonce: ${SIGNED_NONCE:?}
