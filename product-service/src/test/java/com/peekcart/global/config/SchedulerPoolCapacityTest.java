@@ -12,7 +12,6 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.scheduling.support.ScheduledMethodRunnable;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 /** D-078: finite Boot scheduler capacity, not real job throughput or production sizing. */
@@ -70,12 +70,14 @@ class SchedulerPoolCapacityTest {
         assertThat(scheduler.getScheduledThreadPoolExecutor().getCorePoolSize()).isEqualTo(capacity);
         TickProbe probe = context.getBean(TickProbe.class);
         var tasks = context.getBean(ScheduledAnnotationBeanPostProcessor.class).getScheduledTasks();
-        assertThat(tasks).hasSize(1);
-        var registered = tasks.iterator().next().getTask().getRunnable();
-        assertThat(registered).isInstanceOf(ScheduledMethodRunnable.class);
-        assertThat(((ScheduledMethodRunnable) registered).getTarget()).isSameAs(probe);
-        assertThat(((ScheduledMethodRunnable) registered).getMethod().getName()).isEqualTo("tick");
-        await().atMost(5, TimeUnit.SECONDS).until(() -> probe.ticks.get() > 0);
+        List<Runnable> registered = tasks.stream().map(task -> task.getTask().getRunnable()).toList();
+        verifyRegisteredProbe(registered, probe);
+        assertThatThrownBy(() -> verifyRegisteredProbe(List.of(new TickProbe()::tick), probe))
+                .as("a different probe instance is not this registered target").isInstanceOf(AssertionError.class);
+        assertThatThrownBy(() -> verifyRegisteredProbe(List.of(), probe))
+                .as("missing registration is rejected").isInstanceOf(AssertionError.class);
+        int beforeAutomaticTick = probe.ticks.get();
+        await().atMost(5, TimeUnit.SECONDS).until(() -> probe.ticks.get() > beforeAutomaticTick);
 
         CountDownLatch started = new CountDownLatch(blockers);
         CountDownLatch release = new CountDownLatch(1);
@@ -125,6 +127,19 @@ class SchedulerPoolCapacityTest {
         }
     }
 
+    private void verifyRegisteredProbe(List<Runnable> registered, TickProbe probe) {
+        assertThat(registered).hasSize(1);
+        int before = probe.inspectionTicks.get();
+        probe.inspectionThread = Thread.currentThread();
+        try {
+            registered.get(0).run(); // Supported Runnable API, including Spring's outcome-tracking wrapper.
+            assertThat(probe.inspectionTicks.get()).as("registered invocation reaches this probe.tick")
+                    .isEqualTo(before + 1);
+        } finally {
+            probe.inspectionThread = null;
+        }
+    }
+
     @Configuration(proxyBeanMethods = false)
     static class ProbeConfiguration {
         @Bean
@@ -135,10 +150,15 @@ class SchedulerPoolCapacityTest {
 
     static class TickProbe {
         private final AtomicInteger ticks = new AtomicInteger();
+        private final AtomicInteger inspectionTicks = new AtomicInteger();
+        private volatile Thread inspectionThread;
 
         @Scheduled(fixedDelay = 20)
         public void tick() {
             ticks.incrementAndGet();
+            if (Thread.currentThread() == inspectionThread) {
+                inspectionTicks.incrementAndGet();
+            }
         }
     }
 }
