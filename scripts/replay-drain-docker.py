@@ -31,7 +31,8 @@ def save(path, value):
 
 def run(args, input=None, timeout=30, env=None):
     try:
-        return subprocess.run(args, input=input, text=True, capture_output=True, timeout=timeout, env=env)
+        return subprocess.run(args, input=input, text=True, capture_output=True, timeout=timeout, env=env,
+                              stdin=subprocess.DEVNULL if input is None else None)
     except subprocess.TimeoutExpired as error:
         def text(value):
             return value.decode(errors="replace") if isinstance(value, bytes) else (value or "")
@@ -55,7 +56,7 @@ def owned_exec(owner, service, args, input=None, timeout=30):
     inspected = run(["docker", "container", "inspect", "--format",
                      '{{json .Config.Labels}}', identity], timeout=10)
     require(inspected.returncode == 0 and labels_match(owner, json.loads(inspected.stdout)), "exec ownership mismatch")
-    return run(["docker", "exec", "-i", identity, *args], input, timeout)
+    return run(["docker", "exec", *(["-i"] if input is not None else []), identity, *args], input, timeout)
 
 
 def kafka(owner, args, input=None):
@@ -142,6 +143,14 @@ def adapter(args):
     sys.stdout.write(result.stdout)
     sys.stderr.write(result.stderr)
     return result.returncode
+
+
+def assigned_without_commit(members, offsets):
+    member_rows = [line.split() for line in members.splitlines()]
+    offset_rows = [line.split() for line in offsets.splitlines()]
+    return (any(len(row) >= 6 and row[0] == "order-no-commit" and row[4] == "1" for row in member_rows)
+            and any(len(row) >= 6 and row[:4] == ["order-no-commit", "collector.no-commit", "0", "-"]
+                    for row in offset_rows))
 
 
 def lab(evidence):
@@ -274,8 +283,12 @@ def lab(evidence):
             (evidence / "no-commit-members-last.stderr").write_text(members.stderr)
             with (evidence / "no-commit-members-attempts.jsonl").open("a") as stream:
                 stream.write(json.dumps({"exit": members.returncode, "remainingSeconds": deadline - time.monotonic()}) + "\n")
-            if members.returncode == 0 and topic in members.stdout:
+            offsets = kafka(owner, ["kafka-consumer-groups.sh", "--describe", "--group", "order-no-commit"])
+            (evidence / "no-commit-offsets-last.stdout").write_text(offsets.stdout)
+            (evidence / "no-commit-offsets-last.stderr").write_text(offsets.stderr)
+            if members.returncode == offsets.returncode == 0 and assigned_without_commit(members.stdout, offsets.stdout):
                 (evidence / "actual-no-commit-members.stdout").write_text(members.stdout)
+                (evidence / "actual-no-commit-offsets.stdout").write_text(offsets.stdout)
                 break
             require(time.monotonic() < deadline, "actual no-commit partition assignment missing")
             time.sleep(1)

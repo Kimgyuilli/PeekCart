@@ -60,7 +60,11 @@ def verify(directory, root=ROOT):
         index = next(i for i,c in enumerate(calls) if c.get("service") == "order" and c["kind"] == kind)
         collector.require(calls[index]["exit"] == 1 and "Unknown column" in (folder / f"{index:02d}.stderr").read_text(),
                           "actual MySQL column failure not observed")
-    collector.require("collector.no-commit" in (directory / "actual-no-commit-members.stdout").read_text(), "actual no-commit assignment absent")
+    members = [line.split() for line in (directory / "actual-no-commit-members.stdout").read_text().splitlines()]
+    collector.require(any(len(row) >= 6 and row[0] == "order-no-commit" and row[4] == "1" for row in members), "actual no-commit member assignment absent")
+    offsets = [line.split() for line in (directory / "actual-no-commit-offsets.stdout").read_text().splitlines()]
+    collector.require(any(len(row) >= 6 and row[:4] == ["order-no-commit", "collector.no-commit", "0", "-"] for row in offsets),
+                      "actual no-commit topic/partition/unknown offset absent")
     collector.require((directory / "second-sample-missing/actual-group-delete.stdout").exists(), "actual second-sample deletion absent")
     for path in directory.rglob("*"):
         if path.is_file():
@@ -139,6 +143,39 @@ class ContractTests(unittest.TestCase):
         with patch.object(collector, "run", side_effect=responses) as run:
             collector.cleanup(self.path)
             self.assertEqual(run.call_args_list[2].args[0], ["docker", "container", "rm", "-f", identity])
+
+    def test_no_commit_requires_both_membership_and_actual_topic_offset(self):
+        # Kafka 3.8.1 actual members output can show only '(0)' under ASSIGNMENT.
+        members = "order-no-commit console-consumer-123 /172.18.0.2 console-consumer 1 (0)"
+        offsets = "order-no-commit collector.no-commit 0 - 0 - consumer host client"
+        self.assertTrue(collector.assigned_without_commit(members, offsets))
+        for bad_members, bad_offsets in [("", offsets), (members.replace(" 1 ", " 0 "), offsets),
+                                         (members, ""), (members, offsets.replace("collector.no-commit", "other")),
+                                         (members, offsets.replace("0 - 0", "0 0 0"))]:
+            self.assertFalse(collector.assigned_without_commit(bad_members, bad_offsets))
+
+    def test_kafka_exec_preserves_parent_group_stream_and_sql_input(self):
+        # A Docker-like client reads fd0 only with -i. Bash owns the remaining group line.
+        binary = self.root / "docker"
+        labels = {"peekcart.collector.nonce": self.owner["nonce"], "com.docker.compose.project": self.owner["project"]}
+        binary.write_text("#!/usr/bin/env python3\nimport json,sys\n"
+                          + "if sys.argv[1] == 'container': print(" + repr(json.dumps(labels)) + ")\n"
+                          + "elif '-i' in sys.argv: print(sys.stdin.read(), end='')\n")
+        binary.chmod(0o755)
+        source = ROOT / "scripts/replay-drain-docker.py"
+        code = ("import importlib.util,sys; s=importlib.util.spec_from_file_location('lab'," + repr(str(source)) + "); "
+                "m=importlib.util.module_from_spec(s); s.loader.exec_module(m); "
+                "o=m.read_owner(m.Path(sys.argv[1])); "
+                "r=m.owned_exec(o,'mysql',['describe']); print(sys.argv[2]); sys.exit(r.returncode)")
+        import os
+        env = dict(os.environ, PATH=str(self.root) + os.pathsep + os.environ["PATH"])
+        shell = 'while IFS= read -r group; do "$1" -c "$2" "$3" "$group"; done'
+        observed = subprocess.run(["bash", "-c", shell, "fixture", sys.executable, code, str(self.path)],
+                                  input="order-target\norder-svc-dlq-group\n", text=True, capture_output=True, env=env, timeout=10)
+        self.assertEqual(observed.returncode, 0, observed.stderr)
+        self.assertEqual(observed.stdout.splitlines(), ["order-target", "order-svc-dlq-group"])
+        with patch.dict(os.environ, env):
+            self.assertEqual(collector.owned_exec(self.owner, "mysql", ["mysql"], "SELECT 1").stdout, "SELECT 1")
 
     def test_manifest_failure_and_missing_evidence_never_green(self):
         self.path.write_text(json.dumps({"nonce":"other","project":"collector-other"}))
