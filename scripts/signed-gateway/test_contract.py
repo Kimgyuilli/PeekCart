@@ -73,6 +73,16 @@ class EvidenceTest(unittest.TestCase):
         self.write("final-after.json", {"ledger": [], "outbox": [{"id": 1}]})
         with self.assertRaises(AssertionError): self.verify()
 
+    def test_wrong_image_and_migration_source(self):
+        source = evidence.read(self.directory / "source-images.json")
+        changed = copy.deepcopy(source)
+        changed["images"]["gateway"] = "sha256:" + "b" * 64
+        self.write("source-images.json", changed)
+        with self.assertRaises(AssertionError): self.verify()
+        self.write("source-images.json", source)
+        (self.root / "order-service/src/main/resources/db/migration/V2__missing.sql").write_text("SELECT 2;")
+        with self.assertRaises(AssertionError): self.verify()
+
     def test_missing_phase_and_source(self):
         (self.directory / "wrong-key.json").unlink()
         with self.assertRaises(FileNotFoundError): self.verify()
@@ -136,6 +146,17 @@ class OwnershipTest(unittest.TestCase):
                 self.assertEqual(result["failureType"], "TimeoutError")
                 self.assertFalse(result["complete"])
                 self.assertFalse(instance.private.exists())
+
+    def test_workflow_keeps_all_four_resources_and_no_publish(self):
+        workflow = yaml.load((lab.ROOT / ".github/workflows/signed-gateway.yml").read_text(), Loader=yaml.BaseLoader)
+        self.assertNotIn("pull_request_target", workflow["on"])
+        self.assertEqual(workflow["permissions"], {"contents": "read"})
+        self.assertEqual(set(workflow["jobs"]["admission"]["strategy"]["matrix"]["service"]),
+                         {"order", "product", "payment", "notification"})
+        self.assertEqual(set(workflow["jobs"]["images"]["strategy"]["matrix"]["service"]),
+                         {"user-service", "gateway", "order-service", "product-service", "payment-service", "notification-service"})
+        build = next(step for step in workflow["jobs"]["images"]["steps"] if step.get("uses") == "docker/build-push-action@v6")
+        self.assertNotIn("push", build["with"])
 
     def test_compose_is_closed_and_issuer_keys_are_separate(self):
         config = yaml.safe_load(lab.COMPOSE.read_text())

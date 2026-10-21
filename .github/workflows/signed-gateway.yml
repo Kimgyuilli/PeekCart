@@ -13,6 +13,7 @@ on:
       - 'gateway/src/main/**'
       - 'common/src/main/**'
       - 'peekcart-common-*/src/main/**'
+      - 'internal-token-contract/src/main/**'
       - '**/build.gradle'
       - 'gradle/**'
       - 'settings.gradle'
