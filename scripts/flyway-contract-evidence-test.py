@@ -48,7 +48,12 @@ class EvidenceControls(unittest.TestCase):
             (self.lab / f"child-{i}.json").write_text(json.dumps(raw))
             invocations.append(dict(raw, exitCode=0 if raw["success"] else 2))
         self.report = dict(complete=True, restartStatePreserved=True, mysqlImage="mysql:8.0.46",
-                           parentPid=900, services=services, invocations=invocations)
+                           parentPid=900, services=services, invocations=invocations, containerId="owned-fixture",
+                           initialMappedPort=33060, restartedMappedPort=33061)
+        for phase, second, port in (("before", 0, 33060), ("after", 1, 33061)):
+            endpoint = dict(id="owned-fixture", status="running", startedAt=f"2026-10-21T00:00:0{second}Z",
+                            ports={"3306/tcp": [{"HostPort": str(port)}]})
+            (self.lab / f"{phase}-restart-endpoint.json").write_text(json.dumps(endpoint))
         state = {str(i): {"knownFixture": True} for i in range(12)}
         for name in ("before-restart.json", "after-restart.json"):
             (self.lab / name).write_text(json.dumps(state))
@@ -116,6 +121,14 @@ class EvidenceControls(unittest.TestCase):
     def test_missing_negative_outcomes_rejected(self):
         self.report["invocations"][0]["success"] = True
         with self.assertRaisesRegex(ValueError, "missing negative"): self.verify()
+
+    def test_foreign_restart_identity_rejected(self):
+        self.report["containerId"] = "foreign"
+        with self.assertRaisesRegex(ValueError, "ownership mismatch"): self.verify()
+
+    def test_no_actual_restart_rejected(self):
+        (self.lab / "after-restart-endpoint.json").write_bytes((self.lab / "before-restart-endpoint.json").read_bytes())
+        with self.assertRaisesRegex(ValueError, "timestamp did not advance"): self.verify()
 
     def test_restart_data_loss_rejected(self):
         (self.lab / "after-restart.json").write_text("{}")
