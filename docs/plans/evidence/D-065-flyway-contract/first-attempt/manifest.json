@@ -1,0 +1,24 @@
+{
+  "report.json": {
+    "rawSha256": "e0645a6d976d32d62ecf2a74ca62c9073c65d2072ce231cc7f34cdd1f80dc9e1",
+    "gzipSha256": "78bc2ba42d0490e7fab69e9004eef7ce8cb9b2615791ffe0f862ee68684ac0fc"
+  },
+  "failure.xml": {
+    "rawSha256": "2924c9ec60a7ac0295b382026c20dd108dbbaf29d5d5384592b92384fcd62b91",
+    "gzipSha256": "520342539ad9cd20ad4d4818bb83ecf733b2ecb02452a58d83c8431bd861d783"
+  },
+  "restart.txt": {
+    "rawSha256": "d07d680e084c0ff88db1812040f0224691c8733bbc719517e423cd8b2f9f9e67",
+    "gzipSha256": "1f2f9aeb1acf0d48bdcdfdf15c639b09a83b88dfb0602e6defc51db22a3ff326"
+  },
+  "gradle.txt": {
+    "rawSha256": "56cafebee7ce1979604a2246b05d0560b2d43dbd3216fdd7ac265adf4f06397b",
+    "gzipSha256": "0c3ac05e995f9bd8e8cf372b99f82b9ec70fc3fa4eaa2c8ba416a32475f1c28b"
+  },
+  "cleanup.txt": {
+    "rawSha256": "25ebecc657c6cae7729843c7ba23b9345493659e00d6fcf932d4d16fb4e4e72f",
+    "gzipSha256": "0b8efa88e6811498423e045289d09eda073c7b37bc02f2dffe4c491ff4cceb8d"
+  },
+  "sourceHead": "fd521214630d0f9ed7d5a0be7b1b972afafe9b40",
+  "actionsRun": 39582861319
+}
