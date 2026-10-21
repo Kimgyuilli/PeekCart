@@ -81,7 +81,7 @@ dependencies {
 def paymentTestSeed = (project.findProperty('testSeed') ?: System.getenv('TEST_SEED'))?.toString()
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform { excludeTags 'flyway-contract-lab' }
     finalizedBy jacocoTestReport
     systemProperty 'app.scheduling.enabled', 'false'
     systemProperty 'app.kafka.listener.enabled', 'false'
@@ -114,4 +114,21 @@ jacocoTestReport {
             ])
         })
     }
+}
+
+// Dedicated JVM: this fixture restarts its own shared MySQL and must never run
+// beside the normal payment Spring contexts. The existing test set stays intact.
+tasks.register('flywayContractTest', Test) {
+    dependsOn testClasses
+    description = 'Four-service Flyway lifecycle and failed-history contract lab'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'flyway-contract-lab' }
+    maxParallelForks = 1
+    workingDir = rootProject.projectDir
+    systemProperty 'flyway.lab.classpath', sourceSets.test.runtimeClasspath.asPath
+    systemProperty 'flyway.lab.root', rootProject.projectDir.absolutePath
+    systemProperty 'flyway.lab.evidence', layout.buildDirectory.dir('flyway-contract').get().asFile.absolutePath
+    outputs.upToDateWhen { false }
 }
