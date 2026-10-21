@@ -1,0 +1,41 @@
+{
+  "source_base": "bdc370a80e0bfa6adefb6a436a5f608f878d1b69",
+  "status": "initial implementation; formal controls and actual CI measurement pending",
+  "files": [
+    {
+      "path": "Dockerfile",
+      "bytes": 3680,
+      "sha256": "ae4197048727c1de5fef90c56ae29b8efe15f25e92d548b2c1393fcffaa7375c"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 33361,
+      "sha256": "873ba16c82c1b0cb04aafca036bdade5d2ac017acd2f987a47ed35d2b4decf88"
+    },
+    {
+      "path": "scripts/ci-build-profile.py",
+      "bytes": 10267,
+      "sha256": "a3f4de8a4febcaf8303b5694b3c17656ae87759dd8a6d0e5fe7e195d928038c8"
+    },
+    {
+      "path": "scripts/ci-build-profile-selftest.py",
+      "bytes": 13200,
+      "sha256": "e2dbea787eeb38fcf30067c47c2f996f22b661982c34007c50cb13fb870dfec8"
+    },
+    {
+      "path": "docs/plans/evidence/D-087/minimal.txt",
+      "bytes": 217,
+      "sha256": "e0c374c211e7d9f250b353fa67838f5cedd7c2973406e9cbaf8a6988160cca03"
+    },
+    {
+      "path": "docs/plans/evidence/D-087/original-source.json",
+      "bytes": 559,
+      "sha256": "e07e53b065c66eec7d47f47fd13c624ac16807abef7708ef6ba53a70ff814524"
+    },
+    {
+      "path": "docs/plans/evidence/D-087/original-images-notification.log.gz",
+      "bytes": 32495,
+      "sha256": "cb5c0e413df73f249dbb23cf80f7859d6e386d9274d38a0ec7f1ae30568468ba"
+    }
+  ]
+}
