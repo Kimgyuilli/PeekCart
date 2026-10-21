@@ -1,0 +1,27 @@
+{
+  "source_ref": "822f7bd42692f94f5eec45845e87f1d4b03f2a6b",
+  "status": "canonical merged progress stream fix; formal Actions pending",
+  "development_test": "record command method / 5 cases PASS in0.934s; no real Docker",
+  "files": [
+    {
+      "path": "scripts/ci-build-profile.py",
+      "bytes": 10325,
+      "sha256": "762c49c31b8dd241054ecf949794d7ae4aaeae55f0f6b2403c3057ca97e87e6d"
+    },
+    {
+      "path": "scripts/ci-build-profile-selftest.py",
+      "bytes": 14716,
+      "sha256": "4adaec5b67eaaa89eb3f34194bf463dbd4649b1ef6059469e50c0ddbe3fdd653"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 34280,
+      "sha256": "b8d2b47eac227fd0cfc74d3d1aca1693d4e0251c829ebb53356aa86b03e5d70c"
+    },
+    {
+      "path": "Dockerfile",
+      "bytes": 3680,
+      "sha256": "ae4197048727c1de5fef90c56ae29b8efe15f25e92d548b2c1393fcffaa7375c"
+    }
+  ]
+}

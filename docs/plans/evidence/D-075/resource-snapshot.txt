@@ -1,0 +1,8 @@
+2026-10-20T19:38:15Z
+/kind_visvesvaraya image=redis:7 imageID=sha256:4fa24486b8bcca8eec45ee0eb166edc674795e53a2b53d1a9ef263eecebaac85 memory=0 nanoCPUs=0 cpuShares=0
+/sharp_einstein image=mysql:8.0.46 imageID=sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b memory=0 nanoCPUs=0 cpuShares=0
+/exciting_brown image=apache/kafka:3.8.1 imageID=sha256:22c4bea38875408e8f9fe52aca8e3a6ee67f9aa0090db59af99a2f6647558db5 memory=0 nanoCPUs=0 cpuShares=0
+Docker VM CPUs=8 memoryBytes=8217341952
+kind_visvesvaraya	0.61%	9.148MiB / 7.653GiB
+sharp_einstein	14.12%	290.8MiB / 7.653GiB
+exciting_brown	3.84%	346.3MiB / 7.653GiB

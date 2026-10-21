@@ -1,0 +1,51 @@
+{
+  "source_ref": "d0ec714711dcf4f8f051591ae85e6fe8d3b1abc8",
+  "run": 39587257345,
+  "job": 119180029499,
+  "status": "image build succeeded; collector qualified-ref lookup failed before profile export/analysis/health smoke",
+  "credential_pattern_matches": 0,
+  "files": [
+    {
+      "path": "notification-job.log.gz",
+      "raw_bytes": 169145,
+      "raw_sha256": "b4f8b378f3b40089a2a2ac57b284980e390b90ac42122dbc3872496581012623",
+      "gzip_sha256": "cb940915c20760e2e0ee982f3467f9dcea7ddd9a02cb93b79f5b1b59262be540"
+    },
+    {
+      "path": "buildx-version.txt.gz",
+      "raw_bytes": 74,
+      "raw_sha256": "af9e26004e1d709f960d6dda62c5bb9415782f12269f0ccce6c8b918d2326d72",
+      "gzip_sha256": "0f993a8e0505e78b0401951bd7d980a9c8161cd7db78160203e1d11b3735a3f2"
+    },
+    {
+      "path": "context.json.gz",
+      "raw_bytes": 711,
+      "raw_sha256": "c6c3dfd22bbf4c56dad858f5cd1148f7235aa552625f12c5eafab71d36a9063e",
+      "gzip_sha256": "c1b06f4ee51fd2543d98402598e958b32599824d938190889a1042af77a1eaee"
+    },
+    {
+      "path": "docker-version.txt.gz",
+      "raw_bytes": 769,
+      "raw_sha256": "8402d8b7679b4087fa4fb62264e49054f974146c5d134195d8b7a341747ab4ed",
+      "gzip_sha256": "2e1cc7af9d9310f9caba9d4b6d5f57acf3b0cd711c75c2ed8fa02c5d5c6b1da4"
+    },
+    {
+      "path": "image-build.log.gz",
+      "raw_bytes": 0,
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gzip_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    {
+      "path": "image-build.log.stderr.gz",
+      "raw_bytes": 150,
+      "raw_sha256": "1e922b92d9ad8d2072e40d449ae5c747eef119736faffc0928d0e9136ff40268",
+      "gzip_sha256": "c39945100d5859192b9a315160ebcf91c4d50672d9468cc6740f3332c8c876b9"
+    },
+    {
+      "path": "image-metadata.json.gz",
+      "raw_bytes": 37527,
+      "raw_sha256": "b86ed16bc369399a95cc3e53b756d85f4931b4e559254377767869f9b90a7159",
+      "gzip_sha256": "a364c5bab50b2b832a315aa2d48c0c041ce52cdc5869356b92d05b59f1ef48a6"
+    }
+  ]
+}
