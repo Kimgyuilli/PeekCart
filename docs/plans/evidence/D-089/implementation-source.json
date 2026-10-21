@@ -1,8 +1,8 @@
 {
-  "source_ref": "D089 precommit working tree; content hashes identify exact files, not a historical commit",
+  "source_ref": "Post-main209 integration working tree; exact file hashes, no claim of new historical measurement",
   "implementation_base": "89797c9639e15fb7c362e6be49687e652f80d3b9",
   "files": {
-    ".github/workflows/ci.yml": "fd0b9a388d8400e757d7e89690c162a5046a29ced140725685d72dc6523b2590",
+    ".github/workflows/ci.yml": "f36e16e93b80e208b662e9f5e15350f55ff96db9a92009e6fe3fab65b9e58aae",
     "scripts/ci-publication-state.py": "91b97a896609f19768b260689af4aab7ffe4711b7d25c2535869cb07fef6bd51",
     "scripts/ci-publication-state-selftest.py": "364a2d82fcd8f3798dd6e503572707e9fa30e85949372f4d57eec7edab498b54",
     "scripts/ci-release-gate-lint.sh": "18aa0a1e19f33d855170c15b6bc091695b6fd4257f493a74e10da5b03d74573b",
@@ -18,5 +18,6 @@
       "result": "PASS"
     }
   ],
-  "formal_full_suite": "Pending Actions; local full suite/mutants/Gradle/Docker not run"
+  "formal_full_suite": "Pending Actions; local full suite/mutants/Gradle/Docker not run",
+  "pr_base": "c9e12d695e21c348a82da78c6577eac7b2dd4d89"
 }
