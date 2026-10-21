@@ -322,6 +322,61 @@ yaml.dump(doc, open(dst, "w"), allow_unicode=True, sort_keys=False)
 PYEOF
     run_case "outbox status matcher 변조" "$ST_TMP/outbox-pending.yml"
 
+    # D-090: PromQL A만 같아도 발화/라우팅은 달라진다. 오류 종류까지 검사하여
+    # preflight 실패나 예외를 의도한 계약 검출로 세지 않는다.
+    python3 - "$ST_SRC" "$ST_TMP" <<'PYEOF'
+import copy, os, sys, yaml
+src, tmp = sys.argv[1:]
+original = yaml.safe_load(open(src))
+mutations = ("condition", "a-ref", "b-ref", "threshold", "pending", "signal", "severity",
+             "paused", "instant", "range", "b-type", "b-datasource", "b-deleted", "extra-data", "active")
+for mutation in mutations:
+    doc = copy.deepcopy(original)
+    inner = yaml.safe_load(doc["data"]["alerts.yaml"])
+    rule = next(r for g in inner["groups"] for r in g["rules"] if r["uid"] == "peekcart-outbox-failed")
+    a, b = rule["data"]
+    if mutation == "condition": rule["condition"] = "A"
+    elif mutation == "a-ref": a["refId"] = "C"
+    elif mutation == "b-ref": b["refId"] = "C"
+    elif mutation == "threshold": b["model"]["expression"] = "$A > 999"
+    elif mutation == "pending": rule["for"] = "500m"
+    elif mutation == "signal": rule["labels"]["signal"] = "dlq"
+    elif mutation == "severity": rule["labels"]["severity"] = "info"
+    elif mutation == "paused": rule["isPaused"] = True
+    elif mutation == "instant": a["model"]["instant"] = False
+    elif mutation == "range": a["model"]["range"] = True
+    elif mutation == "b-type": b["model"]["type"] = "reduce"
+    elif mutation == "b-datasource": b["datasourceUid"] = "other"
+    elif mutation == "b-deleted": rule["data"].remove(b)
+    elif mutation == "extra-data":
+        extra = copy.deepcopy(b)
+        extra["refId"] = "C"
+        extra["datasourceUid"] = "other"
+        rule["data"].append(extra)
+    else: rule["isPaused"] = False
+    doc["data"]["alerts.yaml"] = yaml.safe_dump(inner, allow_unicode=True, sort_keys=False)
+    yaml.safe_dump(doc, open(os.path.join(tmp, "outbox-" + mutation + ".yml"), "w"), allow_unicode=True, sort_keys=False)
+PYEOF
+    for mutation in condition a-ref b-ref threshold pending signal severity paused instant range b-type b-datasource b-deleted extra-data; do
+        case "$mutation" in
+            signal|severity) diagnostic="alert 라벨 계약 불일치" ;;
+            instant|range) diagnostic="alert instant 평가 계약 불일치" ;;
+            paused|extra-data) diagnostic="alert 활성/데이터 계약 불일치" ;;
+            *) diagnostic="alert 시간/임계 계약 불일치" ;;
+        esac
+        rc=0
+        ALERTS_PATH_OVERRIDE="$ST_TMP/outbox-$mutation.yml" bash "${BASH_SOURCE[0]}" >"$ST_TMP/outbox-result" 2>&1 || rc=$?
+        if [ "$rc" -ne 1 ] || ! grep -qF "$diagnostic: uid=peekcart-outbox-failed" "$ST_TMP/outbox-result"; then
+            echo "self-test 실패: outbox $mutation 의 계약 진단/exit 1 부재 (exit=$rc)" >&2
+            cat "$ST_TMP/outbox-result" >&2
+            ST_FAIL=1
+        fi
+    done
+    if ! ALERTS_PATH_OVERRIDE="$ST_TMP/outbox-active.yml" bash "${BASH_SOURCE[0]}"; then
+        echo "self-test 실패: 명시적으로 활성화한 outbox 규칙이 통과하지 않는다" >&2
+        ST_FAIL=1
+    fi
+
     # D-060: 원본 통과 뒤 독립 변이마다 red 확인. 나이는 backlog 개수로 대체할 수 없다.
     python3 - "$ST_SRC" "$ST_TMP" <<'PYEOF'
 import copy, os, sys, yaml
@@ -470,7 +525,7 @@ PYEOF
     if [[ "$ST_FAIL" -ne 0 ]]; then
         exit 1
     fi
-    echo "observability-promql-lint self-test 47종 통과 (기존 19 + 승인 장기 미결/복구 10 + cache fallback 16 + UID 길이/식 2)"
+    echo "observability-promql-lint self-test 61종 통과 (기존 47 + Outbox 실행/라우팅 14, 활성 양성 대조 포함)"
     exit 0
 fi
 
@@ -585,6 +640,10 @@ METRIC_ALERT_CONTRACTS = {
         "expr": 'sum by (application)(outbox_backlog'
                 '{application=~"notification-service|order-service|payment-service|product-service",'
                 ' status="failed"})',
+        "condition": "$A > 0",
+        "for": "5m",
+        "labels": {"severity": "warning", "signal": "outbox-publish"},
+        "isPaused": False,
     },
 }
 
@@ -856,13 +915,16 @@ for group in alerts_doc.get("groups", []) or []:
         elif uid in METRIC_ALERT_CONTRACTS:
             contract = METRIC_ALERT_CONTRACTS[uid]
             expected_apps = contract["apps"]
+            if "isPaused" in contract:
+                if rule.get("isPaused", False) is not contract["isPaused"] or len(rule.get("data") or []) != 2:
+                    violations.append(f"[D5-V6] alert 활성/데이터 계약 불일치: uid={uid}")
             if "labels" in contract:
                 if any((rule.get("labels") or {}).get(key) != value for key, value in contract["labels"].items()):
-                    violations.append(f"[D5-V6] cache fallback 라벨 계약 불일치: uid={uid}")
+                    violations.append(f"[D5-V6] alert 라벨 계약 불일치: uid={uid}")
                 data_a = [d for d in (rule.get("data") or []) if d.get("refId") == "A"]
                 if len(data_a) != 1 or (data_a[0].get("model") or {}).get("instant") is not True or (data_a[0].get("model") or {}).get("range") is not False:
-                    violations.append(f"[D5-V6] cache fallback instant 평가 계약 불일치: uid={uid}")
-            # age 자체가 대기시간이므로 임계·추가 pending 시간을 함께 고정한다.
+                    violations.append(f"[D5-V6] alert instant 평가 계약 불일치: uid={uid}")
+            # 임계와 pending 시간을 함께 고정하여 식 A 외부의 발화 조건 변이도 잡는다.
             if "condition" in contract:
                 math_entries = [d for d in (rule.get("data") or [])
                                 if d.get("datasourceUid") == "__expr__"]

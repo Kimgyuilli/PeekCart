@@ -17,8 +17,8 @@ public class PaymentApprovalRepositoryImpl implements PaymentApprovalRepository 
     private final PaymentApprovalJpaRepository jpaRepository;
 
     @Override
-    public int insertWaitingIfAbsent(Long orderId, String paymentKey, Long userId, long amount, LocalDateTime now, LocalDateTime deadline) {
-        return jpaRepository.insertWaitingIfAbsent(orderId, paymentKey, userId, amount, now, deadline);
+    public int insertWaitingIfAbsent(Long orderId, String paymentKey, String pgOrderId, Long userId, long amount, LocalDateTime now, LocalDateTime deadline) {
+        return jpaRepository.insertWaitingIfAbsent(orderId, paymentKey, pgOrderId, userId, amount, now, deadline);
     }
 
     @Override
