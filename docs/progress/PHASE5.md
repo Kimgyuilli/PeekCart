@@ -833,3 +833,5 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 [PR217](https://github.com/Kimgyuilli/PeekCart/pull/217) 최종 head `85786a4e3f2945b513bcbdf5507ce0ea10412087`의 [전용·일반 CI39623335274](https://github.com/Kimgyuilli/PeekCart/actions/runs/39623335274)는 성공했다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/217#issuecomment-6320151203)는 실제 Grafana→로컬 수신기의 Slack형 요청 네 건을 직접 분석해 Outbox/DLQ 발화·복귀 각각 하나의 신호와 두 신호의 정확한 전체 집합, 기본 경로 격리, fixture 정리를 확인했다. 이 실행에서는 D-093의 초기 평가 준비도 통과했다.
 
 정상 병합 SHA는 `7320ffdd4a72a1bdde77bc9424c8d11ecff18ba3`다. 실제 [main CI39629072400](https://github.com/Kimgyuilli/PeekCart/actions/runs/39629072400) 및 publish 검증은 진행 중이다. 실제 Slack·GKE·운영 DB 전송은 검증하지 않았고, D-092는 사용자/운영 웹훅 분리 PR219와 실제 Secret 소유·전환, 외부 전달·FAILED 복구 조건이 남은 부분 완료다. D-093 완료 기록은 병합 후 확인까지 보류한다.
+
+실제 main CI39629072400은 테스트·E2E·gate와 여섯 publish가 모두 개별 성공으로 종료됐다. 따라서 D-093은 PR188의 실제 지연/timeout 대조, PR217에서 초기 준비 통과 뒤 실제 Grafana 평가·전달 검증, 두 병합의 main 검사를 근거로 완료 처리한다. TASKS의 원래 본문을 보존해 완료 아카이브에 옮겼다. D-092는 무료 로컬 경로만 부분 완료이며, 실제 외부 전달과 운영 복구를 확인한 것으로 바꾸지 않는다.
