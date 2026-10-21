@@ -1,0 +1,19 @@
+{
+  "run": 36393965323,
+  "job": 108836245553,
+  "service": "notification-service",
+  "retrieved": "2026-10-21",
+  "sha256": "b70b47893fac16ffe23099d5146108a5eea69c741c0766aa3a75a4d9fc4bf7c1",
+  "bytes": 171269,
+  "observations": {
+    "bootJar_vertex_seconds": "35.6",
+    "gha_cache_export_vertex_seconds": "44.1",
+    "common_headers_seconds": {
+      "compileJava": "27.96",
+      "processResources": "27.96",
+      "classes": "27.96",
+      "jar": "28.06"
+    }
+  },
+  "limits": "No task-start timing; 8/28 split cannot be derived from these headers."
+}

@@ -67,6 +67,8 @@ jobs:
           bash scripts/ci-release-gate-lint.sh
           bash scripts/ci-release-gate-lint.sh --self-test
           bash scripts/ci-image-identity.sh --self-test
+          python3 -B scripts/ci-build-profile-selftest.py
+          python3 -B scripts/ci-build-profile-selftest.py --mutants
           # D-033: 시나리오와 음성 대조군을 병렬로 돌리되 PR 에서 둘 다 필수로 유지한다.
           bash scripts/ci-e2e-parallel-lint.sh
           bash scripts/ci-e2e-parallel-lint.sh --self-test
@@ -138,10 +140,14 @@ jobs:
           bash scripts/servicemonitor-selector-lint.sh --self-test
           bash scripts/observability-ssot-lint.sh
           bash scripts/observability-promql-lint.sh
+          # D-093: 초기 NoData/지연과 bounded timeout을 실제 대기 없이 검증한다.
+          python3 -m unittest discover -s scripts/monitoring -p 'test_verify_alerts.py'
           # 구현 ④-d-1 P5 + PR4: alert 라벨/식 계약과 dashboard 변수 집합이 조작 입력에서
           # 실제로 실패하는지 19종 — alert 삭제·라벨 제거·집합 축소·메트릭 변조·entry 삭제·
           # 부정 matcher·0*우회, gateway 제외/scrape-absent 이름 변조, outbox FAILED 삭제/status 변조, dashboard 드리프트 3종.
           bash scripts/observability-promql-lint.sh --self-test
+          # D-092: Grafana operations route와 FAILED Outbox conditional re-entry를 무료 fixture로 검증한다.
+          python3 -B scripts/d092-ops-fixture.py
           # PR3c sweep — 단일 'peekcart' 관측성 식별자(application/service) 잔존 0 강제.
           # escaped-quote(JSON/embedded-yaml) + 형제 라벨(service) 양쪽 매치(PLAN-BLINDSPOTS B11).
           # uid/tags 의 peekcart-* 브랜드 문자열은 라벨 값(="peekcart")이 아니므로 매치 대상 외.
@@ -178,6 +184,36 @@ jobs:
           bash scripts/harness-context.sh --check --base "$HARNESS_BASE"
           python3 -B scripts/harness-context-selftest.py
           python3 -B docs/plans/evidence/D-099/check-mutants.py
+
+  # D-092 PR217 only: the task-scoped real Grafana fixture validates the provisioned
+  # operations route through its loopback receiver. The existing rule-timing scenario
+  # takes about 35 minutes, so isolate it from normal lint/test jobs and bound it.
+  d092-grafana-routing:
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 217 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install fixture dependency
+        run: python3 -m pip install --user pyyaml
+      - name: Verify operations delivery and default-route isolation
+        run: |
+          set -euo pipefail
+          python3 -B scripts/monitoring/verify_alerts.py --run --output "$RUNNER_TEMP/d092-grafana"
+      - name: Upload bounded Grafana evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: d092-grafana-routing-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/d092-grafana/manifest.json
+            ${{ runner.temp }}/d092-grafana/summary.json
+            ${{ runner.temp }}/d092-grafana/capture/notifications.jsonl
+            ${{ runner.temp }}/d092-grafana/cleanup.log
+          if-no-files-found: warn
+          retention-days: 7
 
   # ── test: 모듈 shard 매트릭스. 분해 전 단일 build 는 32m23s 였다(run 33314020601) ──
   # shard→모듈 매핑의 **단일 정본은 matrix.include[].modules** 다. Gradle 명령과
@@ -425,12 +461,21 @@ jobs:
       # D-031: buildx + GitHub Actions 레이어 캐시. 6개 이미지를 매 실행 밑바닥부터
       # 빌드하고 있었다(실측 run 35731821466 에서 최장 173초).
       - name: Set up Buildx
+        id: image-builder
         uses: docker/setup-buildx-action@v3
 
+      - name: Begin image profile evidence
+        env:
+          PROFILE_BUILDER: ${{ steps.image-builder.outputs.name }}
+        run: python3 -B scripts/ci-build-profile.py begin ${{ runner.temp }}/build-profile --service ${{ matrix.service }}
+
       - name: Build image
+        id: image-build
         uses: docker/build-push-action@v6
         with:
           context: .
+          builder: ${{ steps.image-builder.outputs.name }}
+          target: runtime
           build-args: SERVICE=${{ matrix.service }}
           tags: ${{ matrix.service }}:ci
           # load 가 필수다 — docker-container 드라이버는 빌드 결과를 로컬 daemon 에
@@ -441,6 +486,51 @@ jobs:
           # 캐시를 덮어써 마지막 하나만 남는다.
           cache-from: type=gha,scope=image-${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=image-${{ matrix.service }}
+
+      - name: Capture exact image build record
+        id: image-profile
+        if: always() && steps.image-build.outcome != 'skipped'
+        env:
+          BUILD_METADATA: ${{ steps.image-build.outputs.metadata }}
+        run: python3 -B scripts/ci-build-profile.py record-image ${{ runner.temp }}/build-profile
+
+      - name: Export Gradle profile from the image build cache
+        id: profile-export
+        if: steps.image-profile.outputs.profile_needed == 'true'
+        uses: docker/build-push-action@v6
+        env:
+          # The image build record is preserved separately; this target only exports files.
+          DOCKER_BUILD_RECORD_UPLOAD: false
+          DOCKER_BUILD_SUMMARY: false
+        with:
+          context: .
+          builder: ${{ steps.image-builder.outputs.name }}
+          target: gradle-profile
+          build-args: SERVICE=${{ matrix.service }}
+          outputs: type=local,dest=${{ runner.temp }}/build-profile/export
+          cache-from: type=gha,scope=image-${{ matrix.service }}
+          # Reuse the image's remote cache too; do not export a second cache or bust RUN cache.
+
+      - name: Capture profile export record
+        if: steps.image-profile.outputs.profile_needed == 'true'
+        env:
+          BUILD_METADATA: ${{ steps.profile-export.outputs.metadata }}
+        run: |
+          set -euo pipefail
+          python3 -B scripts/ci-build-profile.py record-export ${{ runner.temp }}/build-profile
+
+      - name: Validate image profile evidence
+        run: python3 -B scripts/ci-build-profile.py analyze ${{ runner.temp }}/build-profile
+
+      - name: Upload Docker build profile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-profile-${{ matrix.service }}
+          path: ${{ runner.temp }}/build-profile/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Health smoke
         run: bash scripts/docker-health-smoke.sh ${{ matrix.service }}:ci
