@@ -27,3 +27,9 @@
 - session97118: 판정16 + adapter65/9methods PASS(218.951초), entrypoint lint/drift9 PASS. shell syntax/diff/consistency PASS. Python syntax 첫 명령의 경로 오타로 파일 없음이 나왔고 실제 경로 scripts/tests/replay-drain-collector-test.py로 바로 재실행하여 PASS. 오타 실패를 실행 PASS로 숨기지 않았다.
 - collector 실행 소스 변경 없음. PR201 writer가 main에 병합되었음을 미해결 설명에 반영했고 NOT NULL/실제 adapter/서명 gateway/운영 P22/GKE/replay개방은 분리 유지한다.
 - PR189 최신 전체 CI와 독립 exact-head delta 검토 대기. 이번 통합은 병합 승인이 아니며 추가 root 승인 없이 merge하지 않는다.
+
+## 2026-10-21 — 실제 main209 통합
+
+- root 지정 순서로 actual main `c9e12d695e21c348a82da78c6577eac7b2dd4d89`를 정상 merge했다(`7119d58062c5ce85d390e6214f6883b219a94d1c`). 통합 전후 전체 authored patch가 byte 동일하며 SHA256은 `9fb20d332409833cc6ac1a9cedc2b42985814b1ab01c461ff7a5628d881364f2`다. 이 append 외 collector/fixture 변경은 없다.
+- session17851: 판정16 + adapter65/9methods PASS(227.966초), drift9/entrypoint lint, 문서 보존(actualc9e 기준), diff 검사 PASS. 실제 Docker/Gradle/GKE 실행은 하지 않았다. 실제 DB/Kafka adapter 증거는 별도 PR212이며 이 PR의 합성 CLI fixture와 구분한다.
+- 최신 전체 CI와 exact-head 독립 delta 확인을 기다린다. 병합은 선행 main209의 전체 publish 및 root의 별도 승인 전 수행하지 않는다. 공용 완료 문서는 root 소유로 유지한다.
