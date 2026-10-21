@@ -56,7 +56,7 @@ item() { # <id> <sev> <cat> [extra-json]
 
 echo "=== codex-review-render 자체 검증 ==="
 
-# V1 — 빈 응답. 실제 이력 44개가 이 형태다.
+# V1 — 빈 응답 합성 fixture. 당시 정정 계획은44개를 보고하지만 원corpus 재검증은 아니다.
 : > "${TMP}/plan-v1.json"
 printf 'ERROR: You'"'"'ve hit your usage limit.\ntokens used\n78,700\n' > "${TMP}/plan-v1.stderr"
 check 'V1 빈 응답 → exit 2 + usage limit 인용' 2 "${TMP}/plan-v1.json" 'usage limit' '리뷰 실패'
@@ -87,7 +87,7 @@ printf 'ERROR: You'"'"'ve hit your usage limit.\n+  error::단일 peekcart 라�
 check 'V12 뒤따르는 diff 내용 대신 원인 줄을 인용한다' 2 "${TMP}/diff-v12.json" 'usage limit'
 refute 'V12 가 diff 내용을 사유로 오인하지 않는다' 2 "${TMP}/diff-v12.json" '라벨 잔존'
 
-# V2 — items: null. 실제 이력 1개가 이 형태다.
+# V2 — items:null 합성 음성 fixture. 초기1개 보고는 당시 정정에서0개로 바뀌었다.
 echo '{"run_id":"x","summary":"s","items":null}' > "${TMP}/plan-v2.json"
 check 'V2 items:null → exit 2' 2 "${TMP}/plan-v2.json" '리뷰 실패'
 refute 'V2 가 총 0건으로 렌더되지 않는다' 2 "${TMP}/plan-v2.json" '총 0건'
@@ -112,7 +112,7 @@ printf '{"run_id":"r","summary":"s","items":[%s,%s]}' \
   "$(item 2 P1 test ',"file":"src/Bar.java","line":7')" > "${TMP}/diff-v6.json"
 check 'V6 diff → 위치 컬럼 + diff 라벨' 0 "${TMP}/diff-v6.json" '위치' 'src/Foo.java:42' 'Codex diff 리뷰'
 
-# V7 — scope/disposition 전량 결측이면 컬럼을 내지 않는다. 실측상 1267건 전부 이 상태다.
+# V7 — 선택 필드 생략 호환의 합성 fixture. 당시1267항목 결측 보고의 원raw는 현재 없다.
 refute 'V7 disposition 전량 결측 → 권장 컬럼 없음' 0 "${TMP}/plan-v5.json" '| 권장 |'
 check 'V7 결측 사실을 각주로 알린다' 0 "${TMP}/plan-v5.json" 'suggested_disposition) 미기재'
 
