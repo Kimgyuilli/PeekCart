@@ -45,6 +45,8 @@ CAPTURES = {
                ('saga', '재고 예약 결과 (건/초)'), ('kafka-lag', 'Kafka Consumer Lag (Max)')],
     'd078-5-drain': [('saga', 'Outbox 발행률 (건/초)'), ('saga', 'Outbox backlog')],
     'd078-6': [('saga', 'taskScheduler active / pool'), ('saga', 'taskScheduler 대기 작업')],
+    'd078-jvm': [('api-jvm', 'JVM Heap Memory'), ('api-jvm', 'JVM GC Pause')],
+    'd078-hpa': [('pod-resources', 'HPA Current Replicas'), ('pod-resources', 'Pod CPU Usage')],
 }
 
 # 측정 런은 60초~3분이라 15초 scrape 에 맞춘다. 대시보드의 $__rate_interval 도 같은 창으로 푼다.

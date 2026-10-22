@@ -5,7 +5,8 @@ grade: M
 
 ## 1. 명제와 코드 전제
 
-D-078 ①②③④⑤⑥⑧⑨ 를 과금 세션 한 번으로 잰다. 순서를 잘못 잡거나 조건을 파일 밖에 두면 서로
+D-078 ①②③④⑤⑥⑧⑨ 와 README 보강 지표 A~E(사가 왕복 지연, outbox 발행 대기, 배수 시간, JVM, MSA HPA)를
+과금 세션 한 번으로 잰다. A~E 는 기존 증적에 없는 것만 골랐다(`D-078-latency-metrics.md` §1). 순서를 잘못 잡거나 조건을 파일 밖에 두면 서로
 오염된다(Phase 4 `d002bc` 의 대조군이 직전 run 잔여와 섞여 무효가 된 선례). 이 문서는 세션 절차를
 정하고, 절차가 요구하는 조건 파일 두 개를 둔다. 세션을 실행하지 않으며 D-078 의 어느 항목도 닫지 않는다.
 
@@ -96,7 +97,13 @@ AR 승격 태그 `4bed3135e8213eb90b7bd95763a36a5e6e7f7109`, 6개 모두 GHCR di
 6. run 사이에 outbox backlog 0 과 consumer lag 0 을 기다린 뒤 `d002bc-reset.sql` 로 초기화한다. 대조군 `MODE=spread` 1회도 같은 절차. 섞이면 그 run 은 무효로 적는다.
 7. 정합성: 음수 재고 0, 품목별 diff 0, 예약 상태 합 = 주문 수.
 8. ⑥: 배수 구간에서 order·product 의 `executor_active_threads`/`executor_queued_tasks`, 그리고 backlog 가 있는데 발행률이 0 인 구간이 있는지(D-024 재발).
-9. S3 가 끝나면 항목 ⑤·⑤ 배수·⑥ 을 S2 와 같은 방식으로 찍고 export 한다.
+9. S3 가 끝나면 항목 ⑤·⑤ 배수·⑥·JVM 을 S2 와 같은 방식으로 찍고 export 한다.
+10. 지연 원자료 (A·B): 경합 run 마다 배수 확인 뒤, 6 의 초기화 **전에** `d078-saga-latency.sql`(order)과
+    `d078-outbox-latency.sql`(order·product)을 `mysql -B` 로 TSV 로 내보낸다. `d078-latency.py saga|outbox` 로 집계한다.
+    왕복에는 order(500ms)와 product(기본 5s)의 폴링 대기가 한 번씩 들어 있으므로, 왕복 수치는 B 의 구간값과
+    함께만 적는다. 설정이 지배하는 숫자를 처리 속도로 쓰지 않는다.
+11. 배수 시간 (C): k6 종료 시각부터 order·product `outbox_backlog{status="pending"}` 가 모두 0 이 된 시각까지.
+    `d078-5-drain` export 로 계산한다. Phase 4 의 552초는 폴링 기본값·2분 부하라 조건을 병기한다.
 
 ### S4. base 적용 — ⑧, D-065 ②⑤, D-092
 
@@ -109,6 +116,12 @@ AR 승격 태그 `4bed3135e8213eb90b7bd95763a36a5e6e7f7109`, 6개 모두 GHCR di
 5. D-065 ②: 스택이 뜬 뒤 `bash scripts/replay-drain-preflight.sh` 를 실제 클러스터에서 실행한다. replay 이력이 없으므로 exit 0 이 기대값이다. 수집 계층(`kubectl exec` DB·Kafka 조회)이 실제 스택을 관통한 첫 기록이다.
 6. D-065 ⑤: 브로커의 토픽 설정(`kafka-configs.sh --describe --entity-type topics`)을 서비스가 선언한 값(`KafkaTopicConfigs` business·dlq, retention floor)과 표로 대조한다. 앱이 기동 중 토픽 설정을 실제로 바꿨는지(`ALTER_CONFIGS`)의 증거다.
 7. D-092: (가) Grafana contact point 테스트 API 로 운영 채널에 메시지 1건, (나) gateway 로 주문 1건을 넣어 `order.created` 소비 → 사용자 채널에 메시지 1건. **사용자가 두 채널에서 각각 한 건씩, 서로 다른 채널로 왔는지 확인한다.**
+8. E (MSA order-service HPA): 7 까지 끝난 뒤 시드(`d002bc-seed-products.sh`, 사용자 시드)를 넣고
+   `d002bc-order-create.js` 를 RPS 100 · USERS 200 · 3분으로 건다. HPA 목표는 CPU 60%(request 500m 기준 300m)이고
+   Phase 4 에서 order 는 약 158건/초에 1,784m 를 썼으므로 이 부하로 확장이 일어난다. `kubectl get hpa order-service -w`
+   로그와 신규 Pod 의 Ready 시각을 남기고 `d078-hpa` 를 찍는다. 기록할 값: 확장 시작까지 걸린 시간, 1→3 도달 시각,
+   신규 Pod Ready 소요, 부하 중 5xx·429. 이 run 에서는 D-092 사용자 채널로 주문 알림이 대량으로 간다 — 7 의 확인을
+   먼저 끝낸다. 비교 대상은 모놀리식 1→3·65초 Ready(2026-04-29 리포트)이며 구성이 달라 조건을 병기한다.
 
 ### S5. 정리 — 어떤 경로에서도 실행
 
@@ -137,8 +150,9 @@ AR 승격 태그 `4bed3135e8213eb90b7bd95763a36a5e6e7f7109`, 6개 모두 GHCR di
 | GKE 관리비 | $0.10 (zonal 1개 무료 크레딧 여부는 S0 에서 확인) |
 | 합계 | 약 $0.53 ~ $0.63 |
 
-S2 약 2시간, S3 약 1.5시간, S4 약 1시간(3번째 노드 +$0.17/h), 캡처 약 0.5시간, 준비·정리 약 1.5시간.
-6.5~8.5시간 기준 $4~5.5, 부가세 포함 약 ₩6,000~8,000. 예산 ₩20,000 의 절반 안쪽이다.
+S2 약 2시간, S3 약 1.5시간(지연 원자료 추출 포함), S4 약 1.5시간(E 포함, 3번째 노드 +$0.17/h), 캡처 약 0.5시간,
+준비·정리 약 1.5시간. 7~9시간 기준 $4.5~6, 부가세 포함 약 ₩6,500~8,500. 예산 ₩20,000 의 절반 안쪽이다.
+중단 규칙의 8시간 한도는 클러스터 생성 시점부터 센다 — 넘기면 E 를 먼저 접는다.
 
 ## 6. 검증 방법 (이 PR)
 
