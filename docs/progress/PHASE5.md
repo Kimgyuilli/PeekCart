@@ -902,3 +902,9 @@ D-086·D-088·D-091·D-095·D-096·D-100·D-101·D-102·D-104는 각 계획의 �
 README 개편 측정 수요를 D-078 에 합치고 과금 세션 전의 계측 공백을 메웠다([PR225](https://github.com/Kimgyuilli/PeekCart/pull/225)). product 소비 재시도 메트릭(`kafka.listener.delivery.failed`, `kafka.listener.recovered`)을 추가해 ⑤ 의 충돌 수를 Pod 로그 대신 메트릭으로 센다. ⑥ 은 Boot 가 바인딩하는 `taskScheduler` executor 메트릭으로 보며 그 가정을 테스트로 고정했다. 주문·경합 측정용 `gke-d002bc-mysql-2000m` overlay 를 추가했다.
 
 Phase 4 증적을 다시 읽어 1,000 VU 동시 주문 재측정은 넣지 않았다. `d002bc` ① 과 경합 run 이 README 목적의 질문에 답한다. D-078 ①~⑨ 는 모두 열려 있고 세션 대시보드·캡처 체크리스트·세션 계획서는 후속이다.
+
+## 2026-10-23 — D-078 측정 대시보드와 캡처 기준
+
+#225 를 병합했다. 측정 세션에서 볼 "PeekCart — Saga & Messaging" 대시보드와 `loadtest/captures.md` 를 추가했다([PR226](https://github.com/Kimgyuilli/PeekCart/pull/226)). 건수의 정본은 세션 전후 `/actuator/prometheus` 원값 차분으로 두고 그래프는 보조 증거로 둔다. 재시도 카운터가 첫 실패 때 생성되어 `increase()` 가 첫 1건을 놓치기 때문이다.
+
+측정용 GCP 결제는 새로 준비했다. 결제 계정을 유료로 전환하고 월 예산 ₩20,000(알림 50/90/100/150%)을 걸었다. 지출 한도(spend cap)는 Compute Engine·GKE 를 지원하지 않아 쓰지 않는다. Phase 4 세션의 `peekcart-gke` 프로젝트는 소유 계정이 삭제돼 접근할 수 없으므로, 세션은 새 프로젝트에서 이미지를 다시 올려 진행한다. ⑦(#129 익일 Billing)은 무료 크레딧 계정이라 확인하지 않기로 사용자가 정했다.

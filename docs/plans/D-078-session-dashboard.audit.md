@@ -14,3 +14,8 @@
 - Grafana 11.6.0 컨테이너 import: status success, 18 panels(행 4 포함), `application` 변수 유지. 컨테이너 제거 확인.
 - promql lint 0, self-test 61종 통과, 집합 드리프트 사본에서 불일치 검출.
 - kustomize 렌더에 ConfigMap 1개 생성, namespace·SSOT lint 0, d092 fixture 통과, verify_alerts 단위 테스트 OK.
+
+## /ship
+
+- PR https://github.com/Kimgyuilli/PeekCart/pull/226. consistency precheck 경고 0, 리뷰 처분 점검 ok, 커밋·본문·제목 문체 lint 통과.
+- 갱신: TASKS D-078 상태 cell(#225 병합 반영, #226 링크), PHASE5 작업 이력. 완료 이동·계획 이동 없음.
