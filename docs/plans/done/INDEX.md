@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 115개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 125개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -61,9 +61,7 @@
 | [task-d026-detail-stock-cache-boundary](./task-d026-detail-stock-cache-boundary.md) | D-026 상품 상세 재고 조회 캐시 경계 | [#124](https://github.com/Kimgyuilli/PeakCart/pull/124) | 2026-09-18 | 있음 |
 | [task-d026-d002a-read-ceiling-session](./task-d026-d002a-read-ceiling-session.md) | 이번 세션 한정 — 사용자 지시(2026-09-20) "코덱스 리뷰 돌리지 마세요". | [#129](https://github.com/Kimgyuilli/PeakCart/pull/129) | 2026-09-20 | 있음 |
 | [task-d029-mysql-cpu-base-promotion](./task-d029-mysql-cpu-base-promotion.md) | 사용자 지시(2026-09-22, `.cache/codex-off`) — Codex 리뷰 미호출. | [#131](https://github.com/Kimgyuilli/PeakCart/pull/131) | 2026-09-22 | 있음 |
-| [task-d031-ci-graph-parallelization](./task-d031-ci-graph-parallelization.md) | D-031 — CI 워크플로 그래프 직렬화 해소 | [#135](https://github.com/Kimgyuilli/PeakCart/pull/135) | 2026-09-23 | 있음 |
 | [task-d033-e2e-parallel](./task-d033-e2e-parallel.md) | D-033 — e2e 시나리오와 음성 대조군 병렬 실행 | [#140](https://github.com/Kimgyuilli/PeakCart/pull/140) | 2026-09-25 | 있음 |
-| [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-09-25 | 있음 |
 | [task-d035-notification-container-singleton](./task-d035-notification-container-singleton.md) | task-d035-notification-container-singleton | [#145](https://github.com/Kimgyuilli/PeakCart/pull/145) | 2026-09-26 | 있음 |
 | [task-d035-payment-container-singleton](./task-d035-payment-container-singleton.md) | task-d035-payment-container-singleton | [#146](https://github.com/Kimgyuilli/PeakCart/pull/146) | 2026-09-26 | 있음 |
 | [task-d035-user-container-singleton](./task-d035-user-container-singleton.md) | task-d035-user-container-singleton | [#144](https://github.com/Kimgyuilli/PeakCart/pull/144) | 2026-09-26 | 있음 |
@@ -79,10 +77,12 @@
 | [task-d027-grade-audit](./task-d027-grade-audit.md) | D-027 ③ — 등급 사후 검증 | [#159](https://github.com/Kimgyuilli/PeakCart/pull/159) | 2026-09-29 | 있음 |
 | [task-d048-e2e-stack-startup](./task-d048-e2e-stack-startup.md) | task-d048-e2e-stack-startup | [#156](https://github.com/Kimgyuilli/PeakCart/pull/156) | 2026-09-29 |  |
 | [task-d002-bc-session](./task-d002-bc-session.md) | D-002 잔여 3축 측정 세션 (b' / c + a 천장 분리) | [#119](https://github.com/Kimgyuilli/PeakCart/pull/119) | 2026-10-17 | 있음 |
-| [task-d032-integration-test-container-singleton](./task-d032-integration-test-container-singleton.md) | D-032 — 통합 테스트 컨테이너 모듈 싱글톤 전환 (order-service) | [#138](https://github.com/Kimgyuilli/PeakCart/pull/138) | 2026-10-17 | 있음 |
+| [task-d031-ci-graph-parallelization](./task-d031-ci-graph-parallelization.md) | D-031 — CI 워크플로 그래프 직렬화 해소 | [#135](https://github.com/Kimgyuilli/PeakCart/pull/135) | 2026-10-21 | 있음 |
+| [task-d032-integration-test-container-singleton](./task-d032-integration-test-container-singleton.md) | D-032 — 통합 테스트 컨테이너 모듈 싱글톤 전환 (order-service) | [#138](https://github.com/Kimgyuilli/PeakCart/pull/138) | 2026-10-21 | 있음 |
+| [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-10-21 | 있음 |
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-10-21 |  |
 
-## 기타 (53)
+## 기타 (63)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -101,7 +101,6 @@
 | [task-ops-hardening-d022-d023-d024](./task-ops-hardening-d022-d023-d024.md) | 운영 표면 하드닝 (D-024 · D-022 · D-023) | [#121](https://github.com/Kimgyuilli/PeakCart/pull/121) | 2026-09-18 |  |
 | [task-codex-review-render](./task-codex-review-render.md) | task-codex-review-render | [#128](https://github.com/Kimgyuilli/PeakCart/pull/128) | 2026-09-20 | 있음 |
 | [task-phase4-closure](./task-phase4-closure.md) | task-phase4-closure | [#133](https://github.com/Kimgyuilli/PeakCart/pull/133) | 2026-09-22 |  |
-| [D-049](./D-049.md) | D-049 | [#168](https://github.com/Kimgyuilli/PeakCart/pull/168) | 2026-09-29 | 있음 |
 | [D-056](./D-056.md) | D-056 | [#166](https://github.com/Kimgyuilli/PeakCart/pull/166) | 2026-09-29 | 있음 |
 | [D-058](./D-058.md) | D-058 | [#167](https://github.com/Kimgyuilli/PeakCart/pull/167) | 2026-09-29 | 있음 |
 | [D-050](./D-050.md) | main 코드 주석의 계획서 내부 식별자 제거 | [#169](https://github.com/Kimgyuilli/PeakCart/pull/169) | 2026-09-30 | 있음 |
@@ -130,6 +129,7 @@
 | [D-081](./D-081.md) | 수동 리스너 기동의 할당 대기 (D-082 공동 구현) | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
 | [D-082](./D-082.md) | 자율 writer 수명 lint (D-081 공동 구현) | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
 | [D-083](./D-083.md) | D-083 Kafka cleanup 실패 전파 | [#177](https://github.com/Kimgyuilli/PeakCart/pull/177) | 2026-10-17 | 있음 |
+| [D-049](./D-049.md) | D-049 | [#168](https://github.com/Kimgyuilli/PeakCart/pull/168) | 2026-10-21 | 있음 |
 | [D-085](./D-085.md) | D-085: CI gate 실패 전파 의미 검사 | [#185](https://github.com/Kimgyuilli/PeakCart/pull/185) | 2026-10-21 | 있음 |
 | [D-087](./D-087.md) | D-087: Docker Gradle 구간의 실제 CI profile 보존 | [#209](https://github.com/Kimgyuilli/PeakCart/pull/209) | 2026-10-21 | 있음 |
 | [D-090](./D-090.md) | D-090: Outbox FAILED 알림 실행 계약 검사 | [#186](https://github.com/Kimgyuilli/PeakCart/pull/186) | 2026-10-21 | 있음 |
@@ -139,4 +139,14 @@
 | [D-099](./D-099.md) | D-099: harness 완료 아카이브 건강 검사 | [#204](https://github.com/Kimgyuilli/PeakCart/pull/204) | 2026-10-21 | 있음 |
 | [D-103](./D-103.md) | D-103: 리뷰 결과 렌더러 수용 계약 | [#206](https://github.com/Kimgyuilli/PeakCart/pull/206) | 2026-10-21 | 있음 |
 | [D-105](./D-105.md) | D-105: ship 재개 조회 실패 구분 | [#184](https://github.com/Kimgyuilli/PeakCart/pull/184) | 2026-10-21 | 있음 |
+| [D-086](./D-086.md) | CI 시간 이력 사실 정정 | [#190](https://github.com/Kimgyuilli/PeakCart/pull/190) | 2026-10-22 |  |
+| [D-088](./D-088.md) | D-088: lint CI 배선과 외부 생존 대조 | [#213](https://github.com/Kimgyuilli/PeakCart/pull/213) | 2026-10-22 | 있음 |
+| [D-091](./D-091.md) | D-091 | [#191](https://github.com/Kimgyuilli/PeakCart/pull/191) | 2026-10-22 |  |
+| [D-093](./D-093.md) | D-093: 실제 alert 초기 평가 준비 대기 | [#217](https://github.com/Kimgyuilli/PeakCart/pull/217) | 2026-10-22 | 있음 |
+| [D-095](./D-095.md) | D-095 | [#191](https://github.com/Kimgyuilli/PeakCart/pull/191) | 2026-10-22 |  |
+| [D-096](./D-096.md) | D-096 | [#192](https://github.com/Kimgyuilli/PeakCart/pull/192) | 2026-10-22 |  |
+| [D-100](./D-100.md) | D-100: Flyway 체크섬 근거 버전 정정 | [#194](https://github.com/Kimgyuilli/PeakCart/pull/194) | 2026-10-22 |  |
+| [D-101](./D-101.md) | D-101: 현재 아키텍처 트리와 역사 참조 정정 | [#195](https://github.com/Kimgyuilli/PeakCart/pull/195) | 2026-10-22 |  |
+| [D-102](./D-102.md) | D-102: 테스트 주석의 의미와 출처 정리 | [#197](https://github.com/Kimgyuilli/PeakCart/pull/197) | 2026-10-22 | 있음 |
+| [D-104](./D-104.md) | D-104: 하네스 실측 근거의 모집단과 정정 | [#208](https://github.com/Kimgyuilli/PeakCart/pull/208) | 2026-10-22 | 있음 |
 
