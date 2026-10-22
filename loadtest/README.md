@@ -10,6 +10,7 @@
 loadtest/
 ├── README.md                          (이 문서)
 ├── cleanup.sh                         GCP 정리 (ADR-0004 운영 체크리스트)
+├── captures.md                        측정 세션 캡처 기준 (D-078 ⑨)
 ├── sql/
 │   ├── seed.sql                       시드 데이터 (users 1101, products 1010, 경합재고 1000)
 │   └── verify-concurrency.sql         시나리오 2 정합성 검증 쿼리

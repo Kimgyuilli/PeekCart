@@ -743,6 +743,8 @@ DASHBOARD_APP_SETS = {
     # Kafka 소비자를 가진 서비스만. user-service 는 @KafkaListener 가 0 건이고 gateway 는
     # Kafka 를 쓰지 않는다 — 넣으면 고를 수는 있는데 series 가 없는 값이 된다.
     "kafka-lag-dashboard.json": DOMAIN_SERVICES - {"user-service"},
+    # outbox·DLQ 원장을 가진 서비스(ADR-0033 messaging 모듈 사용처)와 같은 집합이다.
+    "saga-messaging-dashboard.json": DOMAIN_SERVICES - {"user-service"},
 }
 dashboard_violations = []
 for fname, expected in DASHBOARD_APP_SETS.items():
