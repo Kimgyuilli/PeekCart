@@ -1,0 +1,23 @@
+{
+  "source_ref": "Post-main209 integration working tree; exact file hashes, no claim of new historical measurement",
+  "implementation_base": "89797c9639e15fb7c362e6be49687e652f80d3b9",
+  "files": {
+    ".github/workflows/ci.yml": "f36e16e93b80e208b662e9f5e15350f55ff96db9a92009e6fe3fab65b9e58aae",
+    "scripts/ci-publication-state.py": "91b97a896609f19768b260689af4aab7ffe4711b7d25c2535869cb07fef6bd51",
+    "scripts/ci-publication-state-selftest.py": "364a2d82fcd8f3798dd6e503572707e9fa30e85949372f4d57eec7edab498b54",
+    "scripts/ci-release-gate-lint.sh": "18aa0a1e19f33d855170c15b6bc091695b6fd4257f493a74e10da5b03d74573b",
+    "scripts/ci-image-identity.sh": "5b07111cbc6b30c393446081c7e1e52b6752f5d284cc042539c23287d99e25d6"
+  },
+  "development_checks": [
+    {
+      "command": "python3 -B scripts/ci-publication-state-selftest.py PublicationTest.test_six_distinct_images_and_retry_artifacts PublicationTest.test_workflow_evidence_and_failure_propagation",
+      "result": "2 tests PASS,1.696s"
+    },
+    {
+      "command": "bash scripts/ci-release-gate-lint.sh",
+      "result": "PASS"
+    }
+  ],
+  "formal_full_suite": "Pending Actions; local full suite/mutants/Gradle/Docker not run",
+  "pr_base": "c9e12d695e21c348a82da78c6577eac7b2dd4d89"
+}

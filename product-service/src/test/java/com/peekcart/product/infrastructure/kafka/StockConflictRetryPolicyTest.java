@@ -15,11 +15,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * D-025 P5 — 낙관락 충돌 7건이 <b>왜 재시도 4회를 전부 소진하고 DLQ 로 갔는가</b>.
+ * D-025 — 낙관락 충돌 7건이 <b>왜 재시도 4회를 전부 소진하고 DLQ 로 갔는가</b>.
  *
  * <p>GKE replicas=3 실측(증적 {@code evidence/d002bc-gke-20260917.md})에서 {@code PRD-004}=0,
  * 낙관락 충돌 7, DLQ 7 이 나왔다. 공용 핸들러는 초기 1회 + 재시도 3회 = 4회를 시도하므로
- * "전량 DLQ" 는 설명이 필요한 관측이었다. 계획서 P5 가 세운 두 가설을 여기서 가른다.
+ * "전량 DLQ" 는 설명이 필요한 관측이었다. 재시도 불가 분류와 재시도 횟수 소진이라는 두 가설을 여기서 가른다.
  *
  * <ul>
  *   <li><b>가설 (b) — 애초에 재시도 대상이 아니었다</b>: {@link #optimisticLockFailureIsRetryableByDefault()}
@@ -67,7 +67,7 @@ class StockConflictRetryPolicyTest {
      * <p>동시에 충돌한 소비자들이 같은 순간에 같은 간격을 기다린다. 그래서 재시도는 경합을 흩뜨리지
      * 않고 <b>그대로 다시 모은다</b>. 소진 후 전량 DLQ 라는 실측 형태와 일치한다. 이 테스트는 그
      * 성질을 <b>기록으로</b> 남긴다 — {@code FixedSequenceBackOff} 자체는 다른 4개 서비스가 여전히
-     * 쓰고 있어 D-025 범위 밖이고(계획서 §5 후속), 여기서 왜 갈아탔는지가 보여야 한다.
+     * 쓰고 있어 D-025 범위 밖이고, 여기서 왜 갈아탔는지가 보여야 한다.
      */
     @Test
     @DisplayName("옛 backoff 는 jitter 가 없었다 — 동시 충돌자들이 같은 순간에 함께 재시도 (가설 a 메커니즘)")

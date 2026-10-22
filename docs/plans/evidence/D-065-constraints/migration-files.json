@@ -1,0 +1,61 @@
+{
+  "order": [
+    "V1__init_order.sql",
+    "V2__cleanup_indexes.sql",
+    "V3__order_version_and_reservation_lease.sql",
+    "V4__order_compensation_ledger.sql",
+    "V5__order_compensation_refund_closure.sql",
+    "V6__dead_letter_records.sql",
+    "V7__orders_cursor_index.sql",
+    "V8__dead_letter_replay_axis.sql",
+    "V9__outbox_replay_columns.sql",
+    "V10__dead_letter_replay_payload_digest.sql",
+    "V11__dead_letter_replay_backfill.sql",
+    "V12__dead_letter_publication_override_audit.sql",
+    "V13__cart_product_metadata.sql",
+    "V14__dead_letter_id_reservation.sql"
+  ],
+  "product": [
+    "V1__init_product.sql",
+    "V2__cleanup_indexes.sql",
+    "V3__stock_reservation_lease.sql",
+    "V4__stock_reservation_refund_closure.sql",
+    "V5__dead_letter_records.sql",
+    "V6__dead_letter_replay_axis.sql",
+    "V7__outbox_replay_columns.sql",
+    "V8__dead_letter_replay_payload_digest.sql",
+    "V9__dead_letter_replay_backfill.sql",
+    "V10__dead_letter_publication_override_audit.sql",
+    "V11__approval_reservation_fence.sql",
+    "V12__reservation_snapshot_version.sql",
+    "V13__dead_letter_id_reservation.sql"
+  ],
+  "payment": [
+    "V1__init_payment.sql",
+    "V2__cleanup_indexes.sql",
+    "V3__payment_reservation_lease.sql",
+    "V4__payment_refund_ledger.sql",
+    "V5__dead_letter_records.sql",
+    "V6__dead_letter_replay_axis.sql",
+    "V7__outbox_replay_columns.sql",
+    "V8__dead_letter_replay_payload_digest.sql",
+    "V9__dead_letter_replay_backfill.sql",
+    "V10__dead_letter_publication_override_audit.sql",
+    "V11__payment_approval_ledger.sql",
+    "V12__approval_dispatch_deadline.sql",
+    "V13__approval_recovery_audit.sql",
+    "V14__pg_order_identity.sql",
+    "V15__dead_letter_id_reservation.sql"
+  ],
+  "notification": [
+    "V1__init_notification.sql",
+    "V2__cleanup_indexes.sql",
+    "V3__dead_letter_records.sql",
+    "V4__dead_letter_replay_axis.sql",
+    "V5__outbox_events.sql",
+    "V6__dead_letter_replay_payload_digest.sql",
+    "V7__dead_letter_replay_backfill.sql",
+    "V8__dead_letter_publication_override_audit.sql",
+    "V9__dead_letter_id_reservation.sql"
+  ]
+}

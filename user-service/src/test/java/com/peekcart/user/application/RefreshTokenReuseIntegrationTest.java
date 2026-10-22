@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Refresh Token Reuse Detection 통합 회귀 (ADR-0013 D4, 구현 ③ PR2).
+ * Refresh Token Reuse Detection 통합 회귀 (ADR-0013 D4).
  * 실 MySQL/Redis 로 상태전이·grace 원자성·reuse→family revoke→deny write·마이그레이션 스키마를 검증한다.
  */
 @SpringBootTest

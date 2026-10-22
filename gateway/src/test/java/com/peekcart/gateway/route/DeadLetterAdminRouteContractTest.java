@@ -23,10 +23,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * DLQ 원장 <b>관리자 라우트</b> 계약 (구현 ④-c-2b-4b P27 · ADR-0022 §D5 · 계획 V-40).
+ * DLQ 원장 <b>관리자 라우트</b> 계약 (ADR-0022 §D5).
  *
- * <p><b>왜 이 테스트가 필요한가</b>: ④-c-2b-4a 의 replay 진입점은 ADMIN 가드가 정확했지만
- * <b>그 가드에 도달할 경로가 없었다</b>(§10 R9) — 라우트가 `/api/v1/**` 뿐이고 리소스 서비스는
+ * <p><b>왜 이 테스트가 필요한가</b>: replay 진입점의 ADMIN 가드만으로는
+ * <b>그 가드에 도달할 경로를 보장하지 못한다</b> — `/api/v1/**` 라우트만 두면 리소스 서비스는
  * 게이트웨이 서명 토큰에서만 주체를 세우므로 직접 호출은 인증에서 끊긴다. 이 라우트가 그 경로다.
  *
  * <p><b>무엇을 관측하는가</b>: YAML 을 읽는 것이 아니라 <b>실제 {@link RouteLocator} 가 만든 predicate 를

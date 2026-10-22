@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * fail-open 의 <b>경계</b>를 고정한다 (구현 ⑤ diff 리뷰 #1).
+ * fail-open 의 <b>경계</b>를 고정한다.
  *
  * <p>가용성 장애(연결 실패·명령 타임아웃)는 삼켜 DB 로 흘리지만, 직렬화 불일치나 잘못된 명령 같은
  * 정합성 오류는 되던져야 한다. 둘을 같이 삼키면 "Redis 가 죽었다"와 "캐시가 고장 났다"가 하나의

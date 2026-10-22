@@ -13,10 +13,10 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * DLQ 소유권 계약 (계획 ④-c-2a P2 · §6).
+ * DLQ 소유권 계약.
  *
  * <p>여기서 증명하는 것은 <b>매핑의 무모순</b>이다 — "4서비스를 동시에 띄워 1곳만 적재함" 은
- * cross-service 검증이며 ④-d(부모 P12) 소관이다. 본 테스트 × 서비스별 실제 Kafka 왕복 테스트가
+ * cross-service 검증이다. 본 테스트 × 서비스별 실제 Kafka 왕복 테스트가
  * 그 전역 불변식의 근거를 나눠 갖는다.
  */
 @DisplayName("DlqTopology — 소유권 계약")

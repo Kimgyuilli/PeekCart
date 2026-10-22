@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * PG endpoint 설정 소유 계약 (계획 P1 · ADR-0007 · [SAGA-P1-BASEURL-OWN]).
+ * PG endpoint 설정 소유 계약 (ADR-0007 · [SAGA-P1-BASEURL-OWN]).
  *
  * <p>{@code base-url} 은 운영(실 PG)·로컬·E2E(stub) 로 값이 갈리는 <b>연결 정보</b>다.
  * 두 가지를 동시에 고정한다:
@@ -175,7 +175,7 @@ class TossBaseUrlContractTest {
      *
      * <p><b>이름을 열거하면 새는다.</b> 완화 매핑(relaxed binding) 때문에 {@code TOSS_BASE_URL} 만
      * 지워도 {@code TOSS_PAYMENTS_BASE_URL} 이 {@code toss.payments.base-url} 로 해석돼 그대로 들어온다
-     * — 하필 E2E compose 가 쓰는 이름이다(3R #1 이 실제로 재현). 그래서 <b>정규화한 키</b>로 비교한다.
+     * — 하필 E2E compose 가 쓰는 이름이다. 그래서 <b>정규화한 키</b>로 비교한다.
      *
      * <p>{@code systemProperties} 도 함께 거른다. {@code JAVA_TOOL_OPTIONS=-Dtoss.payments.base-url=...}
      * 로도 같은 오염이 생긴다.

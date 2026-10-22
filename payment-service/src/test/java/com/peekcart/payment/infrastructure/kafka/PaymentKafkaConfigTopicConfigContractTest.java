@@ -50,7 +50,7 @@ class PaymentKafkaConfigTopicConfigContractTest {
     /**
      * {@code @Bean} 으로 선언된 {@link NewTopic} 을 수집한다.
      *
-     * <p><b>이 수집기가 놓치는 형태</b>(diff 리뷰 1R #4): 인자를 받는 {@code @Bean},
+     * <p><b>이 수집기가 놓치는 형태</b>: 인자를 받는 {@code @Bean},
      * 다른 {@code @Configuration} 에 선언된 토픽, {@code KafkaAdmin.NewTopics} 묶음 선언.
      * 앞의 둘은 {@link #topicInventoryMatchesDeclaration()} 의 목록 대조가 잡고,
      * 마지막은 {@link #noBulkNewTopicsDeclaration()} 이 명시적으로 막는다 —

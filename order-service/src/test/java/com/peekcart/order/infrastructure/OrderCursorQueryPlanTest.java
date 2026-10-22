@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 /**
- * 커서 질의가 인덱스 범위 스캔으로 실행되는지 실행계획으로 검증한다 (계획 P8·P9 · T2·T3·T8·T9).
+ * 커서 질의가 인덱스 범위 스캔으로 실행되는지 실행계획으로 검증한다.
  *
  * <p>"인덱스를 만들었다"는 검증이 아니다 — 옵티마이저가 그것을 <b>선택했는지</b>를 본다.
  * 그래서 EXPLAIN 대상은 손으로 쓴 동등 SQL 이 아니라 Hibernate 가 실제로 발행한 SQL 이고,
@@ -122,7 +122,7 @@ class OrderCursorQueryPlanTest {
         List<String> names = indexNames();
 
         assertThat(names).contains(INDEX);
-        // P7 이 기존 인덱스를 지우지 않았음을 함께 고정한다 — 커서 전환이 상태 필터 조회를 대체하지 않는다.
+        // 기존 인덱스가 유지됨을 함께 고정한다 — 커서 전환이 상태 필터 조회를 대체하지 않는다.
         // 보존 계약만 본다 — 총목록을 고정하면 이후 정당한 인덱스 추가가 이 테스트를 깨뜨린다.
         assertThat(names).contains(
                 "PRIMARY", "uk_orders_order_number",

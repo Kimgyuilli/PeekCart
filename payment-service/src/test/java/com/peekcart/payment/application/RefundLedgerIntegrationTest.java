@@ -46,10 +46,10 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 /**
- * 환불 원장의 fence·claim·확정 계약 통합 테스트 (계획 P14, ADR-0018 D3).
+ * 환불 원장의 fence·claim·확정 계약 통합 테스트 (ADR-0018 D3).
  *
  * <p><b>단위 mock 으로는 판정할 수 없는 것들만</b> 여기서 본다 — 실제 MySQL 의 유니크 제약,
- * 조건부 UPDATE 의 원자성, 서로 다른 트랜잭션의 동시 커밋. ④-b 에서 `@InjectMocks` 테스트가
+ * 조건부 UPDATE 의 원자성, 서로 다른 트랜잭션의 동시 커밋. `@InjectMocks` 테스트가
  * 트랜잭션 경계를 증명하지 못한 전례가 있다.
  */
 @SpringBootTest

@@ -1,0 +1,23 @@
+{
+  "source_ref": "9ca514a115a4ee05813b010e47f5998d75bc1e88",
+  "base": "3bb01bbc3190a9aa38a7b4e6faec7bb767117808",
+  "development": "actualBash assigned-Python positive plus5zero-call preambles / CLI paired method PASS1.231s; normal24wiringCLI PASS",
+  "formal": "7methods/11poisons pending Actions",
+  "files": [
+    {
+      "path": "scripts/ci-lint-wiring-lint.py",
+      "bytes": 4796,
+      "sha256": "4b73eac12e554040c19e441923e016c6fec966da25a38b5feda2a540f2212168"
+    },
+    {
+      "path": "scripts/ci-lint-health-selftest.py",
+      "bytes": 15796,
+      "sha256": "b2d31163908784abcae5fecf6a2769c1c7fb17448a9688b0fe328829b02768fa"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 32216,
+      "sha256": "84249c2d7bfb7fa11a5633935065c8c22dc3f3e7fe2718b9b5714879bb2cb467"
+    }
+  ]
+}

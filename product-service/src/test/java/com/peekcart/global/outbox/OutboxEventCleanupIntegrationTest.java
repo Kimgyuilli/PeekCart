@@ -19,7 +19,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * outbox_events cleanup 통합 테스트 (ADR-0012 D5 · 구현 ② PR3).
+ * outbox_events cleanup 통합 테스트 (ADR-0012 D5).
  * <p>PUBLISHED + published_at 경과분만 삭제하고 PENDING·FAILED·published_at IS NULL·미만료 는 보존한다
  * (미발행/실패 유실 금지). ShedLock 때문에 {@code scheduler.cleanup()} 은 클래스당 1회만 호출한다.
  */

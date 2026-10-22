@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * Order 타임아웃 잡의 <b>스케줄러 배선</b> 계약 (계획 P17 · V20).
+ * Order 타임아웃 잡의 <b>스케줄러 배선</b> 계약.
  *
  * <p><b>왜 필요한가.</b> 기존 {@code OrderTimeoutSchedulerTest} 는 {@code @InjectMocks} 로 만든
  * 객체의 메서드를 <b>직접 호출</b>한다. 그래서 {@code @Scheduled} 를 통째로 지워도 전부 통과한다 —
@@ -34,7 +34,7 @@ import static org.awaitility.Awaitility.await;
  * <p>여기서는 <b>실제 Spring scheduling 이 발화</b>해 DB 상태가 바뀌는 것까지 본다. 직접 호출은
  * 하지 않는다 — 한 번이라도 호출하면 이 테스트도 같은 false-green 이 된다.
  *
- * <h3>결정성 (V20 · 계획 R3 #11)</h3>
+ * <h3>결정성</h3>
  * 운영 기본값은 {@code fixedDelay=60s}, {@code lockAtLeastFor=30s} 다. 그대로 쓰면 기동 직후의
  * <b>빈 작업 선발화가 lock 을 30초 잡아</b> 뒤이어 seed 한 주문이 그 창 안에 처리되지 않는다 —
  * 대기 시간을 늘려 맞추는 건 타이밍 의존이다. 그래서 이 테스트는 주기와 lock 하한만 짧게 덮는다:
@@ -81,7 +81,7 @@ class OrderSchedulerWiringIntegrationTest extends AbstractIntegrationTest {
      *
      * <p><b>세 잡을 각각 겨눈다.</b> 한 fixture 로 뭉치면 첫 잡의 배선만 증명된다 —
      * 나머지 둘은 {@code PENDING} 전용 조회라 {@code PAYMENT_REQUESTED} 주문을 집지 않고,
-     * 그 상태로는 두 번째·세 번째 {@code @Scheduled} 를 지워도 통과한다(diff 리뷰 #3).
+     * 그 상태로는 두 번째·세 번째 {@code @Scheduled} 를 지워도 통과한다.
      */
     @Test
     @DisplayName("[SAGA-SCHEDULER-WIRING-ORDER] 세 타임아웃 잡이 직접 호출 없이 각각 발화한다 — @Scheduled 배선")

@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * V-10 · V-13b — 멱등 안전창 계산 (ADR-0020 §D5-3).
  *
- * <p>기대값을 ADR 본문 값으로 <b>리터럴 독립 기재</b>한다(N17) — 구현 상수를 참조하면 상수를 고쳤을 때
+ * <p>기대값을 ADR 본문 값으로 <b>리터럴 독립 기재</b>한다 — 구현 상수를 참조하면 상수를 고쳤을 때
  * 테스트가 같이 따라가 아무 것도 검사하지 않는다.
  */
 class ReplayDeadlinesTest {

@@ -31,7 +31,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Notification 서비스 보안 통합 회귀 — Gateway 서명 내부 토큰 전환(ADR-0017 · PR3d).
+ * Notification 서비스 보안 통합 회귀 — Gateway 서명 내부 토큰 전환(ADR-0017).
  * 평문 {@code X-User-*} 신뢰를 폐기하고 {@code X-Internal-Auth} 서명만 인증 근거로 삼는다.
  * 3-state 계약과 공통 정책(401·permitAll·actuator)을 고정한다.
  */
@@ -50,7 +50,7 @@ class NotificationSecurityIntegrationTest {
     /**
      * 사용자 access token 검증키를 <b>일부러</b> 등록한다 — 서비스가 Bearer 를 다시 인증하기 시작하면
      * directBearerToken_rejected 가 실제로 실패하도록 만드는 음성 대조군 배선이다.
-     * (운영 설정에는 이 서비스의 app.jwt.rs256 이 없다 — PR3d 에서 죽은 설정으로 제거했다.)
+     * (운영 설정에는 이 서비스의 app.jwt.rs256 이 없다.)
      */
     @DynamicPropertySource
     static void userTokenVerificationKeys(DynamicPropertyRegistry registry) {
@@ -134,7 +134,7 @@ class NotificationSecurityIntegrationTest {
                 .isNotEmpty();
 
         // 고정 fixture 키 하나만 대조하면, 내부 레지스트리에 *다른* 키가 바인딩되고 그 키가 User 쪽에도
-        // 들어간 경우를 놓친다(diff 리뷰 c2:3). 두 집합 전체의 교집합이 비어 있어야 한다.
+        // 들어간 경우를 놓친다. 두 집합 전체의 교집합이 비어 있어야 한다.
         Set<String> internalFingerprints = internalKeyRegistry.kids().stream()
                 .map(internalKeyRegistry::find)
                 .map(InternalKeyFingerprint::of)

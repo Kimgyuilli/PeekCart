@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "corrections": [
+    {
+      "path": "docs/plans/done/D-050.md",
+      "base_sha256": "2388c968f4d75a55704338914ed21a92120c8b776762aac5a9004ada16d4ed99",
+      "old": "| Flyway SQL | `flyway-core 12.4.0` `ChecksumCalculator` 가 전 줄(주석 포함)을 CRC32 에 넣는다(javap 확인) → 적용된 마이그레이션 주석을 고치면 기존 DB 에서 validate 실패. **범위 밖** |",
+      "new": "| Flyway SQL | 마이그레이션은 **범위 밖**. 당시 로컬 `12.4.0` jar를 확인했지만 프로젝트의 payment `runtimeClasspath`는 `11.7.2`였고, 확인한 calculator 동작과 줄 처리 범위는 D-100 사실 보정에 기록했다. 실제 DB `validate`는 실행하지 않았다. |",
+      "old_sha256": "8a46e42b4f80db4cbe72952330234ccf4fd3f6861b998fe8330ec653f3b6c419",
+      "reason": "D-050 당시 인용한 flyway-core 12.4.0은 로컬 Gradle 캐시 jar였고 payment runtimeClasspath 해석 버전은 11.7.2다(D-100 근거). 기존 DB validate 실패는 실측 결과가 아니므로 표현을 정정한다."
+    }
+  ]
+}

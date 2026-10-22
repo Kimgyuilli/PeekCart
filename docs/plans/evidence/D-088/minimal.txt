@@ -1,0 +1,8 @@
+Command: python3 -B scripts/ci-lint-wiring-lint.py
+LINT-WIRING: 24 scripts; CI consumers/selftest wiring and ship-only exception verified
+External poison health scope: four named lints; other inline selftests are wiring evidence only
+
+Minimal development checks, not the full suite:
+Initial wiring CLI fixture method: PASS in1.431s before additional future-lint/job-disabled controls; those final additions await Actions.
+Final namespace actual kubectl-kustomize fixture method: PASS in2.104s (normal/missing namespace/wrong namespace/render failure; local rendering only).
+Full6 methods and10 poisoned implementations: Actions pending. No local Gradle/Docker/full suite/cluster command.
