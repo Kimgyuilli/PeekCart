@@ -8,6 +8,7 @@
   "links": [],
   "panels": [
     {
+      "id": 1,
       "type": "row",
       "title": "Saga · Outbox",
       "collapsed": false,
@@ -20,6 +21,7 @@
       "panels": []
     },
     {
+      "id": 2,
       "title": "Outbox 발행률 (건/초)",
       "type": "timeseries",
       "gridPos": {
@@ -53,6 +55,7 @@
       "description": "D-075 천장 관측. result=failure 는 발행 시도 단위다(ADR-0009 S8)."
     },
     {
+      "id": 3,
       "title": "Outbox backlog",
       "type": "timeseries",
       "gridPos": {
@@ -81,6 +84,7 @@
       "description": "scrape 시점의 pending/failed 건수. Pod 마다 같은 DB 를 세므로 replicas 가 늘면 sum 이 배가된다 — max 로 읽는다."
     },
     {
+      "id": 4,
       "title": "Outbox 발행 평균 지연",
       "type": "timeseries",
       "gridPos": {
@@ -108,6 +112,7 @@
       }
     },
     {
+      "id": 5,
       "title": "재고 예약 결과 (건/초)",
       "type": "timeseries",
       "gridPos": {
@@ -135,6 +140,7 @@
       }
     },
     {
+      "id": 6,
       "type": "row",
       "title": "재시도 · DLQ (D-078 ⑤)",
       "collapsed": false,
@@ -147,6 +153,7 @@
       "panels": []
     },
     {
+      "id": 7,
       "title": "소비 전달 실패율 (cause 별)",
       "type": "timeseries",
       "gridPos": {
@@ -175,6 +182,7 @@
       "description": "카운터는 첫 실패 때 생성된다. 정확한 건수는 Prometheus increase() 가 아니라 세션 전후 /actuator/prometheus 원값 차분(부재=0)으로 센다."
     },
     {
+      "id": 8,
       "title": "누적 실패 · DLQ 유입 (Pod 기동 이후)",
       "type": "timeseries",
       "gridPos": {
@@ -207,6 +215,7 @@
       }
     },
     {
+      "id": 9,
       "title": "DLQ backlog",
       "type": "timeseries",
       "gridPos": {
@@ -235,6 +244,7 @@
       "description": "미결 incident 수. 같은 원장을 Pod 마다 세므로 max 로 읽는다."
     },
     {
+      "id": 10,
       "title": "DLQ 최고령 incident",
       "type": "timeseries",
       "gridPos": {
@@ -262,6 +272,7 @@
       }
     },
     {
+      "id": 11,
       "type": "row",
       "title": "스케줄러 (D-078 ⑥)",
       "collapsed": false,
@@ -274,6 +285,7 @@
       "panels": []
     },
     {
+      "id": 12,
       "title": "taskScheduler active / pool",
       "type": "timeseries",
       "gridPos": {
@@ -307,6 +319,7 @@
       "description": "active 가 pool 에 붙어 있으면 포화. D-024 의 발행 정지가 풀 4 에서 재발하는지 본다."
     },
     {
+      "id": 13,
       "title": "taskScheduler 대기 작업",
       "type": "timeseries",
       "gridPos": {
@@ -334,6 +347,7 @@
       }
     },
     {
+      "id": 14,
       "type": "row",
       "title": "자원 (D-078 ①②④)",
       "collapsed": false,
@@ -346,6 +360,7 @@
       "panels": []
     },
     {
+      "id": 15,
       "title": "MySQL CPU 사용 / 한도",
       "type": "timeseries",
       "gridPos": {
@@ -378,6 +393,7 @@
       }
     },
     {
+      "id": 16,
       "title": "CPU 스로틀 (컨테이너별)",
       "type": "timeseries",
       "gridPos": {
@@ -406,6 +422,7 @@
       "description": "초당 스로틀된 시간. ADR-0027 의 MySQL 스로틀 147.6s → 0.1s 와 같은 축이다."
     },
     {
+      "id": 17,
       "title": "노드 CPU 사용률",
       "type": "timeseries",
       "gridPos": {
@@ -434,6 +451,7 @@
       "description": "D-078 ④ 노드 레벨 경합. 캐시 ON 경로가 MySQL CPU 에 반응한 원인 후보를 가른다."
     },
     {
+      "id": 18,
       "title": "HikariCP 대기 커넥션",
       "type": "timeseries",
       "gridPos": {
