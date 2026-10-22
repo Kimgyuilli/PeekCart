@@ -28,7 +28,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * product saga 메트릭 (계획 ④-d-1 §5 P1).
+ * product saga 메트릭.
  *
  * <p><b>"등록됐다" 로 통과시키지 않는다.</b> {@code meterRegistry.find(...)} 가 non-null 인지만 보면
  * 계측 지점이 틀린 곳에 있어도 통과한다 — 여기서는 <b>경로 실행 전후의 값 차이</b>를 단언한다.

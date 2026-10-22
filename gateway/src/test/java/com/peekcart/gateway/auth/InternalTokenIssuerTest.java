@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 내부 토큰 <b>발행</b> 계약 (계획 P9 · ADR-0017 D1).
+ * 내부 토큰 <b>발행</b> 계약 (ADR-0017 D1).
  *
  * <p>교차모듈 conformance 의 발행측 절반이다 — gateway 는 common-auth(servlet)를 의존할 수 없어 하나의
  * 테스트로 발행↔검증을 잇지 못하므로, 공유 fixture 의 <b>커밋된 계약 토큰</b>과 자기 출력을 대조한다.

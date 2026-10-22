@@ -53,7 +53,7 @@ class NotificationConsumerIntegrationTest extends AbstractIntegrationTest {
     @Autowired ProcessedEventJpaRepository processedEventJpaRepository;
     @Autowired NotificationConsumer notificationConsumer;
 
-    // DB-per-service(구현 ② PR2): notification 스키마에 users 테이블이 없고 교차 FK 도 제거됨(V13) →
+    // DB-per-service: notification 스키마에 users 테이블이 없고 교차 FK 도 제거됨 →
     // 실제 user 행을 시드하지 않고 임의 userId(ID 참조)만 사용한다.
     private final Long userId = 42L;
 

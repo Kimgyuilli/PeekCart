@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Slack real({@link SlackNotificationClient}) ↔ no-op({@link SlackFallbackConfig}) 게이팅 상호배타 검증
- * (PR3b GP-2 loop2 #2 / loop3 #1).
+ *
  *
  * <p>핵심: presence-based {@code @ConditionalOnProperty(slack.webhook.url)} 와
  * {@code @ConditionalOnProperty(slack.noop-fallback.enabled)} 두 gate 로

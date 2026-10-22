@@ -28,14 +28,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * notification-service 의 outbox 신설 회귀 (구현 ④-c-2b-2 P9 · 계획 §6 V-32 · ADR-0020 §D2·§D8).
+ * notification-service 의 outbox 신설 회귀 (ADR-0020 §D2·§D8).
  *
  * <p><b>왜 소비 전용 서비스에 outbox 가 있는가</b>: DLQ replay 는 원장 소유 서비스가 자기 원장 행을
- * 재발행하는 것이고(D8-3 fence), notification 도 자기 원장을 갖는다. 재발행은 다른 발행과 같은 outbox
- * 경로를 탄다(D3 — 별도 replay_outbox 를 만들지 않는다).
+ * 재발행하는 것이고(ADR-0020 §D8-3 fence), notification 도 자기 원장을 갖는다. 재발행은 다른 발행과 같은 outbox
+ * 경로를 탄다(ADR-0020 §D3 — 별도 replay_outbox 를 만들지 않는다).
  *
- * <p><b>도메인 행으로 관측하는 이유</b>: 이 PR 에는 replay 개시 진입점이 없어(④-c-2b-4) replay 행을
- * 만들 수 없다. 그렇다고 "빈이 존재한다" 로 끝내면 <b>배선됐다 수준의 판정</b>이 된다 — poller 를
+ * <p><b>도메인 행으로 관측하는 이유</b>: 이 테스트는 replay 개시 진입점을 거치지 않고 발행 경로를 분리해
+ * 검증한다. 그렇다고 "빈이 존재한다" 로 끝내면 <b>배선됐다 수준의 판정</b>이 된다 — poller 를
  * 통째로 지워도 통과한다. 그래서 outbox 행을 직접 넣고 <b>broker 에 도착하는지</b>를 본다.
  * 발행 경로 자체는 서비스 무관이므로 그것으로 충분하다.
  */
@@ -103,6 +103,69 @@ class NotificationOutboxIntegrationTest extends AbstractIntegrationTest {
                    AND COLUMN_NAME = 'record_kind'
                 """, String.class);
         assertThat(columnDefault).isNull();
+    }
+
+    @Test
+    @DisplayName("D-092 runbook 재개 SQL은 MySQL에서 FAILED domain 한 행만 바꾸고 JSON payload 중복은 보류한다")
+    void failedDomainRecoverySqlIsGuardedByMySql() {
+        insertRecoveryFixture(9001L, "d092-domain-1", "d092-domain-1", "FAILED", "DOMAIN");
+        insertRecoveryFixture(9002L, "d092-duplicate-payload", "d092-duplicate-payload", "FAILED", "DOMAIN");
+        insertRecoveryFixture(9003L, "d092-duplicate-other", "d092-duplicate-payload", "FAILED", "DOMAIN");
+        insertRecoveryFixture(9004L, "d092-pending-1", "d092-pending-1", "PENDING", "DOMAIN");
+        insertRecoveryFixture(9005L, "d092-replay-1", "d092-replay-payload", "FAILED", "REPLAY");
+
+        String duplicateCountSql = """
+                SELECT COUNT(*) FROM outbox_events
+                 WHERE JSON_UNQUOTE(JSON_EXTRACT(payload, '$.eventId')) = ?
+                """;
+        String recoverySql = """
+                UPDATE outbox_events
+                   SET status = 'PENDING', retry_count = 0, last_attempted_at = NULL
+                 WHERE id = ?
+                   AND event_id = ?
+                   AND status = 'FAILED'
+                   AND published_at IS NULL
+                   AND (record_kind IS NULL OR record_kind = 'DOMAIN')
+                   AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.eventId')) = event_id
+                """;
+
+        assertThat(reissueIfUnique(duplicateCountSql, recoverySql, "d092-domain-1", 9001L,
+                "d092-domain-1")).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForMap(
+                "SELECT status, retry_count, event_id, payload FROM outbox_events WHERE id = 9001"))
+                .containsEntry("status", "PENDING")
+                .containsEntry("retry_count", 0)
+                .containsEntry("event_id", "d092-domain-1")
+                .containsEntry("payload", "{\"eventId\":\"d092-domain-1\"}");
+
+        assertThat(reissueIfUnique(duplicateCountSql, recoverySql, "d092-duplicate-payload", 9002L,
+                "d092-duplicate-payload")).isZero(); // read-only preflight rejects before UPDATE
+        assertThat(jdbcTemplate.queryForList(
+                "SELECT status FROM outbox_events WHERE id IN (9002, 9003) ORDER BY id", String.class))
+                .containsExactly("FAILED", "FAILED");
+        // Mutation control: the conditional UPDATE alone accepts the otherwise valid target row.
+        // Therefore removing the cross-row duplicate preflight makes the recovery path unsafe.
+        assertThat(jdbcTemplate.update(recoverySql, 9002L, "d092-duplicate-payload")).isEqualTo(1);
+        assertThat(jdbcTemplate.update(recoverySql, 9004L, "d092-pending-1")).isZero();
+        assertThat(jdbcTemplate.update(recoverySql, 9005L, "d092-replay-1")).isZero();
+    }
+
+    private void insertRecoveryFixture(long id, String eventId, String payloadEventId,
+                                       String status, String recordKind) {
+        jdbcTemplate.update("""
+                INSERT INTO outbox_events
+                    (id, aggregate_type, aggregate_id, event_type, event_id, payload, status,
+                     retry_count, created_at, record_kind)
+                VALUES (?, 'D092', ?, 'd092.fixture', ?, ?, ?, 5, CURRENT_TIMESTAMP(6), ?)
+                """, id, eventId, eventId, "{\"eventId\":\"" + payloadEventId + "\"}", status, recordKind);
+    }
+
+    private int reissueIfUnique(String duplicateCountSql, String recoverySql,
+                                String payloadEventId, long id, String eventId) {
+        Integer matchingRows = jdbcTemplate.queryForObject(
+                duplicateCountSql, Integer.class, payloadEventId);
+        if (matchingRows == null || matchingRows != 1) return 0;
+        return jdbcTemplate.update(recoverySql, id, eventId);
     }
 
     @Test

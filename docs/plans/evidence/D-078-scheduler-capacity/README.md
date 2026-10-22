@@ -1,0 +1,9 @@
+# D-078 finite Boot scheduler evidence
+
+First [run39622466849](https://github.com/Kimgyuilli/PeekCart/actions/runs/39622466849), product job119299244681/artifact12355052825, used head2a3b2fe9ccd724eed922886d9875fdec82ad23b2 and actual checkouta9fccda356e530776f39c880ade5978589fa1d1e. Its target XML has3tests/3failures/0errors at SchedulerPoolCapacityTest line75. Spring returns Task.OutcomeTrackingRunnable from the registered Task, so a direct ScheduledMethodRunnable cast assumption was wrong. The prior product-name/pool property/core-size/single scheduler/registration-count checks passed; no blocker/capacity stage was reached and D078_SCHEDULER markers are0. This is a detector inspection defect, not observed capacity or configuration failure.
+
+The original target XML, full product job log and run/artifact metadata are preserved unchanged after decompression. [manifest.json](manifest.json) binds hashes, member path and original downloaded shard ZIP hash; unrelated shard report files are not duplicated. [first-result.json](first-result.json) preserves selected failure fields and the explicit unmeasured boundary.
+
+The narrow correction uses the registered Runnable's supported run method. A thread-specific inspection marker verifies that invocation reaches this exact probe.tick, while a different probe target and empty registration reject. The main test then waits for a separate automatic tick after manual inspection, preventing inspection itself from proving scheduled progress. No private delegate reflection or Spring wrapper type is required. All original3/4blocker, pool1, finite latch/watchdog/release/Future checks remain unchanged. Actual new Actions verification is pending.
+
+The fixture has only one test probe. Real7job payload cost/concurrent scheduler contention/operating adequacy remains unmeasured. No DB/Kafka/Testcontainers/production settings/CI workflow changes are introduced, and no GKE/TPS policy conclusion follows.

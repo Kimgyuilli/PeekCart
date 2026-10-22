@@ -1,0 +1,33 @@
+# Narrow extension of the signed fixture. Only Payment/Product publish and consume.
+services:
+  resource-service:
+    environment:
+      APP_SCHEDULING_ENABLED: "true"
+      APP_KAFKA_LISTENER_ENABLED: "true"
+      APP_APPROVAL_RECOVERY_APPROVERS: "1"
+      APP_APPROVAL_RECOVERY_EXECUTORS: "2"
+      TOSS_PAYMENTS_BASE_URL: http://pg-stub:8080/v1
+  product-service:
+    extends:
+      file: docker-compose.signed-gateway.yml
+      service: resource-service
+    image: product-service:ci
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/peekcart_product?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: peekcart_product
+      SPRING_DATASOURCE_PASSWORD: peekcart_product
+      APP_SCHEDULING_ENABLED: "true"
+      APP_KAFKA_LISTENER_ENABLED: "true"
+  pg-stub:
+    extends:
+      file: docker-compose.e2e.yml
+      service: pg-stub
+    labels:
+      peekcart.fixture: signed-gateway
+      peekcart.fixture.nonce: ${SIGNED_NONCE:?}
+    restart: "no"
+  runner:
+    volumes:
+      - ./scripts/approval-recovery:/work/recovery:ro
+      - ./product-service/src/main/resources/db/migration:/work/migrations/product:ro
+    entrypoint: [python3, /work/recovery/verify.py]

@@ -31,11 +31,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * Order 로컬 가격 캐시 (CQRS ⑤, strangler-2) <b>소비자 측</b> 통합 테스트.
+ * Order 로컬 가격 캐시 (CQRS 로컬 가격 캐시) <b>소비자 측</b> 통합 테스트.
  * <p>Product peel 이후 본 테스트는 order-side 계약만 검증한다 — product.updated 페이로드를 직접 주입(또는 실제
  * Kafka 리스너 경로로 전달)해 캐시 적재 · version 기반 stale-skip · flush 경계 · 멱등 · schemaVersion 하위호환 ·
  * createOrder 단가 스냅샷 · 캐시 미스 ORD-009 를 본다. product.updated 를 <i>발행</i>하는 product-side(버전 증가
- * 보장)는 product-service 테스트가 검증한다(B1 split 처분).
+ * 보장)는 product-service 테스트가 검증한다(서비스별 책임 분리).
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -59,7 +59,7 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
     @Autowired KafkaTemplate<String, String> kafkaTemplate;
     @Autowired ObjectMapper objectMapper;
 
-    // DB-per-service(구현 ② PR2): order 스키마엔 categories/products/users 테이블이 없고 교차 FK 도 제거됨(V13).
+    // DB-per-service: order 스키마엔 categories/products/users 테이블이 없고 교차 FK 도 제거됨.
     // 본 테스트는 order-side 소비자 계약만 보므로(product.updated 직접 주입), 실제 행 없이 임의 ID 참조만 쓴다.
     // product_price_cache/carts/cart_items/orders 는 plain ID(product_id/user_id) 로 동작.
     private final Long categoryId = 7L;
@@ -157,7 +157,7 @@ class ProductPriceCacheSagaIntegrationTest extends AbstractIntegrationTest {
     @Test
     @DisplayName("e2e: 가격 캐시 미스이면 addItem 이 ORD-009 로 실패한다 (strangler-4)")
     void endToEnd_cacheMiss_throwsORD009() {
-        // product.updated 미수신 → 로컬 캐시 비어있음. strangler-4 부터 addItem 의 존재 검증이 로컬 캐시 기반이므로
+        // product.updated 미수신 → 로컬 캐시 비어있음. addItem 의 존재 검증이 로컬 캐시 기반이므로
         // 캐시 미수신 상품은 addItem 단계에서 ORD-009 로 거절된다(createOrder 도달 전).
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                         cartCommandService.addItem(userId, new AddCartItemCommand(productId, 1)))

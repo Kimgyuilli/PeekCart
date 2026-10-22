@@ -18,7 +18,7 @@ import java.util.Base64;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * JWKS last-known-good(LKG) · cold start · 실패 분류 회귀 (계획 P12 응답 행렬 · P19).
+ * JWKS last-known-good(LKG) · cold start · 실패 분류 회귀.
  *
  * <p>핵심 계약 3가지를 고정한다:
  * <ul>

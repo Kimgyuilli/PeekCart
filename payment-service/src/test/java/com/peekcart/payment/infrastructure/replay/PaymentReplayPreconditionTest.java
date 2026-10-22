@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * V-28d(payment 축) — {@code reserved} × {@link PaymentStatus} 5종 × {@code readyForPayment} 2종
- * 전 조합 (계획 리뷰 2R #3 · 3R #4).
+ * 전 조합.
  *
  * <p><b>order 판정을 재사용할 수 없다</b> — DB-per-service 라 payment 는 Order 상태를 볼 수 없다.
  * 정책 키에서 소유자 축을 빼면 이 관통이 성립하지 않는다.
@@ -97,7 +97,7 @@ class PaymentReplayPreconditionTest {
     @DisplayName("필드 부재·파싱 실패·대상 아닌 토픽 → deny")
     void failClosedInputs() {
         assertThat(precondition.reject(TOPIC, "{\"payload\":{}}")).contains("orderId/reserved");
-        // 소수·지수·범위 초과 — canConvertToLong() 만 보면 통과해 다른 aggregate 를 조회한다(1R #2).
+        // 소수·지수·범위 초과 — canConvertToLong() 만 보면 통과해 다른 aggregate 를 조회한다.
         assertThat(precondition.reject(TOPIC, "{\"payload\":{\"orderId\":1.5,\"reserved\":true}}"))
                 .contains("orderId/reserved");
         assertThat(precondition.reject(TOPIC, "{\"payload\":{\"orderId\":1e2,\"reserved\":true}}"))

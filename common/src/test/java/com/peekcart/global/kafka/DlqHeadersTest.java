@@ -266,7 +266,7 @@ class DlqHeadersTest {
         /**
          * {@code DlqHeaders} 는 <b>판독만</b> 한다. UUID 형식 강제는 발행 측
          * ({@link ReplayHeaders#requireComplete}) 소관이고, 여기서 던지면 위와 같은 이유로 적재가 막힌다.
-         * 형식이 틀린 attempt 는 원장 앵커와 대조에서 걸러진다(④-c-2b-3b P15).
+         * 형식이 틀린 attempt 는 원장 앵커와 대조에서 걸러진다.
          */
         @Test
         @DisplayName("attempt-id 가 UUID 가 아니어도 그대로 판독한다 — 형식 강제는 발행 측 소관")

@@ -17,7 +17,7 @@ import org.springframework.test.context.TestPropertySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * DLQ 원장 메트릭 (계획 ④-d-1 §5 P3).
+ * DLQ 원장 메트릭.
  *
  * <p><b>{@link DeadLetterEndpoint} 와 값이 일치하는지</b>를 함께 본다. 두 표면이 서로 다른 방식으로
  * 세면 값이 갈라졌을 때 어느 쪽이 맞는지 알 수 없고, 그러면 둘 다 신뢰할 수 없게 된다.

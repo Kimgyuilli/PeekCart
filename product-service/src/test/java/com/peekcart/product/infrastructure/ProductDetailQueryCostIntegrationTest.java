@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p><b>false-green 차단.</b> 기존 {@code ProductCacheIntegrationTest.getProduct_cacheHit} 은
  * 캐시 엔트리 존재와 {@code id}/{@code name} 일치만 보므로 <b>재고가 어디서 왔는지 묻지 않는다</b> —
- * 재고를 캐시로 옮겨도 그 테스트는 그대로 그린이다(계획서 V11). 그래서 여기서는 검증 도구를
+ * 재고를 캐시로 옮겨도 그 테스트는 그대로 그린이다. 그래서 여기서는 검증 도구를
  * 구현과 다른 출처인 <b>Hibernate {@link Statistics}</b> 로 잡았다. 캐시 어노테이션을 지우면
  * 즉시 red 가 된다.
  *

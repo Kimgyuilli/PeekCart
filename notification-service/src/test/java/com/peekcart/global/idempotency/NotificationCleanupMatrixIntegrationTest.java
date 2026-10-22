@@ -16,11 +16,11 @@ import org.springframework.test.context.TestPropertySource;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 서비스×잡 매트릭스 검증 — notification (ADR-0012 D5 · 구현 ② PR3 · ADR-0020 D2 로 갱신).
+ * 서비스×잡 매트릭스 검증 — notification (ADR-0012 D5 · ADR-0020 D2).
  *
- * <p><b>이 매트릭스는 ④-c-2b-2 에서 바뀌었다.</b> 구현 ② PR3 시점의 계약은 "notification 은 소비
- * 전용이므로 outbox cleanup 이 없다" 였으나, ADR-0020 §D2 가 notification 에 {@code outbox_events} 를
- * 신설했다 — DLQ replay 는 <b>원장 소유 서비스가 자기 원장 행을 재발행</b>하는 것이고(§D8-3),
+ * <p><b>notification 도 outbox cleanup 이 필요하다.</b> 도메인 이벤트 소비
+ * 전용 서비스이지만 ADR-0020 §D2 에 따라 {@code outbox_events} 를
+ * 소유한다 — DLQ replay 는 <b>원장 소유 서비스가 자기 원장 행을 재발행</b>하는 것이고(ADR-0020 §D8-3),
  * notification 도 자기 원장을 갖기 때문이다. 따라서 이제 <b>두 cleanup 이 모두</b> 떠야 한다.
  *
  * <p>(user 서비스의 "잡 0" 은 클래스 물리 부재로 구조적으로 보장되며 여기서 바뀌지 않았다.)
@@ -40,7 +40,7 @@ class NotificationCleanupMatrixIntegrationTest {
     @DisplayName("processed cleanup 과 outbox cleanup 이 모두 bean 으로 뜬다")
     void matrix_notificationHasBothCleanups() {
         assertThat(ctx.getBeanNamesForType(ProcessedEventCleanupScheduler.class)).hasSize(1);
-        // ④-c-2b-2 P9 이전에는 클래스 자체가 없어 bean 부재가 계약이었다(구현 ② PR3).
+        // replay 재발행 행도 정리하므로 outbox cleanup 이 필요하다.
         assertThat(ctx.getBeanNamesForType(OutboxEventCleanupScheduler.class)).hasSize(1);
     }
 

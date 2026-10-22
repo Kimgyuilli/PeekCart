@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 /**
- * 토픽 config 가 <b>실제 브로커에 적용되는 경로</b>를 검증한다 (ADR-0020 §D4-1 · 계획 V-P4-1~4).
+ * 토픽 config 가 <b>실제 브로커에 적용되는 경로</b>를 검증한다 (ADR-0020 §D4-1).
  *
  * <p><b>왜 이 테스트가 필요한가</b>: {@code NewTopic} 에 config 를 선언하는 것만으로는
  * <b>이미 존재하는 토픽</b>이 바뀌지 않는다. {@code KafkaAdmin.modifyTopicConfigs} 의 기본값이
@@ -41,7 +41,7 @@ import static org.awaitility.Awaitility.await;
  *
  * <p>이 클래스는 Spring 컨텍스트가 없다(raw {@code Admin} 클라이언트만 쓴다). 그래서
  * {@code @Import(SharedContainers.class)} 경로가 닫혀 있고 정적 필드를 직접 읽는다 —
- * 필드 접근만으로 static initializer 가 돌아 기동이 보장된다(D-032 P3b).
+ * 필드 접근만으로 static initializer 가 돌아 기동이 보장된다(D-032).
  */
 @DisplayName("토픽 config 적용 경로 — 신규/기존 토픽 · 미선언 config 처분 (ADR-0020 D4-1)")
 class KafkaTopicConfigMechanismIntegrationTest {
@@ -169,13 +169,13 @@ class KafkaTopicConfigMechanismIntegrationTest {
     }
 
     // ── V-P4-1 [측정] 기준선 ────────────────────────────────────────────────────
-    // 판정이 아니라 아래 두 테스트의 대조 기준이다. ADR §C1 이 "실효값은 Apache 기본 7일"
+    // 판정이 아니라 아래 두 테스트의 대조 기준이다. ADR-0020 §C1 이 "실효값은 Apache 기본 7일"
     // 이라고 적은 근거를 이미지 파일이 아니라 런타임 관측으로 승격시킨다.
 
     /**
      * 선언 없는 토픽의 브로커 기본값 — 7종 <b>전부</b>의 값과 정확한 {@code ConfigSource}.
      *
-     * <p>ADR §C1 의 "실효값은 Apache 기본 7일" 을 이미지 파일 근거가 아니라
+     * <p>ADR-0020 §C1 의 "실효값은 Apache 기본 7일" 을 이미지 파일 근거가 아니라
      * <b>런타임 관측</b>으로 승격시키고, V-P4-2/3 의 독립 대조표가 된다.
      * 4종만 적으면 {@code segment.*}·{@code message.timestamp.before.max.ms} 의 기준값이
      * 증적에서 빠져 "무엇이 바뀌었는지" 를 나중에 판정할 수 없다.

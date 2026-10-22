@@ -140,3 +140,14 @@ poller 일시정지 엔드포인트, 테스트 프로파일 전용 빈, `Clock` 
 - `scripts/saga-e2e-smoke.sh`, `scripts/e2e/saga_e2e.py`
 - 계획서 `docs/plans/done/task-d041-fault-injection-boundary.md`
 - ADR-0028 §후속 결정에 미치는 영향 ①, ADR-0029
+
+## Update Log
+
+### 2026-10-21 D-091 사실 정정
+
+원 결정은 유지한다. D2-3의 복원 확인 문구 “ShedLock 행 삭제 후”는 Context와 같은 절 아래의 UPDATE 설명 및 현재 구현과
+모순되는 사실 오류다. 복원은 `lock_until` 을 과거로 설정하는 UPDATE이며, `StorageBasedLockProvider`가 기억하는 행을
+삭제하지 않는다. 또한 D3의 “시간 경과” 재검토 조건은 전역 애플리케이션 시계를 제어해야 하는 경우를 가리킨다.
+현재 `scenario_e`는 `stock_reservations.expires_at` 저장값을 과거로 변경해 만료 경로를 실행할 뿐 전역 시계를 바꾸지
+않으므로 그 제어 수단의 존재를 뜻하지 않는다. 근거: 현재 코드 커밋 `8e5f6ce9c037a5c3a2d3538a47a1a909bf72ece9`,
+`scripts/e2e/saga_e2e.py` scenario_e의 UPDATE, D-091 코드·문서 대조.

@@ -15,7 +15,7 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * retention floor 교차필드 불변식 검증 + max 계산 (ADR-0012 D5 · 구현 ② PR3).
+ * retention floor 교차필드 불변식 검증 + max 계산 (ADR-0012 D5).
  * 이 검증이 부팅 시 fail-fast 의 근거다({@code @Validated @ConfigurationProperties}).
  */
 @DisplayName("IdempotencyRetentionProperties — floor cross-field 검증 + max 계산")

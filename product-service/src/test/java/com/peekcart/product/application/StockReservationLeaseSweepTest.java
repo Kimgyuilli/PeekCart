@@ -28,7 +28,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 /**
- * 예약 lease sweeper 단위 테스트 (계획 P4 · §5).
+ * 예약 lease sweeper 단위 테스트.
  *
  * <p>검증의 핵심은 "회수했다"가 아니라 <b>회수 판정 기준</b>이다 — cutoff 가 만료 시각이 아니라
  * {@code 만료 + 유예} 여야 Order 취소 경로가 우선권을 갖는다. 이 유예가 사라지면 살아있는 주문의

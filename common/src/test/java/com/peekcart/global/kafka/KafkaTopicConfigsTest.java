@@ -70,7 +70,7 @@ class KafkaTopicConfigsTest {
     // ── ADR-0020 §D4-1 확정값의 독립 정본 ──────────────────────────────────────
     // 여기 숫자는 SUT 의 상수를 읽지 않고 **ADR 본문에서 직접 옮겨 적은 것**이다.
     // SUT 상수를 기대값으로 재사용하면 8/4 → 10/2 같은 변경에서 "절반 관계"·"총 420 MiB"
-    // 가 모두 유지되어 green 이 된다(diff 리뷰 1R #2). 그래서 리터럴로 못박는다.
+    // 가 모두 유지되어 green 이 된다. 그래서 리터럴로 못박는다.
 
     private static final long ADR_BUSINESS_RETENTION_BYTES = 8L * 1024 * 1024;
     private static final long ADR_BUSINESS_SEGMENT_BYTES = 4L * 1024 * 1024;

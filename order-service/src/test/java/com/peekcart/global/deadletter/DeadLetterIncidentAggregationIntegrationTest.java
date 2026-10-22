@@ -26,17 +26,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * DLQ 원장의 <b>incident 집계</b> 회귀 (구현 ④-c-2b-1 P7 · 계획 §6 V-12·V-16·V-17·V-18 · ADR-0020 §D6-3).
+ * DLQ 원장의 <b>incident 집계</b> 회귀 (ADR-0020 §D6-3).
  *
  * <p><b>여기서 지키는 것은 "행이 아니라 사건을 센다" 하나다.</b> 재발행이 실패할 때마다 자식 행이
  * 늘어나는데 행으로 세면 backlog 가 사건 수보다 계속 부풀고, ADR 이 약속한 "재실패 N회에도 미결 1건"이
- * 거짓이 된다. 반대로 조건을 {@code root_record_id = id} 로만 걸면 <b>④-c-2a 가 적재한 기존 행이 전부
+ * 거짓이 된다. 반대로 조건을 {@code root_record_id = id} 로만 걸면 <b>root_record_id 컬럼 도입 전의 기존 행이 전부
  * 탈락해 backlog 가 0 으로 보인다</b> — 같은 표면에서 반대 방향의 false-green 이 난다. 두 방향을 함께 고정한다.
  *
- * <p><b>자식 행을 fixture 로 만드는 이유</b>: 자식을 만드는 실제 경로(재발행 재실패 상관)는 ④-c-2b-3 P15
- * 소관이라 아직 없다. 이 테스트는 그 경로가 만들 <b>DB 상태</b>를 직접 구성해 집계·종결·purge 계약을
+ * <p><b>자식 행을 fixture 로 만드는 이유</b>: 재발행 재실패 상관 경로와 집계 계약을 분리해
+ * 검증한다. 이 테스트는 그 경로가 만들 <b>DB 상태</b>를 직접 구성해 집계·종결·purge 계약을
  * 먼저 고정한다. 상태 구성에만 SQL/엔티티를 쓰고, <b>전이는 전부 공개 진입점</b>({@link DeadLetterEndpoint})
- * 으로만 한다 — ④-c-2a 에서 runbook 이 직접 UPDATE 를 안내해 가드를 우회시킨 전례가 있다.
+ * 으로만 한다 — 직접 UPDATE 로 전이하면 도메인 가드를 우회하기 때문이다.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -72,7 +72,7 @@ class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTe
                 "deadLetterPurgeJob");
     }
 
-    // ---------- 신규 적재는 self-root 다 (P3) ----------
+    // ---------- 신규 적재는 self-root 다 ----------
 
     @Test
     @DisplayName("신규 적재 행은 root_record_id = id 로 자기 자신을 가리킨다")
@@ -160,7 +160,7 @@ class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTe
         recordRoot(1, 100L);
         recordRoot(1, 101L);
         recordRoot(1, 102L);
-        // ④-c-2a 가 적재한 상태 재현: 컬럼이 없던 시절의 행은 root_record_id 가 NULL 이다.
+        // 컬럼이 없던 시절의 기존 행 재현: root_record_id 가 NULL 이다.
         jdbcTemplate.update("UPDATE dead_letter_records SET root_record_id = NULL");
 
         assertThat(repository.countUnresolved()).isEqualTo(3);
@@ -204,7 +204,7 @@ class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTe
         assertThat(repository.countUnresolved()).isZero();
     }
 
-    // ---------- RESOLVED 는 근거가 필수다 (P2) ----------
+    // ---------- RESOLVED 는 근거가 필수다 ----------
 
     @Test
     @DisplayName("resolve 는 근거 없이 불가 — DISCARDED 와 구분되지 않는 종결을 만들지 않는다")
@@ -220,7 +220,7 @@ class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTe
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    // ---------- 잠금 재검사가 최신 상태를 본다 (diff 리뷰 1R #2) ----------
+    // ---------- 잠금 재검사가 최신 상태를 본다 ----------
 
     @Test
     @DisplayName("종결 경합 — 잠금을 기다린 쪽은 **먼저 커밋된 종결을 보고** root·자식 모두 no-op 한다")
@@ -275,7 +275,7 @@ class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTe
                 .isEqualTo(DeadLetterStatus.RESOLVED);
     }
 
-    // ---------- purge 는 incident 단위 + 현재 상태의 시각만 본다 (P4) ----------
+    // ---------- purge 는 incident 단위 + 현재 상태의 시각만 본다 ----------
 
     @Test
     @DisplayName("종결된 root 를 purge 하면 자식도 함께 사라진다 — 자식 단독 purge 경로는 없다")
@@ -304,7 +304,7 @@ class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTe
     @DisplayName("DISCARDED 이력이 남은 RESOLVED root 는 resolved_at 기준으로만 판정된다 (COALESCE 회귀)")
     void purgeUsesCurrentStatusTimestamp() {
         DeadLetterRecord root = recordRoot(1, 100L);
-        // 재개방(④-c-2b-3 P15)이 만드는 상태 재현: 과거 DISCARDED 이력이 남은 채 현재는 RESOLVED 다.
+        // 재개방이 만드는 상태 재현: 과거 DISCARDED 이력이 남은 채 현재는 RESOLVED 다.
         // COALESCE(discarded_at, resolved_at) 였다면 **과거 discarded_at** 이 골라져 보존기간이 지나기 전에
         // 삭제된다. 현재 상태에 해당하는 시각(resolved_at)만 봐야 한다.
         jdbcTemplate.update("UPDATE dead_letter_records SET status = 'RESOLVED', "
@@ -332,7 +332,7 @@ class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTe
     }
 
     /**
-     * 재발행 재실패로 생기는 자식 행을 만든다. 실제 생성 경로는 ④-c-2b-3 P15 소관이라
+     * 재발행 재실패로 생기는 자식 행을 만든다. 실제 상관 처리와 집계를 분리해
      * 여기서는 그 경로가 만들 DB 상태를 직접 구성한다.
      */
     private DeadLetterRecord childOf(DeadLetterRecord root, int partition, long offset) {

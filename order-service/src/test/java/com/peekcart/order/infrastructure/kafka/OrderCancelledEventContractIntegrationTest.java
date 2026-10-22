@@ -35,11 +35,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willThrow;
 
 /**
- * {@code order.cancelled} 발행이 주문 취소와 <b>같은 트랜잭션</b>에서 일어나는지 검증한다 (계획 P7·§5.2).
+ * {@code order.cancelled} 발행이 주문 취소와 <b>같은 트랜잭션</b>에서 일어나는지 검증한다.
  *
  * <p>단위 테스트는 {@code @InjectMocks} 객체를 직접 호출하므로 Spring 프록시도 DB 트랜잭션도 없다 —
  * 발행 호출이 있었다는 사실만 볼 수 있고, 취소와 Outbox 가 <i>함께</i> 커밋/롤백되는지는 증명하지
- * 못한다(GW-2 #2, false-green). 여기서는 실제 컨텍스트/DB 로 다음을 본다.
+ * 못한다(false-green). 여기서는 실제 컨텍스트/DB 로 다음을 본다.
  * <ul>
  *   <li>성공: {@code CANCELLED} + {@code order.cancelled} Outbox 1행이 함께 커밋되고 payload 가 계약대로다</li>
  *   <li>실패 주입: Outbox 저장이 실패하면 주문 상태와 {@code processed_events} 까지 전부 롤백된다</li>
@@ -96,7 +96,7 @@ class OrderCancelledEventContractIntegrationTest extends AbstractIntegrationTest
         JsonNode payload = objectMapper.readTree(cancelled.get(0).getPayload()).get("payload");
         assertThat(payload.get("reason").asText()).isEqualTo("PAYMENT_FAILED");
         assertThat(payload.get("orderId").asLong()).isEqualTo(orderId);
-        // items[] 는 실제 주문 품목과 일치해야 한다 (계획 §5.2 P5)
+        // items[] 는 실제 주문 품목과 일치해야 한다
         assertThat(payload.get("items")).hasSize(1);
         assertThat(payload.get("items").get(0).get("productId").asLong()).isEqualTo(100L);
         assertThat(payload.get("items").get(0).get("quantity").asInt()).isEqualTo(2);

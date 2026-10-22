@@ -1,0 +1,42 @@
+{
+  "source": "local blog33/renderer-work-records.json; selected historical tool outputs, not original cache corpus",
+  "source_sha256": "096ac41ed74d5729d37365b7865539a5b339ba44b6a1c069adcea1772ef00965",
+  "records": [
+    {
+      "source_file": "4a8c8814-f775-4d78-880a-7e536bb57d7e.jsonl",
+      "source_line": 91,
+      "timestamp": "2026-09-19T15:23:04.399Z",
+      "reported_tool_output": "{\n  \"files\": 239,\n  \"null_items\": 1,\n  \"items\": 1267,\n  \"with_scope\": 0,\n  \"with_disp\": 0,\n  \"with_file\": 393,\n  \"sev\": {\n    \"P0\": 45,\n    \"P1\": 787,\n    \"P2\": 435\n  },\n  \"cat\": {\n    \"architecture\": 285,\n    \"bug\": 309,\n    \"convention\": 36,\n    \"doc\": 168,\n    \"security\": 111,\n    \"style\": 1,\n    \"test\": 357\n  },\n  \"disp\": {\n    \"(없음)\": 238\n  }\n}"
+    },
+    {
+      "source_file": "4a8c8814-f775-4d78-880a-7e536bb57d7e.jsonl",
+      "source_line": 198,
+      "timestamp": "2026-09-19T15:32:00.788Z",
+      "reported_tool_output": "=== codex-review-render 자체 검증 ===\n  ok   V1 빈 응답 → exit 2 + usage limit 인용\n  ok   V1 빈 응답이 자동 통과로 새지 않는다\n  ok   V2 items:null → exit 2\n  ok   V2 가 총 0건으로 렌더되지 않는다\n  ok   V3 빈 배열 → exit 0 + 자동 통과\n  ok   V4 깨진 JSON → exit 2\n  ok   V5 plan 3건 → 헤더 집계\n  ok   V5 plan 리뷰에 위치 컬럼이 없다\n  ok   V6 diff → 위치 컬럼 + diff 라벨\n  ok   V7 disposition 전량 결측 → 권장 컬럼 없음\n  ok   V7 결측 사실을 각주로 알린다\n  ok   V8 1건만 있어도 권장 컬럼 생성\n  ok   V8 에는 결측 각주가 붙지 않는다\n  ok   V9 실제 이력 회귀 — 정형 238 / 실패 44\n\n통과 14 · 실패 0 · 건너뜀 0"
+    },
+    {
+      "source_file": "4a8c8814-f775-4d78-880a-7e536bb57d7e.jsonl",
+      "source_line": 288,
+      "timestamp": "2026-09-19T15:35:50.962Z",
+      "reported_tool_output": "  35 OTHER\n   1 SCHEMA_400\n   9 USAGE_LIMIT\n=== SCHEMA_400 의 시각 범위 ===\n2026-09-20 .cache/codex-reviews/diff-task-codex-review-render-1789832114.json"
+    },
+    {
+      "source_file": "4a8c8814-f775-4d78-880a-7e536bb57d7e.jsonl",
+      "source_line": 292,
+      "timestamp": "2026-09-19T15:35:59.925Z",
+      "reported_tool_output": "   9 ERROR rmcp::transport::worker: worker quit with fatal: Transport channel cl\n   5 ERROR codex_rmcp_client::oauth::refresh_transaction: error=failed to refres\n   3 error::단일 'peekcart' 관측성 라벨 값 잔존 — per-service 로 전환 필요 (ADR-N)\"\n   1 error::ci-test-matrix-lint --self-test 실패\"\n   1 error::[L-016a] ${IMG} push digest 산출 실패 — D-016 image promotion 계\n   1 error::[kafka-subscription-contract-lint] @KafkaListener 와 DlqTopo\n   1 ERROR: Selected model is at capacity. Please try a different model.\n   1 ERROR, \"SYS-001\", \"내부 서버 오류가 발생했습니다.\"),\n   1 ERROR N --- [order-service] [   scheduling-1] o.s.s.s.TaskUtils$Logging\n   1 ERROR codex_models_manager::manager: failed to renew cache TTL: missing fie"
+    },
+    {
+      "source_file": "4a8c8814-f775-4d78-880a-7e536bb57d7e.jsonl",
+      "source_line": 310,
+      "timestamp": "2026-09-19T15:37:41.417Z",
+      "reported_tool_output": "V9 교체\n  ok   V8 에는 결측 각주가 붙지 않는다\n  ok   V10 표 칸은 잘리고 전문은 온전하다 (표 89자 · 전문 406자)\n  ok   V9 실제 이력 283개 불변식 일치 — 정형 238 / 실패 45\n\n통과 19 · 실패 0 · 건너뜀 0"
+    },
+    {
+      "source_file": "4a8c8814-f775-4d78-880a-7e536bb57d7e.jsonl",
+      "source_line": 319,
+      "timestamp": "2026-09-19T15:38:35.839Z",
+      "reported_tool_output": "id,severity,category,file,line,finding,suggestion,scope,suggested_disposition\nexit=0\n--- 결과 ---\n{\"run_id\":\"schema-probe\",\"summary\":\"probe\",\"items\":[{\"id\":1,\"severity\":\"P2\",\"category\":\"doc\",\"file\":\"probe\",\"line\":1,\"finding\":\"스키마 검증용 더미\",\"suggestion\":\"없음\",\"scope\":\"out_of_scope\",\"suggested_disposition\":\"defer\"}]}\n\n--- stderr 원인 ---"
+    }
+  ]
+}

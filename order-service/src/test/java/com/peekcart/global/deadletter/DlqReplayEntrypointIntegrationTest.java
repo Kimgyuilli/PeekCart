@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 /**
- * replay 개시 진입점 (구현 ④-c-2b-4a P19·P20·P21 · 계획 §6 V-8·V-9·V-13·V-22·V-38).
+ * replay 개시 진입점.
  *
  * <p><b>여기서 지키는 것</b>:
  * <ul>
@@ -291,7 +291,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         assertThat(resolved.rejectedReason()).isNull();
     }
 
-    // ---------- drain 앵커 (diff 리뷰 1R #6) ----------
+    // ---------- drain 앵커 ----------
 
     @Test
     @DisplayName("발행 축이 PUBLISHED 로 종착하면 drain 앵커가 DB 시각으로 찍힌다")
@@ -333,7 +333,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         assertThat(after.getLastReplaySettledAt()).isNull();
     }
 
-    // ---------- V-39: 교착 REQUESTED 의 단방향 해제 (④-c-2b-4b P24 · ADR-0022 §D4) ----------
+    // ---------- V-39: 교착 REQUESTED 의 단방향 해제 (ADR-0022 §D4) ----------
 
     @Test
     @DisplayName("outbox 행이 사라져 고착한 REQUESTED 를 해제하면 PUBLISH_UNKNOWN + 앵커 + 감사가 남는다")
@@ -426,7 +426,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         assertThat(ledgerRepository.findById(ledgerId).orElseThrow().getPublicationStatus()).isNull();
     }
 
-    // ---------- V-35: 진입점 → 발행 → 재실패 → 상관 관통 (diff 리뷰 1R #4) ----------
+    // ---------- V-35: 진입점 → 발행 → 재실패 → 상관 관통 ----------
 
     @Test
     @DisplayName("진입점이 만든 앵커로 재발행분이 실제 발행되고, 그 재실패가 같은 root 에 상관된다")
@@ -456,7 +456,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
 
         // 5) 그 재발행분이 표적 group 에서 다시 실패했다고 보고 **실제 DLT 를 `.dlq` 에 흘린다**.
         //    recorder 를 직접 부르지 않는다 — DlqHeaders 판독과 DeadLetterConsumer 진입까지 관통시켜야
-        //    "진입점이 만든 헤더가 실제 소비 경로에서 읽힌다" 가 관측된다(diff 리뷰 2R #3).
+        //    "진입점이 만든 헤더가 실제 소비 경로에서 읽힌다" 가 관측된다.
         sendAsDeadLetter(republished);
 
         // 6) **독립 incident 로 갈라지지 않고** 같은 root 에 자식으로 붙는다.
@@ -469,7 +469,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
         assertThat(ledgerRepository.countUnresolved()).isEqualTo(1);
     }
 
-    // ---------- V-28d 배선: 실제 adapter 를 거친다 (diff 리뷰 1R #5) ----------
+    // ---------- V-28d 배선: 실제 adapter 를 거친다 ----------
 
     @Test
     @DisplayName("stock.reservation.result 는 실제 Order 를 조회해 갈린다 — adapter 가 배선돼 있어야 한다")
@@ -497,7 +497,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
                 .anyMatch(r -> r.contains("사전조건 불충족"));
     }
 
-    // ---------- V-28e: 정책 감사 write 의 동시성 (계획 §6 · diff 리뷰 2R #6) ----------
+    // ---------- V-28e: 정책 감사 write 의 동시성 ----------
 
     @Test
     @DisplayName("같은 root 에 allow 와 deny 가 동시에 와도 root 판정과 발행 결과가 어긋나지 않는다")
@@ -589,7 +589,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
             holder.get(30, TimeUnit.SECONDS);
 
             // **잠금 선행을 지우는 변이(findByIdForUpdate → findById)에서 이 단언이 red 가 된다.**
-            // 조건부 UPDATE 없이 평범한 Java 검사로 I-1 을 세운 근거가 여기서 관측된다(C-31).
+            // 조건부 UPDATE 없이 평범한 Java 검사로 I-1 을 세운 근거가 여기서 관측된다.
             assertThat(resolved.changed()).isFalse();
             assertThat(resolved.rejectedReason()).contains("발행 결과가 미확정");
         } finally {
@@ -774,7 +774,7 @@ class DlqReplayEntrypointIntegrationTest extends AbstractIntegrationTest {
     }
 
     /**
-     * original_timestamp 는 **실제 원본 레코드의 timestamp** 여야 한다 — 재실패 상관(④-c-2b-3b)이
+     * original_timestamp 는 **실제 원본 레코드의 timestamp** 여야 한다 — 재실패 상관이
      * 그 값을 대조 축으로 쓰므로, 임의 값을 넣으면 정상 attempt 가 독립 root 로 갈라진다.
      * 과거 값(예: 고정 상수)을 쓰면 멱등 안전창(7d)이 이미 만료돼 모든 케이스가 [안전창] 으로 거부된다.
      */

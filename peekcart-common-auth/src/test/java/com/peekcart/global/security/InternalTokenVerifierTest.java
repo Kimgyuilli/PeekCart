@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 내부 토큰 <b>검증</b> 계약 + 음성 매트릭스 (계획 P9 · ADR-0017 D3).
+ * 내부 토큰 <b>검증</b> 계약 + 음성 매트릭스 (ADR-0017 D3).
  *
  * <p>교차모듈 conformance 의 검증측 절반 — 발행측({@code InternalTokenIssuerTest})이 만드는 것과 동일한
  * <b>커밋된 계약 토큰</b>을 소비한다.

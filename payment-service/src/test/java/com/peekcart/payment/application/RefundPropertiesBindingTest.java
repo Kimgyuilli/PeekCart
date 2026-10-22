@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * 환불 정책값 fail-fast 검증 (계획 P9, ADR-0007).
+ * 환불 정책값 fail-fast 검증 (ADR-0007).
  *
  * <p>claim lease 가 PG 호출 최악 소요보다 짧으면 살아있는 claim 을 다른 인스턴스가 회수해
  * <b>같은 결제에 취소를 두 번 시도</b>한다. 이런 조합은 런타임이 아니라 부팅에서 막아야 한다.
