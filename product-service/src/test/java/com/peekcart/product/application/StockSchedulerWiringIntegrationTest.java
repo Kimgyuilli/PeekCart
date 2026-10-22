@@ -4,10 +4,12 @@ import com.peekcart.product.domain.model.ReservationStatus;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.IntegrationTestConfig;
 import com.peekcart.support.SharedContainers;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
@@ -50,6 +52,8 @@ import static org.awaitility.Awaitility.await;
 @DisplayName("Product 스케줄러 배선 계약")
 class StockSchedulerWiringIntegrationTest extends AbstractIntegrationTest {
 
+    @Autowired MeterRegistry meterRegistry;
+
     private Long productId;
 
     @BeforeEach
@@ -80,6 +84,27 @@ class StockSchedulerWiringIntegrationTest extends AbstractIntegrationTest {
                 assertThat(statusOf(expired)).isEqualTo(ReservationStatus.RELEASED.name()));
 
         assertThat(statusOf(future)).isEqualTo(ReservationStatus.RESERVED.name());
+    }
+
+    /**
+     * D-078 ⑥ 의 부하 측정 입력. 풀 4 의 적정성은 {@code executor.active}/{@code executor.queued}
+     * 로 본다 — Boot 가 {@code taskScheduler} 빈을 자동 바인딩한다는 가정을 여기서 고정한다.
+     * 등록만 보지 않고, 실제 발화 뒤 완료 수가 올랐는지와 운영 풀 크기를 함께 본다.
+     */
+    @Test
+    @DisplayName("[SAGA-SCHEDULER-WIRING-PRODUCT-METRICS] 실제 발화가 taskScheduler executor 메트릭에 잡힌다")
+    void schedulerExecutorMetricsReflectActualFiring() {
+        Long orderId = seed(ReservationStatus.RESERVED, LocalDateTime.now().minusMinutes(10));
+
+        await().atMost(30, TimeUnit.SECONDS).untilAsserted(() ->
+                assertThat(statusOf(orderId)).isEqualTo(ReservationStatus.RELEASED.name()));
+
+        assertThat(meterRegistry.get("executor.pool.core").tag("name", "taskScheduler").gauge().value())
+                .isEqualTo(4.0);
+        assertThat(meterRegistry.get("executor.completed").tag("name", "taskScheduler")
+                .functionCounter().count()).isPositive();
+        assertThat(meterRegistry.find("executor.active").tag("name", "taskScheduler").gauge()).isNotNull();
+        assertThat(meterRegistry.find("executor.queued").tag("name", "taskScheduler").gauge()).isNotNull();
     }
 
     /**

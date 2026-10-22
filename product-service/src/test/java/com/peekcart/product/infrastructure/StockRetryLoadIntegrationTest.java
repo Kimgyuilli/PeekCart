@@ -8,9 +8,12 @@ import com.peekcart.product.domain.model.Inventory;
 import com.peekcart.product.domain.model.Product;
 import com.peekcart.product.domain.repository.InventoryRepository;
 import com.peekcart.product.infrastructure.kafka.StockReservationConsumer;
+import com.peekcart.product.infrastructure.metrics.ProductKafkaRetryMetrics;
 import com.peekcart.support.AbstractIntegrationTest;
 import com.peekcart.support.SharedContainers;
 import com.peekcart.support.IntegrationTestConfig;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -90,12 +93,16 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
     @Autowired KafkaAdmin kafkaAdmin;
     @Autowired @Qualifier("kafkaErrorHandler") CommonErrorHandler commonErrorHandler;
     @Autowired ObjectMapper mapper;
+    @Autowired MeterRegistry meterRegistry;
     @MockitoSpyBean InventoryRepository inventoryRepository;
     @MockitoSpyBean StockReservationConsumer consumer;
 
     private ConcurrentMessageListenerContainer<?, ?> listener;
     private DefaultErrorHandler handler;
     private BackOff configured;
+    private List<RetryListener> productionListeners;
+    private double failedBefore;
+    private double recoveredBefore;
     private KafkaConsumer<String, String> observer;
     private final ThreadLocal<String> currentEvent = new ThreadLocal<>();
     private final Map<String, AtomicInteger> deliveries = new ConcurrentHashMap<>();
@@ -143,7 +150,13 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
         assertThat(ReflectionTestUtils.getField(configured, "jitterRatio")).isEqualTo(0.5);
         assertThat((long[]) ReflectionTestUtils.getField(configured, "intervals"))
                 .containsExactly(1_000, 5_000, 30_000);
-        handler.setRetryListeners(new RetryListener() {
+        List<RetryListener> registered = ReflectionTestUtils.invokeMethod(handler, "getRetryListeners");
+        productionListeners = List.copyOf(registered);
+        // D-078 ⑤: 운영 배선이 재시도 메트릭을 등록했는지 — 테스트 listener 는 그 옆에 덧붙인다.
+        assertThat(productionListeners).hasSize(1).first().isInstanceOf(ProductKafkaRetryMetrics.class);
+        failedBefore = count("kafka.listener.delivery.failed", "optimistic_lock");
+        recoveredBefore = count("kafka.listener.recovered", null);
+        handler.setRetryListeners(productionListeners.get(0), new RetryListener() {
             @Override
             public void failedDelivery(ConsumerRecord<?, ?> record, Exception exception, int attempt) {
                 boolean optimistic = optimistic(exception);
@@ -254,6 +267,9 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
                 assertThat(count.get()).isBetween(1, 4));
         assertThat(delays).isNotEmpty().doesNotContain(BackOffExecution.STOP);
         assertThat(dlqRecords).isEmpty();
+        assertThat(count("kafka.listener.delivery.failed", "optimistic_lock") - failedBefore)
+                .isEqualTo(failures.size());
+        assertThat(count("kafka.listener.recovered", null) - recoveredBefore).isZero();
         // Same event IDs/order IDs after success: consume and commit, then inspect the DB again.
         List<RecordMetadata> duplicates = new ArrayList<>();
         for (int partition = 0; partition < 3; partition++) {
@@ -294,6 +310,8 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
         }
         assertThat(issued.get(3)).isEqualTo(BackOffExecution.STOP);
         assertThat(dlqRecords).hasSize(1);
+        assertThat(count("kafka.listener.delivery.failed", "optimistic_lock") - failedBefore).isEqualTo(4);
+        assertThat(count("kafka.listener.recovered", null) - recoveredBefore).isEqualTo(1);
         ConsumerRecord<String, String> dead = dlqRecords.get(0);
         assertThat(dead.key()).isEqualTo(run + "-0");
         assertThat(dead.value()).isEqualTo(value);
@@ -362,6 +380,13 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
         }
     }
 
+    private double count(String name, String cause) {
+        var search = meterRegistry.find(name).tag("topic", TOPIC);
+        if (cause != null) search = search.tag("cause", cause);
+        Counter counter = search.counter();
+        return counter == null ? 0 : counter.count();
+    }
+
     private static String textHeader(ConsumerRecord<?, ?> record, String name) {
         return new String(record.headers().lastHeader(name).value(), StandardCharsets.UTF_8);
     }
@@ -389,9 +414,9 @@ class StockRetryLoadIntegrationTest extends AbstractIntegrationTest {
             listener.stop();
             assertThat(listener.isRunning()).isFalse();
         }
-        if (handler != null) {
+        if (handler != null && productionListeners != null) {
             handler.setBackOffFunction((record, exception) -> configured);
-            handler.setRetryListeners();
+            handler.setRetryListeners(productionListeners.toArray(RetryListener[]::new));
         }
         if (observer != null) observer.close(Duration.ofSeconds(5));
         row("cleanup stopped=" + (listener == null || !listener.isRunning())
