@@ -14,6 +14,7 @@
 #   - k8s/overlays/minikube
 #   - k8s/overlays/gke
 #   - k8s/overlays/gke-d002{a,bc} and gke-d002a-mysql-{500m,2000m} (D-079)
+#   - k8s/overlays/gke-d002bc-mysql-2000m (D-078)
 #
 # Dependencies:
 #   - kubectl (CI installs it with azure/setup-kubectl@v4)
@@ -48,6 +49,7 @@ OVERLAYS=(
     "k8s/overlays/minikube" "k8s/overlays/gke"
     "k8s/overlays/gke-d002a" "k8s/overlays/gke-d002bc"
     "k8s/overlays/gke-d002a-mysql-500m" "k8s/overlays/gke-d002a-mysql-2000m"
+    "k8s/overlays/gke-d002bc-mysql-2000m"
 )
 EXPECTED_NAMESPACE="peekcart"
 VIOLATIONS=0

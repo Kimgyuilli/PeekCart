@@ -7,6 +7,7 @@ import com.peekcart.global.kafka.MdcPayloadExtractor;
 import com.peekcart.global.kafka.MdcRecordInterceptor;
 import com.peekcart.global.port.SlackPort;
 import com.peekcart.global.retention.IdempotencyRetentionProperties;
+import com.peekcart.product.infrastructure.metrics.ProductKafkaRetryMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -120,14 +121,15 @@ public class ProductKafkaConfig {
     }
 
     @Bean
-    public CommonErrorHandler kafkaErrorHandler(KafkaTemplate<String, String> kafkaTemplate) {
+    public CommonErrorHandler kafkaErrorHandler(KafkaTemplate<String, String> kafkaTemplate,
+                                                ProductKafkaRetryMetrics retryMetrics) {
         DeadLetterPublishingRecoverer dlqRecoverer = new DeadLetterPublishingRecoverer(
                 kafkaTemplate,
                 (record, ex) -> new TopicPartition(record.topic() + ".dlq", -1)
         );
         dlqRecoverer.setFailIfSendResultIsError(true);
 
-        return new DefaultErrorHandler((record, exception) -> {
+        DefaultErrorHandler handler = new DefaultErrorHandler((record, exception) -> {
             String message = String.format(
                     "[DLQ] topic=%s, partition=%d, offset=%d, exception=%s",
                     record.topic(), record.partition(), record.offset(),
@@ -145,6 +147,8 @@ public class ProductKafkaConfig {
             // 재고 전용 분기가 아니라 이 서비스의 공용 재시도 성질로 둔다: lockstep 은 낙관락에만
             // 생기는 문제가 아니다. 다른 서비스의 같은 배선은 이번 범위 밖이다.
         }, new JitteredSequenceBackOff(0.5, 1_000, 5_000, 30_000));
+        handler.setRetryListeners(retryMetrics);
+        return handler;
     }
 
     @Bean
