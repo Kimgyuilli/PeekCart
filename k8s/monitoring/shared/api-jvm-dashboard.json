@@ -6,6 +6,7 @@
   "links": [],
   "panels": [
     {
+      "id": 1,
       "title": "API Response Time (p95)",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
@@ -32,6 +33,7 @@
       }
     },
     {
+      "id": 2,
       "title": "API Response Time (p99)",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
@@ -48,6 +50,7 @@
       }
     },
     {
+      "id": 3,
       "title": "Error Rate (5xx)",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
@@ -73,6 +76,7 @@
       }
     },
     {
+      "id": 4,
       "title": "Request Rate (RPS)",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
@@ -89,6 +93,7 @@
       }
     },
     {
+      "id": 5,
       "title": "JVM Heap Memory",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
@@ -109,6 +114,7 @@
       }
     },
     {
+      "id": 6,
       "title": "JVM GC Pause",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
@@ -125,6 +131,7 @@
       }
     },
     {
+      "id": 7,
       "title": "Service Up (Scrape Health)",
       "description": "target 의 up 메트릭. 0 이면 스크랩 실패/서비스 다운 — Error Rate 패널의 강제 0% 표시와 구분하기 위한 신호",
       "type": "stat",

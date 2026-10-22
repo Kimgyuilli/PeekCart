@@ -12,8 +12,21 @@
   `now-30m` 같은 상대 범위로 찍으면 같은 패널을 다시 찍을 수 없다.
 - **조건을 그림 안에 남긴다.** 대시보드 상단에 annotation 으로 셀 이름(예: `B list OFF r2`)을 단다.
   파일명만으로는 MySQL 한도·캐시 상태를 복원할 수 없다.
-- **저장 위치**: `loadtest/reports/<YYYY-MM-DD>/grafana/`. 파일명은 `<항목>-<셀 또는 단계>-<패널>.png`
-  (예: `d078-5-contend-r1-delivery-failed.png`).
+- **저장 위치**: `loadtest/reports/<YYYY-MM-DD>/grafana/`. 파일명은 `<항목>-<셀 또는 단계>-<대시보드>-p<패널 id>.jpg`
+  (예: `d078-5-contend-r1-saga-p7.jpg`). 같은 이름의 `.json` 에 그 패널의 Prometheus 원 시계열을 둔다.
+
+## 도구
+
+`loadtest/scripts/d078-capture.py` 가 아래 표를 코드로 갖고 있다. 표를 고치면 스크립트의 `CAPTURES` 도 고친다.
+
+1. run 이 끝나면 `annotate --label <셀> --from <시작> --to <끝>` 으로 대시보드 4개에 구간을 남긴다.
+2. 단계(S2, S3)가 끝나면 항목마다 `plan` 으로 패널 단독 화면 URL 과 파일명을 받아 브라우저로 찍는다.
+   Grafana 는 `kubectl port-forward` 로 `localhost:3000` 에 연다.
+3. 같은 범위로 `export` 를 돌려 원 시계열을 저장한다. 클러스터를 지운 뒤에는 이것만 남는다.
+4. 캡처와 export 가 모두 저장된 것을 확인한 뒤에만 정리 단계로 간다.
+
+패널은 제목으로 찾아 id 로 가리킨다. 대시보드 패널에는 고정 `id` 가 있어야 한다 — 없으면 Grafana 가 로드할
+때 번호를 붙여 단독 화면 URL 이 다른 패널을 가리킬 수 있다.
 
 ## 항목별 캡처
 
