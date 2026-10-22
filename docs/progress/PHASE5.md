@@ -912,3 +912,9 @@ Phase 4 증적을 다시 읽어 1,000 VU 동시 주문 재측정은 넣지 않�
 ## 2026-10-23 — D-078 GKE 측정 세션 계획
 
 #226 을 병합했다. 과금 세션 절차(S0 준비 ~ S5 정리)와 조건 파일 두 개를 추가했다([PR227](https://github.com/Kimgyuilli/PeekCart/pull/227)). ⑤ 의 경합 조건(product replicas 3, outbox 폴링 500ms·500건)을 `gke-d078-contention` overlay 로 고정했다. Phase 4 에서는 두 값이 파일 밖에 있었다. 관측 스택은 별도 노드풀로 격리해 d026 기준선 비교와 노드 CPU 측정을 오염시키지 않는다. 키쌍은 로컬 dev 개인키가 커밋된 ConfigMap 과 짝임을 확인해 새로 만들지 않는다. 세션은 아직 실행하지 않았다.
+
+## 2026-10-23 — D-078 세션 S0 실행과 캡처 도구
+
+#227 을 병합했다. 세션 S0 을 실행했다: 프로젝트 `peekcart-d078` 결제 연결, API 활성화, 서명 키 2개 업로드(업로드 전후 fingerprint 대조), 키별 GSA 1:1 권한, main `4bed313` 이미지 6개 AR 승격(GHCR digest 와 동일). 클러스터·VM 은 없다. Slack webhook 시크릿은 자리만 만들었고 값은 사용자가 넣는다.
+
+캡처 경로를 과금 전에 로컬에서 끝까지 돌렸다([PR228](https://github.com/Kimgyuilli/PeekCart/pull/228)). 대시보드 패널에 고정 id 를 넣고 annotation·단독 패널 URL·원 시계열 export 스크립트를 추가했다. 같은 클러스터에서 확인할 수 있는 D-065 ②⑤와 D-092 전달 canary 를 세션 S4 에 넣었다. 배포 래퍼의 drain preflight 가 빈 namespace 첫 배포를 fail-closed 로 막으므로, 첫 배포는 사유를 남겨 건너뛰고 스택이 뜬 뒤 preflight 를 다시 돌려 D-065 ② 를 확인한다.

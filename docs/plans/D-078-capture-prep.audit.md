@@ -14,3 +14,8 @@
 
 - `test_d078_capture.py` 10건 OK.
 - 리허설: annotation 4건 생성, export 에서 fixture 메트릭이 있는 패널(누적 실패·DLQ 2, backlog 2, executor 2, 실패율 1)만 시계열, 나머지 0. `d-solo` 단독 패널 캡처에서 절대 범위·범례·annotation 구간 2개 확인. 컨테이너 3개·네트워크 제거 확인.
+
+## /ship
+
+- PR https://github.com/Kimgyuilli/PeekCart/pull/228. consistency precheck 경고 0, 리뷰 처분 점검 ok, 커밋·본문·제목 문체 lint 통과.
+- 갱신: TASKS D-078 상태 cell(#227 병합, #228 링크, S0 완료), PHASE5 작업 이력. 완료 이동·계획 이동 없음.
