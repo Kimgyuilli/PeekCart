@@ -14,3 +14,8 @@
 - `gke-d078-contention` 렌더 diff: order env 2줄, product replicas 1 → 3. namespace lint, lint-health selftest 통과.
 - `helm template` kube-prometheus-stack 91.4.0: grafana·kube-state-metrics·operator·prometheus·admission job 2개가 `peekcart.io/role=monitoring` 선택·toleration, node-exporter 는 무조건 toleration.
 - outbox 폴링 값은 `@Value("${app.outbox.polling.batch-size:100}")`·`${app.outbox.polling.delay:5s}` 로 읽는다. Boot 의 `@Value` relaxed binding 으로 `APP_OUTBOX_POLLING_BATCHSIZE`·`APP_OUTBOX_POLLING_DELAY` 가 바인딩된다. 실제 Pod env 반영은 세션 S3 에서 확인한다.
+
+## /ship
+
+- PR https://github.com/Kimgyuilli/PeekCart/pull/227. consistency precheck 경고 0, 리뷰 처분 점검 ok, 커밋·본문·제목 문체 lint 통과.
+- 갱신: TASKS D-078 상태 cell(#226 병합 반영, #227 링크), PHASE5 작업 이력. 완료 이동·계획 이동 없음.
