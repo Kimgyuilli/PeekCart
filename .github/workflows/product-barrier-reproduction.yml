@@ -1,0 +1,94 @@
+name: Product barrier reproduction
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/product-barrier-reproduction.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-barrier-reproduction-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  original-seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Original product seed with CI profile
+        env:
+          SPRING_PROFILES_ACTIVE: test
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/product-barrier-reproduction
+          docker ps -aq --no-trunc > build/product-barrier-reproduction/containers-before.tmp
+          mv build/product-barrier-reproduction/containers-before.tmp build/product-barrier-reproduction/containers-before.txt
+          git rev-parse HEAD > build/product-barrier-reproduction/source-head.txt
+          java -version 2> build/product-barrier-reproduction/java-version.txt
+          sha256sum product-service/src/test/java/com/peekcart/product/infrastructure/StockReservationLockBoundaryIntegrationTest.java > build/product-barrier-reproduction/test-source.sha256
+          git status --porcelain > build/product-barrier-reproduction/source-status.txt
+          cat > build/product-barrier-reproduction/order.init.gradle <<'GRADLE'
+          gradle.beforeProject { project ->
+              if (project.path == ':product-service') {
+                  project.tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+                      beforeTest { descriptor -> logger.lifecycle("D078_TEST_START ${descriptor.className}#${descriptor.name}") }
+                  }
+              }
+          }
+          GRADLE
+          printf '%s\n' './gradlew -I build/product-barrier-reproduction/order.init.gradle :product-service:build -PtestSeed=1792523372921 --no-daemon --no-parallel --max-workers=1 --console=plain --info' > build/product-barrier-reproduction/command.txt
+          printf '%s\n' 'SPRING_PROFILES_ACTIVE=test' 'testSeed=1792523372921' > build/product-barrier-reproduction/environment.txt
+          ./gradlew -I build/product-barrier-reproduction/order.init.gradle :product-service:build -PtestSeed=1792523372921 --no-daemon --no-parallel --max-workers=1 --console=plain --info 2>&1 | tee build/product-barrier-reproduction/gradle.log
+      - name: Verify original barrier test actually ran
+        run: |
+          python3 - <<'PYTHON'
+          import xml.etree.ElementTree as ET
+          root = ET.parse('product-service/build/test-results/test/TEST-com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest.xml').getroot()
+          names = {'concurrentReservations_convergeByOptimisticLock()', '동시 예약은 낙관락으로 수렴한다 — 오버셀링 0, 충돌은 재시도 대상'}
+          cases = [case for case in root.findall('testcase') if case.get('classname') == 'com.peekcart.product.infrastructure.StockReservationLockBoundaryIntegrationTest' and case.get('name') in names]
+          assert len(cases) == 1 and not any(cases[0].find(tag) is not None for tag in ['skipped', 'failure', 'error']), 'original barrier case missing/skipped/failed'
+          assert int(root.get('tests', '0')) > 0 and int(root.get('failures', '0')) == 0 and int(root.get('errors', '0')) == 0, 'invalid barrier suite result'
+          print('Original barrier case executed; raw XML/log retained; PASS does not establish the historical failure cause')
+          PYTHON
+      - name: Clean only this run's Testcontainers
+        if: always()
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          import subprocess
+          before = Path('build/product-barrier-reproduction/containers-before.txt')
+          if before.exists():
+              existing = set(before.read_text().split())
+              current = subprocess.check_output(
+                  ['docker', 'ps', '-aq', '--no-trunc', '--filter', 'label=org.testcontainers=true'],
+                  text=True, timeout=10).split()
+              owned = [container_id for container_id in current if container_id not in existing]
+              if owned:
+                  subprocess.run(['docker', 'rm', '-f', *owned], check=True, timeout=30)
+              Path('build/product-barrier-reproduction/cleanup.txt').write_text(
+                  f'new testcontainers removed={len(owned)}\n')
+          PYTHON
+      - name: Preserve reproduction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-barrier-original-seed
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            build/product-barrier-reproduction/
+            product-service/build/test-results/
+            product-service/build/reports/tests/
