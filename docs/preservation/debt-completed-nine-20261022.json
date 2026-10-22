@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-086.md",
+      "sha256": "e2a9244f511c71fab6646964ed9af830fafe4632c5a835e4eb4ccb5570133fba"
+    },
+    {
+      "path": "docs/plans/D-088.md",
+      "sha256": "197a4ca269cb6b586640349c4195b549fbb74d6d08ec4f349e426c9f83418b23"
+    },
+    {
+      "path": "docs/plans/D-088.audit.md",
+      "sha256": "8e19abba40ce5b966ae3225bb0bd7e5e9e3acf8103254e9988b24c776352a960"
+    },
+    {
+      "path": "docs/plans/D-091.md",
+      "sha256": "84dd894a6d52633dc2f658dbd6d4467658918c6f404dd570a187b2baf68d821a"
+    },
+    {
+      "path": "docs/plans/D-095.md",
+      "sha256": "edd9effd65b4d22ac42907a83dde1e09bc1326dc0559c65221d08c9c57062603"
+    },
+    {
+      "path": "docs/plans/D-096.md",
+      "sha256": "d51afb56abddd0cd8cf35d341ad90cd25bee8d7f20ab95f00fdba3db61aac639"
+    },
+    {
+      "path": "docs/plans/D-100.md",
+      "sha256": "1a8e04e7bb55bba6ce623f3d9965e27496ac98d9e90f4bc8f6106037f88df496"
+    },
+    {
+      "path": "docs/plans/D-101.md",
+      "sha256": "a1a5fe9cdb7e2e72860c691c07c8f9c139e55255187cee7a04b43d355a09259a"
+    },
+    {
+      "path": "docs/plans/D-102.md",
+      "sha256": "b00ba612e91c25d7c2166d741d395ab75e9fb202e9321d4c7aeed2d6fea6fdc1"
+    },
+    {
+      "path": "docs/plans/D-102.audit.md",
+      "sha256": "ec6738c34ed6eb3fdafe848e252c4a215f41115db535668226b3460a99a45b27"
+    },
+    {
+      "path": "docs/plans/D-104.md",
+      "sha256": "43ae1b77acd7ea836d56f5392a7d3b6504aa53eb773cdf806f2f60a527f69b0d"
+    },
+    {
+      "path": "docs/plans/D-104.audit.md",
+      "sha256": "48fac38ae199311f1b78d1842fe00ca4f30c333bc8a924f755644c8838171e3f"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-086.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-086.md",
+          "start": 1,
+          "end": 21
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR190](https://github.com/Kimgyuilli/PeekCart/pull/190) 병합 `03dc67b` 후 [main CI39639266028](https://github.com/Kimgyuilli/PeekCart/actions/runs/39639266028)가 전체 테스트·E2E·gate·여섯 publish 모두 성공했다(2026-10-22). 위 범위 밖 항목은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-088.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-088.md",
+          "start": 1,
+          "end": 49
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR213](https://github.com/Kimgyuilli/PeekCart/pull/213) 병합 `d8df75b` 후 [main CI39682638074](https://github.com/Kimgyuilli/PeekCart/actions/runs/39682638074)가 전체 테스트·E2E·gate·여섯 publish 모두 성공했다(2026-10-22). 위 범위 밖 항목은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-088.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-088.audit.md",
+          "start": 1,
+          "end": 29
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-091.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-091.md",
+          "start": 1,
+          "end": 15
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR191](https://github.com/Kimgyuilli/PeekCart/pull/191) 병합 `2929d7a` 후 [main CI39668426508](https://github.com/Kimgyuilli/PeekCart/actions/runs/39668426508)가 전체 테스트·E2E·gate·여섯 publish 모두 성공했다(2026-10-22). 위 범위 밖 항목은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-095.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-095.md",
+          "start": 1,
+          "end": 14
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR191](https://github.com/Kimgyuilli/PeekCart/pull/191) 병합 `2929d7a` 후 [main CI39668426508](https://github.com/Kimgyuilli/PeekCart/actions/runs/39668426508)가 전체 테스트·E2E·gate·여섯 publish 모두 성공했다(2026-10-22). 위 범위 밖 항목은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-096.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-096.md",
+          "start": 1,
+          "end": 14
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR192](https://github.com/Kimgyuilli/PeekCart/pull/192) 병합 `0cfec39` 후 [main CI39671430679](https://github.com/Kimgyuilli/PeekCart/actions/runs/39671430679)가 전체 테스트·E2E·gate·여섯 publish 모두 성공했다(2026-10-22). 위 범위 밖 항목은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-100.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-100.md",
+          "start": 1,
+          "end": 40
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR194](https://github.com/Kimgyuilli/PeekCart/pull/194) 병합 `7ce16b0` 후 [main CI39696998035](https://github.com/Kimgyuilli/PeekCart/actions/runs/39696998035)가 전체 테스트·E2E·gate·여섯 publish 모두 성공했다(2026-10-22). 위 범위 밖 항목은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-101.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-101.md",
+          "start": 1,
+          "end": 34
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR195](https://github.com/Kimgyuilli/PeekCart/pull/195) 병합 `e5ade0c` 후 [main CI39692335395](https://github.com/Kimgyuilli/PeekCart/actions/runs/39692335395)가 전체 테스트·E2E·gate·여섯 publish 모두 성공했다(2026-10-22). 위 범위 밖 항목은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-102.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-102.md",
+          "start": 1,
+          "end": 45
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR197](https://github.com/Kimgyuilli/PeekCart/pull/197) 병합 `b3ebeb1` 후 [main CI39690048479](https://github.com/Kimgyuilli/PeekCart/actions/runs/39690048479)가 전체 테스트·E2E·gate·여섯 publish 모두 성공했다(2026-10-22). 위 범위 밖 항목은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-102.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-102.audit.md",
+          "start": 1,
+          "end": 44
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-104.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-104.md",
+          "start": 1,
+          "end": 35
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR208](https://github.com/Kimgyuilli/PeekCart/pull/208) 병합 `5111669` 후 [main CI39684990962](https://github.com/Kimgyuilli/PeekCart/actions/runs/39684990962)가 전체 테스트·E2E·gate·여섯 publish 모두 성공했다(2026-10-22). 위 범위 밖 항목은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-104.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-104.audit.md",
+          "start": 1,
+          "end": 21
+        }
+      ]
+    }
+  ]
+}

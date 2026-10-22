@@ -5,6 +5,64 @@
 
 ---
 
+## 무료 범위 부채 병렬 실행 재개 (2026-10-21)
+
+이번 사용자 승인은 아래 2026-10-17 기록의 D-064·D-065·D-078 전체 제외와 D-075 분석 보류를 대체한다. 세 항목의 무료 로컬 구현·검증을 진행하고 실제 PG·운영 표본·GKE 증거는 별도로 남긴다. D-075는 무료 병목 분석과 정책에 독립적인 수정이 승인됐으며, 목표 TPS·최대 backlog·초과 대응 정책은 아직 결정되지 않았다. D-084 영구404의 신뢰할 PG 증빙 원천·형식도 미확보다.
+
+현재 범위·담당·검증 SHA·대기 조건은 [실행 계획](../plans/task-debt-20261021.md)에서 관리한다. 구현 담당자가 자기 worktree에서 작업하고, 구현하지 않은 리뷰 에이전트가 정확한 head를 검토한다. root가 순서를 승인한 뒤 담당자가 보호 규칙을 지켜 직렬 병합하며, 다음 병합 전 실제 main CI와 여섯 publish 결과를 확인한다. 운영 배포는 포함하지 않는다.
+
+### D-085 릴리스 gate 의미 검증 완료
+
+[PR185](https://github.com/Kimgyuilli/PeekCart/pull/185)의 head `d588914b30c89e02ecc70438cc210ced9f239f01`은 gate 조건의 실패 전파 의미와 step `continue-on-error` 우회를 검증한다. 독립 리뷰는 [대상 SHA와 실행 결과](https://github.com/Kimgyuilli/PeekCart/pull/185#issuecomment-6297405146)를 기록했으며, 55개 결함 변이·6개 정상 대조·6개 parser 검증과 원본이 놓치는 결함의 재현 근거를 대조했다. [PR CI39469123095](https://github.com/Kimgyuilli/PeekCart/actions/runs/39469123095)가 성공했다.
+
+정상 병합 SHA는 `0e40b6acd2ffc3266fdca2caa1cb67131da8be34`이며, [main CI39471537474](https://github.com/Kimgyuilli/PeekCart/actions/runs/39471537474)는 E2E·gate 및 여섯 publish를 포함해 성공했다. 완료 행은 본문을 보존해 TASKS-done으로 이동했다. 이 완료 기록 자체의 PR 전달·검증은 실행 계획의 기록 브랜치에서 계속 진행한다.
+
+
+
+### D-105 ship 재개 조회 실패 구분 완료
+
+[PR184](https://github.com/Kimgyuilli/PeekCart/pull/184)의 최종 head `a5d483561648adac67610e9c886c4a636f4c3b50`은 원격·로컬 조회 실패와 정상적인 부재를 구분해 `unknown`/실패를 반환한다. 독립 [최종 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/184#issuecomment-6297728123)는 변경 없는 작성 patch를 확인하고 18개 복구 검사와 gate 반례를 직접 재실행했다. 기존 62개 Bats는 변경 없는 코드의 이전 검증 근거이며 새로 재실행했다고 주장하지 않는다. [최신 PR CI39471735530](https://github.com/Kimgyuilli/PeekCart/actions/runs/39471735530)는 성공했다.
+
+정상 병합 SHA `be535c57ced11acfcbe9a24a349ddb6ad2055d8a`의 [main CI39474188286](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474188286)는 모든 검사와 여섯 publish가 성공했다. TASKS 완료 행 이동은 상태 외 본문 보존, 전체 ID 다중집합 동일성 및 유일성을 확인했다.
+
+### D-097 실제 런타임 의존성 기준 중복 클래스 검사 완료
+
+[PR187](https://github.com/Kimgyuilli/PeekCart/pull/187) 최종 head `cca3efbbc98ce6251afa7d13dfb9ece6a69dc119`은 gateway를 포함한 여섯 bootJar 앱의 실제 선택된 내부 런타임 프로젝트 산출물을 검사한다. runtimeOnly·전이 의존성을 포함하고 compileOnly·외부 jar·대상 외 패키지는 구분한다. [독립 초기 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/187#issuecomment-6297621464)는 실제 컴파일 8개 시나리오를 실행했고, [최종 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/187#issuecomment-6298143655)는 작성 patch 동일성과 최신 main 통합을 확인한 뒤 관련 경량 검증을 실행했다. 8개 컴파일 결과는 변경 없는 코드의 기존 증거로 재사용했다.
+
+[최신 PR CI39474405548](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474405548)가 통과한 뒤 정상 병합한 SHA는 `af60cd6d9dceac541b6f457062093df70753f3ce`다. [main CI39476821899](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476821899)는 E2E·gate와 여섯 publish를 포함해 성공했다. 완료 행은 상태 외 본문과 전체 ID 다중집합·유일성을 확인해 이동했다.
+
+### D-090 경보 실행 계약 검사 완료
+
+[PR186](https://github.com/Kimgyuilli/PeekCart/pull/186) 최종 head `789d13c9be36651ec0f243a28c6a55b308a890a6`은 Outbox 경보의 condition/refId, 평가 모델, for, 라벨, isPaused, instant/range 설정을 검사한다. 실제 운영 경보 규칙은 변경하지 않았다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/186#issuecomment-6298523288)는 최신 main 통합 후 작성 patch 동일성을 확인하고, 61개 경보 변이와 정상 대조·gate·matrix·ship 검증을 직접 실행했다.
+
+[PR CI39476990835](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476990835) 통과 후 정상 병합 SHA는 `545e5dc0bf64505f2bdb117f5d5248b85f17310f`다. [main CI39479945969](https://github.com/Kimgyuilli/PeekCart/actions/runs/39479945969)는 모든 검사와 여섯 publish가 성공했다. 상태 외 본문 보존과 전체 ID 다중집합·유일성을 확인해 완료 행을 이동했다.
+
+### D-064 웹훅·409 무료 계약 보정 부분 병합
+
+[PR193](https://github.com/Kimgyuilli/PeekCart/pull/193) 최종 head `184c19cfcc696c6758fee9bbde27568e50b80ce0`은 일반 PAYMENT_STATUS_CHANGED를 제한된 비신뢰 hint로 접수하고, 알려진 미결 원장에만 원자적인 중복 방지·조회 가속을 적용한다. 최종 결제 판단은 서버 PG 조회만 신뢰한다. 승인 409의 IDEMPOTENT_REQUEST_PROCESSING은 미결·조회 전용 처리로 분류한다. [초기 독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/193#issuecomment-6298254459)는 실제 MySQL 동시성·rollback을 포함한 86개 테스트를 실행했고, [최신 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/193#issuecomment-6298901536)는 작성 patch 불변과 최신 main 통합·경량 검사를 확인했다.
+
+[최신 PR CI39480119984](https://github.com/Kimgyuilli/PeekCart/actions/runs/39480119984) 성공 후 정상 병합 SHA는 `a7ffa11f24be2bd281d8952ac5fc5d351fb6119c`다. [main CI39483390397](https://github.com/Kimgyuilli/PeekCart/actions/runs/39483390397)는 모든 검사와 여섯 publish가 성공했다. 실제 PG·외부 웹훅 전달은 미검증이고 사용자 승인된 새 주문 ID 계약은 PR196에서 검증 중이므로 D-064는 열린 부분 완료로 유지한다. 운영 배포나 결제·환불은 실행하지 않았다.
+
+### D-094 Redis 장애 시간 상한 진단 완료
+
+[PR198](https://github.com/Kimgyuilli/PeekCart/pull/198) 최종 head `a0c2d3e7cd36f6153c020ee6df4aef5f8935c14e`는 실제 Lettuce timeout·네 경로 fallback 카운터·경과 시간을 실패 전에 남긴다. 기존 3500ms 상한은 유지했다. 실제 정상 2075ms, 1800ms 지연 변이 3885ms 실패, timeout 1초 변이 4070ms 실패, 원복 2056ms 통과의 원본 XML과 해시를 보존했다. [독립 최초 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/198#issuecomment-6299237478)와 [최신 통합 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/198#issuecomment-6299645860)는 원본·API 설정·변이와 복원 해시·최신 main 통합을 직접 대조했다. 리뷰어가 같은 Docker 실측을 재실행한 것으로 주장하지 않는다.
+
+[최신 PR CI39484673767](https://github.com/Kimgyuilli/PeekCart/actions/runs/39484673767) 성공 후 정상 병합 SHA는 `ec677b376ff69b1e77c43abf4a073722a58c786f`다. [main CI39487364120](https://github.com/Kimgyuilli/PeekCart/actions/runs/39487364120)는 전체 검사와 여섯 publish가 성공했다. TASKS 완료 행 이동은 상태 외 본문, 전체 D-ID 다중집합과 유일성을 확인했다.
+
+
+### D-064 PG 주문 식별자 무료 계약 부분 병합
+
+[PR196](https://github.com/Kimgyuilli/PeekCart/pull/196)의 최종 head `6b2b534e8c512868a1330a3aaa8399c5ea84ca7a`는 사용자 승인에 따라 canonical PG 주문 ID를 생성·저장하고 checkout 준비 응답부터 승인·조회·복구까지 같은 ID를 유지한다. 기존 NULL 행은 다시 쓰지 않으며 외부 인증에 사용한 ID를 서버에서 임의 변경하지 않는다. 실제 PG와 외부 checkout 연결은 미검증이다.
+
+[최종 독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/196#issuecomment-6300177654)는 E2E 클라이언트 계약 보완과 유한 timeout 진단을 확인했다. 작성자 실제 Compose A/E, 최종 product 236개 및 진단 음성 대조의 원본·hash를 대조했고, 리뷰어는 PG stub 41개와 smoke 59개를 직접 실행했다. 최초 product 동시성 barrier timeout 원인은 아직 미확정이며 D-078 무료 후속 분석으로 남긴다. 통과를 원인 해소로 주장하지 않는다.
+
+[최신 PR CI39487696753](https://github.com/Kimgyuilli/PeekCart/actions/runs/39487696753)가 성공한 뒤 병합 SHA는 `a98ae7d51e3f266a0d9a89996f4a2dd2483af4eb`다. [main CI39568336863](https://github.com/Kimgyuilli/PeekCart/actions/runs/39568336863)는 전체 검사와 여섯 publish가 성공했다. D-064는 전체 완료로 이동하지 않고 부분 완료를 유지한다. 운영 배포와 실제 결제·환불은 실행하지 않았다.
+
+### D-065 첫 적재 lineage writer 부분 병합
+
+[PR201](https://github.com/Kimgyuilli/PeekCart/pull/201)은 ID 예약과 첫 INSERT의 root 기록을 같은 트랜잭션에 두고, 중복·예약 ID 충돌을 affected count와 저장 ID·좌표로 함께 구분한다. ID 간격은 허용하며 구형 writer 혼재를 안전하다고 주장하지 않는다.
+
+최종 head `b288e3a1ff5975ed0edf2e26d02d0b286992a529`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/201#issuecomment-6311540940)는 unit 4개와 실제 MySQL 67개를 직접 실행해 failure/error/skip 없이 통과했다. [PR CI39568431878](https://github.com/Kimgyuilli/PeekCart/actions/runs/39568431878) 성공 후 정상 병합 SHA는 `4a4a36a12a3d914d6bc0379ded94bc0123c4d370`다. [main CI39570795532](https://github.com/Kimgyuilli/PeekCart/actions/runs/39570795532)는 전체 검사와 여섯 publish가 성공했다. writer 범위만 부분 완료이며 offline fixture 제약 검증은 PR202, 실제 Flyway contract/restart와 signed gateway는 무료 후속으로 남는다. 운영 표본·GKE·운영 DDL·replay 개방은 실행하지 않았다.
 
 ## 앱·메시징·Saga·모니터링 10건 완료 (2026-10-17)
 
@@ -727,3 +785,114 @@ Phase 4 가 종결([#133](https://github.com/Kimgyuilli/PeakCart/pull/133))되�
 ### 후속 PR 기록 (2026-10-17)
 
 [#176](https://github.com/Kimgyuilli/PeekCart/pull/176)에 D-060 후속 보강과 D-074·D-079·D-081·D-082를 포함했다. 승인 보호 운영 복구의 남은 범위는 D-084로 추적한다. 기존 사용자 TASKS 편집 중 미완료 부채 D-072·D-073·D-075·D-076·D-077·D-078·D-080·D-083 등록도 포함했다. D-059 계획서는 #174 머지에 따라 done 디렉터리로 이동하고 인덱스를 재생성했다. 새로 등록한 부채 8건의 구현은 미완료 상태로 유지한다. PR은 생성했으며 머지는 하지 않았다.
+
+
+## 2026-10-21 — D-098 독립 검토·병합 후 확인 완료
+
+[PR203](https://github.com/Kimgyuilli/PeekCart/pull/203) 최종 head `2e7251b6b855009ce14adccd0c71a46d23a5ddf8`의 [독립 재검토](https://github.com/Kimgyuilli/PeekCart/pull/203#issuecomment-6312472715)는 세 P2 반례 해소, 직접 52개 fixture 및 실제 원문 분리·archive 정상/음성 대조를 확인했다. 수정 제거 변이 세 개도 각각 실패했다. [PR CI39575261544](https://github.com/Kimgyuilli/PeekCart/actions/runs/39575261544)가 성공한 뒤 정상 병합 SHA는 `f4ee03b97b0bec0c9be7cd3077911fb67b578b74`다. [main CI39578683569](https://github.com/Kimgyuilli/PeekCart/actions/runs/39578683569)는 E2E·gate와 여섯 publish 모두 성공했다. 운영 배포와 실제 계획 archive는 수행하지 않았다.
+
+TASKS 완료 행은 상태 외 본문과 비교 base의 순서를 보존해 이동한다. 일반 문서의 사실 정확성·전체 링크 건강이나 D-099 현행 corpus 검증을 완료했다고 주장하지 않는다. 이 완료 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.
+
+
+## 2026-10-21 — D-075 무료 분석 부분 병합 확인
+
+[PR200](https://github.com/Kimgyuilli/PeekCart/pull/200) 최종 head `3d960601f97dcfac58c00640d2bc00bbdfc2a7e3`는 300개 fixture의 유한 drain, DB save·publish timer·lock skip 및 DB 없는 producer 대조를 보존한다. [최신 독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/200#issuecomment-6313108582)는 원측정 소스·raw·hash 보존과 main 통합 영향, 실제 Actions 보존 gate를 확인했다. 이전 직접 53개 marker 및 여섯 추출기 반례 검토는 변경 없는 자료의 근거로 재사용했고 새 성능 실측으로 주장하지 않았다.
+
+[PR CI39579299737](https://github.com/Kimgyuilli/PeekCart/actions/runs/39579299737) 성공 후 병합 SHA는 `bdc370a80e0bfa6adefb6a436a5f608f878d1b69`다. [main CI39581607992](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581607992)는 E2E·gate와 여섯 publish 모두 성공했다. 운영 배포·설정 변경은 없었다.
+
+D-075는 부분 완료로 남는다. P1 목표 TPS/backlog/초과 대응, P3 정책 선택, P4 선택 정책 검증은 사용자 결정과 후속 근거가 필요하다. 유한 로컬 drain을 지속 TPS나 GKE 천장으로 환산하지 않는다. D-078의 무료 jitter/DLQ 및 실제 scheduler pool4 검증은 별도 후속이며 이 분석으로 완료되지 않았다.
+
+
+## 2026-10-21 — DLQ fixture·진단 변경 병합 후 확인
+
+[PR205](https://github.com/Kimgyuilli/PeekCart/pull/205) 최종 head `b8cde5d722391a3d42366db15018c17dd9d84230`의 [독립 통합 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/205#issuecomment-6313390929)는 기존 코드·음성 대조 증거의 보존과 고정 seed Actions의 실제 54 suites/334 PASS 및 cleanup을 확인했다. 원20초 단언과 최대5초 best-effort 진단 경계는 유지했다.
+
+[일반 CI39581901199](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901199)와 [고정 seed CI39581901183](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901183)가 성공한 뒤 정상 병합 SHA는 `d506f7eef5d29e9894342a6d47b93b89a34266b2`다. [main CI39584187702](https://github.com/Kimgyuilli/PeekCart/actions/runs/39584187702)는 E2E·gate와 여섯 publish 모두 성공했다.
+
+오래된 timestamp fixture의 retention 삭제는 독립 실험으로 확인했지만 PR194의 과거 CI 실패 원인은 당시 broker 증거가 없어 미확정이다. 이 변경은 D-065의 운영 표본·실제 GKE·NOT NULL 적용·replay 개방이나 D-078의 별도 실패 분석을 완료하지 않는다. 운영 배포와 실제 replay는 수행하지 않았다.
+
+## 2026-10-21 — D-099 독립 검토·병합 후 확인 완료
+
+PR [#204](https://github.com/Kimgyuilli/PeekCart/pull/204) 최종 head `48fca6eeaa6e65ba16f6e1cf75bc7dc473865c70`, merge `43a1745a548b24eb85a88ba3e5ecd77bc0742326`. 독립 [최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/204#issuecomment-6313836584)에서 세 P2 수정과 최신 main 통합을 확인했다. Actions의 실제 41 methods/16 mutants, 역사 덮어쓰기 거부·복구 허용, 정확 YAML 조회/fetch 실패 전파를 검토했다. PR CI39584448650과 실제 main CI39586582112/여섯 publish 모두 SUCCESS를 Root가 조회했다.
+
+명시 base의 ID 감소와 현재 빈/중복/손상 archive를 검사한다. standalone만으로 겉보기 정상인 감소를 알아내거나, 부채 전체 완료의 의미를 검증한다는 뜻은 아니다. TASKS 행은 원본문·순서를 보존해 이동했고 이 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.
+
+## 2026-10-21 — D-103 독립 검토·병합 후 확인 완료
+
+PR [#206](https://github.com/Kimgyuilli/PeekCart/pull/206) 최종 head `6b99cb90adf0dda127297da8e30f044e86756601`, merge `3bb01bbc3190a9aa38a7b4e6faec7bb767117808`. 독립 [최신 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314103635)는 실제 숫자 반례·정확 oracle·통합 delta와 Actions 9 methods/10 mutants를 확인했다. wrapper 45 PASS/원자료 cache 1 skip은 전체 역사 raw 검증으로 확대하지 않는다.
+
+PR CI39586719840 attempt1의 payment bootJar 의존성 해석 실패는 테스트 시작 전 발생했고 원로그를 보존했다. 동일 12 URL의 이후 HTTP200·의존성 설정 불변을 확인한 뒤 source 변경 없이 실패 잡만 재실행했다. attempt2에서 실제 payment 54 suites/334 tests/실패·오류·skip0 및 전체 gate SUCCESS를 확인했다. 당시 원인을 나중의 가용성으로 단정하지 않는다. [재실행·병합 근거](https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314417217). 실제 main CI39589440384와 여섯 publish 모두 SUCCESS를 Root가 조회했다.
+
+역사 계약의 선택 필드 생략 호환을 유지하고 필수 metadata/items 내부 계약과 정확 정수 판정을 검증한다. D104의 모집단 정정은 별도 작업이다. TASKS 행은 상태 외 본문·순서를 보존해 이동했다. 이 완료 기록 자체의 최종 PR 검증·병합은 캠페인 기록 작업에 남아 있다.
+
+## 2026-10-21 — signed 경로 권한 예외 수정 병합 후 확인
+
+[PR211](https://github.com/Kimgyuilli/PeekCart/pull/211) 최종 head `3cf31328b3490b0885be68b5491e3534f259a6ed`, merge `89797c9639e15fb7c362e6be49687e652f80d3b9`. 공통 MVC 예외 처리에서 AccessDeniedException을 기존 보안 필터로 전달해 USER403·무인증401을 보존하고 다른 예외500은 유지한다. 실제 기존 결함 음성은 3개 중 2실패였고 수정 뒤 실제 313 platform tests가 통과했다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/211#issuecomment-6314585933)는 정확한 SHA와 원 XML·변경 영향을 검토했다.
+
+PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgyuilli/PeekCart/actions/runs/39592220364)의 모든 테스트·E2E·gate·여섯 publish SUCCESS를 Root가 확인했다. D-065의 실제 signed 전체 체인은 별도 PR210이며 운영 replay는 비개방 상태다. 운영 표본·GKE·NOT NULL 적용 등 남은 조건을 완료로 바꾸지 않는다.
+
+## 2026-10-21 — D-065 signed gateway 부분 범위 병합 후 확인
+
+최종 head `0be5aa32ec9159cdbc86f351475443fa090aec7f`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/210#issuecomment-6315032985)는 새 전용 Actions39592715075의 실제64HTTP/20DB snapshot/112files와 네 fixture 정리를 확인했다. 일반 CI39592715276도 성공했다. [PR210](https://github.com/Kimgyuilli/PeekCart/pull/210)을 보호 우회 없이 직렬 병합한 실제 main은 `7894dcc9cf0de3dd966f62777d1b463a1d9313dc`다. [main CI39595168219](https://github.com/Kimgyuilli/PeekCart/actions/runs/39595168219)의 테스트·E2E·gate와 여섯 publish 모두 SUCCESS를 Root가 직접 조회했다.
+
+이 기록은 무료 signed gateway 경로 검증의 완료다. 운영 replay는 계속 false이며 D-065 전체는 부분 완료다. 실제 운영 표본·GKE·NOT NULL 적용, 별도 수집기/제약/Flyway PR의 최신 병합 검증을 대신하지 않는다. 이미지 archive의 독립 로컬 재다운로드 검증은 수행하지 않았고 Actions checksum/loadID 검사와 구분한다.
+
+## 2026-10-21 — D-087 실제 계측 병합과 후속 CI 회귀
+
+[PR209](https://github.com/Kimgyuilli/PeekCart/pull/209) head `20532aca4ec3b4ccbd1f314bc65e9ef2e064df97`, merge `c9e12d695e21c348a82da78c6577eac7b2dd4d89`. 독립 [최신 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/209#issuecomment-6315314079)는 실제6서비스 profile raw·해석과 최신main 실행 delta를 검토했다. PR CI39595421179 성공, 실제 [main CI39605505984](https://github.com/Kimgyuilli/PeekCart/actions/runs/39605505984)는 23잡 전부 성공했고 여섯 publish도 성공했다. 단일 실행의 profile 숫자를 성능 개선이나 새main 천장으로 확장하지 않는다.
+
+이후 PR189/214의 일반 CI에서 여섯 이미지가 모두 `profile was rebuilt after image; detached measurement`로 실패했다. 이미지 빌드는 원격 gha cache의 bootJar layer를 사용했지만 profile export는 같은 cache 입력이 없어 해당 RUN을 다시 실행했다. 검사기의 거부는 올바르며, D-087 전체 완료는 보류한다. [후속 PR216](https://github.com/Kimgyuilli/PeekCart/pull/216)의 첫 수정 CI39607970017도 이미지 잡이 실패해 원인 분리 중이다. 원 D-039 로그의 `jar` 헤더는 28.06초이며 앞선 `compileJava/processResources/classes` 세 헤더만 27.96초다. 역사 본문은 보존하고 이 정정을 상태·진행 기록에 명시한다.
+
+## 2026-10-21 — D-087 cache-hit 계측 보정 병합 후 완료
+
+[PR216](https://github.com/Kimgyuilli/PeekCart/pull/216) 최종 head `613aa478b645e1dcc56862f177aee951b8e16527`은 이미지의 bootJar cache hit를 실제 raw 기록으로 확인하면 profile export를 생략하고 `cache_hit_unmeasured`와 null 수치를 기록한다. fresh 경로의 검증 및 재빌드 거부는 유지한다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/216#issuecomment-6318077175)는 12개 검사·16개 변이와 여섯 실제 cache-hit 이미지의 원자료·health를 직접 확인했다. 새 CI에서 fresh 시간은 측정하지 않았으며 PR209의 여섯 fresh 실측은 당시 실행의 근거로만 남긴다.
+
+[PR CI39611388133](https://github.com/Kimgyuilli/PeekCart/actions/runs/39611388133)의 필수 검사·E2E·gate 성공 후 정상 병합 SHA는 `797fc30d1661353aaf3d0d878c0e34f3d0347007`이다. 실제 [main CI39613985180](https://github.com/Kimgyuilli/PeekCart/actions/runs/39613985180)는 여섯 publish를 포함해 모두 성공했다. D-087의 무료 직접 계측·잘못된 구간 해석 정정·cache-hit 안전 처리를 완료로 기록한다. 단일 실행의 수치를 성능 개선이나 운영 천장으로 일반화하지 않는다.
+
+## 2026-10-22 — D-065 수집 판정 무료 범위 부분 병합
+
+[PR189](https://github.com/Kimgyuilli/PeekCart/pull/189) 최종 head `a9dd257374bcee3eeb886a938db72e62662a753d`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/189#issuecomment-6318807417)는 최신 main 통합의 작성 patch 동일성과 실제 16개 판정·9개 수집 검사·9개 drift 대조를 확인했다. [PR CI39614158821](https://github.com/Kimgyuilli/PeekCart/actions/runs/39614158821) 전체 성공 뒤 정상 병합 SHA는 `7915f266500a25be457ce2ec67fc18526d437c5c`다. 실제 [main CI39619377710](https://github.com/Kimgyuilli/PeekCart/actions/runs/39619377710)은 성공으로 종료됐고 여섯 publish가 각각 성공했다. GitHub API의 payment 이미지 job 상태는 내부 `Complete job` 성공·후속 payment publish 성공에도 `in_progress`로 지연 표시돼 그 차이를 보존한다.
+
+이 범위는 replay preflight 수집 판정 보강이며 실제 MySQL/Kafka adapter #212·제약 #202·Flyway #207은 별도 최신 병합 검증이 남았다. 운영 P22/GKE·NOT NULL 실제 적용과 replay 개방은 수행하지 않았고 D-065 전체는 부분 완료다.
+
+## 2026-10-22 — D-093 초기평가 준비 수정 병합, 실제 Grafana 재검증 대기
+
+[PR188](https://github.com/Kimgyuilli/PeekCart/pull/188) 최종 head `560e16b5496ed802d8d5de8bd3c81edf2bf1ac72`는 초기 평가의 실제 vector·Normal을 유한 상한에서 기다리도록 바꾼다. [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/188#issuecomment-6319319025)는 직접 음성 대조와 원본 실행 증거를 확인했고, [PR CI39619631016](https://github.com/Kimgyuilli/PeekCart/actions/runs/39619631016) 필수 검사가 성공했다. 정상 병합한 main은 `8f0d2ee091bc2ce08a4c19e2ca3678d406559d34`다.
+
+실제 [main CI39623073011](https://github.com/Kimgyuilli/PeekCart/actions/runs/39623073011)은 workflow 성공으로 종료됐고 publish 다섯 job은 성공 결론이다. product publish는 Push image와 Complete job을 포함한 모든 단계가 성공했으나 GitHub API의 job 상태는 여전히 `in_progress`/결론 공란이므로 여섯 job 모두 성공 결론이라고 기록하지 않는다. D-092 PR217의 새 Grafana 실행으로 준비 경합 해소와 전달 경로를 재확인하기 전 D-093 전체 완료 표기는 보류한다. 운영 외부 전송·GKE 검증으로 확대하지 않는다.
+
+## 2026-10-22 — D-092 운영 경보 로컬 경로 부분 병합
+
+[PR217](https://github.com/Kimgyuilli/PeekCart/pull/217) 최종 head `85786a4e3f2945b513bcbdf5507ce0ea10412087`의 [전용·일반 CI39623335274](https://github.com/Kimgyuilli/PeekCart/actions/runs/39623335274)는 성공했다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/217#issuecomment-6320151203)는 실제 Grafana→로컬 수신기의 Slack형 요청 네 건을 직접 분석해 Outbox/DLQ 발화·복귀 각각 하나의 신호와 두 신호의 정확한 전체 집합, 기본 경로 격리, fixture 정리를 확인했다. 이 실행에서는 D-093의 초기 평가 준비도 통과했다.
+
+정상 병합 SHA는 `7320ffdd4a72a1bdde77bc9424c8d11ecff18ba3`다. 실제 [main CI39629072400](https://github.com/Kimgyuilli/PeekCart/actions/runs/39629072400) 및 publish 검증은 진행 중이다. 실제 Slack·GKE·운영 DB 전송은 검증하지 않았고, D-092는 사용자/운영 웹훅 분리 PR219와 실제 Secret 소유·전환, 외부 전달·FAILED 복구 조건이 남은 부분 완료다. D-093 완료 기록은 병합 후 확인까지 보류한다.
+
+실제 main CI39629072400은 테스트·E2E·gate와 여섯 publish가 모두 개별 성공으로 종료됐다. 따라서 D-093은 PR188의 실제 지연/timeout 대조, PR217에서 초기 준비 통과 뒤 실제 Grafana 평가·전달 검증, 두 병합의 main 검사를 근거로 완료 처리한다. TASKS의 원래 본문을 보존해 완료 아카이브에 옮겼다. D-092는 무료 로컬 경로만 부분 완료이며, 실제 외부 전달과 운영 복구를 확인한 것으로 바꾸지 않는다.
+
+## 2026-10-22 — D-092 사용자·운영 웹훅 분리 부분 병합
+
+[PR219](https://github.com/Kimgyuilli/PeekCart/pull/219) 최종 head `8c55ef3ecfdef8a978fdf15fad8e220ad2514a40`은 사용자 알림과 운영 경보를 별도 필수 URL로 바꾸고 누락·동일 endpoint 설정을 시작 시 거부한다. [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/219#issuecomment-6320677035)는 사용자·운영 loopback 분리, 실패 설정 음성 대조, signed 경로 증거를 직접 확인했다. [일반 CI39629291268](https://github.com/Kimgyuilli/PeekCart/actions/runs/39629291268)과 signed CI39629291259가 성공했다. 정상 병합 SHA는 `b2e862085de695f601725717a7eeae68ca83aecf`이고 실제 main CI39632767287과 여섯 publish는 진행 중이다. 실제 두 Secret의 소유·값·전환 및 외부 Slack/GKE 전달은 여전히 미검증이며 D-092 전체 완료가 아니다.
+
+실제 [main CI39632767287](https://github.com/Kimgyuilli/PeekCart/actions/runs/39632767287)은 테스트·E2E·gate와 여섯 publish가 모두 개별 성공했다. 따라서 웹훅 분리의 무료 코드/로컬 범위는 병합 후 검증까지 마쳤다. 운영 Secret 소유·값·전환 순서, 외부 Slack/GKE 전달과 FAILED 운영 복구는 실제 증빙 전까지 D-092의 잔여 조건이다.
+
+## 2026-10-22 — D-065 실제 수집기 어댑터 무료 범위 병합
+
+[PR212](https://github.com/Kimgyuilli/PeekCart/pull/212) 최종 head `cd1cbb1bb649e673a3650f4a6952f3b820d78ed8`은 replay preflight의 실제 MySQL/Kafka 읽기 어댑터를 로컬 분리 fixture에 연결한다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/212#issuecomment-6321171226)는 452개 원본 증거 파일·11사례·검사기 결함 변이와 정리를 직접 확인했고, [전용 CI39633001119](https://github.com/Kimgyuilli/PeekCart/actions/runs/39633001119) 및 일반 CI39633001050이 성공했다. 정상 병합 SHA는 `e45d3211e2cf30a0a4e220d80b2d397074467b81`이며 실제 main CI39636215009/여섯 publish는 진행 중이다.
+
+운영 표본·GKE·NOT NULL 실제 적용·replay 개방은 수행하지 않았다. D-065는 계속 부분 완료이고 replay kill-switch는 닫혀 있다.
+
+실제 [main CI39636215009](https://github.com/Kimgyuilli/PeekCart/actions/runs/39636215009)는 전체 테스트·두 E2E·gate와 여섯 publish가 모두 개별 성공했다. 따라서 PR212의 무료 로컬 수집기 범위는 병합 후 검증까지 완료했다. 운영 표본·GKE·NOT NULL 실제 적용·replay 개방은 여전히 남는다.
+
+## 2026-10-22 — D-075 후속 정책 결정 보류
+
+사용자가 D-075 티켓의 후속 결정을 보류했다. [PR200](https://github.com/Kimgyuilli/PeekCart/pull/200)의 무료 로컬 병목 분석과 병합 후 검증은 유지한다. 목표 TPS, 최대 backlog, 초과 시 대응 정책은 정하지 않았고, 후속 선택·정책 검증은 사용자가 티켓 재개와 기준을 알려줄 때 진행한다. 이 보류를 전체 완료로 표시하지 않는다.
+
+## 2026-10-22 — 부채 캠페인 직렬 병합 마무리
+
+남은 PR을 최신 main에 맞춘 뒤 PR CI 성공과 직전 main CI 성공을 확인하고 하나씩 병합했다. 순서는 #190·#202·#207·#214·#222·#191·#192·#221·#220·#213·#208·#199·#197·#195·#215·#194·#218이다. 마지막 [main CI39699130969](https://github.com/Kimgyuilli/PeekCart/actions/runs/39699130969)(`985f550`)까지 테스트·E2E·gate와 여섯 publish가 성공했다.
+
+- #214 병합 뒤 main lint가 `backfill transaction did not reach observed pause`로 실패했다. [PR222](https://github.com/Kimgyuilli/PeekCart/pull/222)의 첫 CI에서 runner의 `docker exec mysqladmin ping`이 3초 timeout을 넘는 것을 확인했다. 폴링 한 번이 3초 SLEEP 구간보다 길어 정지 구간을 놓친 것이 원인이다. writer SLEEP을 20초로, 관측을 PROCESSLIST 기준으로 바꾸고 timeout을 늘렸다. 이후 main CI는 모두 성공했다.
+- #221 병합 뒤 main의 일시적 의존성 다운로드 실패(`lombok-1.18.44.jar`)는 실패 job 재실행으로 성공했다.
+- #213은 wiring lint가 `python3 -m` 이후 step 스캔을 멈춰 inline self-test를 못 찾았고, CI 줄 순서만 바꿔 통과시켰다. #197은 #205와 같은 주석 위치에서 충돌해 main 코드와 #197 주석을 함께 남겼다. #194는 완료 아카이브 D-050 정정을 corrections manifest로 선언했다.
+
+D-086·D-088·D-091·D-095·D-096·D-100·D-101·D-102·D-104는 각 계획의 완료 기준을 PR 하나로 충족했고 병합 후 main CI 성공을 확인해 완료 아카이브로 옮겼다. D-064·D-065·D-078·D-084·D-089·D-092는 무료 로컬 범위만 병합한 부분 완료다. D-089의 publication-state job은 main에 연속 push가 있으면 이전 상태를 보고할 수 있다(PR215 P2 코멘트). D-075는 사용자 재개 전까지 보류한다.

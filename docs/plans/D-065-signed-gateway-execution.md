@@ -43,7 +43,7 @@ User/Gateway/공격자용 RSA 키를 매실행 별도로 생성한다. User·Gat
 - [x] P3. ADMIN signed양성은4서비스 각각id/rootId일치, accepted=false, exactdisabledrejection,attemptId없음과전체ledger/outbox불변으로 확인한다. USER정상JWT에 X-User-RoleADMIN 위조를 동반해도403이어야 한다.
 - [x] P4. 미인증/malformed/다른키서명/만료외부토큰/직접서비스평문ADMIN/route외부노출/잘못된내부공개키 음성을 실제HTTP로 검증한다. 각각정상경로복구와DB불변을 함께 확인한다.
 - [x] P5. 자기fixture의준비실패·요청실패·artifact누락·foreignprojectcollision 정리 대조를 작성한다. source/image/4서비스/case누락과공개artifact의privatekey/JWT누출이green이되지않게guard한다.
-- [ ] P6. Actions실제build/4matrix/음성/정리결과와일반CI·독립검토로최종head를확인한다. docs06변경은root의좁은소유범위를받아실제증거만추가한다.
+- [x] P6. Actions실제build/4matrix/음성/정리결과와일반CI·독립검토로최종head를확인한다. docs06변경은root의좁은소유범위를받아실제증거만추가한다.
 
 만료토큰은 claims를변조한서명실패로대체하지않는다. 자기User issuer의짧은TTL fixture단계를별도로사용해실제login발급→exp경과→Gateway401을확인하고정상TTL과정상login을복구한다. 검증기의만료/skew/서명정책은변경하지않는다. 정상token이나issuerprivate key를runner에제공해직접양성내부token을만드는방법은사용하지않는다.
 
@@ -68,3 +68,9 @@ replay.enabled는항상false다. lastReplayBy영속,실제replay claim/publish/d
 ## 8. 실제 검증 결과
 
 head53af54e의 전용 Actions39589065938에서 이미지6개와 리소스4개가 성공했다. 각16 HTTP 사례와5개 DB불변 snapshot, 실제 짧은TTL 만료/잘못된내부키 거부 후 복구, cleanup6containers/1network/1volume와 safe artifact scan을 raw로 확인했다. 원문bundle과개별hash를 보존했다. P5의 실패·foreign collision은12 hermetic methods의 증거이고 actual 종료 정리는 네 Actions fixture에서 별도로 확인했다. 두 근거를 혼동하지 않는다. P6의 최신 main/전체CI/독립검토/직렬승인은 아직 남아 있다.
+
+## 2026-10-21 — 실제 main 병합 후 확인
+
+최종 head `0be5aa32ec9159cdbc86f351475443fa090aec7f`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/210#issuecomment-6315032985)는 새 전용 Actions39592715075의 실제64HTTP/20DB snapshot/112files와 네 fixture 정리를 확인했다. 일반 CI39592715276도 성공했다. [PR210](https://github.com/Kimgyuilli/PeekCart/pull/210)을 보호 우회 없이 직렬 병합한 실제 main은 `7894dcc9cf0de3dd966f62777d1b463a1d9313dc`다. [main CI39595168219](https://github.com/Kimgyuilli/PeekCart/actions/runs/39595168219)의 테스트·E2E·gate와 여섯 publish 모두 SUCCESS를 Root가 직접 조회했다.
+
+이 기록은 무료 signed gateway 경로 검증의 완료다. 운영 replay는 계속 false이며 D-065 전체는 부분 완료다. 실제 운영 표본·GKE·NOT NULL 적용, 별도 수집기/제약/Flyway PR의 최신 병합 검증을 대신하지 않는다. 이미지 archive의 독립 로컬 재다운로드 검증은 수행하지 않았고 Actions checksum/loadID 검사와 구분한다.

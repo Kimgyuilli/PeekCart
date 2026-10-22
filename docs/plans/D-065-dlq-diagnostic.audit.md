@@ -43,3 +43,12 @@
 - 독립 검토 comment6313081275는 exact2b24에 차단 의견이 없었다. 해당 head의 원seed Actions39579295824와 일반CI39579295780 payment는 각각334tests PASS로 확인되었고, 일반전체 결과와 병합은 별도 조건이다. Root 승인으로 draft를 ready로 전환했다.
 - main bdc370a80e0bfa6adefb6a436a5f608f878d1b69를 정상 merge했다. 이전f4→2b24 authored patch와 새base→mergehead2c4a908 비교가 byte동일하며 SHA2565fa385e5ebd06847104d117fab9ce05b0fd0c8c8d2f3c899a08ec25d3aa7f988이다. 추가main은 D075 order 전용 probe/문서이며 payment 진단·workflow는 불변이다.
 - 최종 Java eb40e48d 및 보존 manifest12개 hash가 모두 일치했다. 새base 문서보존gate/diffcheck PASS. 이 audit 추가 외 authored 동작 변경 없음. 로컬 full 재실행은 하지 않았으며 새 최종 head의 일반CI/원seed Actions와 통합 delta 검토를 기다린다. 병합은 아직 승인되지 않았다.
+
+
+## 2026-10-21 — DLQ fixture·진단 변경 병합 후 확인
+
+[PR205](https://github.com/Kimgyuilli/PeekCart/pull/205) 최종 head `b8cde5d722391a3d42366db15018c17dd9d84230`의 [독립 통합 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/205#issuecomment-6313390929)는 기존 코드·음성 대조 증거의 보존과 고정 seed Actions의 실제 54 suites/334 PASS 및 cleanup을 확인했다. 원20초 단언과 최대5초 best-effort 진단 경계는 유지했다.
+
+[일반 CI39581901199](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901199)와 [고정 seed CI39581901183](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901183)가 성공한 뒤 정상 병합 SHA는 `d506f7eef5d29e9894342a6d47b93b89a34266b2`다. [main CI39584187702](https://github.com/Kimgyuilli/PeekCart/actions/runs/39584187702)는 E2E·gate와 여섯 publish 모두 성공했다.
+
+오래된 timestamp fixture의 retention 삭제는 독립 실험으로 확인했지만 PR194의 과거 CI 실패 원인은 당시 broker 증거가 없어 미확정이다. 이 변경은 D-065의 운영 표본·실제 GKE·NOT NULL 적용·replay 개방이나 D-078의 별도 실패 분석을 완료하지 않는다. 운영 배포와 실제 replay는 수행하지 않았다.

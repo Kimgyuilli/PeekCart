@@ -49,3 +49,12 @@ grade: M
 - 별도 Kafka3.8.1 기본설정 probe1PASS(36.336s): topicretention/segment7일,delete,CreateTime,beforemaxLongMAX; brokercheck300000ms. fixedold와now-60s 모두offset0 ack 후 old만start0→1/empty, recent는start0/end1과정확timestamp읽기유지. broker로그에 largestRecordTimestamp1757000123456의retention위반 삭제가명시된다. rawsource/설정/시계열/삭제로그는 [증거](evidence/D-065-dlq-diagnostic/)에 보존했다.
 - 모든로컬실험 자기fixtures정리 및 전체Docker inventory 전후동일. 임시probe/음성변이는 제거했다. 최종timestamp변경은 아직로컬full로검증하지 않았다. 사용자의 Actions우선 지시에 따라 최종head 정상CI와별도고정seed workflow에서검증한다.
 - 미충족: 최종head 전체CI/원seedLinux재현job/독립리뷰. 과거CI원인은여전히미확정이다. 독립fixture결함수정을원CI원인확정으로쓰지않는다. D065전체완료,운영timestamp표본,실제GKE/PG/운영DDL/replay허용을뜻하지않는다.
+
+
+## 2026-10-21 — DLQ fixture·진단 변경 병합 후 확인
+
+[PR205](https://github.com/Kimgyuilli/PeekCart/pull/205) 최종 head `b8cde5d722391a3d42366db15018c17dd9d84230`의 [독립 통합 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/205#issuecomment-6313390929)는 기존 코드·음성 대조 증거의 보존과 고정 seed Actions의 실제 54 suites/334 PASS 및 cleanup을 확인했다. 원20초 단언과 최대5초 best-effort 진단 경계는 유지했다.
+
+[일반 CI39581901199](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901199)와 [고정 seed CI39581901183](https://github.com/Kimgyuilli/PeekCart/actions/runs/39581901183)가 성공한 뒤 정상 병합 SHA는 `d506f7eef5d29e9894342a6d47b93b89a34266b2`다. [main CI39584187702](https://github.com/Kimgyuilli/PeekCart/actions/runs/39584187702)는 E2E·gate와 여섯 publish 모두 성공했다.
+
+오래된 timestamp fixture의 retention 삭제는 독립 실험으로 확인했지만 PR194의 과거 CI 실패 원인은 당시 broker 증거가 없어 미확정이다. 이 변경은 D-065의 운영 표본·실제 GKE·NOT NULL 적용·replay 개방이나 D-078의 별도 실패 분석을 완료하지 않는다. 운영 배포와 실제 replay는 수행하지 않았다.

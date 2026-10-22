@@ -1,0 +1,262 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-085.md",
+      "sha256": "311d48071b2fcceb23d06aae644ff2a96e109dea4ff290e321bf5e190d5b4f21"
+    },
+    {
+      "path": "docs/plans/D-085.audit.md",
+      "sha256": "30d477df9bec06a2ef98dad6e182f45d22ebbe746237ad7d0d0e2c6a60d957f4"
+    },
+    {
+      "path": "docs/plans/D-090.md",
+      "sha256": "4f56977b8378bd85cb4690ac9c2c7867ff675f5a275b0c51125a37beb56613b3"
+    },
+    {
+      "path": "docs/plans/D-090.audit.md",
+      "sha256": "951e9a63509fe025860e2a9702c6721904f98cfcb6ba1a9886f64e607aa4ae27"
+    },
+    {
+      "path": "docs/plans/D-094.md",
+      "sha256": "d75f5194222130f52abe40b31d8dcfa759298b2246de79991e7a6bfecd474cc8"
+    },
+    {
+      "path": "docs/plans/D-097.md",
+      "sha256": "dfb339024ca605f7a3c6968c7a1e626fa3bb91bef98675d3bcb3ecf241a9da8c"
+    },
+    {
+      "path": "docs/plans/D-097.audit.md",
+      "sha256": "c3515d657609246e831f2314debdeea6ea8101f04a0cddcca7e3e0048b5a3722"
+    },
+    {
+      "path": "docs/plans/D-098.md",
+      "sha256": "4ed1ced83c2e98245727b46db521dcc33b6073a6ddbffdcd75ed07cd940986a4"
+    },
+    {
+      "path": "docs/plans/D-098.audit.md",
+      "sha256": "9d079f28f32c910ff296a9a518f8cfac7c535ae7509824a4f1f72430e82db2a2"
+    },
+    {
+      "path": "docs/plans/D-099.md",
+      "sha256": "368543f1c843afc73d4c660e5e345074904953e52000384c9870e028fdccd5ab"
+    },
+    {
+      "path": "docs/plans/D-099.audit.md",
+      "sha256": "c3ba60f76a6aa90c57e9dc2f0596012405a60d5da10f02692329351b3d09c953"
+    },
+    {
+      "path": "docs/plans/D-103.md",
+      "sha256": "a747e32931f6ea99e61310e09d176eb6bfac86269b21376abdf8612958cfcbbd"
+    },
+    {
+      "path": "docs/plans/D-103.audit.md",
+      "sha256": "9d9c05154ae1c52c9e280ea9b0b9958945c7d229fa356fbdd623eb07e5a510e8"
+    },
+    {
+      "path": "docs/plans/D-105.md",
+      "sha256": "d8ef06cce338a55e6a0c3c7b888d7a717539bf28c0dc3b0eb2c672179600654e"
+    },
+    {
+      "path": "docs/plans/D-105.audit.md",
+      "sha256": "50a38086853b2a93fa0f2b21b2f5a64eac0542bbf596b84f20ab1292fa3ac730"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-085.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-085.md",
+          "start": 1,
+          "end": 40
+        },
+        {
+          "literal": "\n## 2026-10-21 완료 검증\n\n[PR185](https://github.com/Kimgyuilli/PeekCart/pull/185)의 head `d588914b30c89e02ecc70438cc210ced9f239f01`를 독립 검토했다. [리뷰 기록](https://github.com/Kimgyuilli/PeekCart/pull/185#issuecomment-6297405146)은 직접 실행한 정상·55변이·6정상대안·6파서 사례 및 원본/수정 검사기의 실제 workflow 변이를 구분한다. 차단 사항은 없었다.\n\n[PR CI39469123095](https://github.com/Kimgyuilli/PeekCart/actions/runs/39469123095)의 필수17 jobs와 gate가 성공했다. 보호 규칙을 지킨 merge SHA는 `0e40b6acd2ffc3266fdca2caa1cb67131da8be34`이며, [main CI39471537474](https://github.com/Kimgyuilli/PeekCart/actions/runs/39471537474)와 6개 publish가 모두 성공했다. PR의 publish skip과 main의 publish 성공을 구분한다. 운영 배포는 수행하지 않았다.\n\nTASKS 완료 행은 root의 완료 기록 브랜치에 원문 보존 이동했다. PHASE5 및 기록 PR의 병합은 전체 실행 계획에서 추적한다. 제한 문법 밖의 GitHub 식과 셸 의미 분석은 여전히 이 작업의 보장 범위가 아니다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-085.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-085.audit.md",
+          "start": 1,
+          "end": 14
+        },
+        {
+          "literal": "\n## 2026-10-21 완료 검증\n\n[PR185](https://github.com/Kimgyuilli/PeekCart/pull/185)의 head `d588914b30c89e02ecc70438cc210ced9f239f01`를 독립 검토했다. [리뷰 기록](https://github.com/Kimgyuilli/PeekCart/pull/185#issuecomment-6297405146)은 직접 실행한 정상·55변이·6정상대안·6파서 사례 및 원본/수정 검사기의 실제 workflow 변이를 구분한다. 차단 사항은 없었다.\n\n[PR CI39469123095](https://github.com/Kimgyuilli/PeekCart/actions/runs/39469123095)의 필수17 jobs와 gate가 성공했다. 보호 규칙을 지킨 merge SHA는 `0e40b6acd2ffc3266fdca2caa1cb67131da8be34`이며, [main CI39471537474](https://github.com/Kimgyuilli/PeekCart/actions/runs/39471537474)와 6개 publish가 모두 성공했다. PR의 publish skip과 main의 publish 성공을 구분한다. 운영 배포는 수행하지 않았다.\n\nTASKS 완료 행은 root의 완료 기록 브랜치에 원문 보존 이동했다. PHASE5 및 기록 PR의 병합은 전체 실행 계획에서 추적한다. 제한 문법 밖의 GitHub 식과 셸 의미 분석은 여전히 이 작업의 보장 범위가 아니다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-090.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-090.md",
+          "start": 1,
+          "end": 32
+        },
+        {
+          "literal": "\n## 2026-10-21 병합 후 완료 근거\n\n[PR186](https://github.com/Kimgyuilli/PeekCart/pull/186) 최종 head `789d13c9be36651ec0f243a28c6a55b308a890a6`은 Outbox 경보의 condition/refId, 평가 모델, for, 라벨, isPaused, instant/range 설정을 검사한다. 실제 운영 경보 규칙은 변경하지 않았다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/186#issuecomment-6298523288)는 최신 main 통합 후 작성 patch 동일성을 확인하고, 61개 경보 변이와 정상 대조·gate·matrix·ship 검증을 직접 실행했다.\n\n[PR CI39476990835](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476990835) 통과 후 정상 병합 SHA는 `545e5dc0bf64505f2bdb117f5d5248b85f17310f`다. [main CI39479945969](https://github.com/Kimgyuilli/PeekCart/actions/runs/39479945969)는 모든 검사와 여섯 publish가 성공했다. 상태 외 본문 보존과 전체 ID 다중집합·유일성을 확인해 완료 행을 이동했다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-090.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-090.audit.md",
+          "start": 1,
+          "end": 14
+        },
+        {
+          "literal": "\n## 2026-10-21 병합 후 완료 근거\n\n[PR186](https://github.com/Kimgyuilli/PeekCart/pull/186) 최종 head `789d13c9be36651ec0f243a28c6a55b308a890a6`은 Outbox 경보의 condition/refId, 평가 모델, for, 라벨, isPaused, instant/range 설정을 검사한다. 실제 운영 경보 규칙은 변경하지 않았다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/186#issuecomment-6298523288)는 최신 main 통합 후 작성 patch 동일성을 확인하고, 61개 경보 변이와 정상 대조·gate·matrix·ship 검증을 직접 실행했다.\n\n[PR CI39476990835](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476990835) 통과 후 정상 병합 SHA는 `545e5dc0bf64505f2bdb117f5d5248b85f17310f`다. [main CI39479945969](https://github.com/Kimgyuilli/PeekCart/actions/runs/39479945969)는 모든 검사와 여섯 publish가 성공했다. 상태 외 본문 보존과 전체 ID 다중집합·유일성을 확인해 완료 행을 이동했다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-094.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-094.md",
+          "start": 1,
+          "end": 32
+        },
+        {
+          "literal": "\n## 2026-10-21 병합 후 확인\n\n최종 head `a0c2d3e7cd36f6153c020ee6df4aef5f8935c14e`, [PR198](https://github.com/Kimgyuilli/PeekCart/pull/198), [독립 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/198#issuecomment-6299645860), [PR CI39484673767](https://github.com/Kimgyuilli/PeekCart/actions/runs/39484673767) 성공. 정상 병합 SHA `ec677b376ff69b1e77c43abf4a073722a58c786f`의 [main CI39487364120](https://github.com/Kimgyuilli/PeekCart/actions/runs/39487364120)는 전체 검사와 여섯 publish가 성공했다. 원본 4회 실측은 작성 patch 불변을 확인해 재사용했고 리뷰어 재실측으로 주장하지 않는다. TASKS·PHASE5 완료 근거는 root 기록 PR로 전달한다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-097.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-097.md",
+          "start": 1,
+          "end": 43
+        },
+        {
+          "literal": "\n## 2026-10-21 병합 후 완료 근거\n\n[PR187](https://github.com/Kimgyuilli/PeekCart/pull/187) 최종 head `cca3efbbc98ce6251afa7d13dfb9ece6a69dc119`은 gateway를 포함한 여섯 bootJar 앱의 실제 선택된 내부 런타임 프로젝트 산출물을 검사한다. runtimeOnly·전이 의존성을 포함하고 compileOnly·외부 jar·대상 외 패키지는 구분한다. [독립 초기 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/187#issuecomment-6297621464)는 실제 컴파일 8개 시나리오를 실행했고, [최종 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/187#issuecomment-6298143655)는 작성 patch 동일성과 최신 main 통합을 확인한 뒤 관련 경량 검증을 실행했다. 8개 컴파일 결과는 변경 없는 코드의 기존 증거로 재사용했다.\n\n[최신 PR CI39474405548](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474405548)가 통과한 뒤 정상 병합한 SHA는 `af60cd6d9dceac541b6f457062093df70753f3ce`다. [main CI39476821899](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476821899)는 E2E·gate와 여섯 publish를 포함해 성공했다. 완료 행은 상태 외 본문과 전체 ID 다중집합·유일성을 확인해 이동했다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-097.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-097.audit.md",
+          "start": 1,
+          "end": 29
+        },
+        {
+          "literal": "\n## 2026-10-21 병합 후 완료 근거\n\n[PR187](https://github.com/Kimgyuilli/PeekCart/pull/187) 최종 head `cca3efbbc98ce6251afa7d13dfb9ece6a69dc119`은 gateway를 포함한 여섯 bootJar 앱의 실제 선택된 내부 런타임 프로젝트 산출물을 검사한다. runtimeOnly·전이 의존성을 포함하고 compileOnly·외부 jar·대상 외 패키지는 구분한다. [독립 초기 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/187#issuecomment-6297621464)는 실제 컴파일 8개 시나리오를 실행했고, [최종 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/187#issuecomment-6298143655)는 작성 patch 동일성과 최신 main 통합을 확인한 뒤 관련 경량 검증을 실행했다. 8개 컴파일 결과는 변경 없는 코드의 기존 증거로 재사용했다.\n\n[최신 PR CI39474405548](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474405548)가 통과한 뒤 정상 병합한 SHA는 `af60cd6d9dceac541b6f457062093df70753f3ce`다. [main CI39476821899](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476821899)는 E2E·gate와 여섯 publish를 포함해 성공했다. 완료 행은 상태 외 본문과 전체 ID 다중집합·유일성을 확인해 이동했다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-098.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-098.md",
+          "start": 1,
+          "end": 54
+        },
+        {
+          "literal": "\n\n## 2026-10-21 — D-098 독립 검토·병합 후 확인 완료\n\n[PR203](https://github.com/Kimgyuilli/PeekCart/pull/203) 최종 head `2e7251b6b855009ce14adccd0c71a46d23a5ddf8`의 [독립 재검토](https://github.com/Kimgyuilli/PeekCart/pull/203#issuecomment-6312472715)는 세 P2 반례 해소, 직접 52개 fixture 및 실제 원문 분리·archive 정상/음성 대조를 확인했다. 수정 제거 변이 세 개도 각각 실패했다. [PR CI39575261544](https://github.com/Kimgyuilli/PeekCart/actions/runs/39575261544)가 성공한 뒤 정상 병합 SHA는 `f4ee03b97b0bec0c9be7cd3077911fb67b578b74`다. [main CI39578683569](https://github.com/Kimgyuilli/PeekCart/actions/runs/39578683569)는 E2E·gate와 여섯 publish 모두 성공했다. 운영 배포와 실제 계획 archive는 수행하지 않았다.\n\nTASKS 완료 행은 상태 외 본문과 비교 base의 순서를 보존해 이동한다. 일반 문서의 사실 정확성·전체 링크 건강이나 D-099 현행 corpus 검증을 완료했다고 주장하지 않는다. 이 완료 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-098.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-098.audit.md",
+          "start": 1,
+          "end": 33
+        },
+        {
+          "literal": "\n\n## 2026-10-21 — D-098 독립 검토·병합 후 확인 완료\n\n[PR203](https://github.com/Kimgyuilli/PeekCart/pull/203) 최종 head `2e7251b6b855009ce14adccd0c71a46d23a5ddf8`의 [독립 재검토](https://github.com/Kimgyuilli/PeekCart/pull/203#issuecomment-6312472715)는 세 P2 반례 해소, 직접 52개 fixture 및 실제 원문 분리·archive 정상/음성 대조를 확인했다. 수정 제거 변이 세 개도 각각 실패했다. [PR CI39575261544](https://github.com/Kimgyuilli/PeekCart/actions/runs/39575261544)가 성공한 뒤 정상 병합 SHA는 `f4ee03b97b0bec0c9be7cd3077911fb67b578b74`다. [main CI39578683569](https://github.com/Kimgyuilli/PeekCart/actions/runs/39578683569)는 E2E·gate와 여섯 publish 모두 성공했다. 운영 배포와 실제 계획 archive는 수행하지 않았다.\n\nTASKS 완료 행은 상태 외 본문과 비교 base의 순서를 보존해 이동한다. 일반 문서의 사실 정확성·전체 링크 건강이나 D-099 현행 corpus 검증을 완료했다고 주장하지 않는다. 이 완료 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-099.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-099.md",
+          "start": 1,
+          "end": 45
+        },
+        {
+          "literal": "\n## 2026-10-21 — D-099 독립 검토·병합 후 확인 완료\n\nPR [#204](https://github.com/Kimgyuilli/PeekCart/pull/204) 최종 head `48fca6eeaa6e65ba16f6e1cf75bc7dc473865c70`, merge `43a1745a548b24eb85a88ba3e5ecd77bc0742326`. 독립 [최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/204#issuecomment-6313836584)에서 세 P2 수정과 최신 main 통합을 확인했다. Actions의 실제 41 methods/16 mutants, 역사 덮어쓰기 거부·복구 허용, 정확 YAML 조회/fetch 실패 전파를 검토했다. PR CI39584448650과 실제 main CI39586582112/여섯 publish 모두 SUCCESS를 Root가 조회했다.\n\n명시 base의 ID 감소와 현재 빈/중복/손상 archive를 검사한다. standalone만으로 겉보기 정상인 감소를 알아내거나, 부채 전체 완료의 의미를 검증한다는 뜻은 아니다. TASKS 행은 원본문·순서를 보존해 이동했고 이 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-099.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-099.audit.md",
+          "start": 1,
+          "end": 43
+        },
+        {
+          "literal": "\n## 2026-10-21 — D-099 독립 검토·병합 후 확인 완료\n\nPR [#204](https://github.com/Kimgyuilli/PeekCart/pull/204) 최종 head `48fca6eeaa6e65ba16f6e1cf75bc7dc473865c70`, merge `43a1745a548b24eb85a88ba3e5ecd77bc0742326`. 독립 [최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/204#issuecomment-6313836584)에서 세 P2 수정과 최신 main 통합을 확인했다. Actions의 실제 41 methods/16 mutants, 역사 덮어쓰기 거부·복구 허용, 정확 YAML 조회/fetch 실패 전파를 검토했다. PR CI39584448650과 실제 main CI39586582112/여섯 publish 모두 SUCCESS를 Root가 조회했다.\n\n명시 base의 ID 감소와 현재 빈/중복/손상 archive를 검사한다. standalone만으로 겉보기 정상인 감소를 알아내거나, 부채 전체 완료의 의미를 검증한다는 뜻은 아니다. TASKS 행은 원본문·순서를 보존해 이동했고 이 기록 자체의 PR 검증·병합은 캠페인 기록 작업에 남아 있다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-103.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-103.md",
+          "start": 1,
+          "end": 41
+        },
+        {
+          "literal": "\n## 2026-10-21 — D-103 독립 검토·병합 후 확인 완료\n\nPR [#206](https://github.com/Kimgyuilli/PeekCart/pull/206) 최종 head `6b99cb90adf0dda127297da8e30f044e86756601`, merge `3bb01bbc3190a9aa38a7b4e6faec7bb767117808`. 독립 [최신 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314103635)는 실제 숫자 반례·정확 oracle·통합 delta와 Actions 9 methods/10 mutants를 확인했다. wrapper 45 PASS/원자료 cache 1 skip은 전체 역사 raw 검증으로 확대하지 않는다.\n\nPR CI39586719840 attempt1의 payment bootJar 의존성 해석 실패는 테스트 시작 전 발생했고 원로그를 보존했다. 동일 12 URL의 이후 HTTP200·의존성 설정 불변을 확인한 뒤 source 변경 없이 실패 잡만 재실행했다. attempt2에서 실제 payment 54 suites/334 tests/실패·오류·skip0 및 전체 gate SUCCESS를 확인했다. 당시 원인을 나중의 가용성으로 단정하지 않는다. [재실행·병합 근거](https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314417217). 실제 main CI39589440384와 여섯 publish 모두 SUCCESS를 Root가 조회했다.\n\n역사 계약의 선택 필드 생략 호환을 유지하고 필수 metadata/items 내부 계약과 정확 정수 판정을 검증한다. D104의 모집단 정정은 별도 작업이다. TASKS 행은 상태 외 본문·순서를 보존해 이동했다. 이 완료 기록 자체의 최종 PR 검증·병합은 캠페인 기록 작업에 남아 있다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-103.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-103.audit.md",
+          "start": 1,
+          "end": 40
+        },
+        {
+          "literal": "\n## 2026-10-21 — D-103 독립 검토·병합 후 확인 완료\n\nPR [#206](https://github.com/Kimgyuilli/PeekCart/pull/206) 최종 head `6b99cb90adf0dda127297da8e30f044e86756601`, merge `3bb01bbc3190a9aa38a7b4e6faec7bb767117808`. 독립 [최신 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314103635)는 실제 숫자 반례·정확 oracle·통합 delta와 Actions 9 methods/10 mutants를 확인했다. wrapper 45 PASS/원자료 cache 1 skip은 전체 역사 raw 검증으로 확대하지 않는다.\n\nPR CI39586719840 attempt1의 payment bootJar 의존성 해석 실패는 테스트 시작 전 발생했고 원로그를 보존했다. 동일 12 URL의 이후 HTTP200·의존성 설정 불변을 확인한 뒤 source 변경 없이 실패 잡만 재실행했다. attempt2에서 실제 payment 54 suites/334 tests/실패·오류·skip0 및 전체 gate SUCCESS를 확인했다. 당시 원인을 나중의 가용성으로 단정하지 않는다. [재실행·병합 근거](https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314417217). 실제 main CI39589440384와 여섯 publish 모두 SUCCESS를 Root가 조회했다.\n\n역사 계약의 선택 필드 생략 호환을 유지하고 필수 metadata/items 내부 계약과 정확 정수 판정을 검증한다. D104의 모집단 정정은 별도 작업이다. TASKS 행은 상태 외 본문·순서를 보존해 이동했다. 이 완료 기록 자체의 최종 PR 검증·병합은 캠페인 기록 작업에 남아 있다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-105.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-105.md",
+          "start": 1,
+          "end": 31
+        },
+        {
+          "literal": "\n## 2026-10-21 병합 후 완료 근거\n\n[PR184](https://github.com/Kimgyuilli/PeekCart/pull/184) 최종 head `a5d483561648adac67610e9c886c4a636f4c3b50`의 [독립 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/184#issuecomment-6297728123)와 [PR CI39471735530](https://github.com/Kimgyuilli/PeekCart/actions/runs/39471735530)가 통과했다. 변경 없는 작성 patch를 확인하고 18개 복구 검사와 gate 검증을 리뷰어가 직접 실행했으며, 기존 Bats62는 이전 검증으로 구분했다. 정상 병합 SHA `be535c57ced11acfcbe9a24a349ddb6ad2055d8a`의 [main CI39474188286](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474188286)는 모든 검사와 여섯 publish가 성공했다. root가 TASKS 완료 행과 PHASE5 기록을 반영했으며 기록 PR 전달은 campaign 계획에서 계속 추적한다. 이전 pending 표기는 당시 이력이며 이 확인으로 종결한다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-105.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-105.audit.md",
+          "start": 1,
+          "end": 15
+        },
+        {
+          "literal": "\n## 2026-10-21 병합 후 완료 근거\n\n[PR184](https://github.com/Kimgyuilli/PeekCart/pull/184) 최종 head `a5d483561648adac67610e9c886c4a636f4c3b50`의 [독립 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/184#issuecomment-6297728123)와 [PR CI39471735530](https://github.com/Kimgyuilli/PeekCart/actions/runs/39471735530)가 통과했다. 변경 없는 작성 patch를 확인하고 18개 복구 검사와 gate 검증을 리뷰어가 직접 실행했으며, 기존 Bats62는 이전 검증으로 구분했다. 정상 병합 SHA `be535c57ced11acfcbe9a24a349ddb6ad2055d8a`의 [main CI39474188286](https://github.com/Kimgyuilli/PeekCart/actions/runs/39474188286)는 모든 검사와 여섯 publish가 성공했다. root가 TASKS 완료 행과 PHASE5 기록을 반영했으며 기록 PR 전달은 campaign 계획에서 계속 추적한다. 이전 pending 표기는 당시 이력이며 이 확인으로 종결한다.\n"
+        }
+      ]
+    }
+  ]
+}

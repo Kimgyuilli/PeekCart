@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-087-profile-cache.md",
+      "sha256": "f3f2e6c5660a27a0e7679fc97dd413b15a54557af004c050a22871838b2c3043"
+    },
+    {
+      "path": "docs/plans/D-087-profile-cache.audit.md",
+      "sha256": "b582bf700d00131338628b6f45e4005a9b478621f1277b5316cc9c03e602df53"
+    },
+    {
+      "path": "docs/plans/D-087.md",
+      "sha256": "c2ceaaa0c50a4c0c7bcd7d3b2148e25e0697e8f3748677607ffd40efbd853c3c"
+    },
+    {
+      "path": "docs/plans/D-087.audit.md",
+      "sha256": "77d1590edbfa9a53f1cf5a4a96a899f3c1514cef6460e9ec4f393831dca9fb4a"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-087-profile-cache.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-087-profile-cache.md",
+          "start": 1,
+          "end": 39
+        },
+        {
+          "literal": "\n## 최종 검증과 병합\n\n초기 P1/P2 체크박스는 첫 cache-from 가설의 역사적 계약으로 보존한다. 실제 8019·ab429 실패로 그 계약을 수정했으므로 아래 최종 범위로 완료 판정한다.\n\n- [x] 최종 P1. 동일 scope cache-from과 실제 cache-hit의 export 생략·미측정 기록, fresh 검증·detached-rebuild 거부 및 정상·결함 대조.\n- [x] 최종 P2. 원 실패 자료 보존, 정확 head 여섯 이미지의 cache/health/save/gate와 병합 후 main CI·여섯 publish 확인.\n\nPR216 최종 head `613aa478b645e1dcc56862f177aee951b8e16527`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/216#issuecomment-6318077175)는 12개 검사·16개 변이와 여섯 실제 이미지 artifact를 직접 재분석해 `cache_hit_unmeasured` 및 profile/origin/exportref null을 확인했다. 이 CI의 여섯 이미지에서는 새 fresh 측정이 없었다. 과거 PR209의 여섯 fresh 보고서를 새 실행의 수치로 대체하지 않는다.\n\n[PR CI39611388133](https://github.com/Kimgyuilli/PeekCart/actions/runs/39611388133)는 lint·테스트·여섯 이미지·E2E·gate 성공, 정상 병합 SHA는 `797fc30d1661353aaf3d0d878c0e34f3d0347007`이다. 실제 [main CI39613985180](https://github.com/Kimgyuilli/PeekCart/actions/runs/39613985180)는 모든 필수 job과 여섯 publish가 성공했다. 운영 빌드 시간의 개선이나 처리량 천장은 이 근거로 주장하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-087-profile-cache.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-087-profile-cache.audit.md",
+          "start": 1,
+          "end": 18
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-087.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-087.md",
+          "start": 1,
+          "end": 39
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-087.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-087.audit.md",
+          "start": 1,
+          "end": 50
+        }
+      ]
+    }
+  ]
+}

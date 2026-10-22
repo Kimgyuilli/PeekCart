@@ -1,0 +1,512 @@
+{
+  "target": "c3a180f0c0662a55fdbca5c4868a3a4fee96644f",
+  "base": "7894dcc9cf0de3dd966f62777d1b463a1d9313dc",
+  "metadata": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-085",
+        "out": [
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR",
+              "chunk_id": "ecf519",
+              "wall_time_seconds": 0.371008542,
+              "exit_code": 0,
+              "original_token_count": 49,
+              "output": "{\"head\":\"d588914b30c89e02ecc70438cc210ced9f239f01\",\"merge_commit_sha\":\"0e40b6acd2ffc3266fdca2caa1cb67131da8be34\",\"merged\":true,\"merged_at\":\"2026-10-20T18:04:13Z\",\"number\":185,\"state\":\"closed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR_CI",
+              "chunk_id": "48a475",
+              "wall_time_seconds": 0.663913833,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"d588914b30c89e02ecc70438cc210ced9f239f01\",\"id\":39469123095,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_CI",
+              "chunk_id": "378a44",
+              "wall_time_seconds": 0.563712375,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"0e40b6acd2ffc3266fdca2caa1cb67131da8be34\",\"id\":39471537474,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_JOBS",
+              "chunk_id": "d048b3",
+              "wall_time_seconds": 2.494757416,
+              "exit_code": 0,
+              "original_token_count": 365,
+              "output": "{\"jobs\":[{\"conclusion\":\"success\",\"name\":\"lint\"},{\"conclusion\":\"success\",\"name\":\"test (order-service, order-service)\"},{\"conclusion\":\"success\",\"name\":\"test (notification-service, notification-service)\"},{\"conclusion\":\"success\",\"name\":\"test (user-service, user-service)\"},{\"conclusion\":\"success\",\"name\":\"test (platform, common peekcart-common-auth peekcart-common-observability peekcart-common-messagi...\"},{\"conclusion\":\"success\",\"name\":\"guards\"},{\"conclusion\":\"success\",\"name\":\"test (product-service, product-service)\"},{\"conclusion\":\"success\",\"name\":\"test (payment-service, payment-service)\"},{\"conclusion\":\"success\",\"name\":\"images (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"images (product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"images (gateway)\"},{\"conclusion\":\"success\",\"name\":\"images (user-service)\"},{\"conclusion\":\"success\",\"name\":\"images (order-service)\"},{\"conclusion\":\"success\",\"name\":\"e2e (scenarios)\"},{\"conclusion\":\"success\",\"name\":\"e2e (negative-control)\"},{\"conclusion\":\"success\",\"name\":\"gate\"},{\"conclusion\":\"success\",\"name\":\"publish (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (product-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (gateway)\"},{\"conclusion\":\"success\",\"name\":\"publish (order-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (user-service)\"}],\"total_count\":23}\n"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-090",
+        "out": [
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR",
+              "chunk_id": "23236d",
+              "wall_time_seconds": 0.353106375,
+              "exit_code": 0,
+              "original_token_count": 49,
+              "output": "{\"head\":\"789d13c9be36651ec0f243a28c6a55b308a890a6\",\"merge_commit_sha\":\"545e5dc0bf64505f2bdb117f5d5248b85f17310f\",\"merged\":true,\"merged_at\":\"2026-10-20T19:01:58Z\",\"number\":186,\"state\":\"closed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR_CI",
+              "chunk_id": "8ce716",
+              "wall_time_seconds": 0.342548459,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"789d13c9be36651ec0f243a28c6a55b308a890a6\",\"id\":39476990835,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_CI",
+              "chunk_id": "6b2a6d",
+              "wall_time_seconds": 0.433136334,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"545e5dc0bf64505f2bdb117f5d5248b85f17310f\",\"id\":39479945969,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_JOBS",
+              "chunk_id": "78af9c",
+              "wall_time_seconds": 2.803499583,
+              "exit_code": 0,
+              "original_token_count": 365,
+              "output": "{\"jobs\":[{\"conclusion\":\"success\",\"name\":\"guards\"},{\"conclusion\":\"success\",\"name\":\"lint\"},{\"conclusion\":\"success\",\"name\":\"test (product-service, product-service)\"},{\"conclusion\":\"success\",\"name\":\"test (platform, common peekcart-common-auth peekcart-common-observability peekcart-common-messagi...\"},{\"conclusion\":\"success\",\"name\":\"test (payment-service, payment-service)\"},{\"conclusion\":\"success\",\"name\":\"test (user-service, user-service)\"},{\"conclusion\":\"success\",\"name\":\"test (order-service, order-service)\"},{\"conclusion\":\"success\",\"name\":\"test (notification-service, notification-service)\"},{\"conclusion\":\"success\",\"name\":\"images (gateway)\"},{\"conclusion\":\"success\",\"name\":\"images (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"images (product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (order-service)\"},{\"conclusion\":\"success\",\"name\":\"images (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"images (user-service)\"},{\"conclusion\":\"success\",\"name\":\"e2e (negative-control)\"},{\"conclusion\":\"success\",\"name\":\"e2e (scenarios)\"},{\"conclusion\":\"success\",\"name\":\"gate\"},{\"conclusion\":\"success\",\"name\":\"publish (order-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (product-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (gateway)\"},{\"conclusion\":\"success\",\"name\":\"publish (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (user-service)\"}],\"total_count\":23}\n"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-094",
+        "out": [
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR",
+              "chunk_id": "87abe4",
+              "wall_time_seconds": 0.605756208,
+              "exit_code": 0,
+              "original_token_count": 49,
+              "output": "{\"head\":\"a0c2d3e7cd36f6153c020ee6df4aef5f8935c14e\",\"merge_commit_sha\":\"ec677b376ff69b1e77c43abf4a073722a58c786f\",\"merged\":true,\"merged_at\":\"2026-10-20T19:53:54Z\",\"number\":198,\"state\":\"closed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR_CI",
+              "chunk_id": "001847",
+              "wall_time_seconds": 0.364654917,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"a0c2d3e7cd36f6153c020ee6df4aef5f8935c14e\",\"id\":39484673767,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_CI",
+              "chunk_id": "e7b047",
+              "wall_time_seconds": 0.5192955,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"ec677b376ff69b1e77c43abf4a073722a58c786f\",\"id\":39487364120,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_JOBS",
+              "chunk_id": "7dd7ea",
+              "wall_time_seconds": 2.817610958,
+              "exit_code": 0,
+              "original_token_count": 365,
+              "output": "{\"jobs\":[{\"conclusion\":\"success\",\"name\":\"lint\"},{\"conclusion\":\"success\",\"name\":\"test (notification-service, notification-service)\"},{\"conclusion\":\"success\",\"name\":\"test (platform, common peekcart-common-auth peekcart-common-observability peekcart-common-messagi...\"},{\"conclusion\":\"success\",\"name\":\"test (user-service, user-service)\"},{\"conclusion\":\"success\",\"name\":\"guards\"},{\"conclusion\":\"success\",\"name\":\"test (product-service, product-service)\"},{\"conclusion\":\"success\",\"name\":\"test (payment-service, payment-service)\"},{\"conclusion\":\"success\",\"name\":\"test (order-service, order-service)\"},{\"conclusion\":\"success\",\"name\":\"images (product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"images (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"images (gateway)\"},{\"conclusion\":\"success\",\"name\":\"images (order-service)\"},{\"conclusion\":\"success\",\"name\":\"images (user-service)\"},{\"conclusion\":\"success\",\"name\":\"e2e (scenarios)\"},{\"conclusion\":\"success\",\"name\":\"e2e (negative-control)\"},{\"conclusion\":\"success\",\"name\":\"gate\"},{\"conclusion\":\"success\",\"name\":\"publish (product-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (order-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (gateway)\"},{\"conclusion\":\"success\",\"name\":\"publish (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (user-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (notification-service)\"}],\"total_count\":23}\n"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-097",
+        "out": [
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR",
+              "chunk_id": "8ee169",
+              "wall_time_seconds": 0.343316792,
+              "exit_code": 0,
+              "original_token_count": 49,
+              "output": "{\"head\":\"cca3efbbc98ce6251afa7d13dfb9ece6a69dc119\",\"merge_commit_sha\":\"af60cd6d9dceac541b6f457062093df70753f3ce\",\"merged\":true,\"merged_at\":\"2026-10-20T18:40:30Z\",\"number\":187,\"state\":\"closed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR_CI",
+              "chunk_id": "eb60ba",
+              "wall_time_seconds": 0.350805708,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"cca3efbbc98ce6251afa7d13dfb9ece6a69dc119\",\"id\":39474405548,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_CI",
+              "chunk_id": "da0592",
+              "wall_time_seconds": 0.340134042,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"af60cd6d9dceac541b6f457062093df70753f3ce\",\"id\":39476821899,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_JOBS",
+              "chunk_id": "44a60b",
+              "wall_time_seconds": 2.7744025,
+              "exit_code": 0,
+              "original_token_count": 365,
+              "output": "{\"jobs\":[{\"conclusion\":\"success\",\"name\":\"guards\"},{\"conclusion\":\"success\",\"name\":\"lint\"},{\"conclusion\":\"success\",\"name\":\"test (platform, common peekcart-common-auth peekcart-common-observability peekcart-common-messagi...\"},{\"conclusion\":\"success\",\"name\":\"test (order-service, order-service)\"},{\"conclusion\":\"success\",\"name\":\"test (payment-service, payment-service)\"},{\"conclusion\":\"success\",\"name\":\"test (notification-service, notification-service)\"},{\"conclusion\":\"success\",\"name\":\"test (user-service, user-service)\"},{\"conclusion\":\"success\",\"name\":\"test (product-service, product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (user-service)\"},{\"conclusion\":\"success\",\"name\":\"images (gateway)\"},{\"conclusion\":\"success\",\"name\":\"images (product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"images (order-service)\"},{\"conclusion\":\"success\",\"name\":\"images (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"e2e (scenarios)\"},{\"conclusion\":\"success\",\"name\":\"e2e (negative-control)\"},{\"conclusion\":\"success\",\"name\":\"gate\"},{\"conclusion\":\"success\",\"name\":\"publish (gateway)\"},{\"conclusion\":\"success\",\"name\":\"publish (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (product-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (user-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (order-service)\"}],\"total_count\":23}\n"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-098",
+        "out": [
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR",
+              "chunk_id": "e5ba21",
+              "wall_time_seconds": 0.513828167,
+              "exit_code": 0,
+              "original_token_count": 49,
+              "output": "{\"head\":\"2e7251b6b855009ce14adccd0c71a46d23a5ddf8\",\"merge_commit_sha\":\"f4ee03b97b0bec0c9be7cd3077911fb67b578b74\",\"merged\":true,\"merged_at\":\"2026-10-21T09:39:42Z\",\"number\":203,\"state\":\"closed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR_CI",
+              "chunk_id": "15cb31",
+              "wall_time_seconds": 0.340865791,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"2e7251b6b855009ce14adccd0c71a46d23a5ddf8\",\"id\":39575261544,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_CI",
+              "chunk_id": "15e984",
+              "wall_time_seconds": 0.373327083,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"f4ee03b97b0bec0c9be7cd3077911fb67b578b74\",\"id\":39578683569,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_JOBS",
+              "chunk_id": "f3247f",
+              "wall_time_seconds": 2.286115541,
+              "exit_code": 0,
+              "original_token_count": 365,
+              "output": "{\"jobs\":[{\"conclusion\":\"success\",\"name\":\"guards\"},{\"conclusion\":\"success\",\"name\":\"test (order-service, order-service)\"},{\"conclusion\":\"success\",\"name\":\"test (platform, common peekcart-common-auth peekcart-common-observability peekcart-common-messagi...\"},{\"conclusion\":\"success\",\"name\":\"test (notification-service, notification-service)\"},{\"conclusion\":\"success\",\"name\":\"test (payment-service, payment-service)\"},{\"conclusion\":\"success\",\"name\":\"test (product-service, product-service)\"},{\"conclusion\":\"success\",\"name\":\"test (user-service, user-service)\"},{\"conclusion\":\"success\",\"name\":\"lint\"},{\"conclusion\":\"success\",\"name\":\"images (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"images (user-service)\"},{\"conclusion\":\"success\",\"name\":\"images (order-service)\"},{\"conclusion\":\"success\",\"name\":\"images (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"images (product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (gateway)\"},{\"conclusion\":\"success\",\"name\":\"e2e (negative-control)\"},{\"conclusion\":\"success\",\"name\":\"e2e (scenarios)\"},{\"conclusion\":\"success\",\"name\":\"gate\"},{\"conclusion\":\"success\",\"name\":\"publish (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (product-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (gateway)\"},{\"conclusion\":\"success\",\"name\":\"publish (order-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (user-service)\"}],\"total_count\":23}\n"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-099",
+        "out": [
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR",
+              "chunk_id": "c74285",
+              "wall_time_seconds": 0.578862084,
+              "exit_code": 0,
+              "original_token_count": 49,
+              "output": "{\"head\":\"48fca6eeaa6e65ba16f6e1cf75bc7dc473865c70\",\"merge_commit_sha\":\"43a1745a548b24eb85a88ba3e5ecd77bc0742326\",\"merged\":true,\"merged_at\":\"2026-10-21T10:42:44Z\",\"number\":204,\"state\":\"closed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR_CI",
+              "chunk_id": "a7006b",
+              "wall_time_seconds": 0.340482125,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"48fca6eeaa6e65ba16f6e1cf75bc7dc473865c70\",\"id\":39584448650,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_CI",
+              "chunk_id": "5ca721",
+              "wall_time_seconds": 0.442083208,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"43a1745a548b24eb85a88ba3e5ecd77bc0742326\",\"id\":39586582112,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_JOBS",
+              "chunk_id": "ac5a48",
+              "wall_time_seconds": 2.5384365,
+              "exit_code": 0,
+              "original_token_count": 365,
+              "output": "{\"jobs\":[{\"conclusion\":\"success\",\"name\":\"guards\"},{\"conclusion\":\"success\",\"name\":\"test (notification-service, notification-service)\"},{\"conclusion\":\"success\",\"name\":\"test (payment-service, payment-service)\"},{\"conclusion\":\"success\",\"name\":\"test (user-service, user-service)\"},{\"conclusion\":\"success\",\"name\":\"test (order-service, order-service)\"},{\"conclusion\":\"success\",\"name\":\"test (platform, common peekcart-common-auth peekcart-common-observability peekcart-common-messagi...\"},{\"conclusion\":\"success\",\"name\":\"test (product-service, product-service)\"},{\"conclusion\":\"success\",\"name\":\"lint\"},{\"conclusion\":\"success\",\"name\":\"images (product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"images (gateway)\"},{\"conclusion\":\"success\",\"name\":\"images (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"images (order-service)\"},{\"conclusion\":\"success\",\"name\":\"images (user-service)\"},{\"conclusion\":\"success\",\"name\":\"e2e (scenarios)\"},{\"conclusion\":\"success\",\"name\":\"e2e (negative-control)\"},{\"conclusion\":\"success\",\"name\":\"gate\"},{\"conclusion\":\"success\",\"name\":\"publish (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (product-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (order-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (gateway)\"},{\"conclusion\":\"success\",\"name\":\"publish (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (user-service)\"}],\"total_count\":23}\n"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-103",
+        "out": [
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR",
+              "chunk_id": "1be188",
+              "wall_time_seconds": 0.406736,
+              "exit_code": 0,
+              "original_token_count": 49,
+              "output": "{\"head\":\"6b99cb90adf0dda127297da8e30f044e86756601\",\"merge_commit_sha\":\"3bb01bbc3190a9aa38a7b4e6faec7bb767117808\",\"merged\":true,\"merged_at\":\"2026-10-21T11:06:03Z\",\"number\":206,\"state\":\"closed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR_CI",
+              "chunk_id": "06f16e",
+              "wall_time_seconds": 0.428859834,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"6b99cb90adf0dda127297da8e30f044e86756601\",\"id\":39586719840,\"run_attempt\":2,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_CI",
+              "chunk_id": "9f26d8",
+              "wall_time_seconds": 0.4142745,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"3bb01bbc3190a9aa38a7b4e6faec7bb767117808\",\"id\":39589440384,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_JOBS",
+              "chunk_id": "201335",
+              "wall_time_seconds": 0.909040333,
+              "exit_code": 0,
+              "original_token_count": 365,
+              "output": "{\"jobs\":[{\"conclusion\":\"success\",\"name\":\"lint\"},{\"conclusion\":\"success\",\"name\":\"test (platform, common peekcart-common-auth peekcart-common-observability peekcart-common-messagi...\"},{\"conclusion\":\"success\",\"name\":\"test (notification-service, notification-service)\"},{\"conclusion\":\"success\",\"name\":\"test (payment-service, payment-service)\"},{\"conclusion\":\"success\",\"name\":\"test (user-service, user-service)\"},{\"conclusion\":\"success\",\"name\":\"guards\"},{\"conclusion\":\"success\",\"name\":\"test (order-service, order-service)\"},{\"conclusion\":\"success\",\"name\":\"test (product-service, product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (gateway)\"},{\"conclusion\":\"success\",\"name\":\"images (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"images (product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (user-service)\"},{\"conclusion\":\"success\",\"name\":\"images (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"images (order-service)\"},{\"conclusion\":\"success\",\"name\":\"e2e (scenarios)\"},{\"conclusion\":\"success\",\"name\":\"e2e (negative-control)\"},{\"conclusion\":\"success\",\"name\":\"gate\"},{\"conclusion\":\"success\",\"name\":\"publish (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (order-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (product-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (user-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (gateway)\"}],\"total_count\":23}\n"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-105",
+        "out": [
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR",
+              "chunk_id": "2dfad9",
+              "wall_time_seconds": 0.351629875,
+              "exit_code": 0,
+              "original_token_count": 49,
+              "output": "{\"head\":\"a5d483561648adac67610e9c886c4a636f4c3b50\",\"merge_commit_sha\":\"be535c57ced11acfcbe9a24a349ddb6ad2055d8a\",\"merged\":true,\"merged_at\":\"2026-10-20T18:22:35Z\",\"number\":184,\"state\":\"closed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "PR_CI",
+              "chunk_id": "c9098e",
+              "wall_time_seconds": 0.435707042,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"a5d483561648adac67610e9c886c4a636f4c3b50\",\"id\":39471735530,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_CI",
+              "chunk_id": "9bbed9",
+              "wall_time_seconds": 0.348031375,
+              "exit_code": 0,
+              "original_token_count": 34,
+              "output": "{\"conclusion\":\"success\",\"head_sha\":\"be535c57ced11acfcbe9a24a349ddb6ad2055d8a\",\"id\":39474188286,\"run_attempt\":1,\"status\":\"completed\"}\n"
+            }
+          },
+          {
+            "status": "fulfilled",
+            "value": {
+              "kind": "MAIN_JOBS",
+              "chunk_id": "f415e1",
+              "wall_time_seconds": 2.57108475,
+              "exit_code": 0,
+              "original_token_count": 365,
+              "output": "{\"jobs\":[{\"conclusion\":\"success\",\"name\":\"lint\"},{\"conclusion\":\"success\",\"name\":\"test (product-service, product-service)\"},{\"conclusion\":\"success\",\"name\":\"test (user-service, user-service)\"},{\"conclusion\":\"success\",\"name\":\"guards\"},{\"conclusion\":\"success\",\"name\":\"test (payment-service, payment-service)\"},{\"conclusion\":\"success\",\"name\":\"test (notification-service, notification-service)\"},{\"conclusion\":\"success\",\"name\":\"test (platform, common peekcart-common-auth peekcart-common-observability peekcart-common-messagi...\"},{\"conclusion\":\"success\",\"name\":\"test (order-service, order-service)\"},{\"conclusion\":\"success\",\"name\":\"images (order-service)\"},{\"conclusion\":\"success\",\"name\":\"images (product-service)\"},{\"conclusion\":\"success\",\"name\":\"images (gateway)\"},{\"conclusion\":\"success\",\"name\":\"images (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"images (user-service)\"},{\"conclusion\":\"success\",\"name\":\"images (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"e2e (scenarios)\"},{\"conclusion\":\"success\",\"name\":\"e2e (negative-control)\"},{\"conclusion\":\"success\",\"name\":\"gate\"},{\"conclusion\":\"success\",\"name\":\"publish (payment-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (notification-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (gateway)\"},{\"conclusion\":\"success\",\"name\":\"publish (product-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (order-service)\"},{\"conclusion\":\"success\",\"name\":\"publish (user-service)\"}],\"total_count\":23}\n"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "comments": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-085",
+        "chunk_id": "79f867",
+        "wall_time_seconds": 0.443003666,
+        "exit_code": 0,
+        "original_token_count": 406,
+        "output": "{\"body\":\"Independent review of exact head `d588914b30c89e02ecc70438cc210ced9f239f01` against base `eb5dee5`.\\n\\nFindings: no blocking correctness or regression findings within D-085 scope. The restricted expression parser checks all 2,048 required upstream-result/cancellation combinations, rejects unsupported syntax, and rejects propagation-step error suppression. Documentation explicitly limits coverage of general Actions expressions and shell bodies.\\n\\nPersonally executed in a separate detached review worktree:\\n- `bash -n scripts/ci-release-gate-lint.sh`\\n- `bash scripts/ci-release-gate-lint.sh`\\n- `bash scripts/ci-release-gate-lint.sh --self-test`: 55/55 mutations, 6 valid workflows, 6 parser cases passed.\\n- `bash scripts/ci-e2e-parallel-lint.sh --self-test`: 7/7 passed.\\n- `bash scripts/ci-test-matrix-lint.sh --self-test`: passed.\\n- `git diff --check eb5dee5...HEAD`: passed.\\n- Independent disposable-workflow mutation experiment using both original and reviewed scripts: all-AND, mixed-AND, step `true`, and step `${{ true }}` each passed incorrectly on base and failed with CRG-003 on reviewed head. Baseline and explicit step `false` passed both versions.\\n\\nNot executed by this reviewer: Gradle, Docker, new GitHub Actions runs, deployments, or payment/operational actions. The author's validation report was not counted as reviewer execution. This is a code/focused-test review only; matching-head required CI must pass separately before merge. No merge approval is asserted for pending or uninspected CI.\\n\",\"html_url\":\"https://github.com/Kimgyuilli/PeekCart/pull/185#issuecomment-6297405146\"}\n"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-090",
+        "chunk_id": "786f88",
+        "wall_time_seconds": 0.347497875,
+        "exit_code": 0,
+        "original_token_count": 570,
+        "output": "{\"body\":\"Independent latest-base delta review: exact head `789d13c9be36651ec0f243a28c6a55b308a890a6`, base `af60cd6d9dceac541b6f457062093df70753f3ce`.\\n\\n**Findings:** no blocking merge/interoperability finding. Independently verified the two parents are the previously reviewed `ad9e7caa5c6df4e0eea30cca403d2837c144e026` and this new main base. The complete authored three-file binary patch relative to main is byte-for-byte identical to the old authored patch relative to `eb5dee5d509f7d9f13c4974a66d47a1809341855` (both SHA-256 `d6a4df8d305c53f0724d8ef6b3821842ecbb45855172d1740d5b678ae31326b8`). Incoming changes are the previously reviewed D085/D105 CI/ship safeguards and D097 Gradle guard, with their documents. The alert lint remains wired into the current mandatory CI path.\\n\\n**Personally rerun at this new exact head:**\\n\\n```sh\\nbash scripts/observability-promql-lint.sh\\nbash scripts/observability-promql-lint.sh --self-test\\nbash scripts/ci-release-gate-lint.sh\\nbash scripts/ci-release-gate-lint.sh --self-test\\nbash scripts/ci-test-matrix-lint.sh\\nbash scripts/ci-test-matrix-lint.sh --self-test\\nbash scripts/ship-resume-selftest.sh\\ngit diff --check af60cd6d9dceac541b6f457062093df70753f3ce...HEAD\\n```\\n\\nAll passed: fresh alert 61-case suite including the active positive control, gate 55 mutations plus valid/parser controls, matrix/layout/guard controls, ship 18 cases, and diff check. These are new executions, not relabeled author reports. The original [independent source review](https://github.com/Kimgyuilli/PeekCart/pull/186#issuecomment-6297473599), including its old-vs-new actual YAML negative controls, applies to the byte-identical authored implementation; those custom historical controls were not separately repeated in this delta pass. D097 compiled mutation evidence is likewise historical and unchanged, not rerun here.\\n\\nNo Gradle compilation, Docker, operational change, or full local suite was run for this merge delta. GitHub CI [39476990835](https://github.com/Kimgyuilli/PeekCart/actions/runs/39476990835) was still running when independently queried. This comment does not approve pending checks; require mandatory CI on the merge candidate.\\n\",\"html_url\":\"https://github.com/Kimgyuilli/PeekCart/pull/186#issuecomment-6298523288\"}\n"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-094",
+        "chunk_id": "170a02",
+        "wall_time_seconds": 0.396207166,
+        "exit_code": 0,
+        "original_token_count": 489,
+        "output": "{\"body\":\"Independent merge-candidate delta review of exact head `a0c2d3e7cd36f6153c020ee6df4aef5f8935c14e`, with GitHub-confirmed base/main `a7ffa11f24be2bd281d8952ac5fc5d351fb6119c`.\\n\\n**No new findings in this integration delta.** This does not reuse approval for a different SHA: I fetched and inspected this exact head. Its merge tree exactly equals a fresh `git merge-tree --write-tree` of previously reviewed `7eb4c48` and actual main `a7ffa11` (tree `8a2132bd96a9a6920dcfc25c0d4b8657feedd900`). All 12 D-094 files match the prior reviewed versions byte for byte. The actual PR delta against current main contains only those D-094 files; the imported webhook/monitoring changes come from main.\\n\\nFresh checks personally performed:\\n\\n- Confirmed the test source still has SHA-256 `f30b7a2cd8d107d4cf9b716cbf690eb0dace1003e88b108cd2c802715a31113f` and preserves the 3500ms bound/diagnostic implementation reviewed in [the original review](https://github.com/Kimgyuilli/PeekCart/pull/198#issuecomment-6299237478).\\n- Revalidated all four committed gzip files against the raw originals, every raw/compressed manifest hash and size, and the testcase/count/observation/failure fields in `results.json`. Both negative records still show the intended `\\u003c3.5S` assertion failure rather than setup failure.\\n- Applied/reversed both mutation patches in new temporary copies, reproduced their recorded source hashes, and verified exact restoration.\\n- Ran the integration-container static lint and `git diff --check`; both pass. The review working tree is clean.\\n\\nI did not rerun Gradle, Docker, or the timing probes. Their preserved execution records remain historical evidence from the author, independently inspected here; this is not a fresh integration-test result. All required CI must pass on the current merge candidate before merge. No merge performed.\\n\",\"html_url\":\"https://github.com/Kimgyuilli/PeekCart/pull/198#issuecomment-6299645860\"}\n"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-097",
+        "chunk_id": "dcbf7e",
+        "wall_time_seconds": 0.406290417,
+        "exit_code": 0,
+        "original_token_count": 373,
+        "output": "{\"body\":\"Updated independent delta review: exact head `cca3efbbc98ce6251afa7d13dfb9ece6a69dc119`, exact base `be535c57ced11acfcbe9a24a349ddb6ad2055d8a`.\\n\\nVerified merge parents are previously reviewed D-097 head `9c46bc2ff210dfe27ebe11557a538b2f8c4f0b3b` and current base above. The entire four-file authored D-097 patch is byte-for-byte identical against the new base. Incoming changes are D-085/D-105 gate/harness/workflow and their documentation; the Gradle implementation and compiled mutation runner did not change.\\n\\nPersonally executed at this exact updated head:\\n- Gate lint self-test: 55/55 mutations, six valid workflows and six parser cases passed against the updated workflow.\\n- CI test matrix normal lint and self-test: passed, including guard discovery/log contracts.\\n- Ship resume self-test: 18/18 passed.\\n- `git diff --check be535c57ced11acfcbe9a24a349ddb6ad2055d8a HEAD`: passed.\\n\\nNo blocking findings in this merge delta or tested interactions. My prior eight-scenario compiled mutation run at `9c46bc2...` remains explicitly historical validation of unchanged code, with logs at `/private/tmp/d097-independent-review/`; it was NOT rerun or represented as a new execution at this head. No unnecessary heavy tests were started. The mutation runner remains on-demand rather than CI-wired. Matching-head CI remains a separate merge condition and is not claimed as passed here.\\n\",\"html_url\":\"https://github.com/Kimgyuilli/PeekCart/pull/187#issuecomment-6298143655\"}\n"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-098",
+        "chunk_id": "afe6c8",
+        "wall_time_seconds": 0.360902209,
+        "exit_code": 0,
+        "original_token_count": 245,
+        "output": "{\"body\":\"Independent re-review of 2e7251b6b855009ce14adccd0c71a46d23a5ddf8 (base 4a4a36a12a3d914d6bc0379ded94bc0123c4d370): all three previously reported P2 false greens are resolved; no blocking findings in the stated preservation scope.\\n\\nPersonally reran the original footer, unquoted-HTML and query/fragment counterexamples: all now reject. All 52 fixture tests passed, along with real-source split/archive controls, six archive tests, source/evidence hash checks and focused CI checks. Three targeted mutants that remove the repaired behavior each fail their paired fixture. Read-only current task-history comparison also passed without changing those documents.\\n\\nNo actual project archive, Gradle/Docker or operational action was performed. General corpus truth and complete link health remain outside this checker’s scope. Full CI and merge/post-merge checks remain separate.\\n\",\"html_url\":\"https://github.com/Kimgyuilli/PeekCart/pull/203#issuecomment-6312472715\"}\n"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-099",
+        "chunk_id": "280079",
+        "wall_time_seconds": 0.392688125,
+        "exit_code": 0,
+        "original_token_count": 174,
+        "output": "{\"body\":\"Independent delta review of 48fca6eeaa6e65ba16f6e1cf75bc7dc473865c70 against d506f7eef5d29e9894342a6d47b93b89a34266b2: no blocking findings.\\n\\nVerified unchanged checker, fixtures, evidence and exact CI step; additions record main integration. Prior three P2 resolutions remain applicable. The matching Actions checkout tree equals this head: 41 fixtures passed and all 16 mutants were rejected, with the current base passed explicitly.\\n\\nNo local full-suite/heavy rerun. Full CI/post-merge gates remain separate; archive health does not prove ordered content preservation or all debt complete.\\n\",\"html_url\":\"https://github.com/Kimgyuilli/PeekCart/pull/204#issuecomment-6313836584\"}\n"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-103",
+        "chunk_id": "20c72e",
+        "wall_time_seconds": 0.696108666,
+        "exit_code": 0,
+        "original_token_count": 168,
+        "output": "{\"body\":\"Independent delta review of 6b99cb90adf0dda127297da8e30f044e86756601 against 43a1745a548b24eb85a88ba3e5ecd77bc0742326: no blocking findings.\\n\\nVerified unchanged renderer, numeric fixtures and evidence; only the audit integration note was appended. The exact renderer CI step is preserved. Matching Actions checkout passed nine contract methods, ten mutants and the wrapper's 45 checks, with one absent-cache skip.\\n\\nPrior numeric P2 resolution remains applicable. No local full/heavy rerun or historical corpus coverage claim. Full CI/post-merge gates remain separate.\\n\",\"html_url\":\"https://github.com/Kimgyuilli/PeekCart/pull/206#issuecomment-6314103635\"}\n"
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "task": "D-105",
+        "chunk_id": "93674b",
+        "wall_time_seconds": 0.363107958,
+        "exit_code": 0,
+        "original_token_count": 381,
+        "output": "{\"body\":\"Updated independent delta review: exact head `a5d483561648adac67610e9c886c4a636f4c3b50`, exact current base `0e40b6acd2ffc3266fdca2caa1cb67131da8be34`.\\n\\nVerified merge parents are previously reviewed D-105 head `81ce54854875857ca6c7015597dfe5d6abf5a562` and the current base above. The authored D-105 patch against the new base is byte-for-byte identical to the previously reviewed patch against `eb5dee5d509f7d9f13c4974a66d47a1809341855`. The only incoming changes versus the previous head are the D-085 gate linter and its plan/audit. Harness implementation/tests, ship contract, and D-105 workflow wiring are unchanged.\\n\\nPersonally reran at this new exact head:\\n- `bash scripts/ship-resume-selftest.sh`: 18/18 passed.\\n- `bash scripts/ci-release-gate-lint.sh`: passed against the workflow containing D-105's self-test step.\\n- `bash scripts/ci-release-gate-lint.sh --self-test`: 55/55 mutations, six valid workflows, six parser cases passed.\\n- `git diff --check 0e40b6acd2ffc3266fdca2caa1cb67131da8be34 HEAD`: passed.\\n\\nNo blocking findings in the merge delta or tested interaction. The prior 62/62 Bats run and original-helper negative control remain historical validation of byte-identical harness code; they were NOT rerun at this head and are not labeled new executions. Matching-head required CI remains pending/uninspected separately. No Gradle, Docker, deployments or operational/payment actions performed.\\n\",\"html_url\":\"https://github.com/Kimgyuilli/PeekCart/pull/184#issuecomment-6297728123\"}\n"
+      }
+    }
+  ]
+}

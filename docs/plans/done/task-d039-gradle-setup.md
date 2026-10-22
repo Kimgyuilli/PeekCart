@@ -40,7 +40,7 @@ PR 시간 이득 상한 ≈ 0초(test) · 수 초(images 컴파일 8초 중 일�
 compileJava/processResources/classes 헤더27.96초와 jar28.06초는 실제 태스크 시작 시각을 제공하지 않는다.
 따라서 위의 컴파일8초/기동설정28초 분해와 그 값에 근거한 표적 상한/수단 분리는 철회한다.
 setup-gradle 캐시가 Docker build에 연결되지 않는 구성과 당시 test 잡의 여유는 별개 근거다.
-[후속 D-087](../D-087.md)은 실제 CI 내부 --profile과 원 build record를 연결해 재측정한다.
+[후속 D-087](D-087.md)은 실제 CI 내부 --profile과 원 build record를 연결해 재측정한다.
 새 실제 측정 전에는 대체 비중이나 최적화 결론을 확정하지 않는다. 원문은 역사 기록으로 보존한다.
 
 ### 2026-10-21 D-087 실제 profile 후속

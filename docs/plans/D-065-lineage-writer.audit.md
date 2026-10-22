@@ -78,3 +78,8 @@
 - ADR은 구현 전에 `564edc0`, 기술 전제 보완은 `f6214ee`로 기록했다. 제품 writer는 `f4a0b25`, 테스트는 `8a06507`, E2E 기대 목록은 `3f4ea2b`, 문서·원본 증거는 `3c0a4bb`로 분리했다. 검증한 source와 코드 commit의 byte 변경은 없다.
 - ship preflight, grade L, consistency, explicit staged category, PR title/body writing 및 diff 검사를 통과했다. 별도 Codex 리뷰 미호출. 세션 독립 검토와 전체 필수 CI는 대기다. ADR/index·05/06 승인 영역과 계획·감사는 갱신했으며 TASKS·진행·마스터 계획은 root 소유다.
 - merge는 승인되지 않았고 draft를 유지한다. 전체 D-065 및 NOT NULL contract·signed gateway·운영 증적은 미완으로 남긴다.
+
+
+## 병합 후 확인 (2026-10-21)
+
+최종 head `b288e3a1ff5975ed0edf2e26d02d0b286992a529`의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/201#issuecomment-6311540940)는 unit 4개와 실제 MySQL 67개를 직접 실행해 failure/error/skip 없이 통과했다. [PR CI39568431878](https://github.com/Kimgyuilli/PeekCart/actions/runs/39568431878) 성공 후 정상 병합 SHA는 `4a4a36a12a3d914d6bc0379ded94bc0123c4d370`다. [main CI39570795532](https://github.com/Kimgyuilli/PeekCart/actions/runs/39570795532)는 전체 검사와 여섯 publish가 성공했다. writer 범위만 부분 완료이며 offline fixture 제약 검증은 PR202, 실제 Flyway contract/restart와 signed gateway는 무료 후속으로 남는다. 운영 표본·GKE·운영 DDL·replay 개방은 실행하지 않았다.

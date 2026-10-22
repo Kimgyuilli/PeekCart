@@ -27,3 +27,9 @@
 - 코드 `02233ca`, 테스트 `5174e78`, 설정 `38ce748`, ADR `d86d375`, 문서 `e16224f`로 분리했다. 각 명시적 staged category check와 최종 ship preflight, grade L, consistency precheck, commit/PR title/body writing lint, diff check를 통과했다.
 - 완료 문서: 본 계획·감사, ADR-0041과 index, 기존 ADR-0023의 적용 범위 안내, 요구사항과 13-3 결제 테스트 시나리오를 갱신했다. 공유 TASKS·진행 문서·마스터 계획은 주 작업자가 별도로 관리하며 본 PR에서 변경하지 않았다.
 - 별도 Codex 리뷰 미호출. 전체 필수 GitHub Actions와 최종 커밋 독립 검토는 대기 중이다. 실제 PG·외부 webhook 수신 미검증 및 후속 merchant-order ID 계약 때문에 D-064 전체는 부분 완료로 유지한다.
+
+## 2026-10-21 무료 계약 범위 병합 후 확인
+
+최종 head `184c19cfcc696c6758fee9bbde27568e50b80ce0`의 [PR193](https://github.com/Kimgyuilli/PeekCart/pull/193)은 [최신 CI39480119984](https://github.com/Kimgyuilli/PeekCart/actions/runs/39480119984)와 [독립 delta 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/193#issuecomment-6298901536)를 통과했다. 초기 head6886c19에서 직접 실행한 86개 테스트는 작성 patch 불변을 확인해 재사용했으며 최신 SHA에서 다시 실행했다고 주장하지 않는다. 최신 필수 CI는 별도로 전체 실행했다.
+
+정상 병합 SHA `a7ffa11f24be2bd281d8952ac5fc5d351fb6119c`의 [main CI39483390397](https://github.com/Kimgyuilli/PeekCart/actions/runs/39483390397)는 모든 검사와 여섯 publish가 성공했다. 본 무료 계약 보정의 구현·검증·리뷰·병합·main 확인은 끝났지만, D-064 전체는 실 PG·외부 수신 미검증 및 후속 주문 ID 계약 검증 때문에 부분 완료다. TASKS 상태와 PHASE5 기록은 root 기록 PR에서 전달한다.
