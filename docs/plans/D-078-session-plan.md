@@ -42,6 +42,21 @@ D-078 ①②③④⑤⑥⑧⑨ 를 과금 세션 한 번으로 잰다. 순서를
 5. AR 리포지토리 생성, `scripts/promote-images.sh --project <P> --tag <main SHA>` 로 6개 승격. 출력 digest 를 기록하고 overlay 에는 digest 로 고정한다(`latest` 금지).
 6. 세션용 이미지·키·ConfigMap 치환은 커밋하지 않는다. 끝나면 `git restore`.
 
+**S0 실행 기록 (2026-10-23).** 프로젝트 `peekcart-d078`, gcloud configuration `peekcart-d078`(기본 configuration 은 그대로).
+서명 키 2개는 업로드 전후 fingerprint 가 §1 과 같다. GSA 2개는 각자 자기 시크릿에만 `secretAccessor`.
+Slack webhook 시크릿 `peekcart-slack-user-webhook`·`peekcart-slack-ops-webhook` 은 자리만 만들었고 값은 사용자가 넣는다.
+AR 승격 태그 `4bed3135e8213eb90b7bd95763a36a5e6e7f7109`, 6개 모두 GHCR digest 와 같다.
+쿼터(asia-northeast3): E2 vCPU 24, SSD 500GB, 외부 IP 8. S4 최대 사용 E2 vCPU 16, SSD 약 220GB.
+
+| 이미지 | digest |
+|---|---|
+| gateway | `sha256:8707b330ffbe90463c5b6ca951582d5fc89001dbf594fc0d5b2033e4c124322f` |
+| user-service | `sha256:2e710d6ff4c9a26461dbf9c166ac8ea65f003d88d1ddb315b54ba29bb33af06a` |
+| product-service | `sha256:1676fd57a17d31af65cd2baf1491ac474cce51f26948d5b8906c1ab5508e69e2` |
+| order-service | `sha256:16920c6452e1c33c3404e79b98394b0d18027aa34e86a55617bd480ef5712261` |
+| payment-service | `sha256:a4d00271813afe1394732341b09bc4583027adb6fb01cce82db959006dc6c2df` |
+| notification-service | `sha256:7cfb7fd6c7bc865400a2206f30fc04acae698845558da4efccc858356d8ee90e` |
+
 ### S1. 클러스터 (여기서부터 시간 과금)
 
 1. GKE `peekcart-d078`: `asia-northeast3-a`, 채널 stable, `e2-standard-4` × 2, 부팅 `pd-balanced` 50GB(SSD 쿼터), `--workload-pool=<P>.svc.id.goog`, `--enable-dataplane-v2`(S4 의 NetworkPolicy 용. 생성 후 못 켠다).
@@ -49,7 +64,9 @@ D-078 ①②③④⑤⑥⑧⑨ 를 과금 세션 한 번으로 잰다. 순서를
 3. **cleanup 을 먼저 건다.** `CLUSTER_NAME=peekcart-d078 LOADGEN_NAME=peekcart-d078-loadgen bash loadtest/cleanup.sh --dry-run` 이 대상을 정확히 가리키는지 본다.
 4. 노드 SA 에 `roles/artifactregistry.reader`. WI 바인딩 `[peekcart/gateway]`·`[peekcart/user-service]`.
 5. CSI: upstream `secrets-store-csi-driver` helm(`syncSecret.enabled=false`, `tokenRequests[0].audience=<P>.svc.id.goog`) + GCP provider. 버전을 기록한다.
-6. 관측: `monitoring` NS → `helm ... -f values-prometheus.yml -f values-measurement-isolation.yml`(차트 버전 기록) → `kubectl apply -k k8s/monitoring/shared/`. Prometheus·Grafana Pod 가 `monitoring-pool` 에 있는지 `-o wide` 로 확인한다.
+6. 관측: `monitoring` NS → Grafana 운영 webhook Secret `grafana-ops-webhook`(키 `url`)을 **사용자가** Secret Manager `peekcart-slack-ops-webhook` 에서 만든다(값을 화면에 내지 않는 파이프, Claude 는 실행하지 않는다) → `helm ... -f values-prometheus.yml -f values-measurement-isolation.yml`(차트 버전 기록) → `kubectl apply -k k8s/monitoring/shared/`. Prometheus·Grafana Pod 가 `monitoring-pool` 에 있는지 `-o wide` 로 확인한다.
+   Grafana 를 먼저 띄운 뒤 Secret 을 만들면 env 가 비어 있다. 순서를 지키지 못했으면 Grafana Pod 를 재시작한다.
+   `kubectl port-forward` 로 Grafana `localhost:3000`, Prometheus `localhost:9090` 을 백그라운드로 연다. 사용자는 같은 주소로 실시간으로 본다.
 7. loadgen VM `peekcart-d078-loadgen`(`e2-medium`, 같은 VPC), k6 v2.2.0(Phase 4 와 같은 버전).
 
 ### S2. 읽기 경로 — ①②③④
@@ -67,7 +84,7 @@ D-078 ①②③④⑤⑥⑧⑨ 를 과금 세션 한 번으로 잰다. 순서를
 - ③: `run-cell` 의 이름별 counter 차분(`product`·`productStock`·`products`)이 ON 셀에서 hit·miss 둘 다 증가했는지.
 - ②: B detail OFF 런에서 Pod 별 CPU, HikariCP 대기, 컨테이너별 스로틀. 원인 분리는 증적에서 하며 세션 중 튜닝하지 않는다.
 - ④: B list ON 런의 노드 CPU 사용률. 캐시 miss 0 인 셀이 MySQL 한도에 반응한 이유를 가른다.
-- 캡처는 `loadtest/captures.md` 를 따른다.
+- 캡처는 `loadtest/captures.md` 를 따른다. run 마다 `d078-capture.py annotate` 로 구간을 남기고, S2 가 끝나면 항목 ①②④ 의 `plan` URL 을 브라우저로 찍고 같은 범위를 `export` 한다. 측정 도중에는 찍지 않는다(Prometheus 보존 24h).
 
 ### S3. 경합 — ⑤⑥
 
@@ -79,15 +96,23 @@ D-078 ①②③④⑤⑥⑧⑨ 를 과금 세션 한 번으로 잰다. 순서를
 6. run 사이에 outbox backlog 0 과 consumer lag 0 을 기다린 뒤 `d002bc-reset.sql` 로 초기화한다. 대조군 `MODE=spread` 1회도 같은 절차. 섞이면 그 run 은 무효로 적는다.
 7. 정합성: 음수 재고 0, 품목별 diff 0, 예약 상태 합 = 주문 수.
 8. ⑥: 배수 구간에서 order·product 의 `executor_active_threads`/`executor_queued_tasks`, 그리고 backlog 가 있는데 발행률이 0 인 구간이 있는지(D-024 재발).
+9. S3 가 끝나면 항목 ⑤·⑤ 배수·⑥ 을 S2 와 같은 방식으로 찍고 export 한다.
 
-### S4. base 적용 — ⑧
+### S4. base 적용 — ⑧, D-065 ②⑤, D-092
+
+운영 overlay 를 띄운 김에, 같은 스택이 필요한 다른 부채의 GKE 확인을 함께 한다.
 
 1. `kubectl delete ns peekcart`, 기본 노드풀을 3대로 늘린다(정상 상태 requests 약 7.3 vCPU, `pr3d-b2` 편차 2).
-2. `GW_URL=<gateway LB> bash scripts/deploy-overlay.sh k8s/overlays/gke`. 외부 자격증명은 smoke 값으로 넣는다(`pr3d-b2` 편차 4와 같은 방식).
-3. 렌더한 mysql `limits.cpu` 와 실행 Pod 의 값이 `2` 로 같은지, 인증 왕복 게이트 통과.
+2. notification-service Secret 의 `SLACK_USER_WEBHOOK_URL`·`SLACK_OPS_WEBHOOK_URL` 은 **사용자가** Secret Manager 두 시크릿에서 넣는다(서로 다른 값이어야 시작한다, `D-092-slack-split.md`). Toss 자격증명은 smoke 값이다(`pr3d-b2` 편차 4).
+3. 첫 배포: `DRAIN_PREFLIGHT_SKIP_REASON="fresh namespace, no prior stack" GW_URL=<gateway LB> bash scripts/deploy-overlay.sh k8s/overlays/gke`. drain preflight 는 fail-closed 라 빈 namespace 에서는 수집이 실패해 배포를 막는다. 건너뛴 사유가 로그에 남는다.
+4. ⑧: 렌더한 mysql `limits.cpu` 와 실행 Pod 의 값이 `2` 로 같은지, 인증 왕복 게이트 통과.
+5. D-065 ②: 스택이 뜬 뒤 `bash scripts/replay-drain-preflight.sh` 를 실제 클러스터에서 실행한다. replay 이력이 없으므로 exit 0 이 기대값이다. 수집 계층(`kubectl exec` DB·Kafka 조회)이 실제 스택을 관통한 첫 기록이다.
+6. D-065 ⑤: 브로커의 토픽 설정(`kafka-configs.sh --describe --entity-type topics`)을 서비스가 선언한 값(`KafkaTopicConfigs` business·dlq, retention floor)과 표로 대조한다. 앱이 기동 중 토픽 설정을 실제로 바꿨는지(`ALTER_CONFIGS`)의 증거다.
+7. D-092: (가) Grafana contact point 테스트 API 로 운영 채널에 메시지 1건, (나) gateway 로 주문 1건을 넣어 `order.created` 소비 → 사용자 채널에 메시지 1건. **사용자가 두 채널에서 각각 한 건씩, 서로 다른 채널로 왔는지 확인한다.**
 
 ### S5. 정리 — 어떤 경로에서도 실행
 
+0. 진입 조건: S2·S3 캡처와 export 파일이 저장돼 있다. 중단 규칙으로 S5 에 온 경우에는 남은 데이터만이라도 export 한 뒤 진행한다.
 1. `CLUSTER_NAME=peekcart-d078 LOADGEN_NAME=peekcart-d078-loadgen bash loadtest/cleanup.sh`. 7종 전부 `[0]` 이어야 끝난다.
 2. AR 리포지토리와 Secret Manager 시크릿 삭제.
 3. `gcloud billing projects unlink <P>`. 남은 자원이 있어도 과금이 멈춘다. 프로젝트 삭제는 사용자가 정한다.
@@ -112,8 +137,8 @@ D-078 ①②③④⑤⑥⑧⑨ 를 과금 세션 한 번으로 잰다. 순서를
 | GKE 관리비 | $0.10 (zonal 1개 무료 크레딧 여부는 S0 에서 확인) |
 | 합계 | 약 $0.53 ~ $0.63 |
 
-S2 약 2시간, S3 약 1.5시간, S4 약 0.5시간(3번째 노드 +$0.17), 준비·정리 약 1.5시간. 6~8시간 기준 $3.5~5,
-부가세 포함 약 ₩5,000~7,000. 예산 ₩20,000 의 절반 안쪽이다.
+S2 약 2시간, S3 약 1.5시간, S4 약 1시간(3번째 노드 +$0.17/h), 캡처 약 0.5시간, 준비·정리 약 1.5시간.
+6.5~8.5시간 기준 $4~5.5, 부가세 포함 약 ₩6,000~8,000. 예산 ₩20,000 의 절반 안쪽이다.
 
 ## 6. 검증 방법 (이 PR)
 
@@ -127,3 +152,5 @@ S2 약 2시간, S3 약 1.5시간, S4 약 0.5시간(3번째 노드 +$0.17), 준�
 - 세션 실행과 증적 작성, TASKS·PHASE5 반영은 세션 후속이다.
 - ⑦(#129 익일 Billing)은 무료 크레딧 계정이라 확인하지 않기로 했다(사용자 결정, 2026-10-23).
 - outbox 폴링 기본값의 처분은 D-075 다. 경합 overlay 의 500ms·500건은 before 조건 재현일 뿐이다.
+- D-065 는 ②⑤ 만 다룬다. replay 개방(4단계), 게이트웨이 관리자 라우트 관통(①), NOT NULL 적용(③), 운영 표본(④), `OriginalRecordReader` 의 실제 좌표 읽기는 replay 를 닫은 채로는 확인할 수 없어 남는다.
+- D-092 는 전달 경로만 본다. Outbox `FAILED` 운영 재발행과 Secret 소유·교체 절차는 남는다.
