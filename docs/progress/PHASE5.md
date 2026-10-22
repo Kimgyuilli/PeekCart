@@ -908,3 +908,7 @@ Phase 4 증적을 다시 읽어 1,000 VU 동시 주문 재측정은 넣지 않�
 #225 를 병합했다. 측정 세션에서 볼 "PeekCart — Saga & Messaging" 대시보드와 `loadtest/captures.md` 를 추가했다([PR226](https://github.com/Kimgyuilli/PeekCart/pull/226)). 건수의 정본은 세션 전후 `/actuator/prometheus` 원값 차분으로 두고 그래프는 보조 증거로 둔다. 재시도 카운터가 첫 실패 때 생성되어 `increase()` 가 첫 1건을 놓치기 때문이다.
 
 측정용 GCP 결제는 새로 준비했다. 결제 계정을 유료로 전환하고 월 예산 ₩20,000(알림 50/90/100/150%)을 걸었다. 지출 한도(spend cap)는 Compute Engine·GKE 를 지원하지 않아 쓰지 않는다. Phase 4 세션의 `peekcart-gke` 프로젝트는 소유 계정이 삭제돼 접근할 수 없으므로, 세션은 새 프로젝트에서 이미지를 다시 올려 진행한다. ⑦(#129 익일 Billing)은 무료 크레딧 계정이라 확인하지 않기로 사용자가 정했다.
+
+## 2026-10-23 — D-078 GKE 측정 세션 계획
+
+#226 을 병합했다. 과금 세션 절차(S0 준비 ~ S5 정리)와 조건 파일 두 개를 추가했다([PR227](https://github.com/Kimgyuilli/PeekCart/pull/227)). ⑤ 의 경합 조건(product replicas 3, outbox 폴링 500ms·500건)을 `gke-d078-contention` overlay 로 고정했다. Phase 4 에서는 두 값이 파일 밖에 있었다. 관측 스택은 별도 노드풀로 격리해 d026 기준선 비교와 노드 CPU 측정을 오염시키지 않는다. 키쌍은 로컬 dev 개인키가 커밋된 ConfigMap 과 짝임을 확인해 새로 만들지 않는다. 세션은 아직 실행하지 않았다.

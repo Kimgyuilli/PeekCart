@@ -1,0 +1,16 @@
+# Phase 4 경합 run 과 같은 폴링 조건. order.created 발행 속도가 경합의 입력이다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      containers:
+        - name: order-service
+          env:
+            - name: APP_OUTBOX_POLLING_DELAY
+              value: 500ms
+            - name: APP_OUTBOX_POLLING_BATCHSIZE
+              value: "500"

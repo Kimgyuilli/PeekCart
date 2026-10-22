@@ -1,0 +1,8 @@
+# 예약 consumer 를 셋으로 늘려 동일 상품 경합을 만든다. HPA 는 상위 overlay 에서 이미 제외돼 있다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: peekcart
+spec:
+  replicas: 3

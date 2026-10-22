@@ -1,0 +1,64 @@
+# ⚠️ 측정 세션 전용 — `values-prometheus.yml` 위에 두 번째 -f 로 얹는다. 운영 설치에 쓰지 않는다.
+#
+# 왜 필요한가: Prometheus(limit 1500m)·Grafana·operator 가 앱 노드에 같이 뜨면 측정 대상 노드의 CPU 를
+# 나눠 쓴다. D-026 기준선 세션은 Prometheus 스택 없이 쟀으므로(`task-d026-d002a-read-ceiling-session.md`
+# P5) 같은 노드에 얹으면 D-078 ① 의 비교가 깨지고, ④(노드 레벨 CPU 경합)는 Prometheus 자신을 재게 된다.
+#
+# 방식: 관측 스택을 taint 된 전용 노드풀(`monitoring-pool`)에만 둔다. 앱 Pod 에는 toleration 이 없으므로
+# 그 노드에 스케줄되지 않는다. node-exporter 는 DaemonSet 이고 차트 기본 toleration 이 NoSchedule 을
+# 허용하므로 앱 노드에서도 돈다 — 노드 CPU 를 재려면 그래야 한다.
+#
+# 설치:
+#   helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#     --namespace monitoring \
+#     -f k8s/monitoring/gke/values-prometheus.yml \
+#     -f k8s/monitoring/gke/values-measurement-isolation.yml
+#
+# 노드풀 생성(세션 계획서 참고):
+#   --node-labels=peekcart.io/role=monitoring --node-taints=peekcart.io/role=monitoring:NoSchedule
+
+prometheus:
+  prometheusSpec:
+    nodeSelector:
+      peekcart.io/role: monitoring
+    tolerations:
+      - key: peekcart.io/role
+        operator: Equal
+        value: monitoring
+        effect: NoSchedule
+
+grafana:
+  nodeSelector:
+    peekcart.io/role: monitoring
+  tolerations:
+    - key: peekcart.io/role
+      operator: Equal
+      value: monitoring
+      effect: NoSchedule
+
+prometheusOperator:
+  nodeSelector:
+    peekcart.io/role: monitoring
+  tolerations:
+    - key: peekcart.io/role
+      operator: Equal
+      value: monitoring
+      effect: NoSchedule
+  admissionWebhooks:
+    patch:
+      nodeSelector:
+        peekcart.io/role: monitoring
+      tolerations:
+        - key: peekcart.io/role
+          operator: Equal
+          value: monitoring
+          effect: NoSchedule
+
+kube-state-metrics:
+  nodeSelector:
+    peekcart.io/role: monitoring
+  tolerations:
+    - key: peekcart.io/role
+      operator: Equal
+      value: monitoring
+      effect: NoSchedule
