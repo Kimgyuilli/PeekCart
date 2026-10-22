@@ -918,3 +918,7 @@ Phase 4 증적을 다시 읽어 1,000 VU 동시 주문 재측정은 넣지 않�
 #227 을 병합했다. 세션 S0 을 실행했다: 프로젝트 `peekcart-d078` 결제 연결, API 활성화, 서명 키 2개 업로드(업로드 전후 fingerprint 대조), 키별 GSA 1:1 권한, main `4bed313` 이미지 6개 AR 승격(GHCR digest 와 동일). 클러스터·VM 은 없다. Slack webhook 시크릿은 자리만 만들었고 값은 사용자가 넣는다.
 
 캡처 경로를 과금 전에 로컬에서 끝까지 돌렸다([PR228](https://github.com/Kimgyuilli/PeekCart/pull/228)). 대시보드 패널에 고정 id 를 넣고 annotation·단독 패널 URL·원 시계열 export 스크립트를 추가했다. 같은 클러스터에서 확인할 수 있는 D-065 ②⑤와 D-092 전달 canary 를 세션 S4 에 넣었다. 배포 래퍼의 drain preflight 가 빈 namespace 첫 배포를 fail-closed 로 막으므로, 첫 배포는 사유를 남겨 건너뛰고 스택이 뜬 뒤 preflight 를 다시 돌려 D-065 ② 를 확인한다.
+
+## 2026-10-23 — D-078 세션에 README 보강 지표 편입
+
+#228 을 병합했고 Slack webhook 2개를 사용자가 시크릿에 넣었다(값은 보지 않고 형식과 상이함만 확인). 후보 지표를 기존 증적과 대조해 비어 있는 것만 세션에 더했다([PR229](https://github.com/Kimgyuilli/PeekCart/pull/229)). 사가 지연 분포는 Phase 4 계획 P7 이 요구했지만 산출되지 않은 공백이었다. gateway 오버헤드는 기존 수치(+9.9ms)가 있어 뺐다. 사가 왕복과 outbox 발행 대기 추출 SQL 과 집계를 로컬 MySQL 에 실제 Flyway 스키마를 올려 검증했다.
