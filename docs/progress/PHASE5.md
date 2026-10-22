@@ -886,3 +886,13 @@ PR CI39589619261 성공 및 실제 [main CI39592220364](https://github.com/Kimgy
 ## 2026-10-22 — D-075 후속 정책 결정 보류
 
 사용자가 D-075 티켓의 후속 결정을 보류했다. [PR200](https://github.com/Kimgyuilli/PeekCart/pull/200)의 무료 로컬 병목 분석과 병합 후 검증은 유지한다. 목표 TPS, 최대 backlog, 초과 시 대응 정책은 정하지 않았고, 후속 선택·정책 검증은 사용자가 티켓 재개와 기준을 알려줄 때 진행한다. 이 보류를 전체 완료로 표시하지 않는다.
+
+## 2026-10-22 — 부채 캠페인 직렬 병합 마무리
+
+남은 PR을 최신 main에 맞춘 뒤 PR CI 성공과 직전 main CI 성공을 확인하고 하나씩 병합했다. 순서는 #190·#202·#207·#214·#222·#191·#192·#221·#220·#213·#208·#199·#197·#195·#215·#194·#218이다. 마지막 [main CI39699130969](https://github.com/Kimgyuilli/PeekCart/actions/runs/39699130969)(`985f550`)까지 테스트·E2E·gate와 여섯 publish가 성공했다.
+
+- #214 병합 뒤 main lint가 `backfill transaction did not reach observed pause`로 실패했다. [PR222](https://github.com/Kimgyuilli/PeekCart/pull/222)의 첫 CI에서 runner의 `docker exec mysqladmin ping`이 3초 timeout을 넘는 것을 확인했다. 폴링 한 번이 3초 SLEEP 구간보다 길어 정지 구간을 놓친 것이 원인이다. writer SLEEP을 20초로, 관측을 PROCESSLIST 기준으로 바꾸고 timeout을 늘렸다. 이후 main CI는 모두 성공했다.
+- #221 병합 뒤 main의 일시적 의존성 다운로드 실패(`lombok-1.18.44.jar`)는 실패 job 재실행으로 성공했다.
+- #213은 wiring lint가 `python3 -m` 이후 step 스캔을 멈춰 inline self-test를 못 찾았고, CI 줄 순서만 바꿔 통과시켰다. #197은 #205와 같은 주석 위치에서 충돌해 main 코드와 #197 주석을 함께 남겼다. #194는 완료 아카이브 D-050 정정을 corrections manifest로 선언했다.
+
+D-086·D-088·D-091·D-095·D-096·D-100·D-101·D-102·D-104는 각 계획의 완료 기준을 PR 하나로 충족했고 병합 후 main CI 성공을 확인해 완료 아카이브로 옮겼다. D-064·D-065·D-078·D-084·D-089·D-092는 무료 로컬 범위만 병합한 부분 완료다. D-089의 publication-state job은 main에 연속 push가 있으면 이전 상태를 보고할 수 있다(PR215 P2 코멘트). D-075는 사용자 재개 전까지 보류한다.
