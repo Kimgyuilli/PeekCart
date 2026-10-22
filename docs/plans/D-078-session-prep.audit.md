@@ -13,3 +13,8 @@
 - `ProductKafkaRetryMetricsTest` 3, `StockRetryLoadIntegrationTest` 4, `StockConflictRetryPolicyTest` 3, `ProductKafkaConfigTopicConfigContractTest` 6, `StockSchedulerWiringIntegrationTest` 3. 실패 0.
 - 렌더 diff 한 줄(mysql `limits.cpu` 500m → 2000m). namespace lint, lint-health selftest, integration-test-container lint, observability SSOT·PromQL lint 통과.
 - product 전체 suite 와 전체 CI 는 PR 에서 확인한다.
+
+## /ship
+
+- PR https://github.com/Kimgyuilli/PeekCart/pull/225 (feat(product): 과금 세션 전 재시도·executor 계측 준비). consistency precheck 경고 0, 리뷰 처분 점검 ok, 커밋·본문·제목 문체 lint 통과.
+- 갱신: TASKS D-078 상태 cell 에 PR 링크(부분 작업, 완료 이동 없음), PHASE5 작업 이력. 계획 이동 없음.
