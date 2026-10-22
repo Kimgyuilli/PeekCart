@@ -1,0 +1,525 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "type": "row",
+      "title": "Saga · Outbox",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "title": "Outbox 발행률 (건/초)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (application) (rate(outbox_publish_seconds_count{application=~\"$application\", result=\"success\"}[$__rate_interval]))",
+          "legendFormat": "{{application}} success",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (application) (rate(outbox_publish_seconds_count{application=~\"$application\", result=\"failure\"}[$__rate_interval]))",
+          "legendFormat": "{{application}} failure",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "description": "D-075 천장 관측. result=failure 는 발행 시도 단위다(ADR-0009 S8)."
+    },
+    {
+      "title": "Outbox backlog",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (application, status) (outbox_backlog{application=~\"$application\"})",
+          "legendFormat": "{{application}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "description": "scrape 시점의 pending/failed 건수. Pod 마다 같은 DB 를 세므로 replicas 가 늘면 sum 이 배가된다 — max 로 읽는다."
+    },
+    {
+      "title": "Outbox 발행 평균 지연",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (application) (rate(outbox_publish_seconds_sum{application=~\"$application\", result=\"success\"}[$__rate_interval])) / sum by (application) (rate(outbox_publish_seconds_count{application=~\"$application\", result=\"success\"}[$__rate_interval]))",
+          "legendFormat": "{{application}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "재고 예약 결과 (건/초)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (outcome) (rate(saga_reservation_result_total{application=\"product-service\"}[$__rate_interval]))",
+          "legendFormat": "{{outcome}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "재시도 · DLQ (D-078 ⑤)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "panels": []
+    },
+    {
+      "title": "소비 전달 실패율 (cause 별)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (topic, cause) (rate(kafka_listener_delivery_failed_total{application=\"product-service\"}[$__rate_interval]))",
+          "legendFormat": "{{topic}} {{cause}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "description": "카운터는 첫 실패 때 생성된다. 정확한 건수는 Prometheus increase() 가 아니라 세션 전후 /actuator/prometheus 원값 차분(부재=0)으로 센다."
+    },
+    {
+      "title": "누적 실패 · DLQ 유입 (Pod 기동 이후)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (cause) (kafka_listener_delivery_failed_total{application=\"product-service\"})",
+          "legendFormat": "failed {{cause}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum (kafka_listener_recovered_total{application=\"product-service\"})",
+          "legendFormat": "recovered (DLQ)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "DLQ backlog",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "max by (application) (dlq_backlog{application=~\"$application\"})",
+          "legendFormat": "{{application}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "description": "미결 incident 수. 같은 원장을 Pod 마다 세므로 max 로 읽는다."
+    },
+    {
+      "title": "DLQ 최고령 incident",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "max by (application) (dlq_oldest_age_seconds{application=~\"$application\"})",
+          "legendFormat": "{{application}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "스케줄러 (D-078 ⑥)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "panels": []
+    },
+    {
+      "title": "taskScheduler active / pool",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 35
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "executor_active_threads{application=~\"$application\", name=\"taskScheduler\"}",
+          "legendFormat": "{{application}} {{pod}} active",
+          "refId": "A"
+        },
+        {
+          "expr": "max by (application) (executor_pool_core_threads{application=~\"$application\", name=\"taskScheduler\"})",
+          "legendFormat": "{{application}} pool",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "description": "active 가 pool 에 붙어 있으면 포화. D-024 의 발행 정지가 풀 4 에서 재발하는지 본다."
+    },
+    {
+      "title": "taskScheduler 대기 작업",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 35
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "executor_queued_tasks{application=~\"$application\", name=\"taskScheduler\"}",
+          "legendFormat": "{{application}} {{pod}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "row",
+      "title": "자원 (D-078 ①②④)",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 43
+      },
+      "panels": []
+    },
+    {
+      "title": "MySQL CPU 사용 / 한도",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 44
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum (rate(container_cpu_usage_seconds_total{namespace=\"peekcart\", container=\"mysql\"}[$__rate_interval]))",
+          "legendFormat": "usage",
+          "refId": "A"
+        },
+        {
+          "expr": "sum (kube_pod_container_resource_limits{namespace=\"peekcart\", container=\"mysql\", resource=\"cpu\"})",
+          "legendFormat": "limit",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cores"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "title": "CPU 스로틀 (컨테이너별)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 44
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (container) (rate(container_cpu_cfs_throttled_seconds_total{namespace=\"peekcart\", container!=\"\", container!=\"POD\"}[$__rate_interval]))",
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "description": "초당 스로틀된 시간. ADR-0027 의 MySQL 스로틀 147.6s → 0.1s 와 같은 축이다."
+    },
+    {
+      "title": "노드 CPU 사용률",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 52
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "1 - avg by (instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "description": "D-078 ④ 노드 레벨 경합. 캐시 ON 경로가 MySQL CPU 에 반응한 원인 후보를 가른다."
+    },
+    {
+      "title": "HikariCP 대기 커넥션",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 52
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum by (application) (hikaricp_connections_pending{application=~\"$application\"})",
+          "legendFormat": "{{application}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": [
+    "peekcart",
+    "saga",
+    "measurement"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "application",
+        "label": "Application",
+        "type": "custom",
+        "query": "notification-service,order-service,payment-service,product-service",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [
+          {
+            "text": "All",
+            "value": "$__all",
+            "selected": true
+          },
+          {
+            "text": "notification-service",
+            "value": "notification-service",
+            "selected": false
+          },
+          {
+            "text": "order-service",
+            "value": "order-service",
+            "selected": false
+          },
+          {
+            "text": "payment-service",
+            "value": "payment-service",
+            "selected": false
+          },
+          {
+            "text": "product-service",
+            "value": "product-service",
+            "selected": false
+          }
+        ],
+        "hide": 0
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "title": "PeekCart — Saga & Messaging",
+  "uid": "peekcart-saga-messaging"
+}
