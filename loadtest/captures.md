@@ -41,8 +41,13 @@
 | ⑤ 사가 배수 | PeekCart — Saga & Messaging | Outbox 발행률, Outbox backlog | 경합 런 시작부터 backlog 0 복귀까지 |
 | ⑥ 스케줄러 풀 | PeekCart — Saga & Messaging | taskScheduler active / pool, 대기 작업 | 경합 런 배수 구간 |
 | 공통 | PeekCart — Kafka Consumer Lag | Kafka Consumer Lag (Max) | 경합 런 |
+| D JVM | PeekCart — API & JVM | JVM Heap Memory, JVM GC Pause | 블록 B 런 1개, 경합 런 1개 (`d078-jvm`) |
+| E HPA | PeekCart — Pod Resources & HPA | HPA Current Replicas, Pod CPU Usage | S4 주문 부하 시작 1분 전부터 안정화까지 (`d078-hpa`) |
 
 ③ `product` 캐시와 ⑧ base 적용은 그래프가 아니라 counter 차분과 `kubectl get` 출력으로 남긴다.
+A 사가 왕복 지연과 B outbox 발행 대기는 그래프가 아니라 DB 원자료다. 경합 런이 배수된 뒤, 초기화 SQL 전에
+`loadtest/sql/d078-saga-latency.sql`(order)과 `d078-outbox-latency.sql`(order·product)을 `mysql -B` 로 TSV 로
+내보내고 `loadtest/scripts/d078-latency.py` 로 집계한다. TSV 원본도 같은 디렉터리에 둔다.
 
 ## Phase 4 before 값과 함께 읽을 때
 
