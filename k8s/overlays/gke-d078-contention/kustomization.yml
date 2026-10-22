@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ⚠️ D-078 ⑤ 경합 측정 전용 — 운영 매니페스트 아님.
+#
+# 무엇을 재나: jitter 도입(ADR-0025 D2) 뒤 동일 상품 경합에서 낙관락 충돌과 DLQ 유입. before 는
+# Phase 4 `d002bc` 의 replicas=3 경합 run(충돌 7 · DLQ 7, 주문 9,782)이다. 그 조건을 파일로 고정한다.
+#
+# - product replicas 3: replicas 1 이면 예약 consumer 가 시스템 전체에 하나라 경합이 **구조적으로**
+#   생기지 않는다(`docs/progress/evidence/d002bc-gke-20260917.md` §D-002c). Phase 4 는 이 값을
+#   `kubectl scale` 로 맞췄다 — 조건이 파일 밖에 있었다.
+# - order outbox 폴링 500ms · 500건: Phase 4 경합 run 이 같은 값을 env 로 덮어쓴 상태였다(증적 §배포 편차 3).
+#   before 와 같은 조건이어야 after 와 비교할 수 있다. 운영 기본값(5s · 100건)의 처분은 D-075 몫이다.
+# - MySQL 2000m: 상위 `gke-d002bc-mysql-2000m` 을 그대로 받는다.
+#
+# 렌더:
+#   kubectl kustomize k8s/overlays/gke-d078-contention
+resources:
+  - ../gke-d002bc-mysql-2000m
+
+patches:
+  - path: patches/product-service-replicas.yml
+  - path: patches/order-service-outbox-polling.yml
