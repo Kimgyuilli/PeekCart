@@ -44,7 +44,7 @@ D-078 ①②③④⑤⑥⑧⑨ 를 과금 세션 한 번으로 잰다. 순서를
 
 **S0 실행 기록 (2026-10-23).** 프로젝트 `peekcart-d078`, gcloud configuration `peekcart-d078`(기본 configuration 은 그대로).
 서명 키 2개는 업로드 전후 fingerprint 가 §1 과 같다. GSA 2개는 각자 자기 시크릿에만 `secretAccessor`.
-Slack webhook 시크릿 `peekcart-slack-user-webhook`·`peekcart-slack-ops-webhook` 은 자리만 만들었고 값은 사용자가 넣는다.
+Slack webhook 시크릿 `peekcart-slack-user-webhook`·`peekcart-slack-ops-webhook` 은 사용자가 값을 넣었다(`test` 워크스페이스 앱 `PeekCart Alerts`, 채널 2개). 값은 보지 않고 둘 다 Slack webhook 형식이며 서로 다름을 해시로 확인했다.
 AR 승격 태그 `4bed3135e8213eb90b7bd95763a36a5e6e7f7109`, 6개 모두 GHCR digest 와 같다.
 쿼터(asia-northeast3): E2 vCPU 24, SSD 500GB, 외부 IP 8. S4 최대 사용 E2 vCPU 16, SSD 약 220GB.
 
