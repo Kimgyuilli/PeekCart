@@ -11,7 +11,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SERVICES = ['notification-service', 'user-service', 'product-service', 'order-service', 'payment-service', 'gateway']
-OVERLAYS = ['minikube', 'gke', 'gke-d002a', 'gke-d002bc', 'gke-d002a-mysql-500m', 'gke-d002a-mysql-2000m']
+OVERLAYS = ['minikube', 'gke', 'gke-d002a', 'gke-d002bc', 'gke-d002a-mysql-500m', 'gke-d002a-mysql-2000m', 'gke-d002bc-mysql-2000m']
 
 
 class HealthTest(unittest.TestCase):

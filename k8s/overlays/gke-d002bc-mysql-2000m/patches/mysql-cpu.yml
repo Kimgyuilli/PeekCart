@@ -1,0 +1,20 @@
+# MySQL CPU 상한 = 2000m (ADR-0027 base 값). 상위 `gke-d002bc` 의 500m patch 를 되돌린다.
+# base 와 같은 값이지만 상속에 맡기지 않는다 — 상위 overlay 가 500m 을 덮으므로 여기서 명시해야
+# 2000m 이 된다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      containers:
+        - name: mysql
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 1Gi

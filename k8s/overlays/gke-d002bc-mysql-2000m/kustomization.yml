@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ⚠️ D-078 주문·경합 경로 측정 전용 — 운영 매니페스트 아님.
+#
+# `gke-d002bc` 는 D-002b'/c 재현을 위해 MySQL 을 500m 으로 **끌어내린다**(patch 주석 참고).
+# D-078 ⑤(jitter 후 충돌·DLQ)와 ⑨(1,000 VU 동시 주문)는 ADR-0027 이후 조건, 즉 MySQL 2000m
+# 에서 재야 한다. 500m 위에서 재면 ⑨ 는 2026-04 미달의 원인으로 지목한 한도를 그대로 둔 채
+# 다시 재는 셈이 된다.
+#
+# **왜 overlay 를 하나 더 두나.** `gke-d002a-mysql-{500m,2000m}` 과 같은 이유다 — MySQL CPU 를
+# `kubectl patch` 로 바꾸면 "지금 어느 조건인가" 가 파일 밖에 있게 된다. 렌더되는 이름이
+# 조건을 말하게 한다.
+#
+# ⑧(base `limits.cpu` 2000m 의 실제 적용)은 이 overlay 로 닫지 않는다 — 여기는 patch 로 2000m 을
+# 명시하므로 base 경로가 아니다. ⑧ 은 운영 overlay `k8s/overlays/gke` 적용으로 본다.
+#
+# 렌더:
+#   kubectl kustomize k8s/overlays/gke-d002bc-mysql-2000m
+resources:
+  - ../gke-d002bc
+
+patches:
+  - path: patches/mysql-cpu.yml
