@@ -1,0 +1,430 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-064-merchant-order-id.md",
+      "sha256": "83a97e877314ae573dc82cc3fb6226ef6aeaad764f185d9daa8ec69deea3555a"
+    },
+    {
+      "path": "docs/plans/D-064-merchant-order-id.audit.md",
+      "sha256": "c94c68d06d0ebcfb5c37ce685b40a6b70ce1061ef5ee2480885f3aa7e7e6e572"
+    },
+    {
+      "path": "docs/plans/D-064-pg-contract.md",
+      "sha256": "f630c00938362b83046c14577efd28ee0db04afcf4f395a7fbc737be2230b5b3"
+    },
+    {
+      "path": "docs/plans/D-064-pg-contract.audit.md",
+      "sha256": "14430d195e60ac878eda7947571d66963865acf6916b0a02fbee124eec0a6281"
+    },
+    {
+      "path": "docs/plans/D-065-collector.md",
+      "sha256": "7a9b9a7ff258ed6b8a8de8dd0e661197bd1d58abeffc38949d9b22dbdfbd828b"
+    },
+    {
+      "path": "docs/plans/D-065-collector.audit.md",
+      "sha256": "f8eaa163106612e1b3bff23c56d7ff1122eec83198f118ff21667844f8582038"
+    },
+    {
+      "path": "docs/plans/D-065-constraints.md",
+      "sha256": "94a16efac14e167e9adeb9e137757bf0f720a6c79917f8170584689c84cd289b"
+    },
+    {
+      "path": "docs/plans/D-065-constraints.audit.md",
+      "sha256": "ca077b58abbb941050ac7d47226fa5b193ff35192f797650bc7fd0268575aacd"
+    },
+    {
+      "path": "docs/plans/D-065-dlq-diagnostic.md",
+      "sha256": "c6e9029c14cc9d06a70023eb502929431fc7722a18b4706261f6bc732aefd214"
+    },
+    {
+      "path": "docs/plans/D-065-dlq-diagnostic.audit.md",
+      "sha256": "604c78eeff5d8ee5ccbf0d64dcf8d14c521330c008290734503337e34fd4760c"
+    },
+    {
+      "path": "docs/plans/D-065-lineage-writer.md",
+      "sha256": "2aee751c80333e630c1e5bc637fcd9904b3cd7d36ffa95ed77a91a427eb48dc3"
+    },
+    {
+      "path": "docs/plans/D-065-lineage-writer.audit.md",
+      "sha256": "662de8d0e3467ee180d29d5a89288774bef5a028796cf41cb6f0a20e5c6fed9f"
+    },
+    {
+      "path": "docs/plans/D-065-signed-gateway-execution.md",
+      "sha256": "6677fe89de836b52ac4ae9b1b9373b66dbb6cc3c80a62b246f88354ca4e922d7"
+    },
+    {
+      "path": "docs/plans/D-065-signed-gateway-execution.audit.md",
+      "sha256": "fc6615c67cd1590cb13e428db41c77a3d95998c522a8cc7c70ef4044a2c39bd6"
+    },
+    {
+      "path": "docs/plans/D-075.md",
+      "sha256": "ef9718b8858daf216f67e51cdc77dc622358ded4fb81fe340f338099cbfeb33d"
+    },
+    {
+      "path": "docs/plans/D-075.audit.md",
+      "sha256": "9605ed679b455ad339f3a2f760098afc6d6a8179683fbc29253867be84419364"
+    },
+    {
+      "path": "docs/plans/D-078-capture-prep.md",
+      "sha256": "12fa5588a96f1f4945ba033aa8d0113128560f4ab385bb412d3857652aa61b12"
+    },
+    {
+      "path": "docs/plans/D-078-capture-prep.audit.md",
+      "sha256": "917d30cef3f239704e546c9bdd73df7ad2839650b1fcc6a85745a0eafc210695"
+    },
+    {
+      "path": "docs/plans/D-078-latency-metrics.md",
+      "sha256": "fbdd538902a47447d9db81a23e29d515866c671ca666992ef89a91d866354660"
+    },
+    {
+      "path": "docs/plans/D-078-latency-metrics.audit.md",
+      "sha256": "8d21613d9ec40110889031bb78fa485ca0f6ae2a422faacbd7810c5877592ac5"
+    },
+    {
+      "path": "docs/plans/D-078-product-actions.md",
+      "sha256": "04e83e6bd0606c98e4660e5f386cf903faad64484ab273f7a68164e7a29c176f"
+    },
+    {
+      "path": "docs/plans/D-078-product-actions.audit.md",
+      "sha256": "b35b5197bc442511b7adf9ec2540514c0bbb68c967e03979c5610f70a19bd3c2"
+    },
+    {
+      "path": "docs/plans/D-078-session-dashboard.md",
+      "sha256": "f76a6da5ee9a8de98bbf6996eeca4876002f2cb722ca3c845c5efb30899b3166"
+    },
+    {
+      "path": "docs/plans/D-078-session-dashboard.audit.md",
+      "sha256": "38eeaa56a128d0534dad38f454eb2f64ff6958c87f94ee32d35a3cbb352191f2"
+    },
+    {
+      "path": "docs/plans/D-078-session-plan.md",
+      "sha256": "f05c747d118a930d0888a223b4bfa20d4fcf331c14aef7d077b80301868a84f8"
+    },
+    {
+      "path": "docs/plans/D-078-session-plan.audit.md",
+      "sha256": "e5073d63feb9844b4f857704ce5cdafd7d3f3becdb14b2fde5d2c0a6388e6cf7"
+    },
+    {
+      "path": "docs/plans/D-078-session-prep.md",
+      "sha256": "189671e68f2e4de2ded3f52cd2e7b315c37013b9bbb37cb07a650c423850ccd7"
+    },
+    {
+      "path": "docs/plans/D-078-session-prep.audit.md",
+      "sha256": "47a8fd40aa20b71bf332ba6a87554232f03f2401a95b5729b3daa89b33f38755"
+    },
+    {
+      "path": "docs/plans/D-078.md",
+      "sha256": "b9607b4f09eb8d44ad3a7c7bc33759d9a7d2a4d7f88296e84cc4dbc2765c3e76"
+    },
+    {
+      "path": "docs/plans/D-078.audit.md",
+      "sha256": "c64cb3a4568ee6d0dfe5810097a2251444fe6c661e94c7a633cc99216ee3d40b"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-064-merchant-order-id.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-064-merchant-order-id.md",
+          "start": 1,
+          "end": 80
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-064-merchant-order-id.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-064-merchant-order-id.audit.md",
+          "start": 1,
+          "end": 93
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-064-pg-contract.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-064-pg-contract.md",
+          "start": 1,
+          "end": 71
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-064-pg-contract.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-064-pg-contract.audit.md",
+          "start": 1,
+          "end": 35
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-collector.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-collector.md",
+          "start": 1,
+          "end": 47
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-collector.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-collector.audit.md",
+          "start": 1,
+          "end": 35
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-constraints.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-constraints.md",
+          "start": 1,
+          "end": 90
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-constraints.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-constraints.audit.md",
+          "start": 1,
+          "end": 45
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-dlq-diagnostic.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-dlq-diagnostic.md",
+          "start": 1,
+          "end": 60
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-dlq-diagnostic.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-dlq-diagnostic.audit.md",
+          "start": 1,
+          "end": 54
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-lineage-writer.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-lineage-writer.md",
+          "start": 1,
+          "end": 65
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-lineage-writer.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-lineage-writer.audit.md",
+          "start": 1,
+          "end": 85
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-signed-gateway-execution.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-signed-gateway-execution.md",
+          "start": 1,
+          "end": 76
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-signed-gateway-execution.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-signed-gateway-execution.audit.md",
+          "start": 1,
+          "end": 36
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-075.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-075.md",
+          "start": 1,
+          "end": 58
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-075.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-075.audit.md",
+          "start": 1,
+          "end": 53
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-capture-prep.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-capture-prep.md",
+          "start": 1,
+          "end": 40
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-capture-prep.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-capture-prep.audit.md",
+          "start": 1,
+          "end": 21
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-latency-metrics.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-latency-metrics.md",
+          "start": 1,
+          "end": 48
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-latency-metrics.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-latency-metrics.audit.md",
+          "start": 1,
+          "end": 20
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-product-actions.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-product-actions.md",
+          "start": 1,
+          "end": 49
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-product-actions.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-product-actions.audit.md",
+          "start": 1,
+          "end": 25
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-session-dashboard.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-session-dashboard.md",
+          "start": 1,
+          "end": 43
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-session-dashboard.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-session-dashboard.audit.md",
+          "start": 1,
+          "end": 21
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-session-plan.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-session-plan.md",
+          "start": 1,
+          "end": 170
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-session-plan.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-session-plan.audit.md",
+          "start": 1,
+          "end": 21
+        },
+        {
+          "literal": "\n## /ship (세션 실행 결과)\n\n- PR https://github.com/Kimgyuilli/PeekCart/pull/230. consistency precheck 경고 0, 리뷰 처분 점검 ok, 커밋·본문·제목 문체 lint 통과, `docs-preservation-ci.py --base 312ff16` PASS.\n- 세션 2026-10-24 실행. S2 는 ADR-0037 bulkhead 로 재현 게이트가 구조적으로 실패해 사용자 결정으로 접었다. 세션 발견 11건은 D-106.\n- 갱신: TASKS D-078·D-065·D-092·D-075 상태 cell, D-106 등록, PHASE5 작업 이력, 계획서 15건 done 이동. D-078 은 열린 채 유지(완료 이동 없음).\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-session-prep.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-session-prep.md",
+          "start": 1,
+          "end": 44
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-session-prep.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-session-prep.audit.md",
+          "start": 1,
+          "end": 20
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078.md",
+          "start": 1,
+          "end": 57
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078.audit.md",
+          "start": 1,
+          "end": 26
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+d092_ops_test 2026-10-23T17:55:10Z
+{"message": "This endpoint has been removed. Please use `/apis/notifications.alerting.grafana.app/v1beta1/namespaces/{namespace}/receivers/{uid}/test` instead."}
+d092_ops_test 2026-10-23T17:55:23Z
+{"status":"success","duration":"416ms"}d092_user_order 2026-10-23T17:55:40Z
+1,"orderNumber":"ORD-20261023-668456FA","totalAmount":1001,"status":"PENDING","receiverName":"d092-canary","phone":"010-1234-5678","zipcode":"06234","address":"서울시 강남구","orderedAt":"2026-10-23T17:55:40.368535808","items":[{"id":1,"productId":1,"quantity":1,"unitPrice":1001}]}}
+order 201
+D-092: ops canary 17:55:23Z (Grafana receiver test success 416ms) + user canary order ORD-20261023-668456FA 17:55:40Z → 사용자 확인: 두 채널에 각 1건, 서로 다른 채널 (2026-10-24 KST)

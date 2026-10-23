@@ -1,0 +1,8 @@
+[DRAIN-PREFLIGHT] namespace=peekcart · drain 상한 564s · lag 재관측 간격 15s
+수집 실패 — fail-closed (부재는 안전의 증거가 아니다):
+  ! order: consumer group order-svc-dlq-group 의 lag 조회 실패
+  ! product: consumer group product-svc-dlq-group 의 lag 조회 실패
+  ! payment: consumer group payment-svc-dlq-group 의 lag 조회 실패
+  ! notification: consumer group notification-svc-dlq-group 의 lag 조회 실패
+[DRAIN-PREFLIGHT] 배포를 막는다. 조치는 docs/runbooks/dlq-recovery.md §6-R 을 따른다
+exit=1

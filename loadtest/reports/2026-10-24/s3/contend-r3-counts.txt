@@ -1,0 +1,16 @@
+## orders by status
+CANCELLED	3839
+PENDING	6272
+## order outbox
+order.created	PUBLISHED	10111
+order.cancelled	PUBLISHED	3839
+## product outbox
+stock.reservation.result	PUBLISHED	10107
+## dlq order
+0
+## dlq product
+4
+## reservations
+CANCEL_REQUESTED	4
+RELEASED	3835
+RESERVED	6272

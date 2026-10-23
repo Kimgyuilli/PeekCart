@@ -1,0 +1,16 @@
+{
+  "dashboard_uid": "peekcart-saga-messaging",
+  "panel_id": 16,
+  "title": "CPU 스로틀 (컨테이너별)",
+  "start": 1792773360,
+  "end": 1792773922,
+  "step_seconds": 15,
+  "rate_interval": "1m",
+  "targets": [
+    {
+      "expr": "sum by (container) (rate(container_cpu_cfs_throttled_seconds_total{namespace=\"peekcart\", container!=\"\", container!=\"POD\"}[1m]))",
+      "legendFormat": "{{container}}",
+      "result": []
+    }
+  ]
+}

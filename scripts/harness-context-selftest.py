@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Exercise the actual harness entrypoint in disposable git fixtures, without ops."""
+import hashlib
 import os
 import shlex
 import shutil
@@ -13,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = Path(os.environ.get('HARNESS_CONTEXT_TEST_SCRIPT', ROOT / 'scripts/harness-context.sh'))
 TASKS = 'docs/TASKS.md'
 DONE = 'docs/progress/TASKS-done.md'
+HISTORY_FIXTURES = ROOT / 'scripts/fixtures/harness-context'
 ACTIVE1 = '| D-900 | Docs | first fixture | source | 🔲 |\n'
 ACTIVE2 = '| D-901 | Docs | second fixture | source | 🔲 |\n'
 OLD1 = '| D-800 | Docs | first history | source | ✅ |\n'
@@ -315,6 +317,8 @@ exit "$HARNESS_TEST_TOOL_RC"
         # Execute the historical control from a repository with no such git objects.
         target = self.root / 'scripts/harness-context-selftest.py'
         target.write_bytes(Path(__file__).read_bytes())
+        # Byte fixtures are repository content; only the git object for the legacy checker is absent.
+        shutil.copytree(HISTORY_FIXTURES, self.root / HISTORY_FIXTURES.relative_to(ROOT))
         environment = self.env.copy()
         environment['HARNESS_CONTEXT_TEST_SCRIPT'] = str(self.root / 'scripts/harness-context.sh')
         result = subprocess.run([sys.executable, '-B', str(target),
@@ -325,12 +329,15 @@ exit "$HARNESS_TEST_TOOL_RC"
         self.assertIn('CalledProcessError', result.stderr)
 
     def test_original_d053_overwrite_and_recovery(self):
-        path = 'docs/progress/TASKS-done.md'
+        # The original commits lived only on the deleted PR #171 branch, so their
+        # docs/progress/TASKS-done.md bytes are kept as fixtures and pinned by git blob id.
         originals = {}
-        for revision, size, lines, debts in [('d5f1a2ac^', 67553, 59, 44),
-                                             ('d5f1a2ac', 875, 2, 1),
-                                             ('bf678c0c', 68427, 60, 45)]:
-            raw = subprocess.check_output(['git', 'show', revision + ':' + path], cwd=ROOT)
+        for revision, fixture, blob, size, lines, debts in [
+                ('d5f1a2ac^', 'TASKS-done-d5f1a2ac-parent.txt', '0d4de41cd15e3ee7784c189d5f7e2b35e72beed8', 67553, 59, 44),
+                ('d5f1a2ac', 'TASKS-done-d5f1a2ac.txt', '1fe0093a6ffade1cf4be22626b51a221539ac4db', 875, 2, 1),
+                ('bf678c0c', 'TASKS-done-bf678c0c.txt', '592412c4c64df8439dbb29cc8add981f93b4242d', 68427, 60, 45)]:
+            raw = (HISTORY_FIXTURES / fixture).read_bytes()
+            self.assertEqual(hashlib.sha1(b'blob %d\0' % len(raw) + raw).hexdigest(), blob, fixture)
             self.assertEqual((len(raw), len(raw.splitlines()), sum(l.startswith(b'| D-') for l in raw.splitlines())),
                              (size, lines, debts))
             originals[revision] = raw.decode('utf-8')

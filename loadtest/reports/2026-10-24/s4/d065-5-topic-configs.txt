@@ -1,0 +1,160 @@
+Dynamic configs for topic product.updated.dlq are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.failed are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic order.created.dlq are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic stock.approval.result are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.completed are:
+Dynamic configs for topic stock.compensation.requested are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.completed.dlq are:
+Dynamic configs for topic stock.compensation.requested.dlq are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic product.updated are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic stock.reservation.result are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.approval-recovery.requested are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.approval-recovery.requested.dlq are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic order.compensation.requested.dlq are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic order.compensation.requested are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic order.cancelled.dlq are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic order.cancelled are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic stock.approval-recovery.result.dlq are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic order.created are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.refunded are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.failed.dlq are:
+Dynamic configs for topic stock.approval-recovery.result are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic stock.approval-recovery.snapshot.dlq are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.requested are:
+Dynamic configs for topic payment.requested.dlq are:
+Dynamic configs for topic payment.approval-recovery.execute.dlq are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic stock.approval.result.dlq are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.approval-recovery.execute are:
+  cleanup.policy=delete sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=delete, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  message.timestamp.type=CreateTime sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.type=CreateTime, DEFAULT_CONFIG:log.message.timestamp.type=CreateTime}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  retention.ms=604800000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=604800000}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic stock.reservation.result.dlq are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=4194304, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=2097152 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=2097152, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}
+Dynamic configs for topic payment.refunded.dlq are:
+Dynamic configs for topic __consumer_offsets are:
+  cleanup.policy=compact sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:cleanup.policy=compact, DEFAULT_CONFIG:log.cleanup.policy=delete}
+  compression.type=producer sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:compression.type=producer, DEFAULT_CONFIG:compression.type=producer}
+  segment.bytes=104857600 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=104857600, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+Dynamic configs for topic stock.approval-recovery.snapshot are:
+  message.timestamp.before.max.ms=777600000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:message.timestamp.before.max.ms=777600000, DEFAULT_CONFIG:log.message.timestamp.before.max.ms=9223372036854775807}
+  retention.bytes=8388608 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.bytes=8388608, DEFAULT_CONFIG:log.retention.bytes=-1}
+  segment.bytes=4194304 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.bytes=4194304, DEFAULT_CONFIG:log.segment.bytes=1073741824}
+  segment.ms=86400000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:segment.ms=86400000}

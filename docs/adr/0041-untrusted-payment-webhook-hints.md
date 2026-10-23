@@ -44,4 +44,4 @@ Toss의 일반 PAYMENT_STATUS_CHANGED는 eventType과 중첩 data Payment 객체
 - [Toss webhook verification](https://docs.tosspayments.com/guides/v2/get-started/llms-quick-reference#72-webhooks)
 - [Toss idempotency status](https://docs.tosspayments.com/reference/using-api/authorization)
 - [ADR-0023](./0023-payment-approval-reconciliation.md)
-- [계획](../plans/D-064-pg-contract.md)
+- [계획](../plans/done/D-064-pg-contract.md)

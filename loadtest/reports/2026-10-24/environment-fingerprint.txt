@@ -1,0 +1,21 @@
+## cluster
+ERROR: (gcloud.container.clusters.describe) ResponseError: code=403, message=Permission denied on resource project project-5cd81b6a-35c0-4547-be8. This command is authenticated as rlarbdlf222@gmail.com which is the active account specified by the [core/account] property.
+## nodes
+N                                                 K                     OS                                   CR                   T
+gke-peekcart-d078-default-pool-2ac4221b-2r2t      v1.35.6-gke.1250001   Container-Optimized OS from Google   containerd://2.1.7   e2-standard-4
+gke-peekcart-d078-default-pool-2ac4221b-2vs1      v1.35.6-gke.1250001   Container-Optimized OS from Google   containerd://2.1.7   e2-standard-4
+gke-peekcart-d078-default-pool-2ac4221b-tpg4      v1.35.6-gke.1250001   Container-Optimized OS from Google   containerd://2.1.7   e2-standard-4
+gke-peekcart-d078-monitoring-pool-38efbb8c-v8rh   v1.35.6-gke.1250001   Container-Optimized OS from Google   containerd://2.1.7   e2-standard-2
+## helm
+NAME                 	NAMESPACE  	REVISION	UPDATED                             	STATUS  	CHART                         	APP VERSION
+csi-secrets-store    	kube-system	1       	2026-10-24 01:29:15.967323 +0900 KST	deployed	secrets-store-csi-driver-1.6.1	1.6.1      
+kube-prometheus-stack	monitoring 	1       	2026-10-24 01:31:25.021167 +0900 KST	deployed	kube-prometheus-stack-91.4.0  	v0.94.0    
+## s1 versions
+cluster peekcart-d078 created 2026-10-23T16:24:08Z..16:28:26Z GKE 1.35.6-gke.1250001 stable, e2-standard-4 x2 pd-balanced 50GB, dataplane-v2, WI
+monitoring-pool e2-standard-2 x1 taint peekcart.io/role=monitoring:NoSchedule
+csi secrets-store-csi-driver chart 1.6.1 (syncSecret=false, audience peekcart-d078.svc.id.goog), provider-gcp v1.17.0
+kube-prometheus-stack chart 91.4.0 (+values-measurement-isolation)
+loadgen peekcart-d078-loadgen e2-medium debian-12 10.178.0.5, k6 v2.2.0 (commit 00a9a1b7f5)
+helm v4.1.3, kubectl client 1.35.3
+## base commit
+312ff1682c5dae114d9cc91d359fac2c076383b1

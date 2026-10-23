@@ -1,0 +1,15 @@
+## orders by status
+CANCELLED	3180
+PENDING	7021
+## order outbox
+order.created	PUBLISHED	10201
+order.cancelled	PUBLISHED	3180
+## product outbox
+stock.reservation.result	PUBLISHED	10201
+## dlq order
+0
+## dlq product
+0
+## reservations
+RELEASED	3180
+RESERVED	7021
