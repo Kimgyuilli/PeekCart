@@ -1,0 +1,6 @@
+negative_stock_rows
+0
+status	cnt
+CANCEL_REQUESTED	4
+RELEASED	3835
+RESERVED	6272

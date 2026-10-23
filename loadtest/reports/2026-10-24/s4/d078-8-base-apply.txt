@@ -1,0 +1,24 @@
+## rendered mysql limits.cpu (k8s/overlays/gke)
+{'limits': {'cpu': '2000m', 'memory': '1Gi'}, 'requests': {'cpu': '250m', 'memory': '512Mi'}}
+## running mysql pod
+mysql-74f6f4cb4f-k5jdh {"limits":{"cpu":"2","memory":"1Gi"},"requests":{"cpu":"250m","memory":"512Mi"}}
+## hpa
+NAME            REFERENCE                  TARGETS        MINPODS   MAXPODS   REPLICAS   AGE
+gateway         Deployment/gateway         cpu: 3%/60%    2         4         2          2m6s
+order-service   Deployment/order-service   cpu: 29%/60%   1         3         1          2m6s
+## images
+gateway-d4bddfd6c-b6hkl	asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/gateway@sha256:8707b330ffbe90463c5b6ca951582d5fc89001dbf594fc0d5b2033e4c124322f
+gateway-d4bddfd6c-m4zhw	asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/gateway@sha256:8707b330ffbe90463c5b6ca951582d5fc89001dbf594fc0d5b2033e4c124322f
+kafka-7fd9dc8784-ccsbr	docker.io/apache/kafka@sha256:22c4bea38875408e8f9fe52aca8e3a6ee67f9aa0090db59af99a2f6647558db5
+mysql-74f6f4cb4f-k5jdh	docker.io/library/mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+notification-service-64495b4db4-tfk7h	asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/notification-service@sha256:7cfb7fd6c7bc865400a2206f30fc04acae698845558da4efccc858356d8ee90e
+order-service-bd55549fc-q4p28	asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/order-service@sha256:16920c6452e1c33c3404e79b98394b0d18027aa34e86a55617bd480ef5712261
+payment-service-78746d8979-fkrf2	asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/payment-service@sha256:a4d00271813afe1394732341b09bc4583027adb6fb01cce82db959006dc6c2df
+product-service-65979c7969-stpsq	asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/product-service@sha256:1676fd57a17d31af65cd2baf1491ac474cce51f26948d5b8906c1ab5508e69e2
+redis-7456fd985-npkvh	docker.io/library/redis@sha256:1009f15ccd9ed271996d1c65745a1ab1dadedea188feb3f1ab938602a32e50a3
+user-service-8566584dd7-6x2f5	asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/user-service@sha256:2e710d6ff4c9a26461dbf9c166ac8ea65f003d88d1ddb315b54ba29bb33af06a
+[AUTH-GATE] FATAL (1) 로그인 실패 — 토큰을 얻지 못했다. 계정 시드/발급 경로를 먼저 확인하라.
+[AUTH-GATE]   응답: 
+[AUTH-GATE] (1) 로그인 OK
+[AUTH-GATE] (2) 보호 경로 200 OK — 인증 왕복 성립
+[AUTH-GATE] PASS

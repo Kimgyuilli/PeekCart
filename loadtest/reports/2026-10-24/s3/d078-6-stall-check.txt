@@ -1,0 +1,12 @@
+contend-r1 p2 targets: ['{{application}} success', '{{application}} failure']
+  order-service: pending>0 8 steps(15s), publish_rate==0 among them 0 [], max_pending 4332, max_rate 62.2/s
+  product-service: pending>0 21 steps(15s), publish_rate==0 among them 0 [], max_pending 3231, max_rate 20.0/s
+contend-r2 p2 targets: ['{{application}} success', '{{application}} failure']
+  order-service: pending>0 15 steps(15s), publish_rate==0 among them 0 [], max_pending 8104, max_rate 81.2/s
+  product-service: pending>0 36 steps(15s), publish_rate==0 among them 1 [1792775948], max_pending 13110, max_rate 20.6/s
+contend-r3 p2 targets: ['{{application}} success', '{{application}} failure']
+  order-service: pending>0 17 steps(15s), publish_rate==0 among them 1 [1792776299], max_pending 9181, max_rate 82.8/s
+  product-service: pending>0 43 steps(15s), publish_rate==0 among them 1 [1792776629], max_pending 17870, max_rate 20.0/s
+spread-r1 p2 targets: ['{{application}} success', '{{application}} failure']
+  order-service: pending>0 14 steps(15s), publish_rate==0 among them 0 [], max_pending 7725, max_rate 85.4/s
+  product-service: pending>0 40 steps(15s), publish_rate==0 among them 1 [1792776634], max_pending 21478, max_rate 20.0/s

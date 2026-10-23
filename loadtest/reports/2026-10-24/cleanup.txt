@@ -1,0 +1,51 @@
+=== Phase 3 Task 3-4 정리 시작 (Sat Oct 24 03:09:28 KST 2026) ===
+cluster=peekcart-d078  loadgen=peekcart-d078-loadgen  zone=asia-northeast3-a  region=asia-northeast3
+--- 1) GKE 클러스터 삭제 ---
+[exec] gcloud container clusters delete peekcart-d078 --zone=asia-northeast3-a --quiet
+Deleting cluster peekcart-d078...
+............................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................done.
+Deleted [https://container.googleapis.com/v1/projects/peekcart-d078/zones/asia-northeast3-a/clusters/peekcart-d078].
+--- 2) 부하 발생기 VM 삭제 ---
+[exec] gcloud compute instances delete peekcart-d078-loadgen --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/instances/peekcart-d078-loadgen].
+--- 3) Orphan Persistent Disk 회수 ---
+미부착 disk:
+  pvc-77a0eb2d-5485-41f1-bf66-cf1d9cbdfcc6
+  pvc-c40bbc9c-49b6-4687-9c58-c0bb5dd4dbd1
+  pvc-da5a99bb-d84b-45f0-812d-f881a938f8d9
+  pvc-f119bd53-aa92-41c1-acec-1e2dd6474e2a
+[exec] gcloud compute disks delete pvc-77a0eb2d-5485-41f1-bf66-cf1d9cbdfcc6 --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/disks/pvc-77a0eb2d-5485-41f1-bf66-cf1d9cbdfcc6].
+[exec] gcloud compute disks delete pvc-c40bbc9c-49b6-4687-9c58-c0bb5dd4dbd1 --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/disks/pvc-c40bbc9c-49b6-4687-9c58-c0bb5dd4dbd1].
+[exec] gcloud compute disks delete pvc-da5a99bb-d84b-45f0-812d-f881a938f8d9 --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/disks/pvc-da5a99bb-d84b-45f0-812d-f881a938f8d9].
+[exec] gcloud compute disks delete pvc-f119bd53-aa92-41c1-acec-1e2dd6474e2a --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/disks/pvc-f119bd53-aa92-41c1-acec-1e2dd6474e2a].
+--- 4) 예약 IP (reserved addresses) 회수 ---
+미사용 예약 IP 없음
+--- 5) 잔여 0 검증 ---
+  [0] clusters
+  [0] instances
+  [0] disks
+  [0] addresses
+  [0] forwarding-rules
+  [0] backend-services
+  [0] health-checks
+=== 정리 완료 ===
+과금 재확인: 내보내기 적재 후 위 주석의 bq 쿼리 또는 콘솔 리포트로 직전 세션 비용을 본다.
+Deleted repository [peekcart].
+Listed 0 items.
+## kept
+peekcart-gateway-internal-signing-key
+peekcart-slack-ops-webhook
+peekcart-slack-user-webhook
+peekcart-user-jwt-signing-key
+peekcart-user-signer@peekcart-d078.iam.gserviceaccount.com
+peekcart-gateway-signer@peekcart-d078.iam.gserviceaccount.com
+Listed 0 items.
+billingEnabled: false
+name: projects/peekcart-d078/billingInfo
+projectId: peekcart-d078
+False
+unlink 2026-10-23T18:15:49Z
