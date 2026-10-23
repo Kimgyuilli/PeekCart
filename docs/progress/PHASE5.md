@@ -940,3 +940,11 @@ D-106 11건 중 재측정 최소 조건이면서 과금 없이 고칠 수 있는
 포트를 고쳐도 정상 스택은 막혔다. 4서비스 컨슈머는 `auto-offset-reset: earliest` 라 레코드가 없는 DLQ 파티션에 커밋이 생기지 않는다(Spring Kafka 3.3.14 jar 확인). 사용자 승인으로 `CURRENT-OFFSET -`·`LOG-END-OFFSET 0`·`LAG -` 행만 lag 0 으로 세고, 그 밖의 미확인 값은 계속 막는다(ADR-0022 Update Log). 실제 Kafka lab 에서 같은 컨슈머의 `0 - 0 -` 통과와 레코드 1건 뒤 `0 - 1 -` 차단을 확인했다.
 
 측정 overlay 진입점 5개에 ServiceMonitor 를 넣고 lint 범위를 측정 overlay 6개로 넓혔다. 측정 절차에는 관측 스택 선행, payment Toss smoke 주입, 빈 스택의 시드 뒤 인증 게이트, 배포 직후 워밍업 run 규칙을 넣었다. 남은 것은 ①⑦ 설계 확정, ⑥(D-075), ⑩ 원인 분리, ②⑤ 다. 워밍업 횟수는 재측정 계획에서 정하고, 실제 스택 확인은 D-078 재측정에서 한다.
+
+## 2026-10-24 — CI 임계경로 단축과 문서 전용 PR skip
+
+[PR231](https://github.com/Kimgyuilli/PeekCart/pull/231). PR CI 19분의 임계경로는 lint 4.4분, images, e2e scenarios 12.1분이 이어진 한 줄이었다(run 40007646179). test 샤드는 최장 5분으로 이 경로 밖이라, 검사를 줄이지 않고 직렬 구간을 끊었다. images 는 lint 대신 새 `changes` job 만 기다리고, e2e 는 scenarios(a,b,c,d,f)·fence(e)·negative-control 세 러너로 나눴다. E2E 증적 대조는 gate 에서 두 시나리오 러너의 합집합으로 한다. 문서만 바꾼 PR 은 test·guards·images·e2e 가 skipped 이고 gate 는 그것이 정확히 skipped 인지 본다. PR 217 전용 job 은 지웠다. 결정은 ADR-0044(ADR-0030 D1 부분 대체)다.
+
+#231 의 PR CI 두 번은 15.1분·14.8분이었다(이전 약 19분). e2e 세 러너와 gate 의 합집합 증적 대조(35행)는 두 번 다 통과했다. 목표 10~11분에 못 미친 원인은 둘이다. e2e 의 이미지 artifact 다운로드가 6회 중 4회 2~5분이었고(직전 성공 실행 12개는 24회 모두 49초 이하, 원인 미확정), 시나리오 e 는 단독 실행에서 약 5.4분으로 이어 돌 때보다 1분 길었다.
+
+미충족: 문서 전용 경로는 다음 문서 PR 에서 처음 실제로 돈다. 다운로드 지연은 병합 후 실행을 더 보고 판단한다.

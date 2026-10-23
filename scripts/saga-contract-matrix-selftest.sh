@@ -280,6 +280,21 @@ PYEOF2
 expect "e2e: 같은 시나리오 manifest 2개" fail e2e "$TMP/e-ok.tsv"
 rm -f "$MAN/manifest-z2.json"
 
+# CI 는 시나리오를 러너별 디렉터리로 나눠 넘긴다 — 합집합으로 대조하고, 디렉터리를
+# 넘나드는 중복도 디렉터리 안의 중복처럼 잡아야 한다
+MAN2="$TMP/manifests-2"
+mkdir -p "$MAN2"
+mv "$MAN/manifest-z.json" "$MAN2/manifest-z.json"
+expect "e2e: 증적이 다른 디렉터리에 있음" pass \
+  env SAGA_MATRIX="$TMP/e-ok.tsv" bash "$LINT" --e2e-evidence "$MAN,$MAN2"
+expect "e2e: 증적 디렉터리 누락" fail e2e "$TMP/e-ok.tsv"
+manifest z success '{"thing":{"actual":{"a":1,"b":"x"}}}' ""
+expect "e2e: 디렉터리 간 같은 시나리오 manifest 2개" fail \
+  env SAGA_MATRIX="$TMP/e-ok.tsv" bash "$LINT" --e2e-evidence "$MAN,$MAN2"
+expect "e2e: 없는 디렉터리 지정" fail \
+  env SAGA_MATRIX="$TMP/e-ok.tsv" bash "$LINT" --e2e-evidence "$MAN,$TMP/absent"
+rm -f "$MAN2"/*.json
+
 rm -f "$MAN"/*.json
 expect "e2e: manifest 없음" fail e2e "$TMP/e-ok.tsv"
 

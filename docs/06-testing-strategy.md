@@ -58,9 +58,11 @@ scenario_e는 `stock_reservations.expires_at` 저장값을 과거로 바꿔 만�
 [38991415193](https://github.com/Kimgyuilli/PeekCart/actions/runs/38991415193)의 여섯 시나리오 잡은 시작부터
 끝까지 714초였다. 전자는 개별 단계 합계이고 후자는 잡 wall time이므로 같은 측정값처럼 비교하지 않는다.
 
-**PR 필수 체크 `gate` 는 최종 집계자다 (see ADR-0030).** `lint`·`test`·`guards`·
-`images`(6개 health smoke)·`e2e`(시나리오와 음성 대조군)의 실패·skip 중 하나라도
-있으면 실패한다. 이미지 빌드와 JVM 테스트는 병렬로 진행하고, main push 의 GHCR
+**PR 필수 체크 `gate` 는 최종 집계자다 (see ADR-0030, ADR-0044).** `changes`·`lint`·`test`·`guards`·
+`images`(6개 health smoke)·`e2e`(시나리오 두 러너와 음성 대조군)의 실패·skip 중 하나라도
+있으면 실패한다. 예외는 문서 전용 PR 하나다 — `changes` 가 `code=false` 로 판정하면
+`test`·`guards`·`images`·`e2e` 는 정확히 skipped 여야 한다. E2E 증적 대조는 두 시나리오
+러너 증적의 합집합으로 `gate` 에서 한다. 이미지 빌드와 JVM 테스트는 병렬로 진행하고, main push 의 GHCR
 `publish` 는 `gate` 성공 뒤에만 시작한다. e2e 와 publish 는 빌드 artifact 의 checksum 과
 이미지 ID(config digest)를 확인한다. SHA 태그로 push 한 원격 manifest 의 config digest 를
 같은 ID 와 대조한 뒤, 그 manifest digest 그대로 `latest` 를 승격한다.

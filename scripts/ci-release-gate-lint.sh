@@ -15,8 +15,24 @@ except ImportError:
     print("[CRG-000] pyyaml 부재", file=sys.stderr)
     sys.exit(2)
 
-REQUIRED = ("lint", "test", "guards", "images", "e2e")
+REQUIRED = ("changes", "lint", "test", "guards", "images", "e2e")
+# 문서 전용 PR(changes.outputs.code == 'false')에서 건너뛰는 job. 그때는 정확히 skipped 여야 한다.
+HEAVY = ("test", "guards", "images", "e2e")
 RESULTS = ("success", "failure", "skipped", "cancelled")
+# '' 는 판정 출력 누락(changes 실패·출력 이름 오타)이다. 코드 변경으로 취급해야 한다.
+CODES = ("true", "false", "")
+CODE_REF = "needs.changes.outputs.code"
+SKIP_IF = "needs.changes.outputs.code == 'true'"
+
+
+def expected_failure(results, code, cancelled):
+    # 전파 조건의 oracle. 조건식을 이것과 전수 대조한다.
+    if cancelled:
+        return False
+    if results["changes"] != "success" or results["lint"] != "success":
+        return True
+    want = "skipped" if code == "false" else "success"
+    return any(results[job] != want for job in HEAVY)
 
 
 def propagation_condition(condition):
@@ -27,7 +43,7 @@ def propagation_condition(condition):
     source = condition.strip()
     if source.startswith("${{") and source.endswith("}}"):
         source = source[3:-2].strip()
-    token = re.compile(r"\s*(needs\.[a-z0-9]+\.result|'[a-zA-Z]+'|cancelled|true|false|!=|==|&&|\|\||[!()])")
+    token = re.compile(r"\s*(needs\.[a-z0-9]+\.result|needs\.changes\.outputs\.code|'[a-zA-Z]+'|cancelled|true|false|!=|==|&&|\|\||[!()])")
     tokens = []
     offset = 0
     while offset < len(source):
@@ -62,6 +78,11 @@ def propagation_condition(condition):
             return ("cancelled",)
         if value in ("true", "false"):
             return (value,)
+        if value == CODE_REF:
+            operator, literal = take(), take()
+            if operator in ("==", "!=") and literal.startswith("'") and literal[1:-1].lower() in ("true", "false"):
+                return ("code", operator, literal[1:-1].lower())
+            raise ValueError(f"지원하지 않는 판정 출력 비교: {value} {operator} {literal}")
         if value.startswith("needs."):
             job = value.split(".")[1]
             operator, result = take(), take()
@@ -92,14 +113,17 @@ def propagation_condition(condition):
     return tree
 
 
-def evaluate(node, results, cancelled):
+def evaluate(node, results, cancelled, code=""):
     operator = node[0]
     if operator == "&&":
-        return evaluate(node[1], results, cancelled) and evaluate(node[2], results, cancelled)
+        return evaluate(node[1], results, cancelled, code) and evaluate(node[2], results, cancelled, code)
     if operator == "||":
-        return evaluate(node[1], results, cancelled) or evaluate(node[2], results, cancelled)
+        return evaluate(node[1], results, cancelled, code) or evaluate(node[2], results, cancelled, code)
     if operator == "!":
-        return not evaluate(node[1], results, cancelled)
+        return not evaluate(node[1], results, cancelled, code)
+    if operator == "code":
+        equal = code == node[2]
+        return equal if node[1] == "==" else not equal
     if operator in ("==", "!="):
         equal = results[node[1]] == node[2]
         return equal if operator == "==" else not equal
@@ -131,8 +155,21 @@ def validate(doc):
     gate, images, e2e, publish = (jobs[name] for name in ("gate", "images", "e2e", "publish"))
     if set(needs(gate)) != set(REQUIRED) or len(needs(gate)) != len(REQUIRED):
         bad("CRG-002", f"gate.needs 는 {REQUIRED} 정확히여야 한다")
-    if needs(images) != ["lint"] or needs(e2e) != ["images"]:
-        bad("CRG-002", "images→e2e 의존과 JVM 테스트 병렬성이 바뀌었다")
+    if any(needs(jobs[name]) != ["changes"] for name in ("test", "guards", "images")) or needs(e2e) != ["images"]:
+        bad("CRG-002", "test·guards·images 는 changes 만, e2e 는 images 만 기다려야 한다(lint 직렬화 금지)")
+    if any(jobs[name].get("if") != SKIP_IF for name in ("test", "guards", "images")) or e2e.get("if"):
+        bad("CRG-007", f"문서 전용 skip 조건은 test·guards·images 에 정확히 `{SKIP_IF}` 여야 한다(e2e 는 images 에서 전이)")
+    changes = jobs["changes"]
+    classify = step(changes, "Classify changed paths")
+    classify_run = classify.get("run", "")
+    if (changes.get("if") or classify.get("if") or changes.get("continue-on-error") or classify.get("continue-on-error")
+            or changes.get("outputs", {}).get("code") != "${{ steps.classify.outputs.code }}"
+            or classify.get("id") != "classify"):
+        bad("CRG-007", "changes 판정이 항상 돌고 그 출력이 code 로 나가야 한다")
+    for token in ('[ "$EVENT_NAME" != "pull_request" ]', 'echo "code=true" | tee -a "$GITHUB_OUTPUT"',
+                  "git diff --no-renames --name-only HEAD^1 HEAD", "bash scripts/ci-docs-only.sh"):
+        if token not in classify_run:
+            bad("CRG-007", f"changes 판정 계약 누락: {token}")
     if needs(publish) != ["gate"]:
         bad("CRG-002", "publish 는 최종 gate 만 기다려야 한다")
     if gate.get("if") != "${{ !cancelled() }}":
@@ -145,10 +182,10 @@ def validate(doc):
         tree = propagation_condition(condition)
         for values in itertools.product(RESULTS, repeat=len(REQUIRED)):
             results = dict(zip(REQUIRED, values))
-            for cancelled in (False, True):
-                expected = not cancelled and any(value != "success" for value in values)
-                if evaluate(tree, results, cancelled) != expected:
-                    raise ValueError(f"전파 판정 불일치: results={results}, cancelled={cancelled}, 기대={expected}")
+            for code, cancelled in itertools.product(CODES, (False, True)):
+                expected = expected_failure(results, code, cancelled)
+                if evaluate(tree, results, cancelled, code) != expected:
+                    raise ValueError(f"전파 판정 불일치: results={results}, code={code!r}, cancelled={cancelled}, 기대={expected}")
     except ValueError as error:
         bad("CRG-003", str(error))
     if prop.get("continue-on-error", False) is not False:
@@ -159,11 +196,11 @@ def validate(doc):
         bad("CRG-002", "publish 는 main push 전용이어야 한다")
     if publish.get("permissions", {}).get("packages") != "write":
         bad("CRG-002", "publish 의 GHCR 쓰기 권한이 없다")
-    for name in ("lint", "test", "guards", "gate", "images", "e2e"):
+    for name in ("changes", "lint", "test", "guards", "gate", "images", "e2e"):
         if jobs[name].get("permissions", {}).get("packages") == "write":
             bad("CRG-002", f"{name} 에 불필요한 GHCR 쓰기 권한이 있다")
-    if e2e.get("strategy", {}).get("matrix", {}).get("mode") != ["scenarios", "negative-control"]:
-        bad("CRG-002", "e2e 두 모드가 모두 필수가 아니다")
+    if e2e.get("strategy", {}).get("matrix", {}).get("mode") != ["scenarios", "fence", "negative-control"]:
+        bad("CRG-002", "e2e 세 모드가 모두 필수가 아니다")
 
     smoke_step = step(images, "Health smoke")
     smoke = smoke_step.get("run", "")
@@ -231,13 +268,20 @@ if sys.argv[2] == "--self-test":
         step(doc["jobs"][job], name)[field] = value
 
     original = step(workflow["jobs"]["gate"], "Propagate upstream failure")["if"]
+
+    def heavy(operator, result, joiner):
+        return "(" + joiner.join(f"needs.{job}.result {operator} '{result}'" for job in HEAVY) + ")"
+
     comparisons = [f"needs.{job}.result != 'success'" for job in REQUIRED]
     positives = {
         "wrapper 없는 조건": original[3:-2].strip(),
-        "순서와 공백 변경": "${{ ! cancelled ( ) && ( " + " ||\n".join(reversed(comparisons)) + " ) }}",
-        "드모르간 동치": "${{ !cancelled() && !(" + " && ".join(
-            f"needs.{job}.result == 'success'" for job in REQUIRED) + ") }}",
-        "대문자 문자열 비교": original.replace("'success'", "'SUCCESS'"),
+        "순서와 공백 변경": "${{ ! cancelled ( ) && ( ( needs.changes.outputs.code == 'false' && "
+            + heavy("!=", "skipped", " ||\n") + " ) || ( needs.changes.outputs.code != 'false' && "
+            + heavy("!=", "success", " || ") + " ) || needs.lint.result != 'success' || needs.changes.result != 'success' ) }}",
+        "드모르간 동치": "${{ !cancelled() && !(needs.changes.result == 'success' && needs.lint.result == 'success'"
+            " && (needs.changes.outputs.code == 'false' || " + heavy("==", "success", " && ") + ")"
+            " && (needs.changes.outputs.code != 'false' || " + heavy("==", "skipped", " && ") + ")) }}",
+        "대문자 문자열 비교": original.replace("'success'", "'SUCCESS'").replace("'false'", "'FALSE'"),
     }
     for label, condition in positives.items():
         changed = copy.deepcopy(workflow)
@@ -279,7 +323,15 @@ if sys.argv[2] == "--self-test":
                     d, "gate", "Propagate upstream failure", "if", original.replace(
                         f"needs.{job}.result != 'success'",
                         f"(needs.{job}.result != 'success' && needs.{job}.result != '{result}')")), "CRG-003")
+    for job in HEAVY:
+        mutations[f"문서 전용에서 {job} 실행 허용"] = (
+            lambda d, job=job: change_step(d, "gate", "Propagate upstream failure", "if", original.replace(
+                f"needs.{job}.result != 'skipped'", "false")), "CRG-003")
     for label, condition in {
+        "판정 누락을 문서 전용으로 취급": original.replace("needs.changes.outputs.code != 'false'", "needs.changes.outputs.code == 'true'"),
+        "문서 전용에서 실패만 전파": original.replace("!= 'skipped'", "== 'failure'"),
+        "판정 출력 비교 반전": original.replace("needs.changes.outputs.code == 'false'", "needs.changes.outputs.code != 'false'"),
+        "판정 출력 미지원 값": original.replace("needs.changes.outputs.code == 'false'", "needs.changes.outputs.code == 'docs'"),
         "OR 전체를 AND로 변경": original.replace("||", "&&"),
         "OR 하나를 AND로 변경": original.replace("||", "&&", 1),
         "취소 가드 괄호 삭제": original.replace("&& (", "&& ").replace(") }}", " }}"),
@@ -303,6 +355,17 @@ if sys.argv[2] == "--self-test":
     mutations.update({
         "필수 gate 이름 변경": (lambda d: d["jobs"].__setitem__("final_gate", d["jobs"].pop("gate")), "CRG-001"),
         "publish gate 우회": (lambda d: d["jobs"]["publish"].update(needs=["images"]), "CRG-002"),
+        "images lint 직렬화": (lambda d: d["jobs"]["images"].update(needs=["changes", "lint"]), "CRG-002"),
+        "test 판정 미대기": (lambda d: d["jobs"]["test"].update(needs=[]), "CRG-002"),
+        "images skip 조건 삭제": (lambda d: d["jobs"]["images"].pop("if"), "CRG-007"),
+        "guards skip 조건 반전": (lambda d: d["jobs"]["guards"].update({"if": "needs.changes.outputs.code != 'true'"}), "CRG-007"),
+        "e2e 독자 skip": (lambda d: d["jobs"]["e2e"].update({"if": SKIP_IF}), "CRG-007"),
+        "판정 출력 배선 누락": (lambda d: d["jobs"]["changes"].update(outputs={}), "CRG-007"),
+        "판정 실패 무시": (lambda d: change_step(d, "changes", "Classify changed paths", "continue-on-error", True), "CRG-007"),
+        "push 판정 생략 삭제": (lambda d: change_step(d, "changes", "Classify changed paths", "run",
+            step(d["jobs"]["changes"], "Classify changed paths")["run"].replace('echo "code=true" | tee -a "$GITHUB_OUTPUT"', "true")), "CRG-007"),
+        "rename 감지로 삭제 경로 누락": (lambda d: change_step(d, "changes", "Classify changed paths", "run",
+            step(d["jobs"]["changes"], "Classify changed paths")["run"].replace("--no-renames ", "")), "CRG-007"),
         "PR publish 허용": (lambda d: d["jobs"]["publish"].__setitem__("if", "always()"), "CRG-002"),
         "gate 실패 무시": (lambda d: d["jobs"]["gate"].update(**{"continue-on-error": True}), "CRG-003"),
         "e2e 대조군 삭제": (lambda d: d["jobs"]["e2e"]["strategy"]["matrix"].update(mode=["scenarios"]), "CRG-002"),
@@ -335,7 +398,7 @@ if sys.argv[2] == "--self-test":
             sys.exit(1)
     print(f"ci-release-gate-lint self-test OK ({len(mutations)}/{len(mutations)} mutations, "
           f"{len(positives) + 2} valid workflows, {len(parser_cases)} parser cases, "
-          f"{len(RESULTS) ** len(REQUIRED) * 2} result/cancellation combinations per valid condition)")
+          f"{len(RESULTS) ** len(REQUIRED) * len(CODES) * 2} result/code/cancellation combinations per valid condition)")
 else:
-    print("ci-release-gate-lint OK (최종 gate · 이미지 승격)")
+    print("ci-release-gate-lint OK (최종 gate · 문서 전용 skip · 이미지 승격)")
 PY

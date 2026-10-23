@@ -52,7 +52,7 @@
 | [0027](./0027-mysql-cpu-limit-baseline.md) | base MySQL CPU 상한 = 2000m — 공통 읽기/쓰기 천장의 해제 (D-029) | Accepted | Phase 4 | 02 |
 | [0028](./0028-integration-test-container-lifecycle.md) | 통합 테스트 컨테이너 수명 = 모듈 싱글톤 — per-class 재부팅 폐기 | Accepted | Phase 5 | 06, CLAUDE.md |
 | [0029](./0029-test-autonomous-writer-policy.md) | 테스트에서 자율 writer(스케줄러 · Kafka 리스너)는 기본 off + opt-in | Accepted | Phase 5 | 06, CLAUDE.md |
-| [0030](./0030-ci-final-gate-and-image-promotion.md) | CI 최종 게이트와 검증 이미지 승격 계약 | Accepted | Phase 5 | 06 |
+| [0030](./0030-ci-final-gate-and-image-promotion.md) | CI 최종 게이트와 검증 이미지 승격 계약 (ADR-0044 로 D1 부분 무효화) | Partially Superseded | Phase 5 | 06 |
 | [0031](./0031-e2e-fault-injection-boundary.md) | e2e 음성 대조군의 결함 주입 경계 (스택 바깥 주입 · 실패 지점 특정 · 유도한 부재 창) | Accepted | Phase 5 | 06 |
 | [0032](./0032-e2e-jvm-verification-responsibility.md) | 실제 스택 e2e 와 JVM 테스트의 검증 책임 경계 (배선은 스택 · 로직은 JVM · 결함 주입으로만 중복 인정) | Accepted | Phase 5 | 06 |
 | [0033](./0033-shared-messaging-module.md) | Outbox · 멱등성 · DLQ 원장 실행 세트의 공유 모듈 승격 (`peekcart-common-messaging` · 스키마는 서비스 소유 유지) | Accepted | Phase 5 | 02 |
@@ -64,4 +64,5 @@
 | [0041](./0041-untrusted-payment-webhook-hints.md) | 일반 결제 웹훅의 제한된 비신뢰 신호 접수 | Accepted | Phase 5 | 03, 06 |
 | [0042](./0042-canonical-pg-order-identity.md) | Checkout부터 복구까지 유지하는 PG 주문 식별자 | Accepted | Phase 5 | 03, 05, 06 |
 | [0043](./0043-dlq-preallocated-lineage-identity.md) | DLQ 최초 INSERT의 lineage와 ID 예약 | Accepted | Phase 5 | 05, 06 |
+| [0044](./0044-ci-critical-path-and-docs-only-skip.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 (ADR-0030 D1 부분 무효화) | Accepted | Phase 5 | 06 |
 <!-- INDEX:END -->
