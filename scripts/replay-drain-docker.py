@@ -60,7 +60,7 @@ def owned_exec(owner, service, args, input=None, timeout=30):
 
 
 def kafka(owner, args, input=None):
-    return owned_exec(owner, "kafka", ["/opt/kafka/bin/" + args[0], "--bootstrap-server", "localhost:9092", *args[1:]], input)
+    return owned_exec(owner, "kafka", ["/opt/kafka/bin/" + args[0], "--bootstrap-server", "localhost:29092", *args[1:]], input)
 
 
 def mysql(owner, service, sql):
@@ -122,7 +122,7 @@ def adapter(args):
         result = mysql(owner, service, query)
     else:
         require(args[:8] == ["exec", "deploy/kafka", "--", "/opt/kafka/bin/kafka-consumer-groups.sh",
-                            "--bootstrap-server", "localhost:9092", "--describe", "--group"] and len(args) == 9,
+                            "--bootstrap-server", "localhost:29092", "--describe", "--group"] and len(args) == 9,
                 "unexpected Kafka command")
         group = args[8]
         require(re.fullmatch(r"[a-z0-9.-]+", group) is not None, "unexpected fixture group")
@@ -145,11 +145,11 @@ def adapter(args):
     return result.returncode
 
 
-def assigned_without_commit(members, offsets):
+def assigned_without_commit(members, offsets, log_end):
     member_rows = [line.split() for line in members.splitlines()]
     offset_rows = [line.split() for line in offsets.splitlines()]
     return (any(len(row) >= 6 and row[0] == "order-no-commit" and row[4] == "1" for row in member_rows)
-            and any(len(row) >= 6 and row[:4] == ["order-no-commit", "collector.no-commit", "0", "-"]
+            and any(row[:6] == ["order-no-commit", "collector.no-commit", "0", "-", log_end, "-"]
                     for row in offset_rows))
 
 
@@ -259,6 +259,7 @@ def lab(evidence):
         scenario("second-sample-missing", 1, "lag 재조회 실패")
         reset_group(GROUP)
         # A real assigned consumer deliberately never commits. This is not a fabricated '-' row.
+        # Empty partition first ("- 0 -", the shape of a never-used DLQ intake partition), then one record ("- 1 -").
         topic = "collector.no-commit"
         result["stage"] = "no-commit-topic-create"
         created = kafka(owner, ["kafka-topics.sh", "--create", "--topic", topic, "--partitions", "1", "--replication-factor", "1"])
@@ -268,31 +269,46 @@ def lab(evidence):
         require(created.returncode == 0, "no-commit topic creation failed")
         result["stage"] = "no-commit-consumer-start"
         started_consumer = run(["docker", "exec", "-d", owner["containers"]["kafka"], "sh", "-c",
-                               "exec /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 "
+                               "exec /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:29092 "
                                "--topic collector.no-commit --group order-no-commit --consumer-property enable.auto.commit=false "
                                "--timeout-ms 120000 > /tmp/collector-no-commit.log 2>&1"])
         (evidence / "no-commit-start.stdout").write_text(started_consumer.stdout)
         (evidence / "no-commit-start.stderr").write_text(started_consumer.stderr)
         save(evidence / "no-commit-start.json", {"exit": started_consumer.returncode})
         require(started_consumer.returncode == 0, "no-commit consumer launch failed")
+
+        def await_uncommitted(log_end, name):
+            deadline = time.monotonic() + 40
+            while True:
+                members = kafka(owner, ["kafka-consumer-groups.sh", "--describe", "--members", "--verbose", "--group", "order-no-commit"])
+                (evidence / "no-commit-members-last.stdout").write_text(members.stdout)
+                (evidence / "no-commit-members-last.stderr").write_text(members.stderr)
+                with (evidence / "no-commit-members-attempts.jsonl").open("a") as stream:
+                    stream.write(json.dumps({"logEnd": log_end, "exit": members.returncode,
+                                             "remainingSeconds": deadline - time.monotonic()}) + "\n")
+                offsets = kafka(owner, ["kafka-consumer-groups.sh", "--describe", "--group", "order-no-commit"])
+                (evidence / "no-commit-offsets-last.stdout").write_text(offsets.stdout)
+                (evidence / "no-commit-offsets-last.stderr").write_text(offsets.stderr)
+                if members.returncode == offsets.returncode == 0 and assigned_without_commit(members.stdout, offsets.stdout, log_end):
+                    (evidence / f"actual-{name}-members.stdout").write_text(members.stdout)
+                    (evidence / f"actual-{name}-offsets.stdout").write_text(offsets.stdout)
+                    return
+                require(time.monotonic() < deadline, "actual no-commit partition assignment missing")
+                time.sleep(1)
+
         result["stage"] = "no-commit-member-assignment"
-        deadline = time.monotonic() + 40
-        while True:
-            members = kafka(owner, ["kafka-consumer-groups.sh", "--describe", "--members", "--verbose", "--group", "order-no-commit"])
-            (evidence / "no-commit-members-last.stdout").write_text(members.stdout)
-            (evidence / "no-commit-members-last.stderr").write_text(members.stderr)
-            with (evidence / "no-commit-members-attempts.jsonl").open("a") as stream:
-                stream.write(json.dumps({"exit": members.returncode, "remainingSeconds": deadline - time.monotonic()}) + "\n")
-            offsets = kafka(owner, ["kafka-consumer-groups.sh", "--describe", "--group", "order-no-commit"])
-            (evidence / "no-commit-offsets-last.stdout").write_text(offsets.stdout)
-            (evidence / "no-commit-offsets-last.stderr").write_text(offsets.stderr)
-            if members.returncode == offsets.returncode == 0 and assigned_without_commit(members.stdout, offsets.stdout):
-                (evidence / "actual-no-commit-members.stdout").write_text(members.stdout)
-                (evidence / "actual-no-commit-offsets.stdout").write_text(offsets.stdout)
-                break
-            require(time.monotonic() < deadline, "actual no-commit partition assignment missing")
-            time.sleep(1)
+        await_uncommitted("0", "never-written")
         sql("order", "UPDATE dead_letter_records SET last_replay_target_group='order-no-commit' WHERE id=1001")
+        result["stage"] = "no-commit-collector"
+        scenario("never-written-no-commit", 0, "OK — drain")
+        result["stage"] = "no-commit-produce"
+        produced = kafka(owner, ["kafka-console-producer.sh", "--topic", topic], "uncommitted\n")
+        (evidence / "no-commit-produce.stdout").write_text(produced.stdout)
+        (evidence / "no-commit-produce.stderr").write_text(produced.stderr)
+        save(evidence / "no-commit-produce.json", {"exit": produced.returncode})
+        require(produced.returncode == 0, "no-commit record produce failed")
+        result["stage"] = "no-commit-record-assignment"
+        await_uncommitted("1", "no-commit")
         result["stage"] = "no-commit-collector"
         scenario("no-committed-offset", 1, "lag 조회 실패")
         sql("order", "UPDATE dead_letter_records SET last_replay_target_group='order-target' WHERE id=1001")

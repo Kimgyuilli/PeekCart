@@ -297,8 +297,9 @@ collect() {
 
 consumer_group_lag() {
     local group="$1" output
+    # k8s Kafka 의 리스너는 29092 하나다(k8s/base/infra/kafka/kafka.yml). replay-entrypoint-lint 가 대조한다.
     output=$(kubectl -n "$NAMESPACE" exec deploy/kafka -- \
-        /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 \
+        /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:29092 \
         --describe --group "$group" 2>/dev/null) || return 1
     # Empty output, a header alone, or a missing group is not evidence of drain.
     # Kafka --describe emits one row per topic/partition after this header.
@@ -315,14 +316,17 @@ partitions = set()
 for row in rows[1:]:
     if len(row) != len(header) or row[0] != sys.argv[1]:
         sys.exit(1)
-    # An unknown offset/lag (-), NaN, or a negative value must not become zero.
-    if any(re.fullmatch(r"[0-9]+", value) is None for value in row[2:6]):
+    # A partition that never received a record has no commit under auto.offset.reset=earliest
+    # and nothing to consume: "- 0 -". Any other unknown offset/lag (-), NaN, or a negative
+    # value must not become zero.
+    offsets = ["0", "0", "0"] if row[3:6] == ["-", "0", "-"] else row[3:6]
+    if any(re.fullmatch(r"[0-9]+", value) is None for value in [row[2], *offsets]):
         sys.exit(1)
     key = (row[1], int(row[2]))
     if key in partitions:
         sys.exit(1)
     partitions.add(key)
-    lag += int(row[5])
+    lag += int(offsets[2])
 print(lag)
 ' "$group" <<< "$output"
 }

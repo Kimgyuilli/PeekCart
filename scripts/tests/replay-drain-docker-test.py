@@ -17,7 +17,14 @@ collector = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(collector)
 CASES = {"baseline": 0, "pending": 1, "requested": 1, "recent-settled": 1, "positive-lag": 1,
          "missing-group": 1, "group-sql-failed": 1, "aggregate-sql-failed": 1, "second-sample-missing": 1,
-         "no-committed-offset": 1, "restored": 0}
+         "never-written-no-commit": 0, "no-committed-offset": 1, "restored": 0}
+UNCOMMITTED = ["order-no-commit", "collector.no-commit", "0", "-"]
+
+
+def describe_rows(folder, group):
+    calls = [json.loads(line) for line in (folder / "calls.jsonl").read_text().splitlines()]
+    index = next(i for i, c in enumerate(calls) if c.get("group") == group)
+    return [line.split() for line in (folder / f"{index:02d}.stdout").read_text().splitlines() if line.strip()]
 
 
 def read(path):
@@ -44,14 +51,17 @@ def verify(directory, root=ROOT):
         calls = [json.loads(line) for line in (folder / "calls.jsonl").read_text().splitlines()]
         collector.require({c["service"] for c in calls if c["kind"] == "aggregate"} == set(collector.SERVICES), "service aggregate missing")
         if expected == 0:
-            groups = ["order-target"] + [service + "-svc-dlq-group" for service in collector.SERVICES]
+            target = "order-no-commit" if case == "never-written-no-commit" else "order-target"
+            groups = [target] + [service + "-svc-dlq-group" for service in collector.SERVICES]
             for group in groups:
                 collector.require([c["sample"] for c in calls if c.get("group") == group] == [1, 2], "two actual samples absent")
             aggregate = next(i for i,c in enumerate(calls) if c.get("service") == "order" and c["kind"] == "aggregate")
             collector.require((folder / f"{aggregate:02d}.stdout").read_text().strip().endswith(".123456"), "actual SQL microseconds absent")
-            lag = next(i for i,c in enumerate(calls) if c.get("group") == "order-target")
-            rows = [line.split() for line in (folder / f"{lag:02d}.stdout").read_text().splitlines() if line.strip()]
-            collector.require(len(rows) == 3 and {row[2] for row in rows[1:]} == {"0", "1"}, "actual two-partition rows absent")
+            rows = describe_rows(folder, target)
+            if target == "order-no-commit":
+                collector.require(len(rows) == 2 and rows[1][:6] == UNCOMMITTED + ["0", "-"], "actual never-written uncommitted row absent")
+            else:
+                collector.require(len(rows) == 3 and {row[2] for row in rows[1:]} == {"0", "1"}, "actual two-partition rows absent")
         for index, call in enumerate(calls):
             collector.require((folder / f"{index:02d}.stdout").exists() and (folder / f"{index:02d}.stderr").exists(), "raw adapter observation missing")
     for case, kind in (("group-sql-failed", "groups"), ("aggregate-sql-failed", "aggregate")):
@@ -60,11 +70,15 @@ def verify(directory, root=ROOT):
         index = next(i for i,c in enumerate(calls) if c.get("service") == "order" and c["kind"] == kind)
         collector.require(calls[index]["exit"] == 1 and "Unknown column" in (folder / f"{index:02d}.stderr").read_text(),
                           "actual MySQL column failure not observed")
-    members = [line.split() for line in (directory / "actual-no-commit-members.stdout").read_text().splitlines()]
-    collector.require(any(len(row) >= 6 and row[0] == "order-no-commit" and row[4] == "1" for row in members), "actual no-commit member assignment absent")
-    offsets = [line.split() for line in (directory / "actual-no-commit-offsets.stdout").read_text().splitlines()]
-    collector.require(any(len(row) >= 6 and row[:4] == ["order-no-commit", "collector.no-commit", "0", "-"] for row in offsets),
-                      "actual no-commit topic/partition/unknown offset absent")
+    for name, log_end in (("never-written", "0"), ("no-commit", "1")):
+        members = [line.split() for line in (directory / f"actual-{name}-members.stdout").read_text().splitlines()]
+        collector.require(any(len(row) >= 6 and row[0] == "order-no-commit" and row[4] == "1" for row in members), "actual no-commit member assignment absent")
+        offsets = [line.split() for line in (directory / f"actual-{name}-offsets.stdout").read_text().splitlines()]
+        collector.require(any(row[:6] == UNCOMMITTED + [log_end, "-"] for row in offsets),
+                          "actual no-commit topic/partition/unknown offset absent")
+    # The rejected sample is the record-bearing uncommitted row itself, not a vanished group.
+    collector.require(any(row[:6] == UNCOMMITTED + ["1", "-"] for row in describe_rows(directory / "no-committed-offset", "order-no-commit")),
+                      "rejected uncommitted record row absent")
     collector.require((directory / "second-sample-missing/actual-group-delete.stdout").exists(), "actual second-sample deletion absent")
     for path in directory.rglob("*"):
         if path.is_file():
@@ -148,11 +162,13 @@ class ContractTests(unittest.TestCase):
         # Kafka 3.8.1 actual members output can show only '(0)' under ASSIGNMENT.
         members = "order-no-commit console-consumer-123 /172.18.0.2 console-consumer 1 (0)"
         offsets = "order-no-commit collector.no-commit 0 - 0 - consumer host client"
-        self.assertTrue(collector.assigned_without_commit(members, offsets))
+        self.assertTrue(collector.assigned_without_commit(members, offsets, "0"))
+        self.assertFalse(collector.assigned_without_commit(members, offsets, "1"))
+        self.assertTrue(collector.assigned_without_commit(members, offsets.replace("0 - 0 -", "0 - 1 -"), "1"))
         for bad_members, bad_offsets in [("", offsets), (members.replace(" 1 ", " 0 "), offsets),
                                          (members, ""), (members, offsets.replace("collector.no-commit", "other")),
                                          (members, offsets.replace("0 - 0", "0 0 0"))]:
-            self.assertFalse(collector.assigned_without_commit(bad_members, bad_offsets))
+            self.assertFalse(collector.assigned_without_commit(bad_members, bad_offsets, "0"))
 
     def test_kafka_exec_preserves_parent_group_stream_and_sql_input(self):
         # A Docker-like client reads fd0 only with -i. Bash owns the remaining group line.
@@ -196,6 +212,6 @@ class ContractTests(unittest.TestCase):
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--evidence":
         negative_controls(Path(sys.argv[2]))
-        print("actual collector evidence: 11 cases, four schemas, two samples, raw CLI and cleanup PASS")
+        print("actual collector evidence: 12 cases, four schemas, two samples, raw CLI and cleanup PASS")
     else:
         unittest.main()
