@@ -1,0 +1,37 @@
+{
+  "head": "de18d0074d4ce1ede323f79472fb8a3a82f388b6",
+  "actual_checkout": "a07da44c20cde5e273131a0dfe1ddcab88958850",
+  "run": 39625382103,
+  "job": 119309115974,
+  "suite": {
+    "name": "com.peekcart.global.config.SchedulerPoolCapacityTest",
+    "tests": "3",
+    "skipped": "0",
+    "failures": "0",
+    "errors": "0",
+    "timestamp": "2026-10-21T15:27:28.260Z",
+    "hostname": "runnervmxehtw",
+    "time": "1.062"
+  },
+  "cases": [
+    {
+      "name": "configuredPoolFourProgressesWithThreeOccupiedSlots()",
+      "time": "0.323"
+    },
+    {
+      "name": "singleThreadCounterfactualStallsAtOneOccupiedSlotAndRecoversOnRelease()",
+      "time": "0.37"
+    },
+    {
+      "name": "configuredPoolFourStallsAtFourOccupiedSlotsAndRecoversOnRelease()",
+      "time": "0.367"
+    }
+  ],
+  "capacity_markers": 3,
+  "markers": [
+    "D078_SCHEDULER pool=4 blockers=3 registered=1 stalled=false ticksBefore=7 ticksAfter=17 queueDelayNs=164823",
+    "D078_SCHEDULER pool=1 blockers=1 registered=1 stalled=true ticksBefore=7 ticksAfter=13 queueDelayNs=150375400",
+    "D078_SCHEDULER pool=4 blockers=4 registered=1 stalled=true ticksBefore=7 ticksAfter=13 queueDelayNs=150242244"
+  ],
+  "conclusion": "All3 passed with0 failures/errors/skips. pool4 with3 blockers progressed; pool4 with4 blockers and pool1 with1 blocker stalled, and release recovery is asserted by the tests. One test probe only; real7job cost/concurrent contention/operating adequacy/TPS/GKE remain unmeasured."
+}
