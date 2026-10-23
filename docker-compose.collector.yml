@@ -6,12 +6,9 @@ services:
   kafka:
     labels:
       peekcart.collector.nonce: ${COLLECTOR_NONCE:?}
+    # 리스너는 덮어쓰지 않는다 — e2e·k8s 와 같은 29092 여야 preflight 의 실제 포트를 검증한다(D-106 ⑨).
     environment:
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       CLUSTER_ID: ${COLLECTOR_CLUSTER_ID:?}
-    healthcheck:
-      test: [CMD-SHELL, '/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server kafka:9092 >/dev/null 2>&1']
 networks:
   internal:
     labels:

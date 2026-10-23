@@ -75,6 +75,9 @@ class CollectorTest(unittest.TestCase):
             'non-numeric-lag': HEADER + ROW.replace('15 15 0 ', '15 15 NaN '),
             'negative-lag': HEADER + ROW.replace('15 15 0 ', '15 15 -1 '),
             'unassigned': HEADER + ROW.replace('15 15 0 ', '- 15 - '),
+            'records-without-commit': HEADER + ROW.replace('15 15 0 ', '- 1 - '),
+            'unknown-log-end': HEADER + ROW.replace('15 15 0 ', '- - - '),
+            'uncommitted-numeric-lag': HEADER + ROW.replace('15 15 0 ', '- 0 0 '),
             'non-numeric-partition': HEADER + ROW.replace('order.created 0', 'order.created NaN'),
             'non-numeric-offset': HEADER + ROW.replace('15 15 0 ', 'NaN 15 0 '),
             'missing-header': ROW,
@@ -88,6 +91,17 @@ class CollectorTest(unittest.TestCase):
                     needle = 'lag 조회 실패' if sample == 1 else 'lag 재조회 실패'
                     self.assert_blocked(dict(match=dict(kind='lag', group='order-target-a', sample=sample),
                                              output=output), needle)
+
+    def test_never_written_partition_without_commit_is_zero_lag(self):
+        # earliest 컨슈머는 레코드가 없는 파티션에 커밋을 남기지 않는다. 실제 스택의 DLQ intake group 형태다.
+        never_written = 'order-target-a order.created 1 - 0 - consumer-a /10.0.0.1 client-a\n'
+        result, _ = self.run_fixture([dict(match=dict(kind='lag', group='order-target-a'),
+                                           output=HEADER + ROW + never_written)])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn('OK — drain', result.stdout)
+        lagging = ROW.replace('order.created 0 15 15 0', 'order.created 0 12 15 3')
+        self.assert_blocked(dict(match=dict(kind='lag', group='order-target-a'), output=HEADER + lagging + never_written),
+                            '[ⓑⓒ] order: consumer group order-target-a')
 
     def test_invalid_db_aggregate_blocks_rollback(self):
         for output in ['', '0\t0\n', '-1\t0\t-\n', '0\tNaN\t-\n',

@@ -151,6 +151,9 @@ bash loadtest/cleanup.sh              # 실제 삭제
 overlay `k8s/overlays/gke-d002bc` — gateway + user + product + order + payment + mysql/redis/kafka.
 notification 제외, HPA 제외(replicas 고정 — 오토스케일이 붙으면 처리량이 아니라 스케일러를 재게 된다).
 
+측정 overlay 는 앱마다 ServiceMonitor 를 포함한다(D-106 ③). apply 전에 관측 스택(kube-prometheus-stack,
+ServiceMonitor CRD)을 먼저 설치한다 — `k8s/overlays/gke/README.md` 1~3단계. CRD 가 없으면 apply 가 실패한다.
+
 ```bash
 kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/gke-d002bc | kubectl apply -f -
 ```
@@ -158,13 +161,21 @@ kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/gke-d002bc
 `--load-restrictor LoadRestrictionsNone` 은 `gke-d002a` 와 같은 이유로 필요하다(base 파일을
 디렉터리가 아니라 파일 단위로 참조한다).
 
-배포 직후 **인증 왕복 게이트를 반드시 통과시킨다** (D-022):
+apply 직후 payment Secret 에 Toss **smoke 값**을 넣고 재기동한다(D-106 ④). k8s 프로파일은
+`TOSS_SECRET_KEY` 기본값이 없어 fail-fast 하고(CrashLoop), 매니페스트에는 이 값을 두지 않는다(GP-2 #3).
+값은 `scripts/docker-health-smoke.sh` 와 같다. 실제 자격증명이 아니며 Toss 연동은 검증하지 않는다.
 
 ```bash
-GW_URL=http://<gateway-internal-lb>:8080 bash scripts/auth-roundtrip-gate.sh
+kubectl -n peekcart patch secret payment-service-secret --type merge \
+  -p '{"stringData":{"TOSS_SECRET_KEY":"test_sk_smoke","TOSS_WEBHOOK_SECRET":"test_webhook_smoke"}}'
+kubectl -n peekcart rollout restart deploy/payment-service
 ```
 
-이 세션이 이 단계를 건너뛰어 **키쌍 불일치 2건**(사용자 토큰·내부 토큰)을 배포 후에야 발견했고,
+사용자 시드(§1) 직후 **인증 왕복 게이트를 반드시 통과시킨다** (D-022). 게이트의 기본 계정
+`loadadmin@peekcart.test` 는 `d002bc-user-seed.sql` 이 넣으므로, 빈 스택에서 시드 전에 돌리면
+로그인 단계에서 실패한다(D-106 ⑧). 명령은 §1 에 있다.
+
+Phase 4 세션이 이 게이트를 건너뛰어 **키쌍 불일치 2건**(사용자 토큰·내부 토큰)을 배포 후에야 발견했고,
 원인을 좁히는 데 40분이 들었다. 게이트는 실패 시 어느 도메인이 어긋났는지 지목한다.
 
 **gateway 를 뺄 수 없다.** order/payment 는 `InternalTokenAuthenticationFilter`(기본 `SIGNED_ONLY`)
@@ -173,12 +184,20 @@ GW_URL=http://<gateway-internal-lb>:8080 bash scripts/auth-roundtrip-gate.sh
 
 ## 절차
 
+§3·§4 의 run 은 **배포·재기동 직후 같은 시나리오의 워밍업 run 을 먼저 돌리고 버린다**(D-106 ⑪).
+횟수는 세션 계획에 사전 기록하고, 사후에 골라 버리지 않는다. 워밍업 run 뒤에도 run 사이 초기화는 같다.
+2026-10-24 세션은 이 규칙이 없어 경합 run 의 주문 p50 이 r1→r2→r3 에서 1,205→701→151ms 로 떨어졌고,
+첫 run 의 주문 수는 r3 의 44% 였다. 한 번만 버려도 충분한지는 그 기록만으로 알 수 없다.
+
 ### 1. 시드
 
 ```bash
 # 사용자 (200명 + admin 1)
 kubectl -n peekcart exec -i deploy/mysql -- \
   mysql -upeekcart_user -ppeekcart_user peekcart_user < loadtest/sql/d002bc-user-seed.sql
+
+# 인증 왕복 게이트 — 시드 계정(loadadmin)으로 로그인하므로 사용자 시드 뒤에 돈다
+GW_URL=http://<gateway-internal-lb>:8080 bash scripts/auth-roundtrip-gate.sh
 
 # k6 입력 CSV — **USERS 와 같은 수로** 재생성한다(적으면 계정이 겹쳐 사용자별 한도가 무너진다)
 bash loadtest/scripts/generate-users-csv.sh --count 200

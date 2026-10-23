@@ -7,3 +7,5 @@ resources:
   - secretproviderclass.yml
   - configmap.yml
   - deployment.yml
+  # 측정 세션도 앱 메트릭을 scrape 한다. apply 전에 관측 스택(ServiceMonitor CRD)이 있어야 한다(D-106 ③).
+  - servicemonitor.yml

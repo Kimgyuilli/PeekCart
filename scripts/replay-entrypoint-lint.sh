@@ -161,6 +161,20 @@ for service in services:
             "[REPLAY-ENTRY-006] %s: clock-skew-budget %ds 가 preflight 의 CLOCK_SKEW_SECONDS=%ds 와 다르다"
             % (service, seconds, declared_skew))
 
+# D-106 ⑨: lag 를 묻는 브로커 포트는 실제 k8s 리스너와 같아야 한다. collector fixture 가 스크립트의
+# 포트를 따라가면 이 드리프트는 어떤 테스트도 실패시키지 못한다(GKE 에서 9092 고정으로 전부 실패했다).
+bootstrap = re.findall(r"--bootstrap-server\s+localhost:(\d+)", script)
+try:
+    with open(os.path.join(root, "k8s/base/infra/kafka/kafka.yml"), encoding="utf-8") as f:
+        listeners = re.findall(r"PLAINTEXT://0\.0\.0\.0:(\d+)", f.read())
+except OSError:
+    listeners = []
+if len(bootstrap) != 1 or len(listeners) != 1:
+    problems.append("[REPLAY-ENTRY-007] preflight 브로커 주소와 k8s Kafka PLAINTEXT 리스너를 각각 하나로 읽지 못했다")
+elif bootstrap[0] != listeners[0]:
+    problems.append("[REPLAY-ENTRY-007] preflight 는 localhost:%s 로 lag 를 묻는데 k8s Kafka 리스너는 %s 다"
+                    % (bootstrap[0], listeners[0]))
+
 for p in problems:
     print(p)
 sys.exit(1 if problems else 0)
@@ -181,6 +195,8 @@ if [[ "${1:-}" == "--self-test" ]]; then
         mkdir -p "$tmp/${svc}-service/src/main/resources"
         cp "${svc}-service/src/main/resources/application.yml" "$tmp/${svc}-service/src/main/resources/"
     done
+    mkdir -p "$tmp/k8s/base/infra/kafka"
+    cp k8s/base/infra/kafka/kafka.yml "$tmp/k8s/base/infra/kafka/"
 
     failures=0
     fixture_lines=0
@@ -243,6 +259,13 @@ if [[ "${1:-}" == "--self-test" ]]; then
     expect "기존 36초 상한 회귀" 1 "backoff 최대 합"
     cp "$tmp/scripts/replay-drain-preflight.sh.bak" "$tmp/scripts/replay-drain-preflight.sh"
 
+    sed -i.bak 's/localhost:29092/localhost:9092/' "$tmp/scripts/replay-drain-preflight.sh"
+    expect "preflight 브로커 포트 9092 회귀" 1 "REPLAY-ENTRY-007"
+    cp "$tmp/scripts/replay-drain-preflight.sh.bak" "$tmp/scripts/replay-drain-preflight.sh"
+    sed -i.bak 's#PLAINTEXT://0.0.0.0:29092#PLAINTEXT://0.0.0.0:39092#' "$tmp/k8s/base/infra/kafka/kafka.yml"
+    expect "k8s 리스너만 바꿔도 red" 1 "REPLAY-ENTRY-007"
+    cp "$tmp/k8s/base/infra/kafka/kafka.yml.bak" "$tmp/k8s/base/infra/kafka/kafka.yml"
+
     rm "$tmp/scripts/replay-drain-preflight.sh"
     expect "preflight 가 사라지면 red (상한 정본 소실)" 1 "정본이 사라졌다"
 
@@ -250,7 +273,7 @@ if [[ "${1:-}" == "--self-test" ]]; then
         echo "replay-entrypoint-lint self-test FAILED (${failures}건)" >&2
         exit 2
     fi
-    echo "replay-entrypoint-lint self-test OK — 드리프트 9종"
+    echo "replay-entrypoint-lint self-test OK — 드리프트 11종"
     exit 0
 fi
 

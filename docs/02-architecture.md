@@ -207,7 +207,7 @@ k8s/
   2. `bash k8s/monitoring/minikube/install.sh` — kube-prometheus-stack Helm 설치. **이 단계가 ServiceMonitor CRD 를 등록**하므로 다음 단계 전에 반드시 선행
   3. `kubectl apply -k k8s/monitoring/shared/` — 환경 무관 대시보드/Alert ConfigMap (kustomize 가 *.json → ConfigMap 생성, Grafana sidecar 자동 로드)
   4. `bash scripts/deploy-overlay.sh k8s/overlays/minikube` — app/infra + ServiceMonitor 적용. 2번이 등록한 CRD 가 충족되어야 성공.
-     **앱 overlay 배포는 래퍼를 쓴다** (see ADR-0022 §D3) — replay 행이 남은 상태로 구 이미지를 배포하면 발행 경로가 손상되므로, 래퍼가 `scripts/replay-drain-preflight.sh` 를 선행시킨다. 1~3 단계(monitoring/shared)는 서비스 이미지를 바꾸지 않아 raw `apply -k` 를 그대로 쓴다. 래퍼는 우회 가능하며 그 한계는 ADR-0022 가 명시한다
+     **앱 overlay 배포는 래퍼를 쓴다** (see ADR-0022 §D3) — replay 행이 남은 상태로 구 이미지를 배포하면 발행 경로가 손상되므로, 래퍼가 `scripts/replay-drain-preflight.sh` 를 선행시킨다. 빈 namespace 의 첫 배포는 preflight 가 조회할 스택이 없어 fail-closed 로 막으므로, `DRAIN_PREFLIGHT_SKIP_REASON` 에 사유를 남겨 건너뛴다(`k8s/overlays/gke/README.md` 4' 단계). 1~3 단계(monitoring/shared)는 서비스 이미지를 바꾸지 않아 raw `apply -k` 를 그대로 쓴다. 래퍼는 우회 가능하며 그 한계는 ADR-0022 가 명시한다
 - **"self-contained overlay" 의 운영 해석 (ADR-0006 불변식 4)**: `apply -k overlays/minikube/` 가 단독으로 fresh 클러스터에 성공한다는 뜻이 **아니다**. ServiceMonitor 는 CRD 의존성을 가지며, K8s 생태계의 표준 패턴(cert-manager, Istio 등)과 동일하게 CRD 선행 설치가 문서화된 순서로 보장된다. overlay 가 self-contained 라는 것은 "monitoring NS 리소스를 포함하지 않으며, 외부 상태를 만들거나 변형하지 않는다" 는 의미이다.
 - **재배포 (idempotent)**: 동일 4개 명령을 순서대로 재실행. install.sh 는 `helm upgrade --install` 멱등
 - **최초 배포 순서 (fresh 클러스터, GKE)**: minikube 와 동일한 4단계. install 진입점만 환경별로 분리:

@@ -81,7 +81,12 @@ kubectl apply -k k8s/monitoring/shared/
 #    주지 않으면 건너뛰고 그 사실을 경고로 남긴다 — 건너뛴 채로 두지 말 것.
 GW_URL=http://<gateway-internal-lb>:8080 bash scripts/deploy-overlay.sh k8s/overlays/gke
 
-# 5. (LB IP 를 배포 전에 모를 때) 인증 왕복 게이트를 따로 실행 — **통과해야 완료다**
+# 4'. 빈 namespace 첫 배포는 4 대신 이렇게 한다 (D-106 ⑧)
+#    preflight 는 조회할 스택이 없어 fail-closed 로 막고, 게이트 계정(기본 loadadmin@peekcart.test)도 아직 없다.
+#    사유를 남겨 preflight 를 건너뛰고 GW_URL 없이 배포한다. 계정을 시드한 뒤 5단계를 실행한다.
+DRAIN_PREFLIGHT_SKIP_REASON="fresh namespace, no prior stack" bash scripts/deploy-overlay.sh k8s/overlays/gke
+
+# 5. (LB IP 를 배포 전에 모를 때, 또는 4' 뒤 계정 시드 후) 인증 왕복 게이트를 따로 실행 — **통과해야 완료다**
 GW_URL=http://<gateway-internal-lb>:8080 bash scripts/auth-roundtrip-gate.sh
 ```
 
