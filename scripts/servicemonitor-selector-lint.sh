@@ -4,6 +4,8 @@
 # 목적: 양 overlay (minikube, gke) 의 kubectl kustomize 산출물에서
 #       ServiceMonitor selector 가 같은 namespace 의 Service label/port 와
 #       정확히 매칭되는지 정적 검증.
+#       측정 overlay(gke-d002a·gke-d002bc 계열)도 렌더한다(D-106 ③). 측정 overlay 는 앱 일부만
+#       띄우므로 SM 집합 기대값이 "canonical 6 중 렌더된 Deployment" 다. 운영 overlay 는 6개 그대로.
 #
 # 검증:
 #   - ServiceMonitor.spec.selector.matchLabels ⊆ Service.metadata.labels
@@ -44,29 +46,35 @@ if [[ "${1:-}" == "--self-test" ]]; then
     kubectl kustomize k8s/overlays/gke >"$ST_BASE"
     ST_FAIL=0
 
+    ST_MEASUREMENT="$ST_TMP/measurement.yml"
+    kubectl kustomize k8s/overlays/gke-d078-contention >"$ST_MEASUREMENT"
+
     # (0) 원본 렌더는 통과해야 한다 — 통과 못 하면 아래 음성 케이스가 무의미하다
-    if ! RENDERED_OVERRIDE="$ST_BASE" bash "${BASH_SOURCE[0]}" >/dev/null 2>&1; then
+    if ! RENDERED_OVERRIDE="$ST_BASE" bash "${BASH_SOURCE[0]}" >/dev/null 2>&1 \
+        || ! RENDERED_OVERRIDE="$ST_MEASUREMENT" RENDERED_MODE=measurement bash "${BASH_SOURCE[0]}" >/dev/null 2>&1; then
         echo "self-test 실패: 원본 렌더가 통과하지 않는다" >&2
         exit 1
     fi
 
     run_case() {
-        local name="$1" file="$2"
-        if RENDERED_OVERRIDE="$file" bash "${BASH_SOURCE[0]}" >/dev/null 2>&1; then
+        local name="$1" file="$2" mode="${3:-operational}"
+        if RENDERED_OVERRIDE="$file" RENDERED_MODE="$mode" bash "${BASH_SOURCE[0]}" >/dev/null 2>&1; then
             echo "self-test 실패: '$name' 을 검출하지 못했다" >&2
             ST_FAIL=1
         fi
     }
 
-    ST_BASE="$ST_BASE" ST_TMP="$ST_TMP" python3 - <<'PYEOF'
+    ST_BASE="$ST_BASE" ST_MEASUREMENT="$ST_MEASUREMENT" ST_TMP="$ST_TMP" python3 - <<'PYEOF'
 import os, copy, yaml
 
 base, tmp = os.environ["ST_BASE"], os.environ["ST_TMP"]
 with open(base) as f:
     docs = [d for d in yaml.safe_load_all(f) if d]
+with open(os.environ["ST_MEASUREMENT"]) as f:
+    measurement_docs = [d for d in yaml.safe_load_all(f) if d]
 
-def write(name, mutate):
-    out = copy.deepcopy(docs)
+def write(name, mutate, source=docs):
+    out = copy.deepcopy(source)
     mutate(out)
     with open(os.path.join(tmp, name), "w") as f:
         yaml.safe_dump_all(out, f, allow_unicode=True, sort_keys=False)
@@ -109,6 +117,17 @@ write("sm-selector-broad.yml", selector_too_broad)
 def svc_port_rename(ds):
     find(ds, "Service", "gateway-metrics")["spec"]["ports"][0]["name"] = "metrics"
 write("svc-port-rename.yml", svc_port_rename)
+
+# (7) 측정 overlay 가 띄운 앱의 SM 누락 — D-106 ③ 세션에서 손으로 apply 하던 상태
+def drop_measurement_sm(ds):
+    ds.remove(find(ds, "ServiceMonitor", "product-service"))
+write("measurement-sm-deleted.yml", drop_measurement_sm, measurement_docs)
+
+# (8) 운영 overlay 는 Deployment 와 SM 을 함께 지워도 red — 측정용 일반화가 6개 계약을 약화하지 않는다
+def drop_service_and_sm(ds):
+    ds.remove(find(ds, "ServiceMonitor", "notification-service"))
+    ds.remove(find(ds, "Deployment", "notification-service"))
+write("operational-service-dropped.yml", drop_service_and_sm)
 PYEOF
 
     run_case "SM 1개 삭제" "$ST_TMP/sm-deleted.yml"
@@ -117,25 +136,42 @@ PYEOF
     run_case "SM endpoint port 오타" "$ST_TMP/sm-port-typo.yml"
     run_case "gateway SM selector 과대매칭(app 단독)" "$ST_TMP/sm-selector-broad.yml"
     run_case "gateway-metrics Service 포트 이름 변경" "$ST_TMP/svc-port-rename.yml"
+    run_case "측정 overlay 의 SM 누락" "$ST_TMP/measurement-sm-deleted.yml" measurement
+    run_case "운영 overlay 의 서비스·SM 동시 삭제" "$ST_TMP/operational-service-dropped.yml"
 
     if [[ "$ST_FAIL" -ne 0 ]]; then
         exit 1
     fi
-    echo "servicemonitor-selector-lint self-test 6종 통과"
+    echo "servicemonitor-selector-lint self-test 8종 통과"
     exit 0
 fi
 
 OVERLAYS=("k8s/overlays/minikube" "k8s/overlays/gke")
+MEASUREMENT_OVERLAYS=(
+    "k8s/overlays/gke-d002a" "k8s/overlays/gke-d002bc"
+    "k8s/overlays/gke-d002a-mysql-500m" "k8s/overlays/gke-d002a-mysql-2000m"
+    "k8s/overlays/gke-d002bc-mysql-2000m" "k8s/overlays/gke-d078-contention"
+)
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 # self-test 는 렌더 산출을 조작해 먹인다 — kustomize 를 다시 돌리면 조작이 사라진다.
 if [[ -n "${RENDERED_OVERRIDE:-}" ]]; then
-    OVERLAYS=("$RENDERED_OVERRIDE")
+    OVERLAYS=()
+    MEASUREMENT_OVERLAYS=()
+    if [[ "${RENDERED_MODE:-operational}" == "measurement" ]]; then
+        MEASUREMENT_OVERLAYS=("$RENDERED_OVERRIDE")
+    else
+        OVERLAYS=("$RENDERED_OVERRIDE")
+    fi
 fi
 
 VIOLATIONS=0
-for overlay in "${OVERLAYS[@]}"; do
+for overlay in "${OVERLAYS[@]}" "${MEASUREMENT_OVERLAYS[@]}"; do
+    mode="operational"
+    for measurement in "${MEASUREMENT_OVERLAYS[@]}"; do
+        [[ "$overlay" == "$measurement" ]] && mode="measurement"
+    done
     out="$TMP_DIR/$(basename "$overlay").yml"
     if [[ -n "${RENDERED_OVERRIDE:-}" ]]; then
         out="$overlay"
@@ -147,6 +183,7 @@ for overlay in "${OVERLAYS[@]}"; do
     fi
     OVERLAY_NAME="$(basename "$overlay")" \
     OVERLAY_OUT="$out" \
+    OVERLAY_MODE="$mode" \
     python3 - <<'PY'
 import os, sys, yaml
 
@@ -158,12 +195,15 @@ with open(path) as f:
 
 services = []   # list of (ns, name, labels, ports[name list])
 monitors = []   # list of (ns, name, ns_match, label_match, endpoint_ports)
+deployments = set()
 
 for d in docs:
     kind = d.get("kind")
     md = d.get("metadata", {}) or {}
     spec = d.get("spec", {}) or {}
-    if kind == "Service":
+    if kind == "Deployment":
+        deployments.add(md.get("name"))
+    elif kind == "Service":
         port_names = []
         for p in spec.get("ports", []) or []:
             n = p.get("name")
@@ -195,13 +235,16 @@ violations = []
 # gateway 의 SM 이름은 `gateway` 다(scrape 되는 Service 이름 `gateway-metrics` 와 다르다 — 의도).
 CANONICAL = {"notification-service", "user-service", "product-service", "order-service",
              "payment-service", "gateway"}
+# 측정 overlay 는 앱 일부만 띄운다. 띄운 앱이 scrape 되지 않으면 세션마다 SM 을 손으로 apply 해야 했다(D-106 ③).
+measurement = os.environ["OVERLAY_MODE"] == "measurement"
+expected = CANONICAL & deployments if measurement else CANONICAL
 monitor_names = {m["name"] for m in monitors}
-if monitor_names != CANONICAL:
+if monitor_names != expected:
     violations.append(
         f"[D5-V5] ServiceMonitor 집합 불일치 ({overlay}):\n"
-        f"  expected(canonical 6 = 도메인 5 + 인프라 1): {sorted(CANONICAL)}\n"
+        f"  expected({'canonical 6 중 렌더된 Deployment' if measurement else 'canonical 6 = 도메인 5 + 인프라 1'}): {sorted(expected)}\n"
         f"  actual: {sorted(monitor_names)}\n"
-        f"  missing: {sorted(CANONICAL - monitor_names)} / extra: {sorted(monitor_names - CANONICAL)}\n"
+        f"  missing: {sorted(expected - monitor_names)} / extra: {sorted(monitor_names - expected)}\n"
         f"  → ADR-0024 D1 집합 C: 6개 ServiceMonitor 필수 — 0개/축소 시 selector-lint vacuous-green 차단.\n"
     )
 
