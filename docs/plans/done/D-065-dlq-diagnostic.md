@@ -46,7 +46,7 @@ grade: M
 - 원 CI: 334개 중1실패, 첫 timestamp20.470s, final poll은 DLT 검증queue[]였다. 원장 존재/부재나 timestamp equality는 이 실패로 측정되지 않았다.
 - 첫 local-profile baseline334PASS(3m48s)는 CI동등 재현이 아니다. test-profile baseline334PASS(1m29s), 실제54 XML class순서동일, stdout295bytes도CI와동일했다. 로컬JDK17.0.11/macOS 대CI17.0.20/Linux 차이는 남는다.
 - 진단 source dc00bbfa의 test-profile full334PASS(1m35s). observerdrop음성은 단일case21.084s expectedfail, 실제 offset/committed 조회약61ms. loopback무응답음성은22.403s expectedfail, 진단조회약1.020s후 ExecutionException/close, 원 AssertionError[] 유지. 정상dc00bbfa 복원확인.
-- 별도 Kafka3.8.1 기본설정 probe1PASS(36.336s): topicretention/segment7일,delete,CreateTime,beforemaxLongMAX; brokercheck300000ms. fixedold와now-60s 모두offset0 ack 후 old만start0→1/empty, recent는start0/end1과정확timestamp읽기유지. broker로그에 largestRecordTimestamp1757000123456의retention위반 삭제가명시된다. rawsource/설정/시계열/삭제로그는 [증거](evidence/D-065-dlq-diagnostic/)에 보존했다.
+- 별도 Kafka3.8.1 기본설정 probe1PASS(36.336s): topicretention/segment7일,delete,CreateTime,beforemaxLongMAX; brokercheck300000ms. fixedold와now-60s 모두offset0 ack 후 old만start0→1/empty, recent는start0/end1과정확timestamp읽기유지. broker로그에 largestRecordTimestamp1757000123456의retention위반 삭제가명시된다. rawsource/설정/시계열/삭제로그는 [증거](../evidence/D-065-dlq-diagnostic)에 보존했다.
 - 모든로컬실험 자기fixtures정리 및 전체Docker inventory 전후동일. 임시probe/음성변이는 제거했다. 최종timestamp변경은 아직로컬full로검증하지 않았다. 사용자의 Actions우선 지시에 따라 최종head 정상CI와별도고정seed workflow에서검증한다.
 - 미충족: 최종head 전체CI/원seedLinux재현job/독립리뷰. 과거CI원인은여전히미확정이다. 독립fixture결함수정을원CI원인확정으로쓰지않는다. D065전체완료,운영timestamp표본,실제GKE/PG/운영DDL/replay허용을뜻하지않는다.
 

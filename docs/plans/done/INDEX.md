@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 125개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 140개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,12 +82,13 @@
 | [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-10-21 | 있음 |
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-10-21 |  |
 
-## 기타 (63)
+## 기타 (78)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
 | [D-051](./D-051.md) | D-051 | [#163](https://github.com/Kimgyuilli/PeakCart/pull/163) |  |  |
 | [D-054](./D-054.md) | D-054 | [#164](https://github.com/Kimgyuilli/PeakCart/pull/164) |  |  |
+| [D-078-product-actions](./D-078-product-actions.md) | D-078 product barrier Actions 재현 | [#218](https://github.com/Kimgyuilli/PeakCart/pull/218) |  | 있음 |
 | [D-087-profile-cache](./D-087-profile-cache.md) | D-087 profile export cache 후속 | [#216](https://github.com/Kimgyuilli/PeakCart/pull/216) |  | 있음 |
 | [task-phase5-baseline](./task-phase5-baseline.md) | task-phase5-baseline | [#134](https://github.com/Kimgyuilli/PeakCart/pull/134) |  |  |
 | [task-publish-diagnostics](./task-publish-diagnostics.md) | Publish 실패 출력 보존 | [#179](https://github.com/Kimgyuilli/PeakCart/pull/179) |  |  |
@@ -130,6 +131,15 @@
 | [D-082](./D-082.md) | 자율 writer 수명 lint (D-081 공동 구현) | [#176](https://github.com/Kimgyuilli/PeakCart/pull/176) | 2026-10-17 | 있음 |
 | [D-083](./D-083.md) | D-083 Kafka cleanup 실패 전파 | [#177](https://github.com/Kimgyuilli/PeakCart/pull/177) | 2026-10-17 | 있음 |
 | [D-049](./D-049.md) | D-049 | [#168](https://github.com/Kimgyuilli/PeakCart/pull/168) | 2026-10-21 | 있음 |
+| [D-064-merchant-order-id](./D-064-merchant-order-id.md) | D-064 canonical PG 주문 식별자 | [#196](https://github.com/Kimgyuilli/PeakCart/pull/196) | 2026-10-21 | 있음 |
+| [D-064-pg-contract](./D-064-pg-contract.md) | D-064 무료 PG 계약 보정 | [#193](https://github.com/Kimgyuilli/PeakCart/pull/193) | 2026-10-21 | 있음 |
+| [D-065-collector](./D-065-collector.md) | D-065 collector 수집 실패 차단 | [#189](https://github.com/Kimgyuilli/PeakCart/pull/189) | 2026-10-21 | 있음 |
+| [D-065-constraints](./D-065-constraints.md) | D-065 constraints — 로컬 분류·backfill 안전성 검증 계획 | [#202](https://github.com/Kimgyuilli/PeakCart/pull/202) | 2026-10-21 | 있음 |
+| [D-065-dlq-diagnostic](./D-065-dlq-diagnostic.md) | D-065 DLQ 첫 테스트 실패 진단 | [#205](https://github.com/Kimgyuilli/PeakCart/pull/205) | 2026-10-21 | 있음 |
+| [D-065-lineage-writer](./D-065-lineage-writer.md) | D-065 DLQ 원장의 최초 INSERT lineage 보장 | [#201](https://github.com/Kimgyuilli/PeakCart/pull/201) | 2026-10-21 | 있음 |
+| [D-065-signed-gateway-execution](./D-065-signed-gateway-execution.md) | D-065 signed gateway 실행 계획 | [#210](https://github.com/Kimgyuilli/PeakCart/pull/210) | 2026-10-21 | 있음 |
+| [D-075](./D-075.md) | D-075: outbox 로컬 병목 분해 (부분 분석) | [#200](https://github.com/Kimgyuilli/PeakCart/pull/200) | 2026-10-21 | 있음 |
+| [D-078](./D-078.md) | D-078: 캐시 이름별 수집 공백의 로컬 보완 (부분 작업) | [#199](https://github.com/Kimgyuilli/PeakCart/pull/199) | 2026-10-21 | 있음 |
 | [D-085](./D-085.md) | D-085: CI gate 실패 전파 의미 검사 | [#185](https://github.com/Kimgyuilli/PeakCart/pull/185) | 2026-10-21 | 있음 |
 | [D-087](./D-087.md) | D-087: Docker Gradle 구간의 실제 CI profile 보존 | [#209](https://github.com/Kimgyuilli/PeakCart/pull/209) | 2026-10-21 | 있음 |
 | [D-090](./D-090.md) | D-090: Outbox FAILED 알림 실행 계약 검사 | [#186](https://github.com/Kimgyuilli/PeakCart/pull/186) | 2026-10-21 | 있음 |
@@ -139,6 +149,7 @@
 | [D-099](./D-099.md) | D-099: harness 완료 아카이브 건강 검사 | [#204](https://github.com/Kimgyuilli/PeakCart/pull/204) | 2026-10-21 | 있음 |
 | [D-103](./D-103.md) | D-103: 리뷰 결과 렌더러 수용 계약 | [#206](https://github.com/Kimgyuilli/PeakCart/pull/206) | 2026-10-21 | 있음 |
 | [D-105](./D-105.md) | D-105: ship 재개 조회 실패 구분 | [#184](https://github.com/Kimgyuilli/PeakCart/pull/184) | 2026-10-21 | 있음 |
+| [D-078-session-prep](./D-078-session-prep.md) | D-078 과금 세션 사전 준비 (부분 작업) | [#225](https://github.com/Kimgyuilli/PeakCart/pull/225) | 2026-10-22 | 있음 |
 | [D-086](./D-086.md) | CI 시간 이력 사실 정정 | [#190](https://github.com/Kimgyuilli/PeakCart/pull/190) | 2026-10-22 |  |
 | [D-088](./D-088.md) | D-088: lint CI 배선과 외부 생존 대조 | [#213](https://github.com/Kimgyuilli/PeakCart/pull/213) | 2026-10-22 | 있음 |
 | [D-091](./D-091.md) | D-091 | [#191](https://github.com/Kimgyuilli/PeakCart/pull/191) | 2026-10-22 |  |
@@ -149,4 +160,8 @@
 | [D-101](./D-101.md) | D-101: 현재 아키텍처 트리와 역사 참조 정정 | [#195](https://github.com/Kimgyuilli/PeakCart/pull/195) | 2026-10-22 |  |
 | [D-102](./D-102.md) | D-102: 테스트 주석의 의미와 출처 정리 | [#197](https://github.com/Kimgyuilli/PeakCart/pull/197) | 2026-10-22 | 있음 |
 | [D-104](./D-104.md) | D-104: 하네스 실측 근거의 모집단과 정정 | [#208](https://github.com/Kimgyuilli/PeakCart/pull/208) | 2026-10-22 | 있음 |
+| [D-078-capture-prep](./D-078-capture-prep.md) | D-078 세션 캡처 도구와 세션 범위 확장 (부분 작업) | [#228](https://github.com/Kimgyuilli/PeakCart/pull/228) | 2026-10-23 | 있음 |
+| [D-078-latency-metrics](./D-078-latency-metrics.md) | D-078 README 보강 지표 A~E 와 지연 원자료 도구 (부분 작업) | [#229](https://github.com/Kimgyuilli/PeakCart/pull/229) | 2026-10-23 | 있음 |
+| [D-078-session-dashboard](./D-078-session-dashboard.md) | D-078 측정 세션 대시보드와 캡처 기준 (부분 작업) | [#226](https://github.com/Kimgyuilli/PeakCart/pull/226) | 2026-10-23 | 있음 |
+| [D-078-session-plan](./D-078-session-plan.md) | D-078 GKE 측정 세션 계획 (부분 작업) | [#227](https://github.com/Kimgyuilli/PeakCart/pull/227) | 2026-10-23 | 있음 |
 

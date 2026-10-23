@@ -69,7 +69,7 @@
 - 테스트 컨테이너 종료 뒤 기존 momens 3개만 확인하고 heavy slot을 반환했다. smoke self-test 59개(`/private/tmp/d065-writer-smoke-selftest.log`), migration-grant 53개, integration-container lint 및 diff 검사도 통과했다. 전체 CI와 독립 검토는 아직 대기이며 실제 운영 전환·NOT NULL contract·signed gateway ADMIN 전체 경로·P22/GKE/replay 개방은 수행하지 않았다.
 
 - 최종 PR196 head `6b2b534e8c512868a1330a3aaa8399c5ea84ca7a`를 정상 merge한 기준은 `63ce6bf`다. 통합 전 전체 source snapshot은 여전히 `caf2f011...`과 일치했고, 통합 뒤 D065 소유 writer/migration/test/script 12개를 각 파일 SHA256으로 대조해 모두 불변임을 확인했다(`/private/tmp/d065-owned-tested-source.json`). 상위 product test/doc 변경은 최종 전체 CI에서 확인한다. D065 제품 코드는 `f4a0b25`, 테스트 `8a06507`, E2E 기대 목록 `3f4ea2b`로 분리했다.
-- 일시 경로만으로 증거가 사라지지 않도록 [증거 묶음](evidence/D-065-lineage-writer/README.md)에 당시 SQL prototype, 최종 SQL/restart 로그, 최종 집중 실행 로그 및 신규 JPA 15개 원본 XML과 해시를 보존했다. 역사적 no-op prototype가 최종 판정 계약이 아님을 명시했다.
+- 일시 경로만으로 증거가 사라지지 않도록 [증거 묶음](../evidence/D-065-lineage-writer/README.md)에 당시 SQL prototype, 최종 SQL/restart 로그, 최종 집중 실행 로그 및 신규 JPA 15개 원본 XML과 해시를 보존했다. 역사적 no-op prototype가 최종 판정 계약이 아님을 명시했다.
 
 
 ## 2026-10-21 /ship 실행

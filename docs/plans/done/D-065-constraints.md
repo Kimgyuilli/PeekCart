@@ -75,7 +75,7 @@ DML backfill은 명시적 트랜잭션 안에서 검증된 NULL 후보에만 적
 
 ## 6. 실제 결과와 무료 후속
 
-- 실제 MySQL 8.0.46 SQL 대조 33개, 108.805초 통과. 네 서비스 migration 14/13/15/9개를 최소 권한 계정으로 적용했다. 경량 Python 10개와 fixture export의 offline CLI 양성 호출도 통과했다. 상세 결과와 55개 source hash는 [증거](evidence/D-065-constraints/README.md)에 있다.
+- 실제 MySQL 8.0.46 SQL 대조 33개, 108.805초 통과. 네 서비스 migration 14/13/15/9개를 최소 권한 계정으로 적용했다. 경량 Python 10개와 fixture export의 offline CLI 양성 호출도 통과했다. 상세 결과와 55개 source hash는 [증거](../evidence/D-065-constraints/README.md)에 있다.
 - strict/non-strict old INSERT IGNORE는 warning 1364와 affected count 1로 root 0을 저장했다. 기존 NULL-only self update는 고치지 못했다. kind IGNORE는 빈 문자열을 저장했다. 따라서 NOT NULL만으로 구 writer를 안전하게 거부한다는 주장은 반증됐다.
 - DML 실패 1146은 양 테이블 before-image와 일치하게 rollback됐다. 둘째 ALTER 실패 1054는 첫 NOT NULL을 되돌리지 않았고, ALTER 전에 수행한 DML도 implicit commit되어 ROLLBACK으로 되돌아오지 않았다. old writer의 새 NULL은 strict ALTER를 1138로 막았다.
 - 관측된 backfill 트랜잭션 pause 중 별도 old writer가 NULL을 넣었다. legacy AUTO_INCREMENT는 allocator의 예약 ID 22를 소비했다. 후속 SQL upsert의 count 2에도 새 좌표는 없었으며 rollback 후 원본을 보존했다. live writer 정지 증거는 여전히 외부 전제다.
@@ -87,4 +87,4 @@ DML backfill은 명시적 트랜잭션 안에서 검증된 NULL 후보에만 적
 
 ### cleanup 검토 보완
 
-독립 P2 검토가 생성 응답 전에 중단되면 기존 owner manifest가 없다는 반례를 재현했다. Docker 호출 전 atomic name+nonce manifest와 생성 nonce label을 기록하고, ID 반환과 무관하게 소유권을 확인한 immutable ID로 정리하도록 보완했다. 같은 이름의 다른 nonce는 삭제하지 않으며 Python -O에서도 검사를 유지한다. 최종 SQL33은 175.519초, actual cleanup7methods(ownership5와 Docker4조건을 담은 2methods)는 5.284초에 통과했다. classifier10과 optimized ownership5도 통과했다. 수정 source56의 hash 및 raw 결과는 [cleanup-fix 증거](evidence/D-065-constraints/cleanup-fix/results.json)에 있다. 최초108.805초 실행은 역사적 증거로 보존하고 이번 수정의 최종 검증과 구별한다. 최종 독립 재검토·전체 CI는 별도 확인한다.
+독립 P2 검토가 생성 응답 전에 중단되면 기존 owner manifest가 없다는 반례를 재현했다. Docker 호출 전 atomic name+nonce manifest와 생성 nonce label을 기록하고, ID 반환과 무관하게 소유권을 확인한 immutable ID로 정리하도록 보완했다. 같은 이름의 다른 nonce는 삭제하지 않으며 Python -O에서도 검사를 유지한다. 최종 SQL33은 175.519초, actual cleanup7methods(ownership5와 Docker4조건을 담은 2methods)는 5.284초에 통과했다. classifier10과 optimized ownership5도 통과했다. 수정 source56의 hash 및 raw 결과는 [cleanup-fix 증거](../evidence/D-065-constraints/cleanup-fix/results.json)에 있다. 최초108.805초 실행은 역사적 증거로 보존하고 이번 수정의 최종 검증과 구별한다. 최종 독립 재검토·전체 CI는 별도 확인한다.
