@@ -13,6 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = Path(os.environ.get('HARNESS_CONTEXT_TEST_SCRIPT', ROOT / 'scripts/harness-context.sh'))
 TASKS = 'docs/TASKS.md'
 DONE = 'docs/progress/TASKS-done.md'
+# test_original_d053_overwrite_and_recovery 의 원본 커밋은 PR #171 ref 에만 있다(ci.yml 이 직접 받는다).
+HISTORY_FETCH = 'git:fetch --no-tags origin refs/pull/171/head'
 ACTIVE1 = '| D-900 | Docs | first fixture | source | 🔲 |\n'
 ACTIVE2 = '| D-901 | Docs | second fixture | source | 🔲 |\n'
 OLD1 = '| D-800 | Docs | first history | source | ✅ |\n'
@@ -170,6 +172,7 @@ exit "$HARNESS_TEST_TOOL_RC"
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertEqual([c for c in calls if c.startswith('tool:')], expected_tools)
                 self.assertEqual('git:fetch --unshallow --no-tags origin' in calls, state == 'true')
+                self.assertIn(HISTORY_FETCH, calls)
 
     def test_workflow_shallow_query_failure_stops_all_tools(self):
         result, calls = self.workflow(query_rc=23)
@@ -181,6 +184,11 @@ exit "$HARNESS_TEST_TOOL_RC"
         self.assertEqual(result.returncode, 23, result.stderr)
         self.assertEqual(calls, ['git:rev-parse --is-shallow-repository',
                                  'git:fetch --unshallow --no-tags origin'])
+
+    def test_workflow_history_fetch_failure_stops_all_tools(self):
+        result, calls = self.workflow(fetch_rc=23)
+        self.assertEqual(result.returncode, 23, result.stderr)
+        self.assertEqual(calls, ['git:rev-parse --is-shallow-repository', HISTORY_FETCH])
 
     def test_workflow_unexpected_query_output_is_not_full_state(self):
         for state in ('', 'unknown', 'true\nfalse'):
@@ -197,7 +205,7 @@ exit "$HARNESS_TEST_TOOL_RC"
     def test_workflow_health_failure_stops_later_checks(self):
         result, calls = self.workflow(tool_rc=3)
         self.assertEqual(result.returncode, 3, result.stderr)
-        self.assertEqual(calls, ['git:rev-parse --is-shallow-repository',
+        self.assertEqual(calls, ['git:rev-parse --is-shallow-repository', HISTORY_FETCH,
                                  'tool:bash:scripts/harness-context.sh --check --base fixture-base'])
 
     def test_cross_document_duplicate_is_failure(self):
