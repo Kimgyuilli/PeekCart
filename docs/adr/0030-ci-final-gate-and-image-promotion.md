@@ -1,6 +1,7 @@
 # ADR-0030: CI 최종 게이트와 검증 이미지 승격 계약
 
-- **Status**: Accepted
+- **Status**: Partially Superseded by [ADR-0044](./0044-ci-critical-path-and-docs-only-skip.md)
+- **후속 범위**: D1의 "skip 을 모두 실패로 전파"·"`images` 는 `lint` 만 기다린다"·"e2e 2개" 를 문서 전용 PR 의 정확한 skipped 허용·`changes` 대기·e2e 3러너로 대체한다. 필수 검증 집합과 D2~D4 는 유지한다.
 - **Date**: 2026-09-25
 - **Deciders**: PeakCart
 - **관련 Phase**: Phase 5
