@@ -932,3 +932,9 @@ S2 읽기 경로(①②③④)는 미측정이다. d026 이후 들어온 ADR-003
 ## 2026-10-24 — 열린 부채 상태 갱신과 D-075 재개
 
 세션 결과에 맞춰 열린 부채의 상태 칸을 정리했다. D-075 는 사용자 결정으로 보류를 풀고 재개한다. 목표 TPS·최대 backlog·초과 대응 기준을 먼저 정하고, D-106 ⑥(배수가 예약 lease 보다 길 때 대량 만료 취소)과 함께 처분한다. D-092 는 실제 Slack 전달이 확인돼 Secret 소유·교체와 FAILED 재발행 절차만 남았다. D-065 는 ②⑤ 의 GKE 결과를 D-106 으로 넘기고 ①③④ 가 남았다. D-064 의 차단 사유는 GCP 과금이 아니라 Toss 테스트 가맹점 키다. 과금이 필요한 남은 작업은 D-106 을 고친 뒤의 D-078 재측정뿐이다.
+
+## 2026-10-24 — CI 임계경로 단축과 문서 전용 PR skip
+
+[PR231](https://github.com/Kimgyuilli/PeekCart/pull/231). PR CI 19분의 임계경로는 lint 4.4분, images, e2e scenarios 12.1분이 이어진 한 줄이었다(run 40007646179). test 샤드는 최장 5분으로 이 경로 밖이라, 검사를 줄이지 않고 직렬 구간을 끊었다. images 는 lint 대신 새 `changes` job 만 기다리고, e2e 는 scenarios(a,b,c,d,f)·fence(e)·negative-control 세 러너로 나눴다. E2E 증적 대조는 gate 에서 두 시나리오 러너의 합집합으로 한다. 문서만 바꾼 PR 은 test·guards·images·e2e 가 skipped 이고 gate 는 그것이 정확히 skipped 인지 본다. PR 217 전용 job 은 지웠다. 결정은 ADR-0044(ADR-0030 D1 부분 대체)다.
+
+미충족: e2e 분할은 #231 CI 에서, 문서 전용 경로는 다음 문서 PR 에서 처음 실제로 돈다. 단축폭(약 19분에서 10~11분)은 추정이며 병합 후 실측한다.
