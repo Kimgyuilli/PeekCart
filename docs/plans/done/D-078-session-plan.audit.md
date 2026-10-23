@@ -19,3 +19,9 @@
 
 - PR https://github.com/Kimgyuilli/PeekCart/pull/227. consistency precheck 경고 0, 리뷰 처분 점검 ok, 커밋·본문·제목 문체 lint 통과.
 - 갱신: TASKS D-078 상태 cell(#226 병합 반영, #227 링크), PHASE5 작업 이력. 완료 이동·계획 이동 없음.
+
+## /ship (세션 실행 결과)
+
+- PR https://github.com/Kimgyuilli/PeekCart/pull/230. consistency precheck 경고 0, 리뷰 처분 점검 ok, 커밋·본문·제목 문체 lint 통과, `docs-preservation-ci.py --base 312ff16` PASS.
+- 세션 2026-10-24 실행. S2 는 ADR-0037 bulkhead 로 재현 게이트가 구조적으로 실패해 사용자 결정으로 접었다. 세션 발견 11건은 D-106.
+- 갱신: TASKS D-078·D-065·D-092·D-075 상태 cell, D-106 등록, PHASE5 작업 이력, 계획서 15건 done 이동. D-078 은 열린 채 유지(완료 이동 없음).
