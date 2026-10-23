@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 144개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 149개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-10-21 | 있음 |
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-10-21 |  |
 
-## 기타 (82)
+## 기타 (87)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -133,10 +133,12 @@
 | [D-049](./D-049.md) | D-049 | [#168](https://github.com/Kimgyuilli/PeakCart/pull/168) | 2026-10-21 | 있음 |
 | [D-064-merchant-order-id](./D-064-merchant-order-id.md) | D-064 canonical PG 주문 식별자 | [#196](https://github.com/Kimgyuilli/PeakCart/pull/196) | 2026-10-21 | 있음 |
 | [D-064-pg-contract](./D-064-pg-contract.md) | D-064 무료 PG 계약 보정 | [#193](https://github.com/Kimgyuilli/PeakCart/pull/193) | 2026-10-21 | 있음 |
+| [D-065-access-denied-mvc](./D-065-access-denied-mvc.md) | D-065 MVC 권한 거부 응답 보존 | [#211](https://github.com/Kimgyuilli/PeakCart/pull/211) | 2026-10-21 | 있음 |
 | [D-065-collector](./D-065-collector.md) | D-065 collector 수집 실패 차단 | [#189](https://github.com/Kimgyuilli/PeakCart/pull/189) | 2026-10-21 | 있음 |
 | [D-065-constraints](./D-065-constraints.md) | D-065 constraints — 로컬 분류·backfill 안전성 검증 계획 | [#202](https://github.com/Kimgyuilli/PeakCart/pull/202) | 2026-10-21 | 있음 |
 | [D-065-dlq-diagnostic](./D-065-dlq-diagnostic.md) | D-065 DLQ 첫 테스트 실패 진단 | [#205](https://github.com/Kimgyuilli/PeakCart/pull/205) | 2026-10-21 | 있음 |
 | [D-065-lineage-writer](./D-065-lineage-writer.md) | D-065 DLQ 원장의 최초 INSERT lineage 보장 | [#201](https://github.com/Kimgyuilli/PeakCart/pull/201) | 2026-10-21 | 있음 |
+| [D-065-signed-gateway](./D-065-signed-gateway.md) | D-065 signed gateway — 닫힌 replay 진입점의 실제 인증 체인 | [#210](https://github.com/Kimgyuilli/PeakCart/pull/210) | 2026-10-21 | 있음 |
 | [D-065-signed-gateway-execution](./D-065-signed-gateway-execution.md) | D-065 signed gateway 실행 계획 | [#210](https://github.com/Kimgyuilli/PeakCart/pull/210) | 2026-10-21 | 있음 |
 | [D-075](./D-075.md) | D-075: outbox 로컬 병목 분해 (부분 분석) | [#200](https://github.com/Kimgyuilli/PeakCart/pull/200) | 2026-10-21 | 있음 |
 | [D-078](./D-078.md) | D-078: 캐시 이름별 수집 공백의 로컬 보완 (부분 작업) | [#199](https://github.com/Kimgyuilli/PeakCart/pull/199) | 2026-10-21 | 있음 |
@@ -149,12 +151,15 @@
 | [D-099](./D-099.md) | D-099: harness 완료 아카이브 건강 검사 | [#204](https://github.com/Kimgyuilli/PeakCart/pull/204) | 2026-10-21 | 있음 |
 | [D-103](./D-103.md) | D-103: 리뷰 결과 렌더러 수용 계약 | [#206](https://github.com/Kimgyuilli/PeakCart/pull/206) | 2026-10-21 | 있음 |
 | [D-105](./D-105.md) | D-105: ship 재개 조회 실패 구분 | [#184](https://github.com/Kimgyuilli/PeakCart/pull/184) | 2026-10-21 | 있음 |
+| [D-065-collector-adapter](./D-065-collector-adapter.md) | D-065 actual DB/Kafka collector adapter 검증 | [#212](https://github.com/Kimgyuilli/PeakCart/pull/212) | 2026-10-22 | 있음 |
+| [D-065-flyway-contract](./D-065-flyway-contract.md) | D-065 실제 Flyway migration·재시작 경계 검증 | [#207](https://github.com/Kimgyuilli/PeakCart/pull/207) | 2026-10-22 | 있음 |
 | [D-078-retry-load](./D-078-retry-load.md) | D-078: finite Kafka inventory retry experiment | [#221](https://github.com/Kimgyuilli/PeakCart/pull/221) | 2026-10-22 | 있음 |
 | [D-078-session-prep](./D-078-session-prep.md) | D-078 과금 세션 사전 준비 (부분 작업) | [#225](https://github.com/Kimgyuilli/PeakCart/pull/225) | 2026-10-22 | 있음 |
 | [D-084-signed-recovery](./D-084-signed-recovery.md) | D-084 — 실제 signed ADMIN 분산 복구 체인 | [#214](https://github.com/Kimgyuilli/PeakCart/pull/214) | 2026-10-22 | 있음 |
 | [D-086](./D-086.md) | CI 시간 이력 사실 정정 | [#190](https://github.com/Kimgyuilli/PeakCart/pull/190) | 2026-10-22 |  |
 | [D-088](./D-088.md) | D-088: lint CI 배선과 외부 생존 대조 | [#213](https://github.com/Kimgyuilli/PeakCart/pull/213) | 2026-10-22 | 있음 |
 | [D-091](./D-091.md) | D-091 | [#191](https://github.com/Kimgyuilli/PeakCart/pull/191) | 2026-10-22 |  |
+| [D-092-slack-split](./D-092-slack-split.md) | D-092 P2: 사용자와 운영 Slack webhook 분리 | [#219](https://github.com/Kimgyuilli/PeakCart/pull/219) | 2026-10-22 | 있음 |
 | [D-093](./D-093.md) | D-093: 실제 alert 초기 평가 준비 대기 | [#217](https://github.com/Kimgyuilli/PeakCart/pull/217) | 2026-10-22 | 있음 |
 | [D-095](./D-095.md) | D-095 | [#191](https://github.com/Kimgyuilli/PeakCart/pull/191) | 2026-10-22 |  |
 | [D-096](./D-096.md) | D-096 | [#192](https://github.com/Kimgyuilli/PeakCart/pull/192) | 2026-10-22 |  |

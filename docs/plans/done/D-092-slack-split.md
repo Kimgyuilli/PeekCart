@@ -30,3 +30,7 @@ notification 사용자 메시지와 운영 경보가 같은 endpoint로 전달�
 ## 미해결
 
 실제 Slack 전달, 채널 소유자 승인, Secret 주입, GKE rollout은 외부 운영 조건으로 남는다. PR217의 Grafana/runbook 파일은 이 PR 범위 밖이다. 코드/무료 fixture 성공을 운영 전달 성공이나 D-092 전체 완료로 표시하지 않는다.
+
+## 완료 기록
+
+[PR219](https://github.com/Kimgyuilli/PeekCart/pull/219) 최종 head `8c55ef3` 의 일반 CI39629291268 과 signed run39629291259 가 성공했다. [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/219#issuecomment-6320677035)는 구현·설정·테스트·계획 10파일이 이전 리뷰본과 byte 동일함과 notification 59 tests(실제 loopback 분리, 시작 거부 7건)를 확인했고 차단이 없었다. 병합 `b2e8620` 의 [main CI39632767287](https://github.com/Kimgyuilli/PeekCart/actions/runs/39632767287)은 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-22). 위 §미해결의 운영 조건은 이 완료에 포함하지 않는다. 실제 두 채널 분리 전달은 이후 D-078 GKE 세션에서 확인됐고, Secret 소유·교체는 D-092 에 남아 있다.
