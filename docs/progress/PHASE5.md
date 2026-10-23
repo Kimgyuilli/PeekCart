@@ -932,3 +932,11 @@ S2 읽기 경로(①②③④)는 미측정이다. d026 이후 들어온 ADR-003
 ## 2026-10-24 — 열린 부채 상태 갱신과 D-075 재개
 
 세션 결과에 맞춰 열린 부채의 상태 칸을 정리했다. D-075 는 사용자 결정으로 보류를 풀고 재개한다. 목표 TPS·최대 backlog·초과 대응 기준을 먼저 정하고, D-106 ⑥(배수가 예약 lease 보다 길 때 대량 만료 취소)과 함께 처분한다. D-092 는 실제 Slack 전달이 확인돼 Secret 소유·교체와 FAILED 재발행 절차만 남았다. D-065 는 ②⑤ 의 GKE 결과를 D-106 으로 넘기고 ①③④ 가 남았다. D-064 의 차단 사유는 GCP 과금이 아니라 Toss 테스트 가맹점 키다. 과금이 필요한 남은 작업은 D-106 을 고친 뒤의 D-078 재측정뿐이다.
+
+## 2026-10-24 — D-106 재측정 선행 수정
+
+D-106 11건 중 재측정 최소 조건이면서 과금 없이 고칠 수 있는 ⑨③④⑧⑪ 을 고쳤다([PR232](https://github.com/Kimgyuilli/PeekCart/pull/232)). drain preflight 는 브로커 주소를 k8s 리스너 29092 로 맞췄다. collector fixture 와 hermetic kubectl fixture 가 9092 에 맞춰져 있어 결함이 green 이었으므로, drift lint(REPLAY-ENTRY-007)가 preflight 포트와 k8s 리스너를 대조한다.
+
+포트를 고쳐도 정상 스택은 막혔다. 4서비스 컨슈머는 `auto-offset-reset: earliest` 라 레코드가 없는 DLQ 파티션에 커밋이 생기지 않는다(Spring Kafka 3.3.14 jar 확인). 사용자 승인으로 `CURRENT-OFFSET -`·`LOG-END-OFFSET 0`·`LAG -` 행만 lag 0 으로 세고, 그 밖의 미확인 값은 계속 막는다(ADR-0022 Update Log). 실제 Kafka lab 에서 같은 컨슈머의 `0 - 0 -` 통과와 레코드 1건 뒤 `0 - 1 -` 차단을 확인했다.
+
+측정 overlay 진입점 5개에 ServiceMonitor 를 넣고 lint 범위를 측정 overlay 6개로 넓혔다. 측정 절차에는 관측 스택 선행, payment Toss smoke 주입, 빈 스택의 시드 뒤 인증 게이트, 배포 직후 워밍업 run 규칙을 넣었다. 남은 것은 ①⑦ 설계 확정, ⑥(D-075), ⑩ 원인 분리, ②⑤ 다. 워밍업 횟수는 재측정 계획에서 정하고, 실제 스택 확인은 D-078 재측정에서 한다.

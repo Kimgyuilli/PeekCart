@@ -18,3 +18,10 @@
 
 ## 2026-10-24 — P7 범위 정정
 - `/ship` preflight 가 P7 미완으로 막았다. P7 초안은 PR CI·`replay-collector` 결과 확인을 포함해 PR 생성 전에는 닫을 수 없었고, 같은 확인은 §완료 조건에 이미 있다. 머지 뒤에도 CI 확인 체크박스가 열린 채 남는 패턴(D-078-retry-load P4 등, 2026-10-24 sync 아카이브 후보)을 반복하지 않도록 P7 을 로컬 검증으로 좁히고 PR CI 확인은 §완료 조건에 맡겼다. 로컬 검증은 위 블록대로 완료했다.
+
+## 2026-10-24 06:10 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/232 (base main `1cc1efc`, head 브랜치 `debt/d106-remeasure-prereq`)
+- precheck: ship preflight ok(P7 정정 후), consistency ok(warnings 0), review health ok, writing lint 는 커밋 5건·본문·제목 모두 통과.
+- 커밋: `747554f` docs(plans), `37abac6` chore(replay), `4f15169` chore(k8s), `7eec964` docs(adr), `793605b` docs(loadtest), 이후 /done 갱신 커밋.
+- 갱신: TASKS D-106 행을 🔄 진행과 PR 링크로 바꿨다(11건 중 5건이라 완료 이동 없음). PHASE5 에 진행 기록을 남겼다. Layer 1 `docs/02-architecture.md` 에서 빈 namespace 첫 배포의 preflight skip 을 What 만 정정했다.
+- 남은 확인: PR 일반 CI, `replay-collector` workflow.
