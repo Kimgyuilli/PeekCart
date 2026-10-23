@@ -55,3 +55,9 @@ grade: L
 ## 실제 실행 근거
 
 수정 source `81fc5183db0c947ffe3149aba8d52e58411d8e7c`, Actions39605979637의 실제 PR merge checkout은 `5d54ab47377fc484ff95bd6cffdbd18003c70373`이다. 24개 관측(16/3/3/2), 네 outbox/inbox 전이, 실제 Kafka 중복 전달, ack 전 상태 유지, happy 재고3→5 한 번, stale/404/identity 불일치 재고3 유지, 8개 실제 원자료 변이 거절이 통과했다. 자기 container8/network1/volume1 정리와 secret scan(제거0)도 완료했다. 39개 raw 파일과 개별 hash는 evidence bundle에 보존한다. 이는 fixture PG와 seeded 초기 상태의 검증이며 최종 일반 CI/독립 검토/순차 병합인 P6는 미완이다.
+
+## 완료 기록
+
+[PR214](https://github.com/Kimgyuilli/PeekCart/pull/214)는 head `2fa0942`에서 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/214#issuecomment-6321259541) 차단 없음과 같은 head의 전용 [run39633928741](https://github.com/Kimgyuilli/PeekCart/actions/runs/39633928741)·일반 [CI39633928865](https://github.com/Kimgyuilli/PeekCart/actions/runs/39633928865) 성공을 받았다. 원자료는 run39605979637 bundle에 보존돼 있고, [첫 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/214#issuecomment-6317172893)와 위 리뷰가 실행 source가 그 run의 `81fc518` 이후 바뀌지 않았음을 확인했다. 최신 main을 합친 최종 head `7df9a1c`는 작성 patch의 patch-id가 `2fa0942`와 같고, 전용 [run39654630929](https://github.com/Kimgyuilli/PeekCart/actions/runs/39654630929)와 일반 [PR CI39654630960](https://github.com/Kimgyuilli/PeekCart/actions/runs/39654630960)이 성공했다.
+
+병합 `b9faf58`의 [main CI39657501878](https://github.com/Kimgyuilli/PeekCart/actions/runs/39657501878)은 lint에서 실패했다. 실패 지점은 PR214가 바꾸지 않은 `scripts/tests/dlq_contract_lab.py`의 `backfill transaction did not reach observed pause`이고, images·E2E·publish는 돌지 않았다. 이를 고친 PR222 병합 `1f0920d`의 [main CI39665572218](https://github.com/Kimgyuilli/PeekCart/actions/runs/39665572218)이 PR214 변경을 포함한 main에서 전체 테스트·E2E·gate·여섯 publish 성공으로 끝났다(2026-10-22). 이로써 P6을 충족한다. 체크박스는 원문 그대로 둔다. 영구 404 신뢰 증빙, 실 PG·운영 실행, D-084 전체는 이 완료에 포함하지 않는다.

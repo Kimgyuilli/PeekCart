@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 140개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 144개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-10-21 | 있음 |
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-10-21 |  |
 
-## 기타 (78)
+## 기타 (82)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -149,7 +149,9 @@
 | [D-099](./D-099.md) | D-099: harness 완료 아카이브 건강 검사 | [#204](https://github.com/Kimgyuilli/PeakCart/pull/204) | 2026-10-21 | 있음 |
 | [D-103](./D-103.md) | D-103: 리뷰 결과 렌더러 수용 계약 | [#206](https://github.com/Kimgyuilli/PeakCart/pull/206) | 2026-10-21 | 있음 |
 | [D-105](./D-105.md) | D-105: ship 재개 조회 실패 구분 | [#184](https://github.com/Kimgyuilli/PeakCart/pull/184) | 2026-10-21 | 있음 |
+| [D-078-retry-load](./D-078-retry-load.md) | D-078: finite Kafka inventory retry experiment | [#221](https://github.com/Kimgyuilli/PeakCart/pull/221) | 2026-10-22 | 있음 |
 | [D-078-session-prep](./D-078-session-prep.md) | D-078 과금 세션 사전 준비 (부분 작업) | [#225](https://github.com/Kimgyuilli/PeakCart/pull/225) | 2026-10-22 | 있음 |
+| [D-084-signed-recovery](./D-084-signed-recovery.md) | D-084 — 실제 signed ADMIN 분산 복구 체인 | [#214](https://github.com/Kimgyuilli/PeakCart/pull/214) | 2026-10-22 | 있음 |
 | [D-086](./D-086.md) | CI 시간 이력 사실 정정 | [#190](https://github.com/Kimgyuilli/PeakCart/pull/190) | 2026-10-22 |  |
 | [D-088](./D-088.md) | D-088: lint CI 배선과 외부 생존 대조 | [#213](https://github.com/Kimgyuilli/PeakCart/pull/213) | 2026-10-22 | 있음 |
 | [D-091](./D-091.md) | D-091 | [#191](https://github.com/Kimgyuilli/PeakCart/pull/191) | 2026-10-22 |  |
@@ -163,5 +165,7 @@
 | [D-078-capture-prep](./D-078-capture-prep.md) | D-078 세션 캡처 도구와 세션 범위 확장 (부분 작업) | [#228](https://github.com/Kimgyuilli/PeakCart/pull/228) | 2026-10-23 | 있음 |
 | [D-078-latency-metrics](./D-078-latency-metrics.md) | D-078 README 보강 지표 A~E 와 지연 원자료 도구 (부분 작업) | [#229](https://github.com/Kimgyuilli/PeakCart/pull/229) | 2026-10-23 | 있음 |
 | [D-078-session-dashboard](./D-078-session-dashboard.md) | D-078 측정 세션 대시보드와 캡처 기준 (부분 작업) | [#226](https://github.com/Kimgyuilli/PeakCart/pull/226) | 2026-10-23 | 있음 |
-| [D-078-session-plan](./D-078-session-plan.md) | D-078 GKE 측정 세션 계획 (부분 작업) | [#227](https://github.com/Kimgyuilli/PeakCart/pull/227) | 2026-10-23 | 있음 |
+| [D-078-scheduler-capacity](./D-078-scheduler-capacity.md) | D-078 실제 Boot scheduler의 유한 capacity 검사 | [#220](https://github.com/Kimgyuilli/PeakCart/pull/220) | 2026-10-24 | 있음 |
+| [D-078-session-plan](./D-078-session-plan.md) | D-078 GKE 측정 세션 계획 (부분 작업) | [#230](https://github.com/Kimgyuilli/PeakCart/pull/230) | 2026-10-24 | 있음 |
+| [D-106-remeasure-prereq](./D-106-remeasure-prereq.md) | D-106 재측정 선행 수정 — ⑨③④⑧⑪ | [#232](https://github.com/Kimgyuilli/PeakCart/pull/232) | 2026-10-24 | 있음 |
 
