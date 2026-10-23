@@ -6,7 +6,7 @@
 #
 #   --structure       매트릭스 자체의 유효성 (증적 없이도 돈다 — build 잡에서 먼저)
 #   --jvm-evidence    JUnit XML 과 대조 — jvm 행이 실제로 통과했는가
-#   --e2e-evidence    E2E manifest 와 대조 — e2e 행의 관측값이 expected 와 정확히 같은가
+#   --e2e-evidence    E2E manifest 와 대조(디렉터리 여럿은 쉼표로) — e2e 행의 관측값이 expected 와 정확히 같은가
 #   --self-test       lint 자신이 위반을 잡는지 (fixture 조작)
 #
 # **required-ID 정본은 이 스크립트 안에 둔다**(계획 N4). 매트릭스가 유일한 입력이면
@@ -316,32 +316,38 @@ def check_jvm_evidence(rows, roots, commit_sha):
 
 
 # ---- --e2e-evidence ------------------------------------------------------------
-def check_e2e_evidence(rows, manifest_dir, commit_sha):
+# CI 는 시나리오를 러너 여럿으로 나눠 돌린다. 디렉터리를 쉼표로 받아 **합집합**을 대조하고,
+# 같은 시나리오가 두 디렉터리에 있으면 디렉터리 안의 중복과 똑같이 실패로 센다.
+def check_e2e_evidence(rows, manifest_dirs, commit_sha):
     problems = []
     manifests = {}
-    if not os.path.isdir(manifest_dir):
-        return ["manifest 디렉터리가 없다: %s" % manifest_dir]
-    for fn in sorted(os.listdir(manifest_dir)):
-        if not (fn.startswith("manifest-") and fn.endswith(".json")):
-            continue
-        with open(os.path.join(manifest_dir, fn), encoding="utf-8") as f:
-            doc = json.load(f)
-        sid = doc.get("scenario_id")
-        if sid is None:
-            problems.append("%s: scenario_id 가 없다" % fn)
-            continue
-        if commit_sha and doc.get("commit_sha") != commit_sha:
-            problems.append("%s: stale manifest — commit_sha %s (기대 %s)"
-                            % (fn, doc.get("commit_sha"), commit_sha))
-            continue
-        if doc.get("result") != "success":
-            problems.append("%s: result=%s" % (fn, doc.get("result")))
-            continue
-        if sid in manifests:
-            problems.append("시나리오 %s 의 성공 manifest 가 2개 이상이다 — 어느 실행의 "
-                            "증적인지 불확정이다" % sid)
-            continue
-        manifests[sid] = doc.get("evidence") or {}
+    if not manifest_dirs:
+        return ["manifest 디렉터리가 지정되지 않았다"]
+    missing = [d for d in manifest_dirs if not os.path.isdir(d)]
+    if missing:
+        return ["manifest 디렉터리가 없다: %s" % d for d in missing]
+    for manifest_dir in manifest_dirs:
+        for fn in sorted(os.listdir(manifest_dir)):
+            if not (fn.startswith("manifest-") and fn.endswith(".json")):
+                continue
+            with open(os.path.join(manifest_dir, fn), encoding="utf-8") as f:
+                doc = json.load(f)
+            sid = doc.get("scenario_id")
+            if sid is None:
+                problems.append("%s: scenario_id 가 없다" % fn)
+                continue
+            if commit_sha and doc.get("commit_sha") != commit_sha:
+                problems.append("%s: stale manifest — commit_sha %s (기대 %s)"
+                                % (fn, doc.get("commit_sha"), commit_sha))
+                continue
+            if doc.get("result") != "success":
+                problems.append("%s: result=%s" % (fn, doc.get("result")))
+                continue
+            if sid in manifests:
+                problems.append("시나리오 %s 의 성공 manifest 가 2개 이상이다 — 어느 실행의 "
+                                "증적인지 불확정이다" % sid)
+                continue
+            manifests[sid] = doc.get("evidence") or {}
 
     for r in rows:
         if r["evidence_type"] != "e2e":
@@ -386,7 +392,8 @@ def main(argv):
         roots = [d for d in argv[3].split(",") if d]
         problems = check_jvm_evidence(rows, roots, os.environ.get("SAGA_COMMIT_SHA", ""))
     elif mode == "--e2e-evidence":
-        problems = check_e2e_evidence(rows, argv[3], os.environ.get("SAGA_COMMIT_SHA", ""))
+        dirs = [d for d in argv[3].split(",") if d]
+        problems = check_e2e_evidence(rows, dirs, os.environ.get("SAGA_COMMIT_SHA", ""))
     else:
         print("알 수 없는 모드: %s" % mode, file=sys.stderr)
         return 2
@@ -431,7 +438,7 @@ case "$MODE" in
     exec bash "$(dirname "${BASH_SOURCE[0]}")/saga-contract-matrix-selftest.sh"
     ;;
   *)
-    echo "사용: $0 [--structure|--jvm-evidence [roots]|--e2e-evidence [dir]|--self-test]" >&2
+    echo "사용: $0 [--structure|--jvm-evidence [roots]|--e2e-evidence [dir[,dir...]]|--self-test]" >&2
     exit 2
     ;;
 esac

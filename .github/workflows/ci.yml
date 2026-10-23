@@ -11,6 +11,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ── changes: 문서 전용 PR 이면 test·guards·images·e2e 를 건너뛴다 ──────────────────
+  # lint 는 문서 보존·harness 검사를 포함하므로 판정과 무관하게 항상 돈다. push 는 publish 가
+  # 이미지를 소비하므로 판정 없이 전부 돈다. 판정이 실패하면 이 job 이 red 가 되고 gate 가 막는다.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      code: ${{ steps.classify.outputs.code }}
+
+    steps:
+      # PR 의 checkout 은 merge 커밋이다. 첫 부모가 base 라 HEAD^1..HEAD 가 PR 의 순변경이다.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      # --no-renames: 코드 파일을 docs/ 로 옮긴 PR 은 삭제 쪽 경로로 코드 변경이 잡혀야 한다.
+      - name: Classify changed paths
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "code=true" | tee -a "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --no-renames --name-only HEAD^1 HEAD > "$RUNNER_TEMP/changed.txt"
+          bash scripts/ci-docs-only.sh < "$RUNNER_TEMP/changed.txt" | tee -a "$GITHUB_OUTPUT"
+
   # ── lint: 정책 검사. Java/Gradle 불요라 테스트와 병렬로 즉시 시작한다 ──────────────
   lint:
     runs-on: ubuntu-latest
@@ -72,9 +102,11 @@ jobs:
           bash scripts/ci-image-identity.sh --self-test
           python3 -B scripts/ci-build-profile-selftest.py
           python3 -B scripts/ci-build-profile-selftest.py --mutants
-          # D-033: 시나리오와 음성 대조군을 병렬로 돌리되 PR 에서 둘 다 필수로 유지한다.
+          # D-033: 시나리오(두 러너)와 음성 대조군을 병렬로 돌리되 PR 에서 모두 필수로 유지한다.
           bash scripts/ci-e2e-parallel-lint.sh
           bash scripts/ci-e2e-parallel-lint.sh --self-test
+          # 문서 전용 PR 판정 — 코드 경로를 문서로 오판하면 test·images·e2e 가 조용히 빠진다.
+          bash scripts/ci-docs-only.sh --self-test
           # D-032: 통합 테스트가 컨테이너를 직접 선언하지 못하게 한다(ADR-0028).
           # 규약을 코드로 강제하지 않으면 새 테스트가 관행대로 @Container 를 선언하고,
           # 그 클래스만 조용히 컨테이너를 다시 띄운다 — CI 는 초록이고 테스트 시간만 우상향한다.
@@ -212,41 +244,13 @@ jobs:
           python3 -B scripts/harness-context-selftest.py
           python3 -B docs/plans/evidence/D-099/check-mutants.py
 
-  # D-092 PR217 only: the task-scoped real Grafana fixture validates the provisioned
-  # operations route through its loopback receiver. The existing rule-timing scenario
-  # takes about 35 minutes, so isolate it from normal lint/test jobs and bound it.
-  d092-grafana-routing:
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 217 }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 50
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install fixture dependency
-        run: python3 -m pip install --user pyyaml
-      - name: Verify operations delivery and default-route isolation
-        run: |
-          set -euo pipefail
-          python3 -B scripts/monitoring/verify_alerts.py --run --output "$RUNNER_TEMP/d092-grafana"
-      - name: Upload bounded Grafana evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: d092-grafana-routing-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            ${{ runner.temp }}/d092-grafana/manifest.json
-            ${{ runner.temp }}/d092-grafana/summary.json
-            ${{ runner.temp }}/d092-grafana/capture/notifications.jsonl
-            ${{ runner.temp }}/d092-grafana/cleanup.log
-          if-no-files-found: warn
-          retention-days: 7
-
   # ── test: 모듈 shard 매트릭스. 분해 전 단일 build 는 32m23s 였다(run 33314020601) ──
   # shard→모듈 매핑의 **단일 정본은 matrix.include[].modules** 다. Gradle 명령과
   # ci-test-matrix-lint 가 같은 필드를 읽는다 — 실행식과 검증식이 갈리면 lint 가
   # 자기 복사본만 보는 false-green 이 된다.
   test:
+    needs: [changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -325,6 +329,8 @@ jobs:
   # 다만 가드가 전 서비스 :classes 를 dependsOn 하므로 이 job 은 전 배포 모듈의
   # **main 컴파일을 수행**한다(test 제외) — shard 들과 중복이다.
   guards:
+    needs: [changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -379,8 +385,9 @@ jobs:
 
   # ── gate: 전체 필수 검증 + saga 계약 증적 통합 ─────────────────────────────────
   # test/guards 는 JVM 증적 소비, 나머지는 PR 병합·이미지 승격의 필수 판정이다.
+  # 문서 전용 PR(changes.code=false)에서는 test·guards·images·e2e 가 정확히 skipped 여야 한다.
   gate:
-    needs: [lint, test, guards, images, e2e]
+    needs: [changes, lint, test, guards, images, e2e]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
@@ -397,7 +404,7 @@ jobs:
       # 두 shard 에 들어가면 증적이 조용히 덮인다(P6 이 정적으로 막지만, 업로드 이후의
       # 충돌·변조는 못 본다). artifact 별로 받아 충돌을 먼저 검출하고 병합한다.
       - name: Download shard results
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.code == 'true' }}
         uses: actions/download-artifact@v4
         with:
           pattern: shard-results-*
@@ -406,11 +413,11 @@ jobs:
       # 충돌 0 을 확인한 뒤 `<module>/build/...` 배치로 병합한다. 이 배치라야 saga lint 의
       # 기본 glob(./*/build/test-results/test)이 로컬과 같게 동작한다.
       - name: Merge shard artifacts (collision-checked)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.code == 'true' }}
         run: bash scripts/ci-test-matrix-lint.sh --merge-artifacts _artifacts
 
       - name: Download root reports
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.code == 'true' }}
         uses: actions/download-artifact@v4
         with:
           name: root-reports
@@ -421,7 +428,7 @@ jobs:
       # "증적 없음" 과 **다른 메시지**로 끝난다(원인 오진 방지).
       - name: Verify artifact layout
         id: layout
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && needs.changes.outputs.code == 'true' }}
         run: bash scripts/ci-test-matrix-lint.sh --verify-layout
 
       # 4-b. 배치가 온전할 때만 전체 증적 대조. 배치가 깨졌으면 결측 22행을 대량 출력하지 않는다.
@@ -429,6 +436,22 @@ jobs:
         if: ${{ !cancelled() && steps.layout.outcome == 'success' && needs.test.result == 'success' }}
         run: |
           SAGA_COMMIT_SHA="${GITHUB_SHA}" bash scripts/saga-contract-matrix-lint.sh --jvm-evidence
+
+      # e2e 는 시나리오를 두 러너(scenarios·fence)로 나눠 돈다. 증적 대조는 러너별이 아니라
+      # 합집합에서 한 번 한다 — 러너별로 하면 어느 러너에도 없는 시나리오를 아무도 보지 못한다.
+      - name: Download e2e evidence
+        if: ${{ !cancelled() && needs.e2e.result == 'success' }}
+        uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-evidence-${{ github.run_id }}-*
+          path: e2e-evidence
+
+      - name: saga contract matrix — e2e evidence
+        if: ${{ !cancelled() && needs.e2e.result == 'success' }}
+        run: |
+          set -euo pipefail
+          DIRS="$(ls -d e2e-evidence/e2e-evidence-${{ github.run_id }}-{scenarios,fence}/*/ | paste -sd, -)"
+          SAGA_COMMIT_SHA="${GITHUB_SHA}" bash scripts/saga-contract-matrix-lint.sh --e2e-evidence "$DIRS"
 
       # shard 결과와 무관한 계약들 — 배치가 깨져도 항상 돈다.
       - name: Contract self-tests (stack-independent)
@@ -454,17 +477,21 @@ jobs:
           if-no-files-found: warn
 
       # !cancelled() 로 실패 후에도 진단을 모으므로 마지막에 모든 선행 결과를 전파한다.
+      # code 출력이 비면(판정 누락) 코드 변경으로 본다 — 'false' 와만 비교하는 이유다.
       - name: Propagate upstream failure
-        if: ${{ !cancelled() && (needs.lint.result != 'success' || needs.test.result != 'success' || needs.guards.result != 'success' || needs.images.result != 'success' || needs.e2e.result != 'success') }}
+        if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.lint.result != 'success' || (needs.changes.outputs.code != 'false' && (needs.test.result != 'success' || needs.guards.result != 'success' || needs.images.result != 'success' || needs.e2e.result != 'success')) || (needs.changes.outputs.code == 'false' && (needs.test.result != 'skipped' || needs.guards.result != 'skipped' || needs.images.result != 'skipped' || needs.e2e.result != 'skipped'))) }}
         run: |
-          echo "::error::선행 job 실패 — lint=${{ needs.lint.result }} test=${{ needs.test.result }} guards=${{ needs.guards.result }} images=${{ needs.images.result }} e2e=${{ needs.e2e.result }}"
+          echo "::error::선행 job 실패 — changes=${{ needs.changes.result }}(code=${{ needs.changes.outputs.code }}) lint=${{ needs.lint.result }} test=${{ needs.test.result }} guards=${{ needs.guards.result }} images=${{ needs.images.result }} e2e=${{ needs.e2e.result }}"
           exit 1
 
   # D-031: gate 를 needs 에서 뺀다 — 이미지 빌드는 테스트 결과와 무관한 일인데 전 샤드
   # 완료를 기다리고 있었다(실측 run 35731821466 에서 images 가 test 보다 18분 늦게 시작).
   # 최종 gate 가 images/e2e 까지 기다리므로 이미지 빌드의 테스트 병렬성은 유지한다.
+  # lint 도 기다리지 않는다 — lint→images→e2e 가 한 줄로 직렬이라 lint 4.4분이 그대로
+  # 전체 시간에 더해졌다(run 40007646179). lint 실패는 gate 가 직접 막는다.
   images:
-    needs: [lint]
+    needs: [changes]
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -586,8 +613,10 @@ jobs:
           if-no-files-found: error
 
   # cross-service saga E2E (계획 P12·P16·P18·P19).
-  # 시나리오 6종 + 음성 대조군을 별도 러너에서 병렬로 돌린다.
-  # 두 매트릭스 항목 모두 PR 과 push 에서 필수이며 각자 cold start 스택을 소유한다.
+  # 시나리오 6종을 두 러너로 나누고 음성 대조군과 함께 셋을 병렬로 돌린다. 시나리오 e(승인
+  # fence, payment 재시작)가 혼자 4.5분이라 나머지 다섯과 묶으면 이 러너가 전체 시간을 정했다.
+  # 세 매트릭스 항목 모두 PR 과 push 에서 필수이며 각자 cold start 스택을 소유한다.
+  # 증적 대조는 두 시나리오 러너의 합집합으로 gate 에서 한다.
   e2e:
     needs: images
     runs-on: ubuntu-latest
@@ -596,7 +625,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [scenarios, negative-control]
+        mode: [scenarios, fence, negative-control]
     # ⑤ 실행 예산 — 전체 상한. 인프라가 매달려도 러너를 오래 잡지 않는다.
     timeout-minutes: 45
     env:
@@ -634,20 +663,18 @@ jobs:
       - name: Build runner image
         run: docker compose -f docker-compose.e2e.yml -p e2e-${E2E_RUN_ID} build runner
 
-      - name: 시나리오 6종
+      # f 는 잔여를 남기므로 꼬리에 둔다(saga_e2e.validate_order).
+      - name: 시나리오 a·b·c·d·f
         if: matrix.mode == 'scenarios'
-        run: bash scripts/saga-e2e-smoke.sh
+        run: bash scripts/saga-e2e-smoke.sh --scenarios a,b,c,d,f
+
+      - name: 시나리오 e (fence)
+        if: matrix.mode == 'fence'
+        run: bash scripts/saga-e2e-smoke.sh --scenarios e
 
       - name: 음성 대조군
         if: matrix.mode == 'negative-control'
         run: bash scripts/saga-e2e-smoke.sh --negative-control
-
-      - name: saga contract matrix gate (structure + e2e evidence)
-        if: matrix.mode == 'scenarios'
-        run: |
-          bash scripts/saga-contract-matrix-lint.sh --structure
-          SAGA_COMMIT_SHA="${GITHUB_SHA}" \
-            bash scripts/saga-contract-matrix-lint.sh --e2e-evidence ".cache/e2e/${E2E_RUN_ID}"
 
       # ③ 실패해도 증적은 남긴다 — 실패한 실행의 로그가 가장 필요하다.
       - name: 증적 업로드
