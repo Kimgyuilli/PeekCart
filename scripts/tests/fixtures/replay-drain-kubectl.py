@@ -37,7 +37,7 @@ elif args[:4] == ['exec', 'deploy/mysql', '--', 'mysql']:
         output = '0\t0\t1000000000.000000\n'
     call = dict(kind=kind, service=service)
 elif args[:3] == ['exec', 'deploy/kafka', '--']:
-    assert args[3:8] == ['/opt/kafka/bin/kafka-consumer-groups.sh', '--bootstrap-server', 'localhost:9092', '--describe', '--group'], args
+    assert args[3:8] == ['/opt/kafka/bin/kafka-consumer-groups.sh', '--bootstrap-server', 'localhost:29092', '--describe', '--group'], args
     assert len(args) == 9, args
     group = args[8]
     sample = 1 + sum(c.get('group') == group for c in prior)
