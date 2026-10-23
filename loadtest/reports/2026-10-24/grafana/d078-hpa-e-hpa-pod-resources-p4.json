@@ -1,0 +1,483 @@
+{
+  "dashboard_uid": "peekcart-pod-resources",
+  "panel_id": 4,
+  "title": "HPA Current Replicas",
+  "start": 1792778617,
+  "end": 1792778978,
+  "step_seconds": 15,
+  "rate_interval": "1m",
+  "targets": [
+    {
+      "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"peekcart\"}",
+      "legendFormat": "{{horizontalpodautoscaler}}",
+      "result": [
+        {
+          "metric": {
+            "__name__": "kube_horizontalpodautoscaler_status_current_replicas",
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "horizontalpodautoscaler": "gateway",
+            "instance": "10.24.2.8:8080",
+            "job": "kube-state-metrics",
+            "namespace": "peekcart",
+            "pod": "kube-prometheus-stack-kube-state-metrics-7db44d6ffb-lkj4g",
+            "service": "kube-prometheus-stack-kube-state-metrics"
+          },
+          "values": [
+            [
+              1792778617,
+              "2"
+            ],
+            [
+              1792778632,
+              "2"
+            ],
+            [
+              1792778647,
+              "2"
+            ],
+            [
+              1792778662,
+              "2"
+            ],
+            [
+              1792778677,
+              "2"
+            ],
+            [
+              1792778692,
+              "2"
+            ],
+            [
+              1792778707,
+              "2"
+            ],
+            [
+              1792778722,
+              "2"
+            ],
+            [
+              1792778737,
+              "2"
+            ],
+            [
+              1792778752,
+              "4"
+            ],
+            [
+              1792778767,
+              "4"
+            ],
+            [
+              1792778782,
+              "4"
+            ],
+            [
+              1792778797,
+              "4"
+            ],
+            [
+              1792778812,
+              "4"
+            ],
+            [
+              1792778827,
+              "4"
+            ],
+            [
+              1792778842,
+              "4"
+            ],
+            [
+              1792778857,
+              "4"
+            ],
+            [
+              1792778872,
+              "4"
+            ],
+            [
+              1792778887,
+              "4"
+            ],
+            [
+              1792778902,
+              "4"
+            ],
+            [
+              1792778917,
+              "4"
+            ],
+            [
+              1792778932,
+              "4"
+            ],
+            [
+              1792778947,
+              "4"
+            ],
+            [
+              1792778962,
+              "4"
+            ],
+            [
+              1792778977,
+              "4"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kube_horizontalpodautoscaler_status_current_replicas",
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "horizontalpodautoscaler": "order-service",
+            "instance": "10.24.2.8:8080",
+            "job": "kube-state-metrics",
+            "namespace": "peekcart",
+            "pod": "kube-prometheus-stack-kube-state-metrics-7db44d6ffb-lkj4g",
+            "service": "kube-prometheus-stack-kube-state-metrics"
+          },
+          "values": [
+            [
+              1792778617,
+              "1"
+            ],
+            [
+              1792778632,
+              "1"
+            ],
+            [
+              1792778647,
+              "1"
+            ],
+            [
+              1792778662,
+              "1"
+            ],
+            [
+              1792778677,
+              "1"
+            ],
+            [
+              1792778692,
+              "1"
+            ],
+            [
+              1792778707,
+              "1"
+            ],
+            [
+              1792778722,
+              "1"
+            ],
+            [
+              1792778737,
+              "1"
+            ],
+            [
+              1792778752,
+              "3"
+            ],
+            [
+              1792778767,
+              "3"
+            ],
+            [
+              1792778782,
+              "3"
+            ],
+            [
+              1792778797,
+              "3"
+            ],
+            [
+              1792778812,
+              "3"
+            ],
+            [
+              1792778827,
+              "3"
+            ],
+            [
+              1792778842,
+              "3"
+            ],
+            [
+              1792778857,
+              "3"
+            ],
+            [
+              1792778872,
+              "3"
+            ],
+            [
+              1792778887,
+              "3"
+            ],
+            [
+              1792778902,
+              "3"
+            ],
+            [
+              1792778917,
+              "3"
+            ],
+            [
+              1792778932,
+              "3"
+            ],
+            [
+              1792778947,
+              "3"
+            ],
+            [
+              1792778962,
+              "3"
+            ],
+            [
+              1792778977,
+              "3"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"peekcart\"}",
+      "legendFormat": "desired — {{horizontalpodautoscaler}}",
+      "result": [
+        {
+          "metric": {
+            "__name__": "kube_horizontalpodautoscaler_status_desired_replicas",
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "horizontalpodautoscaler": "gateway",
+            "instance": "10.24.2.8:8080",
+            "job": "kube-state-metrics",
+            "namespace": "peekcart",
+            "pod": "kube-prometheus-stack-kube-state-metrics-7db44d6ffb-lkj4g",
+            "service": "kube-prometheus-stack-kube-state-metrics"
+          },
+          "values": [
+            [
+              1792778617,
+              "2"
+            ],
+            [
+              1792778632,
+              "2"
+            ],
+            [
+              1792778647,
+              "2"
+            ],
+            [
+              1792778662,
+              "2"
+            ],
+            [
+              1792778677,
+              "2"
+            ],
+            [
+              1792778692,
+              "2"
+            ],
+            [
+              1792778707,
+              "2"
+            ],
+            [
+              1792778722,
+              "2"
+            ],
+            [
+              1792778737,
+              "2"
+            ],
+            [
+              1792778752,
+              "4"
+            ],
+            [
+              1792778767,
+              "4"
+            ],
+            [
+              1792778782,
+              "4"
+            ],
+            [
+              1792778797,
+              "4"
+            ],
+            [
+              1792778812,
+              "4"
+            ],
+            [
+              1792778827,
+              "4"
+            ],
+            [
+              1792778842,
+              "4"
+            ],
+            [
+              1792778857,
+              "4"
+            ],
+            [
+              1792778872,
+              "4"
+            ],
+            [
+              1792778887,
+              "4"
+            ],
+            [
+              1792778902,
+              "4"
+            ],
+            [
+              1792778917,
+              "4"
+            ],
+            [
+              1792778932,
+              "4"
+            ],
+            [
+              1792778947,
+              "4"
+            ],
+            [
+              1792778962,
+              "4"
+            ],
+            [
+              1792778977,
+              "4"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kube_horizontalpodautoscaler_status_desired_replicas",
+            "container": "kube-state-metrics",
+            "endpoint": "http",
+            "horizontalpodautoscaler": "order-service",
+            "instance": "10.24.2.8:8080",
+            "job": "kube-state-metrics",
+            "namespace": "peekcart",
+            "pod": "kube-prometheus-stack-kube-state-metrics-7db44d6ffb-lkj4g",
+            "service": "kube-prometheus-stack-kube-state-metrics"
+          },
+          "values": [
+            [
+              1792778617,
+              "1"
+            ],
+            [
+              1792778632,
+              "1"
+            ],
+            [
+              1792778647,
+              "1"
+            ],
+            [
+              1792778662,
+              "1"
+            ],
+            [
+              1792778677,
+              "1"
+            ],
+            [
+              1792778692,
+              "1"
+            ],
+            [
+              1792778707,
+              "1"
+            ],
+            [
+              1792778722,
+              "1"
+            ],
+            [
+              1792778737,
+              "1"
+            ],
+            [
+              1792778752,
+              "3"
+            ],
+            [
+              1792778767,
+              "3"
+            ],
+            [
+              1792778782,
+              "3"
+            ],
+            [
+              1792778797,
+              "3"
+            ],
+            [
+              1792778812,
+              "3"
+            ],
+            [
+              1792778827,
+              "3"
+            ],
+            [
+              1792778842,
+              "3"
+            ],
+            [
+              1792778857,
+              "3"
+            ],
+            [
+              1792778872,
+              "3"
+            ],
+            [
+              1792778887,
+              "3"
+            ],
+            [
+              1792778902,
+              "3"
+            ],
+            [
+              1792778917,
+              "3"
+            ],
+            [
+              1792778932,
+              "3"
+            ],
+            [
+              1792778947,
+              "3"
+            ],
+            [
+              1792778962,
+              "3"
+            ],
+            [
+              1792778977,
+              "3"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
