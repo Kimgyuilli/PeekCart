@@ -1,0 +1,2 @@
+
+| D-053 | Docs | **Layer 1 문서에 과거 단계 설계가 남아 있다** — `02-architecture.md` §5 Phase 1 모놀리식 다이어그램 · §12 Phase 1·2 패키지 구조(약 170줄), `05-data-design.md` Phase 1 ERD(약 170줄)·Phase 1 vs 4 비교. 문서 레이어 원칙상 Layer 1 은 현재 상태(What)이므로 이력은 progress/archive 로 옮기거나 줄인다. 현재 상태를 찾는 독자가 과거 구조를 먼저 읽게 된다 | 전수조사 세션(2026-09-29) | ✅ 완료 ([#171](https://github.com/Kimgyuilli/PeekCart/pull/171)). `docs/progress/design-archive-phase1-2.md` 로 원문 이동, 절 제목은 유지. `02-architecture.md` 의 Phase 1 대비 전환 비교표도 같은 성격이라 함께 옮겼고, D-052 에서 넘어온 `consistency-hints.sh` 항목 4 를 제거했다. §12 Phase 3 트리의 루트 `src/` 잔존은 범위 밖 |
