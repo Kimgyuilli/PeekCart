@@ -949,8 +949,10 @@ D-106 11건 중 재측정 최소 조건이면서 과금 없이 고칠 수 있는
 
 미충족: 문서 전용 경로는 다음 문서 PR 에서 처음 실제로 돈다. 다운로드 지연은 병합 후 실행을 더 보고 판단한다.
 
-## 2026-10-24 — 머지 근거를 확인한 하위 계획 4건 아카이브
+## 2026-10-24 — 머지 근거를 확인한 하위 계획 9건 아카이브
 
 [PR233](https://github.com/Kimgyuilli/PeekCart/pull/233). D-078-retry-load·D-078-scheduler-capacity·D-084-signed-recovery 는 PR 이 머지됐지만 계획서에 최종 CI·독립 리뷰·main 확인이 기록되지 않아 미완 체크박스가 남아 있었다. 리뷰한 head 와 머지한 head 의 작성 patch 가 같고 두 head 의 CI 와 머지 뒤 main CI 가 성공한 것을 확인해 각 계획서에 완료 기록을 덧붙이고 `done/` 으로 옮겼다. 원문 체크박스는 고치지 않았다. #214 머지 커밋의 main CI 는 #214 가 바꾸지 않은 `dlq_contract_lab.py` lint 에서 실패했고 #222 뒤 main CI 가 성공했다. D-078-scheduler-capacity 는 성공 run 의 원자료가 저장소에 없어 보존 기한 안의 artifact 에서 XML·job log·API metadata 를 보존했다.
 
 D-106 ⑨③④⑧⑪ 은 #232 를 포함한 `2c9aa36` 의 main CI40031226500 성공으로 해소를 기록하고 계획서를 함께 옮겼다. #232 머지 커밋의 main CI 는 #231 병합 push 에 밀려 cancelled 됐다. D-106 에 남은 것은 ①⑦ 설계 확정, ⑥(D-075), ⑩ 원인 분리, ②⑤ 다.
+
+PR 근거 없음으로 보류됐던 6건도 계획서를 바꾼 커밋을 GitHub 에서 조회해 모두 머지된 PR(#202·#207·#211·#212·#215·#219)에 들어 있음을 확인했다. 스크립트는 `pull/NNN` URL 만 세는데 이 계획서들은 PR 을 텍스트로만 적거나 자기 PR 을 적지 않았다. D-065 네 건과 D-092-slack-split 은 같은 방식으로 근거를 대조해 옮겼고, D-065-signed-gateway 는 실행 계획(PR210)으로 수행된 plan-only 계획이다. D-089 는 부채 자체의 계획서이고 stale 보고 한계와 원인 미확정이 남아 PR 링크와 상태만 적고 옮기지 않았다. 이 PR 의 CI(run40039880106)가 #231 문서 전용 경로의 첫 실제 실행이었다(test·guards·images·e2e skipped, gate 성공).
