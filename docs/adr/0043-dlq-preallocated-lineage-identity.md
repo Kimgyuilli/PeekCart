@@ -52,7 +52,7 @@ writer와 실제 MySQL 검증이 끝난 뒤 backfill 확인 및 NOT NULL/no DEFA
 ## References
 
 - [MySQL 8 AUTO_INCREMENT](https://dev.mysql.com/doc/refman/8.0/en/innodb-auto-increment-handling.html): 잠금 모드, rollback gap, counter 영속성과 비정상 종료 시 미flush 값 재사용 조건. 2026-10-21 확인.
-- [조사·실측 기록](../plans/D-065-lineage-writer.audit.md)
+- [조사·실측 기록](../plans/done/D-065-lineage-writer.audit.md)
 - ADR-0020, ADR-0021, ADR-0022, ADR-0033
 
 ## Update Log
