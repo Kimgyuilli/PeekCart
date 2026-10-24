@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/ci-critical-path.md",
+      "sha256": "c99db49130a6094c9abb67fd6d60a5129bffb301288b84a544afc6a8ca6095ed"
+    },
+    {
+      "path": "docs/plans/ci-critical-path.audit.md",
+      "sha256": "a6f5867fe5abc50ba819a896d2772b834cfdd37f29a86f021bca8a4295a310ac"
+    },
+    {
+      "path": "docs/plans/D-089-stale-state.md",
+      "sha256": "f1f3dd8bbb68b362caeec3970cc7d1460099609de715a782b063fb67a83a9624"
+    },
+    {
+      "path": "docs/plans/D-089-stale-state.audit.md",
+      "sha256": "b145fd8d7f53faa87b2725eb5b450844269a8c6c520510eb596ce94ea675ebda"
+    },
+    {
+      "path": "docs/plans/D-089.md",
+      "sha256": "3e7c7c842038b8b58f2c9bda5bf415230f2f9fabcb740ba3a7611d932d4b7fb6"
+    },
+    {
+      "path": "docs/plans/D-089.audit.md",
+      "sha256": "c8cbf574f86f28001354379c8a1dce4a8fc995bb97676da431ae46eb5325cdc8"
+    },
+    {
+      "path": "docs/plans/D-092-ops-closure.md",
+      "sha256": "55a8bcd0fedeb995df2d1f0b9f6549e57c86f022ea4d2d8d92f10ad64b97ab13"
+    },
+    {
+      "path": "docs/plans/D-092-ops-closure.audit.md",
+      "sha256": "a30d4c945489d9c9cd428992c2027c34cb68ff5ccfc22a20c39163b765ad303f"
+    },
+    {
+      "path": "docs/plans/D-092.md",
+      "sha256": "e37ca22aa71c601930a98ed11f2bd30bde53c0efe0ae5a0faf8ce5c08bda6246"
+    },
+    {
+      "path": "docs/plans/D-092.audit.md",
+      "sha256": "1fd4ef2ec34fe9ed5eca868bbcd891f041b94576ec168d9f8119fd38d57f0523"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/ci-critical-path.md",
+      "parts": [
+        {
+          "source": "docs/plans/ci-critical-path.md",
+          "start": 1,
+          "end": 58
+        },
+        {
+          "literal": "\n## 완료 기록 (2026-10-24)\n\n§미해결 세 항목을 병합 뒤 실행으로 확인했다. e2e 분할은 #231 PR CI 두 번에서 실제 스택으로 돌았고 gate 의 합집합 증적 대조(35행)를 통과했다. 문서 전용 경로는 [PR233](https://github.com/Kimgyuilli/PeekCart/pull/233) CI(run40039880106)에서 test·guards·images·e2e skipped, gate 성공으로 처음 확인됐다.\n\n단축폭은 push 에서 gate 까지 약 13분이다. main `2c9aa36` 12분 58초, `6052c2f` 12분 49초, PR234 12분 57초, PR235 14분 2초와 main 반영 뒤 재실행 13분 0초였다. 이전 약 19분에서 줄었지만 추정한 10~11분에는 못 미쳤다.\n\n이미지 다운로드가 1분을 넘긴 8회는 모두 10-23 21:07 에서 10-24 00:10 UTC 사이 run 에 있었다. 10-24 10:05 이후 PR run 세 개의 9회는 5~28초였고, 분할 전 main run 네 개의 8회는 7~39초였다. 3러너 분할 구조보다 시간대 변동으로 판단한다. 10~11분 미달의 남은 원인은 e2e fence 러너다. PR234 run 에서 시나리오 e 단계가 스택 기동을 포함해 8분 9초였고 다운로드는 5~8초였다. 추가 단축은 시나리오 e 를 줄이는 별도 작업이며 부채로 등록하지 않는다(사용자 결정).\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/ci-critical-path.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/ci-critical-path.audit.md",
+          "start": 1,
+          "end": 9
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-089-stale-state.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-089-stale-state.md",
+          "start": 1,
+          "end": 62
+        },
+        {
+          "literal": "\n## 완료 기록 (2026-10-24)\n\n[PR234](https://github.com/Kimgyuilli/PeekCart/pull/234) 의 최종 head `090e828` CI(run40084496982)가 성공한 뒤 병합했다(`4ab907f`). main CI40086117418 에서 publication-state 는 `aligned (6/6 aligned)` 였다. `superseded` 실관측은 연속 push 가 있을 때 생긴다. §미해결의 과거 원인 처분과 D-089 종결은 사용자 결정으로 확정됐고 부모 계획 [D-089](D-089.md) 완료 기록에 있다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-089-stale-state.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-089-stale-state.audit.md",
+          "start": 1,
+          "end": 12
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-089.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-089.md",
+          "start": 1,
+          "end": 54
+        },
+        {
+          "literal": "\n## 완료 기록 (2026-10-24)\n\n연속 main push 뒤 stale 오판정은 [PR234](https://github.com/Kimgyuilli/PeekCart/pull/234)(하위 계획 [D-089-stale-state](D-089-stale-state.md))로 고쳤다. 병합 `4ab907f` 의 main CI40086117418 에서 여섯 publish 와 publication-state 가 성공했고 관측은 `aligned (6/6 aligned)` 였다. 과거 unknown blob 원인은 당시 원자료가 없어 확정할 수 없다. 사용자 결정으로 미확정인 채 D-089 를 닫는다.\n\n남는 한계는 하나다. 취소된 publish 뒤 다음 run 이 gate 전에 실패하면 latest 가 서비스마다 섞인 채 다음 main publish 까지 남고, 이를 알리는 관측이 없다. 실관측이 없어 부채로 등록하지 않고 한계로 기록한다(사용자 결정).\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-089.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-089.audit.md",
+          "start": 1,
+          "end": 18
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-092-ops-closure.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-092-ops-closure.md",
+          "start": 1,
+          "end": 43
+        },
+        {
+          "literal": "\n## 완료 기록 (2026-10-24)\n\n[PR235](https://github.com/Kimgyuilli/PeekCart/pull/235) 는 main 을 반영한 head `99916a7` 의 CI(run40086138173)가 성공한 뒤 병합했다(`92bfddb`). main CI40087160770 에서 여섯 publish 와 publication-state 가 성공했다. §미해결의 소유자 지정은 사용자 결정으로 저장소 소유자로 확정했고 runbook §1 에 반영했다. DENY 소비쌍 topic 7개의 FAILED 행을 이관하는 판정도 사용자가 받아들였다. 나머지 두 외부 조건은 부모 [D-092](D-092.md) 완료 기록에 한계로 남겼다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-092-ops-closure.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-092-ops-closure.audit.md",
+          "start": 1,
+          "end": 17
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-092.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-092.md",
+          "start": 1,
+          "end": 49
+        },
+        {
+          "literal": "\n## 완료 기록 (2026-10-24)\n\n남은 두 항목은 [PR235](https://github.com/Kimgyuilli/PeekCart/pull/235)(하위 계획 [D-092-ops-closure](D-092-ops-closure.md))로 처리했다. 병합 `92bfddb` 의 main CI40087160770 이 성공했다. 사용자 결정으로 Secret 소유자를 저장소 소유자로 확정하고, DENY 소비쌍이 있는 topic 7개는 FAILED 재발행 없이 이관하는 판정을 받아들여 D-092 를 닫는다. 실제 교체 리허설(Secret Manager 와 클러스터가 있는 세션)과 운영 DB 재발행(운영 환경 없음)은 한계로 남긴다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-092.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-092.audit.md",
+          "start": 1,
+          "end": 24
+        }
+      ]
+    }
+  ]
+}

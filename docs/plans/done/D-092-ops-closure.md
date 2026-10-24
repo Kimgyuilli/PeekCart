@@ -41,3 +41,7 @@ Slack webhook 값의 정본·주입 위치·교체 순서·유출 대응이 문�
 - 실제 교체 리허설은 Secret Manager 와 클러스터에 접근할 수 있는 세션에서만 할 수 있다. 이 작업은 명령 형태를 로컬에서만 확인한다.
 - DENY 소비쌍이 있는 토픽(`order.created` 등)의 `FAILED` 행은 재발행하지 않고 이관한다. 허용하려면 outbox 경로 전용 사전조건을 새로 설계해야 하며 이 범위 밖이다.
 - 운영 DB 에서의 실제 재발행은 운영 환경이 없어 외부 조건으로 남는다.
+
+## 완료 기록 (2026-10-24)
+
+[PR235](https://github.com/Kimgyuilli/PeekCart/pull/235) 는 main 을 반영한 head `99916a7` 의 CI(run40086138173)가 성공한 뒤 병합했다(`92bfddb`). main CI40087160770 에서 여섯 publish 와 publication-state 가 성공했다. §미해결의 소유자 지정은 사용자 결정으로 저장소 소유자로 확정했고 runbook §1 에 반영했다. DENY 소비쌍 topic 7개의 FAILED 행을 이관하는 판정도 사용자가 받아들였다. 나머지 두 외부 조건은 부모 [D-092](D-092.md) 완료 기록에 한계로 남겼다.
