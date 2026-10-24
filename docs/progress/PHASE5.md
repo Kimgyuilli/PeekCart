@@ -994,3 +994,23 @@ D-106 ② 스로틀 패널이 빈 원인은 kube-prometheus-stack 91.4.0 의 기
 같은 PR 에 앞선 두 PR 의 기록을 담았다. #237 은 `0ab5de6` 으로 병합됐고 main CI40105508535 가 성공해, TASKS D-106 행의 "PR CI·머지 대기"를 고치고 계획서 `D-106-topic-config-race` 를 옮겼다. `D-107-recovery-lab-topics` 도 #238 의 main CI 성공과 #237 로 들어간 D-107 행 기록을 확인해 옮겼다.
 
 미충족: 실제 앱 스택에서의 양성 대조는 D-078 재측정 첫 사용에서 한다. DLQ intake·quarantine group 의 할당은 보지 않는다. D-106 에는 ①⑦ 설계 확정, ⑥(D-075), ⑤ 가 남는다. PR CI 와 머지는 대기 중이다.
+
+## 2026-10-25 — PG·운영 제외 부채 병렬 처리와 재측정 준비
+
+[PR240](https://github.com/Kimgyuilli/PeekCart/pull/240) · [PR241](https://github.com/Kimgyuilli/PeekCart/pull/241) · [PR242](https://github.com/Kimgyuilli/PeekCart/pull/242) · [PR243](https://github.com/Kimgyuilli/PeekCart/pull/243) · [PR244](https://github.com/Kimgyuilli/PeekCart/pull/244) · 기록 PR. 사용자 결정으로 PG·운영이 엮인 항목(D-064, D-084, D-065 ④, D-065 ③ 의 운영 적용 증빙)을 범위에서 빼고, 나머지를 레인 4개(서브에이전트, 레인별 worktree·브랜치·PR)로 나눠 병렬로 처리했다. 목표는 남은 작업을 D-078 재측정 하나로 만드는 것이었다. 병합은 한 건씩 했고, 매번 PR CI 와 직전 main CI 성공을 확인했다.
+
+- #240: 다이제스트가 ◐ 행을 열린 행에서 빼던 결함을 고쳤다(◐ 를 처음 쓴 2026-10-17 부터 빠졌다). 계획서 인덱스는 `/ship` 이 남기는 `PR:` 줄을 그 계획의 PR 로 쓴다. #239 병합 기록과 계획서 아카이브도 담았다.
+- #241 (D-107): 배포 래퍼가 kafka 를 먼저 올리고 선언 토픽 30개를 사전 생성·파티션 대조한 뒤 앱을 적용한다. 브로커 설정과 매니페스트는 그대로다.
+- #242 (D-075, D-106 ⑥, ADR-0045): order·product·payment outbox 기본값을 500ms·배치 500·락 최소 보존 400ms 로 올리고 설정으로 분리했다. 지난 세션의 대량 취소는 예약 미확정 PENDING 주문의 5분 컷오프(`OrderTimeoutScheduler.cancelUnconfirmedReservations`)였다는 것을 코드로 확인했다(lease 30분과는 무관).
+- #243 (D-106 ①⑦⑤): 재측정 계획 `D-078-remeasure-plan`. S2 를 bulkhead 상한 1·4 비교와 ON 셀로 재정의했고, spread 대조군을 상품 1,000개로 넓혔으며(종전 `__ITER` 선택은 23개만 썼다), dropped_iterations 가 목표의 1% 를 넘는 run 은 무효로 한다(USERS 450). 병합 전에 #241·#242 와 맞춘 정정(outbox 조건, 래퍼 배포, ADR-0045 재검토 조건)을 넣었다.
+- #244 (D-065 ③ 코드): 4서비스 record_kind·root_record_id NOT NULL contract(DEFAULT 없음)와 beforeMigrate 가드. 위반 행은 history 없이 거부하고 자동 보정하지 않는다. 첫 CI 는 계약 테스트의 예외 타입 기대와, 과거 backfill DML 을 현재 스키마에서 실행하는 테스트 때문에 실패했고 고쳐 통과했다. 병합 전 main 과 합치며 V-30 테스트 충돌은 삭제 쪽으로 정리했다.
+- 기록 PR: TASKS 에서 D-075·D-106·D-107 을 완료로 옮기고 D-064·D-065·D-084 를 ⏸ 보류로 바꿨다. runbook 의 k8s Kafka 주소(29092)와 §7 의 적재 방식 서술을 정정했다. 완료 계획서 2건(D-075-outbox-throughput, digest-open-rows)을 아카이브했다. D-065-contract-migration·D-107-deploy-topics 는 문서 보존 도구가 해석하지 못하는 줄을 넘는 인라인 코드 표기를 한 줄로 정리했고, 그 정리가 main 에 들어간 뒤 다음 `/sync` 에서 옮긴다.
+
+진행 중 사건: #242 병합 뒤 main CI 가 Docker Hub 502(베이스 이미지 manifest 조회)로 payment 이미지 빌드에 실패해, 실패 job 만 다시 돌려 성공을 확인한 뒤 다음 병합을 이어 갔다. worktree 생성 과정에서 공유 git 설정의 `core.hooksPath` 가 절대 경로로 바뀌어 커밋 훅 검사가 막혔고 `.githooks` 로 되돌렸다. 레인들이 같은 scratchpad 를 써서 한 레인의 래퍼가 다른 레인 경로로 덮어써졌기 때문에, 병합 전 각 브랜치에서 `/ship` 사전 검사를 다시 돌렸다.
+
+미충족과 관찰:
+- 남은 작업은 D-078 재측정 1회(과금 세션 승인 필요)다. ADR-0045 의 기대 효과, 토픽 가드·배포 래퍼의 실제 스택 동작, bulkhead 상한 비교는 그 세션에서 확인한다.
+- D-065 ③ 의 운영 몫(writer 정지·전환 증빙, 실제 데이터 표본, 운영 DDL 적용)과, contract 이후 INSERT IGNORE 가 0·빈 문자열로 강등하는 경로(DB 가 막지 않음)는 운영 전제로 남는다.
+- product·notification producer 의 `max.block.ms` 기본 60초는 메타데이터 장애 때 한 사이클을 락 최대 보존(5분)에 가깝게 만들 수 있다. 이번 변경이 만든 위험이 아니라 관찰로만 남긴다.
+- 부하 중 order 발행률 저하(부하 구간 약 4~36건/초, 부하 뒤 약 77건/초)는 원인 미분리다(ADR-0045 재검토 조건 2).
+- `plans-index.sh` 에는 자동 회귀 테스트가 없다. `d002bc-order-create.js` 도 순차 로그인 setup 60초 제한이 남아 있다(이번 세션은 쓰지 않음).
