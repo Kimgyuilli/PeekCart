@@ -2,6 +2,7 @@ package com.peekcart.order.infrastructure.kafka;
 
 import com.peekcart.global.kafka.JitteredSequenceBackOff;
 import com.peekcart.global.kafka.KafkaTopicConfigs;
+import com.peekcart.global.kafka.KafkaTopicReconciler;
 import com.peekcart.global.replay.OriginalRecordReader;
 import com.peekcart.global.kafka.MdcPayloadExtractor;
 import com.peekcart.global.kafka.MdcRecordInterceptor;
@@ -139,5 +140,16 @@ public class OrderKafkaConfig {
                                                      ConsumerFactory<String, String> consumerFactory,
                                                      IdempotencyRetentionProperties retentionProperties) {
         return new OriginalRecordReader(kafkaAdmin, consumerFactory, retentionProperties);
+    }
+
+    /**
+     * 기동 뒤 토픽 재적용. 생성 경합을 겪은 토픽은 기동 중 적용에서 config 갱신을 받지 못한다(D-106).
+     *
+     * <p><b>공통 모듈에서 자동 등록하지 않는다</b> — {@code KafkaAdmin} 이 없는 user-service 의 컨텍스트가 깨진다.
+     * 토픽을 선언하는 서비스만 등록한다.
+     */
+    @Bean
+    public KafkaTopicReconciler kafkaTopicReconciler(KafkaAdmin kafkaAdmin) {
+        return new KafkaTopicReconciler(kafkaAdmin);
     }
 }
