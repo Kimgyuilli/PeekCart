@@ -20,3 +20,10 @@
 - precheck: `hpx_ship_preflight` 는 처음에 blocked 였다. P6 가 PR URL 뒤에만 닫히는 TASKS·progress 갱신을 포함했기 때문이고, 계획서에서 그 기록을 §완료 조건으로 옮겨 정정한 뒤 ok. consistency precheck ok(warnings 0), `hpx_review_health` ok, `writing-lint.sh` 커밋 4건·본문·제목 통과.
 - ADR-0020 Update Log 에서 브로커 자동 생성 비활성화 문장을 뺐다. 대안 추가는 Update Log 로 우회하지 않는다(`docs/adr/README.md` §원칙). 그 내용은 계획서 §미해결과 PR 본문 §미충족에 둔다. GKE 원인 문장은 코드 경로와 로컬 재현으로 한정해 다시 적었다(예외가 DEBUG 라 GKE 기록이 없다).
 - 갱신: TASKS D-106 ⑩ 상태와 PR 링크, D-065 ⑤ 재확인 조건(파티션 수 포함), PHASE5 이력. D-106 은 ①⑦·⑥·②⑤ 가 남아 완료 이동하지 않았다.
+
+## 2026-10-24 21:55 — 머지 전 후속 정리
+- 사용자 요청으로 후속 후보 두 가지가 실제 문제인지 근거로 다시 검토했다. 확인한 것: `apache/kafka:3.8.1` 의 `num.partitions=1`(설정 파일 3곳), E2E 토픽 사전 생성(`scripts/saga-e2e-smoke.sh`, #92 실측 203초), kafka-clients 3.9.2 `Metadata` 가 토픽 단위 `InvalidMetadataException` 에 metadata 를 다시 요청함(backoff 100ms~1s), `metadata.max.age.ms` 기본 5분(서비스 미설정).
+- GKE S3 lag 원자료(`loadtest/reports/2026-10-24/grafana/*kafka-lag*.json`): 트래픽이 있던 `stock.reservation.result`·`order.created` 는 측정 동안 세 파티션이 모두 할당돼 소비됐다. payment 토픽은 측정 동안 값이 전부 NaN(트래픽 없음)이라 파티션별 지표로 파티션 수를 추론할 수 없어 근거에서 뺐다.
+- 계획서: §2.2 에 두 행(브로커 기본 파티션, E2E 사전 생성) 추가, §2.3 부수 효과 정정(발견 지연 누락과 "E2E 도 빈 브로커" 서술), §미해결 처분 갱신.
+- 처분: PR 기록 보완(반영), 측정 전 토픽 상태 가드(D-106 ⑩ 남은 항목), 생성 경로 처방(D-107 등록, 재검토 조건 명시), E2E 자동 대조(따로 하지 않음).
+- 주석: `KafkaTopicReconciler` Javadoc 에 파티션 증설의 대가를 더했다. `docker-compose.e2e.yml` 의 자동 생성 파티션 주석은 "기본값 3" 과 부하 원인 서술을 이미지 실제 값과 #92 의 사전 생성 근거로 바꿨다. `docker compose config -q`, `e2e-network-contract-lint.sh`, `ci-e2e-parallel-lint.sh`, `:common:compileJava` 통과.

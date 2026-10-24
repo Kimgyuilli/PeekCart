@@ -45,6 +45,8 @@ spring-kafka 소스는 의존성과 같은 3.3.14 sources jar 를 Maven Central 
 | 생성 경로 | `KafkaAdmin.addOrModifyTopicsIfNeeded`: describe 에 실패한 토픽을 `topicsToAdd` 로 createTopics 한 뒤, modify 검사 대상을 `toCheck.removeAll(topicsToAdd)` 로 만든다 | createTopics 가 실패한 토픽도 modify 대상에서 빠진다 |
 | 경합 예외 | `addTopics`: `TopicExistsException` 은 DEBUG 로그만 남기고 삼킨다(주석 "Possible race with another app instance"). 다른 예외는 `KafkaException` 이 되어 `initialize()` 가 ERROR 로그 | C 는 운영 로그 수준에서 보이지 않는다 |
 | 파티션 | `checkPartitions` 는 describe 에 성공한 토픽만 증설한다 | C 의 업무 토픽 2개는 파티션도 자동 생성 기본값으로 남았을 것이다. S4 덤프에 파티션 수가 없어 GKE 에서는 미확인 |
+| 브로커 기본 파티션 (구현 뒤 확인) | `apache/kafka:3.8.1` 이미지의 설정 파일 3곳 모두 `num.partitions=1`, k8s 매니페스트는 이 값을 바꾸지 않는다 | 자동 생성 토픽은 1파티션으로 시작한다. 위 행의 C 업무 토픽 2개도 코드상 1개로 남았다 |
+| E2E 토픽 사전 생성 (구현 뒤 확인) | `scripts/saga-e2e-smoke.sh` 가 앱 기동 전에 `kafka-subscription-contract-lint.sh --emit-topics` 목록을 선언 파티션 수로 만든다(#92). GKE 배포(`scripts/deploy-overlay.sh`)에는 이 단계가 없다 | CI E2E 는 이 경합과 아래 2.3 의 발견 지연을 재현하지 않는다 |
 | 상위 버전 | 3.3.16 의 `KafkaAdmin.java` 는 3.3.14 와 동일, 4.1.2 의 `addTopics`·`toCheck` 도 같다 | 버전 올림으로 해소되지 않는다 |
 | 자동 생성 주체 | 브로커 `auto.create.topics.enable` 미설정(기본 true, `k8s/base/infra/kafka/kafka.yml`·compose 동일), 컨슈머 `allow.auto.create.topics` 미설정(기본 true). order `DeadLetterConsumer` 가 payment `.dlq` 4개를, order `OrderEventConsumer`·product·notification 컨슈머가 payment 업무 토픽을 구독한다 | 빈 스택에서 다른 서비스 컨슈머가 소유 서비스보다 먼저 토픽을 만드는 것은 흔한 경로다(B 가 흔적) |
 | 자동 생성 응답 (구현 중 확인) | KRaft 브로커는 자동 생성을 컨트롤러에 넘기고 그 metadata 응답에 `UNKNOWN_TOPIC_OR_PARTITION` 을 준다(kafka 3.8.1 `AutoTopicCreationManager.sendCreateTopicRequest`). 클라이언트 `TopicMetadataFetcher` 는 그 응답을 부재로 보고 재시도하지 않는다(kafka-clients 3.9.2). P1 첫 실행에서 `partitionsFor` 가 빈 목록을 돌려 관측했다 | 자동 생성이 진행 중인 동안 KafkaAdmin 의 describe 도 토픽을 못 본다. 경합 창이 describe 와 create 사이 왕복 한 번보다 넓다 |
@@ -66,8 +68,14 @@ B4(파일·배선 명시), B6(`@Component` 금지), B12(아래 2.4). 나머지�
 | 컨슈머 자동 생성 끄기 | 4서비스 base YAML `allow.auto.create.topics: false` | 기각. 통합 테스트가 다른 서비스 토픽을 자동 생성에 기대는 범위가 넓고, 생산자 경로는 그대로 남는다 |
 | 기동 완료 뒤 재적용 | `ApplicationReadyEvent` 에서 `kafkaAdmin.initialize()` 를 한 번 더 부른다 | 채택. 1차에서 경합한 토픽은 그때 이미 있으므로 describe 에 잡혀 파티션 증설과 config 갱신을 받는다 |
 
-부수 효과: C 의 업무 토픽도 B 처럼 기동 직후 파티션이 1개에서 3개로 늘어난다. 기존 B 경로와 같은 성질이고,
-이 저장소의 GKE·E2E 스택은 매번 빈 브로커에서 시작한다.
+부수 효과: C 의 업무 토픽 2개(`payment.completed`, `payment.requested`)는 재적용 때 파티션이 1개에서 3개로 늘어난다.
+이미 구독 중인 다른 서비스 컨슈머는 metadata 갱신(`metadata.max.age.ms` 기본 5분, 서비스가 바꾸지 않는다)까지
+새 파티션을 소비하지 않는다(E2E 실측 203초, `scripts/saga-e2e-smoke.sh` #92). B 갈래 업무 토픽 8개가 기동 중 적용에서
+이미 겪는 것과 같은 성질이고, 빈 브로커 첫 기동 직후에만 생긴다. GKE S3 측정 구간의 lag 자료에는 그 흔적이 없다
+(트래픽이 있던 `stock.reservation.result`·`order.created` 는 측정 동안 세 파티션이 모두 할당돼 소비됐다. 측정 전 구간은 자료 없음).
+
+(정정: 초안은 증설만 적고 발견 지연을 빠뜨렸고, "GKE·E2E 스택은 매번 빈 브로커에서 시작한다" 고 적었다.
+E2E 는 토픽을 미리 만들어 이 경로를 타지 않는다.)
 
 ### 2.4 남는 창 (B12)
 
@@ -115,7 +123,10 @@ fence 가 아니며, 그 경우 남은 C 는 여전히 DEBUG 로만 보인다.
 
 ## 미해결
 
-- 브로커 자동 생성 끄기: 생성 주체를 하나로 만드는 근본 처방. 초기화 실패 처리와 E2E 동등성을 함께 정해야 해 별도 결정으로 둔다.
-- 2.4 의 남은 창(1차 전체 실패 뒤 2차 경합)은 관측 수단이 없다. 재측정 점검이 잡는다.
+- 생성 경로를 하나로 만드는 처방(배포 전 토픽 사전 생성 또는 브로커 자동 생성 끄기)은 D-107 로 등록했다.
+  경합의 남은 창과 2.3 의 발견 지연을 함께 없애지만 배포 순서나 브로커 동작을 바꿔 GKE 에서만 검증된다. 재검토 조건은 TASKS 행에 있다.
+- 2.4 의 남은 창(1차 전체 실패 뒤 2차 경합)과 2.3 의 발견 지연은 D-106 ⑩ 의 남은 항목인 측정 전 토픽 상태 가드가 잡는다
+  (측정 run 전에 30개 토픽의 config·파티션 수와 업무 컨슈머 그룹의 전 파티션 할당 확인).
 - GKE 에서 C 업무 토픽의 파티션 수는 클러스터 삭제로 확인할 수 없다.
-- E2E 스택에서 선언 토픽 config·파티션을 자동 대조하는 점검은 후속 후보다.
+- E2E 스택의 토픽 설정 자동 대조는 따로 하지 않는다. E2E 는 토픽을 미리 만들어 경합 경로를 타지 않고, 기존 토픽 경로는
+  메커니즘·계약 테스트가 덮는다. 측정 전 가드를 E2E 에서도 돌릴 수 있게 두는 것으로 갈음한다.
