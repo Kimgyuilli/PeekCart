@@ -151,6 +151,7 @@ MEASUREMENT_OVERLAYS=(
     "k8s/overlays/gke-d002a" "k8s/overlays/gke-d002bc"
     "k8s/overlays/gke-d002a-mysql-500m" "k8s/overlays/gke-d002a-mysql-2000m"
     "k8s/overlays/gke-d002bc-mysql-2000m" "k8s/overlays/gke-d078-contention"
+    "k8s/overlays/gke-d078-read-bulkhead-4"
 )
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT

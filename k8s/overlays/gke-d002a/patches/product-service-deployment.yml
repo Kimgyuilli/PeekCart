@@ -1,4 +1,4 @@
-# 측정 조건 — product-service 쪽 손잡이 둘.
+# 측정 조건 — product-service 쪽 손잡이 셋.
 #
 # ① `limits.cpu: 3000m` — 기준선 증적의 **조건 B** 값이다
 #    (`docs/progress/evidence/d002a-gke-20260916-0030.md` §측정 행렬).
@@ -12,6 +12,12 @@
 #    `noOpCacheManager`(havingValue="false") **상호배타 두 빈**을 가른다.
 #    `productStock` 캐시(D-026/ADR-0026)도 `cacheManager` 안에 배선돼 있어 OFF 면 함께 죽는다.
 #    → OFF 조건이 기준선과 같은 의미를 유지한다.
+#
+# ③ `PEEKCART_CACHE_DBMAXCONCURRENCY` — ADR-0037 조회 DB 진입 bulkhead 상한
+#    (`ProductReadBulkheadConfig` 의 `peekcart.cache.db-max-concurrency`, 코드 기본값 1).
+#    캐시 miss 경로(OFF 셀 전부)가 이 상한을 지나므로 측정 조건이다. 기본값과 같은 1 을 파일에 적어,
+#    코드 기본값이 바뀌어도 이 overlay 가 잰 조건이 따라 바뀌지 않게 한다. 상한 4 는
+#    `gke-d078-read-bulkhead-4` 가 같은 이름으로 덮어쓴다(D-078 재측정 S2).
 #
 # 이미지는 여기서 고정하지 않는다 — `kustomization.yml` 의 `images:` 변환기가 **digest 로** 핀한다.
 # 지난 세션은 이 자리에 `:latest` 를 박았고, 그 가변 태그가 "재빌드 불필요" 라는 낡은 판단을
@@ -36,3 +42,5 @@ spec:
           env:
             - name: PEEKCART_CACHE_ENABLED
               value: "true"
+            - name: PEEKCART_CACHE_DBMAXCONCURRENCY
+              value: "1"

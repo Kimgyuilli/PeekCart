@@ -21,6 +21,8 @@
 #   REP     반복 회차 (1..3)
 #   VUS     기본 400   DUR 기본 60s   IDS 기본 100
 #   OUTDIR  기본 .cache/d026-runs
+#   BULKHEAD  ADR-0037 조회 DB 진입 상한의 기대값(선택). Pod env 와 다르면 측정하지 않는다.
+#             값은 overlay 가 정한다(gke-d002a 는 1, gke-d078-read-bulkhead-4 는 4). 비우면 기록만 한다.
 
 set -uo pipefail
 
@@ -83,6 +85,14 @@ meta pod_start "$(kubectl -n "$NS" get pod "$POD" -o jsonpath='{.status.startTim
 meta image_id  "$(kubectl -n "$NS" get pod "$POD" -o jsonpath='{.status.containerStatuses[0].imageID}')"
 meta product_cpu_limit "$(kubectl -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].resources.limits.cpu}')"
 meta cache_env "$(kubectl -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].env[?(@.name=="PEEKCART_CACHE_ENABLED")].value}')"
+# ADR-0037 bulkhead 상한(`peekcart.cache.db-max-concurrency`). 측정 대상 Pod 의 env 가 정본이다.
+# 이름이 틀리면 앱은 조용히 기본값 1 로 뜬다 — 상한 4 셀이 실제로는 1 을 재는 것을 여기서 막는다.
+DB_MAX=$(kubectl -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].env[?(@.name=="PEEKCART_CACHE_DBMAXCONCURRENCY")].value}')
+meta db_max_concurrency "${DB_MAX:-unset}"
+if [ -n "${BULKHEAD:-}" ] && [ "$DB_MAX" != "$BULKHEAD" ]; then
+  say "!! bulkhead 상한 불일치 (Pod ${DB_MAX:-unset} · 기대 $BULKHEAD) — 측정하지 않는다"
+  exit 1
+fi
 MYPOD=$(kubectl -n "$NS" get pod -l app=mysql -o jsonpath='{.items[0].metadata.name}')
 meta mysql_pod "$MYPOD"
 meta mysql_cpu_limit "$(kubectl -n "$NS" get pod "$MYPOD" -o jsonpath='{.spec.containers[0].resources.limits.cpu}')"
