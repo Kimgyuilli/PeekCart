@@ -54,7 +54,9 @@ if x.get('read_error'): sys.exit(23)
 if '--raw' in args: print(json.dumps({'config': {'digest': x['config']}}))
 else:
     if x.get('bad_json'): print('{broken'); sys.exit(0)
-    key='latest' if ref.endswith(':latest') else 'expected'
+    tag=ref.rsplit(':',1)[1]
+    key='latest' if tag == 'latest' else 'expected' if tag == 'a'*40 else 'current'
+    if x.get(key) is None: sys.exit(1)
     print(json.dumps({'digest':x[key]}))
 '''); docker.chmod(0o755)
         self.env = os.environ.copy(); self.env.update(PATH=str(binary) + os.pathsep + self.env['PATH'],
@@ -127,10 +129,42 @@ else:
         self.assertEqual(self.cli(1)['aligned_services'], 0)
 
     def test_current_main_and_observation_window(self):
-        for main, status in [(['b'*40,SHA], 'stale_or_concurrent_release'), ([SHA,'b'*40], 'stale_or_concurrent_release'),
-                             (['ERROR',SHA], 'incomplete_observation'), ([SHA,None], 'incomplete_observation')]:
+        # Main returning to expected is not forward movement; main moving during an aligned observation is.
+        for main, status, code in [(['b'*40,SHA], 'stale_or_concurrent_release', 1), ([SHA,'b'*40], 'superseded', 0),
+                                   (['ERROR',SHA], 'incomplete_observation', 1), ([SHA,None], 'incomplete_observation', 1)]:
             self.fixture['main'] = main
-            with self.subTest(main=main): self.assertEqual(self.cli(1)['status'], status)
+            with self.subTest(main=main): self.assertEqual(self.cli(code)['status'], status)
+
+    def test_latest_moved_to_current_main(self):
+        new, moved = 'c' * 40, 'sha256:' + 'e' * 64
+        for service in SERVICES: self.fixture['services'][service].update(latest=moved, current=moved)
+        self.fixture['main'] = [new, new]
+        x = self.cli(); self.assertEqual(x['status'], 'superseded')
+        self.assertEqual([r['status'] for r in x['rows']], ['superseded'] * 6)
+        self.assertTrue(all(r['current_main_manifest'] == moved for r in x['rows']))
+        for service in SERVICES[:5]: self.fixture['services'][service]['latest'] = self.fixture['services'][service]['expected']
+        self.fixture['main'] = [SHA, new]
+        x = self.cli(); self.assertEqual(x['status'], 'superseded')
+        self.assertEqual([r['status'] for r in x['rows']], ['aligned'] * 5 + ['superseded'])
+
+    def test_moved_main_keeps_unproven_states_failed(self):
+        new, moved = 'c' * 40, 'sha256:' + 'e' * 64
+        base = copy.deepcopy(self.fixture)
+        for service in SERVICES: base['services'][service]['current'] = moved
+        cases = {'third_digest': ({'latest': 'sha256:' + 'f' * 64}, [SHA, new]),
+                 'current_tag_missing': ({'latest': moved, 'current': None}, [SHA, new]),
+                 'read_error': ({'read_error': True}, [SHA, new]),
+                 'expected_latest_after_earlier_move': ({}, [new, new])}
+        for label, (change, main) in cases.items():
+            self.fixture = copy.deepcopy(base); self.fixture['main'] = main
+            self.fixture['services']['gateway'].update(change)
+            with self.subTest(label): self.assertEqual(self.cli(1)['status'], 'stale_or_concurrent_release')
+        self.fixture = copy.deepcopy(base); self.fixture['main'] = [SHA, new]
+        outcome = self.inputs / 'publish-evidence-gateway-attempt-1/push-outcome.txt'; outcome.write_text('failure\n')
+        with self.subTest('push_failure'): self.assertEqual(self.cli(1)['status'], 'stale_or_concurrent_release')
+        outcome.write_text('success\n')
+        unexpected = self.inputs / 'publish-evidence-unknown-attempt-1'; unexpected.mkdir()
+        with self.subTest('unexpected_artifact'): self.assertEqual(self.cli(1)['status'], 'stale_or_concurrent_release')
 
     def test_previous_success_is_not_reused(self):
         self.cli()
@@ -201,7 +235,11 @@ def mutants():
     variants = [
         ('unavailable-is-success', "status = 'incomplete_observation'", "status = 'aligned'", 'test_read_parse_and_config_failures'),
         ('old-attempt-preferred', 'max(choices, key=', 'min(choices, key=', 'test_six_distinct_images_and_retry_artifacts'),
-        ('main-transition-ignored', "if (before is not None and before != expected) or (after is not None and after != expected):", 'if False:', 'test_current_main_and_observation_window'),
+        ('main-transition-ignored', "elif (before is not None and before != expected) or (after is not None and after != expected):", 'elif False:', 'test_current_main_and_observation_window'),
+        ('current-main-unchecked', "if row['current_main_manifest'] == row['latest_manifest']: row['status'] = 'superseded'", "row['status'] = 'superseded'", 'test_moved_main_keeps_unproven_states_failed'),
+        ('push-outcome-ignored', "published = not unexpected and all(row.get('push_outcome') == 'success' for row in rows)", 'published = not unexpected', 'test_moved_main_keeps_unproven_states_failed'),
+        ('aligned-after-earlier-move', "(row['status'] == 'aligned' and before == expected)", "row['status'] == 'aligned'", 'test_moved_main_keeps_unproven_states_failed'),
+        ('superseded-reported-failed', "return 0 if status in {'aligned', 'superseded'} else 1", "return 0 if status == 'aligned' else 1", 'test_current_main_and_observation_window'),
         ('identity-ignored', 'def command(directory, name, args):', "def command(directory, name, args):\n    if args[0] == 'bash': return b''", 'test_read_parse_and_config_failures'),
         ('source-marker-ignored', "(directory / file).read_text() == value + '\\n'", 'True', 'test_mixed_sha_or_run_in_old_attempt_is_rejected'),
         ('always-pass', 'def observe(expected, inputs, output):', 'def observe(expected, inputs, output):\n    return 0', 'test_six_distinct_images_and_retry_artifacts'),
@@ -217,7 +255,7 @@ def mutants():
             actual = subprocess.run([sys.executable,'-B',__file__,'PublicationTest.'+test],env=env,text=True,capture_output=True)
             assert actual.returncode and ('FAIL: '+test) in actual.stderr, name + actual.stdout + actual.stderr
             print(name + ': REJECTED')
-    print('PUBLICATION-SELFTEST: 7 incorrect implementations rejected; no real registry/GitHub/Docker calls')
+    print('PUBLICATION-SELFTEST: 11 incorrect implementations rejected; no real registry/GitHub/Docker calls')
 
 
 if __name__ == '__main__':
