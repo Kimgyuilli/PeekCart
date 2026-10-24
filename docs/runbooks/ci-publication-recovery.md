@@ -10,7 +10,8 @@ main의 기존 gate/publish 뒤 `publication-state`가 read-only로 실행된다
 - `different_latest`: SHA/config를 확인했지만 latest가 다른 manifest다.
 - `unavailable`: marker/원 image ID/검증/조회/파싱을 확인하지 못했다.0이나 성공으로 읽지 않는다.
 - 집계 `partial_relative_to_expected`는 관측 구간에서 일부가 aligned이고 다른 서비스가 different_latest인 경우다. unknown은 confirmed partial로 바꾸지 않는다.
-- `stale_or_concurrent_release`는 시작/끝 currentmain이 expected SHA와 다른 경우다. currentmain 조회 실패나 unavailable/알 수 없는 추가 artifact는 `incomplete_observation`이다.
+- `superseded`는 끝 currentmain이 expected SHA를 지났고 이 run의 승격이 완결된 경우다. 여섯 서비스 모두 push outcome이 success이고 SHA manifest/config를 확인했으며, 각 latest가 현재 main SHA tag의 manifest(행 `superseded`)이거나, 시작 currentmain이 expected였고 latest가 expected(행 `aligned`)여야 한다. job은 성공하며 그 뒤 latest 판정은 현재 main run의 observer가 한다.
+- `stale_or_concurrent_release`는 그 밖에 시작/끝 currentmain이 expected SHA와 다른 경우다. 관측 전에 main이 이미 바뀌었는데 latest가 아직 expected이면 이 run의 승격이 다음 release보다 앞섰는지 증명할 수 없어 여기에 남는다. currentmain 조회 실패나 unavailable/알 수 없는 추가 artifact는 `incomplete_observation`이다.
 
 서비스별 읽기는 순차적이다. 시작·끝/각 읽기 시각을 확인하며 동일 순간의 원자적 snapshot으로 해석하지 않는다. currentmain이 같아도 다른 publisher가 전혀 없음을 증명하지 않는다. 각 receipt의 run/attempt와 현재 실행 목록을 함께 읽는다. `aligned`는 원 publish job의 실패를 취소하지 않으며 원 workflow가 초록이라는 뜻도 아니다.
 
@@ -53,7 +54,7 @@ GITHUB_REPOSITORY=Kimgyuilli/PeekCart GITHUB_RUN_ID="$RUN_ID" GITHUB_RUN_ATTEMPT
   python3 -B scripts/ci-publication-state.py "$EXPECTED_SHA" "$STATE_INPUTS" "$STATE_OUTPUT"
 ```
 
-기존 `verify-remote`로 config를 대조하고각repo의SHA/latest를확인한다. missing/읽기오류/stale이면성공으로완료하지않는다. 정상6개관측과원전체workflow결과를별도로보존한다. 수동tag쓰기/운영deploy/보호우회/자동retry는이절차에없다.
+기존 `verify-remote`로 config를 대조하고각repo의SHA/latest를확인한다. missing/읽기오류/stale이면성공으로완료하지않는다. 새 release 뒤에 오래된 run의 observer를 다시 돌리면 `superseded`이거나 stale이며, `superseded`도 그 run의 승격 완결만 뜻하므로 현재 latest는 현재 main run의 관측으로 확인한다. 정상6개관측과원전체workflow결과를별도로보존한다. 수동tag쓰기/운영deploy/보호우회/자동retry는이절차에없다.
 
 ## 역사 unknown blob의 미해결 범위
 
