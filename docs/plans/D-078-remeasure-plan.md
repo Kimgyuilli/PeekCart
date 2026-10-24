@@ -44,7 +44,8 @@ ADR 선행 신호(새 외부 의존성·경계 변경·새 인프라)가 없다.
 | 지난 S2 | 블록 A(MySQL 500m) OFF 셀의 200 비율 0.77~1.46%(list OFF r2 200 응답 14.5 rps), MySQL 스로틀 차분 0, 60초 MySQL CPU 3.37s. list ON 949.2 rps·200 100% | ① 재정의 근거 |
 | spread 선택 | `d002bc-contention.js:94` 가 `PRODUCT_IDS[__ITER % PRODUCT_IDS.length]`. k6 문서: `__ITER` 는 VU 별 반복 번호, `exec.scenario.iterationInTest` 는 시나리오 전역 순번(v0.34+). 원래 스크립트를 USERS 450·RPS 170·60s 로 node 대역에서 돌리면 상품 1,000개 중 **23개**만 쓰인다 | P1 |
 | 파티션 키 | `OutboxPollingService.java:133-134` 가 레코드 키로 `aggregateId` 를 쓰고 `OrderOutboxEventPublisher` 는 주문 id 를 넣는다. 같은 상품의 주문도 세 파티션에 흩어진다 | ⑦ 근거(키는 앱 계약이라 그대로) |
-| 시드 1,000 | `d002bc-seed-products.sh` 는 admin API 순차 생성, admin 라우트는 사용자 키 40 req/s·1초 창(`gateway application.yml:70-81`), 전파 대기 60초 고정. product outbox 기본 5s·100건(초당 20건) | P2 |
+| 시드 1,000 | `d002bc-seed-products.sh` 는 admin API 순차 생성, admin 라우트는 사용자 키 40 req/s·1초 창(`gateway application.yml:70-81`), 전파 대기 60초 고정. product outbox 는 계획 작성 때 5s·100건(초당 20건)이었고 #242(ADR-0045) 뒤 500ms·배치 500 이다 | P2 |
+| outbox 기본값 | ADR-0045(#242): order·product·payment 500ms·배치 500·락 최소 보존 400ms, notification 5s·4s·100. `gke-d078-contention` 은 order outbox env 를 더 이상 덮어쓰지 않는다 | S3 조건 |
 | 초기화·정합성 | `d002bc-product-reset.sql` 은 inventories 전체를 `@stock` 100000 으로, `d002bc-reset.sql` 은 order 표 전체 삭제(price cache 유지), `d002bc-verify.sql` 은 inventories 전체를 상품별로 대조(`HAVING diff <> 0`, `@initial_stock` 100000). 셋 다 상품 수에 의존하지 않고 시드 기본 재고(100000)와 같다 | 변경 없음 |
 | 지난 S3 k6 | 원 요약(`s3/*.json`): dropped r1 5,763(반복 4,438, 합 10,201)·r2 1,871·r3 89(합 10,200)·spread 없음(0건이면 metric 자체가 없다). 반복 p95 5.637·2.764·1.639·0.377s, `vus_max` 모두 200 | P1 |
 | setup 시간 | 지난 run 의 전체 시간(반복 수/rate)은 114~118초다. 60초 부하를 빼면 setup 이 약 50~55초(200명 순차 로그인 + 150ms, 1명 약 0.25초). k6 `setupTimeout` 기본 60s, 넘으면 exit 100(k6 `errext/exitcodes`) | P1 |
@@ -186,8 +187,8 @@ run 인 r1(5.637s)을 넣으면 1,450, r2(2.764s)면 750 이다.
 
 ## 4. 재측정 세션 절차
 
-진입 조건: 캠페인 PR 4개(레인 A 이 PR, B D-065 ③ NOT NULL contract, C D-075 outbox 처리율 기본값과 그 ADR, D D-107
-배포 래퍼의 토픽 사전 생성)가 main 에 병합되고 그 main CI 가 성공했다. 세션은 그 main SHA 하나로 돈다.
+진입 조건: 캠페인 PR 4개(레인 A 이 PR #243, B D-065 ③ NOT NULL contract #244, C D-075 outbox 처리율 기본값과 ADR-0045
+#242, D D-107 배포 래퍼의 토픽 사전 생성 #241)가 main 에 병합되고 그 main CI 가 성공했다. 세션은 그 main SHA 하나로 돈다.
 
 ### S0. 클러스터 없이 하는 준비 (과금 미미)
 
@@ -218,8 +219,9 @@ run 인 r1(5.637s)을 넣으면 1,450, r2(2.764s)면 750 이다.
 
 ### S2. 읽기 경로: bulkhead 상한·③·④ (약 1.2시간)
 
-1. 빈 namespace 에 `kubectl apply -k k8s/overlays/gke-d002a-mysql-2000m`(digest 치환본)을 적용하고 mysql·product-service
-   rollout 을 기다린다. `loadtest/sql/d002a-product-seed.sql` 을 넣고, `product-service-measure` Internal LB IP 를 확인한다.
+1. 빈 namespace 에 `DRAIN_PREFLIGHT_SKIP_REASON="S2 읽기 경로, order·payment·notification 없음" bash scripts/deploy-overlay.sh
+   k8s/overlays/gke-d002a-mysql-2000m`(digest 치환본)으로 배포한다. 래퍼가 kafka 를 먼저 올리고 토픽을 사전 생성한다(D-107, #241).
+   mysql·product-service rollout 을 기다린다. `loadtest/sql/d002a-product-seed.sql` 을 넣고, `product-service-measure` Internal LB IP 를 확인한다.
    Prometheus target 에서 product-service 가 up 인지 본다(측정 overlay 의 ServiceMonitor, D-106 ③). 토픽 상태 가드는 돌리지
    않는다(§2.1, 읽기 경로는 Kafka 를 쓰지 않는다).
 2. `export LOADGEN=peekcart-d078-loadgen OUTDIR=$PWD/loadtest/reports/<날짜>/s2-runs` 뒤 블록 셋을 이 순서로 돈다.
@@ -243,11 +245,11 @@ run 인 r1(5.637s)을 넣으면 1,450, r2(2.764s)면 750 이다.
 
 ### S3. 경합: ⑤⑥·A~C, D-106 ⑦⑤ 반영 (약 1.5시간)
 
-S3 의 outbox 는 D-075 처분 뒤 base 기본값을 쓰며, 측정 overlay 의 order outbox env 처분은 D-075 몫.
+S3 의 outbox 는 ADR-0045 의 base 기본값(500ms·배치 500·락 최소 보존 400ms)이다. 측정 overlay 는 order outbox 를 덮어쓰지 않는다(#242).
 
-1. 배포: `DRAIN_PREFLIGHT_SKIP_REASON="fresh namespace, no prior stack" bash scripts/deploy-overlay.sh
-   k8s/overlays/gke-d078-contention`(digest·PROJECT 치환본, `GW_URL` 없이). 래퍼가 레인 D(D-107)의 토픽 사전 생성을 거친다는
-   것이 전제다. 이어서 payment Secret 에 Toss smoke 값을 넣고 재기동한다(`loadtest/README.md` D-002b'/c §스택).
+1. 배포: `DRAIN_PREFLIGHT_SKIP_REASON="측정 overlay, notification 없음" bash scripts/deploy-overlay.sh
+   k8s/overlays/gke-d078-contention`(digest·PROJECT 치환본, `GW_URL` 없이). 래퍼가 kafka 를 먼저 올리고 선언 토픽을 사전
+   생성한다(D-107, #241). 이어서 payment Secret 에 Toss smoke 값을 넣고 재기동한다(`loadtest/README.md` D-002b'/c §스택).
 2. 시드: 사용자 450명 → 인증 왕복 게이트 → `users.csv` 450행 확인 → 상품 1,000개(`--count 1000 | tee .../s3/seed-products.log`,
    `PRODUCT_IDS` 를 파일로 저장해 loadgen `/tmp/product-ids.txt` 로 복사, 개수 1,000 확인) → 429 프로브 PASS.
 3. 토픽 상태 가드: `python3 scripts/kafka-topic-state-guard.py --services order,product,payment --evidence-dir
@@ -271,7 +273,9 @@ S3 의 outbox 는 D-075 처분 뒤 base 기본값을 쓰며, 측정 overlay 의 
 7. 캡처: 측정 run 마다 `d078-5`·`d078-5-drain`·`d078-6`, 경합 run 1개 `d078-jvm`.
 8. 읽는 법: ⑤ 는 DLQ/주문 비율의 c1~c3 중앙값·범위를 Phase 4(0.072%)·2026-10-24(0.040~0.068%)와 나란히 적는다. 충돌 수는
    전달 실패 counter 로 적고 세는 단위가 다른 Phase 4 충돌 수와는 비교하지 않는다. ⑦ 은 §2.2 규칙. 만료 취소는 0 이
-   기대값이다(D-075 처분 뒤). 0 이 아니면 그 run 의 배수 시간과 ⑤ 에 취소 경로가 섞였다고 적고 D-075 검증의 입력으로 넘긴다.
+   기대값이다(ADR-0045). 만료 취소 1건 이상, 사가 왕복 p99 4분(5분 컷오프의 80%) 초과, product 발행률이 order 의 부하 뒤
+   발행률보다 낮아 product backlog 가 쌓임 중 하나라도 나오면 ADR-0045 재검토 조건 1 의 입력으로 넘긴다(근거: saga 지연 TSV,
+   outbox 지연·배수 TSV, counts). 만료 취소가 있으면 그 run 의 배수 시간과 ⑤ 에 취소 경로가 섞였다고 함께 적는다.
 9. 끝나면 `kubectl delete ns peekcart`.
 
 ### S4. base overlay: D-065 ②⑤ 재확인 (약 0.5시간)
@@ -305,7 +309,8 @@ S3 의 outbox 는 D-075 처분 뒤 base 기본값을 쓰며, 측정 overlay 의 
 - S3: 토픽 가드가 처치 1회 뒤에도 exit 1 이면 S3 를 접고 S4 로 간다. 가드 출력은 D-107 의 입력이다.
 - S3: 부하 판정이 무효인 측정 run 은 모드마다 2회까지 다시 돌린다. 넘으면 그 모드를 접고 "부하 미달" 로 적는다.
 - S3: 한 run 의 배수가 15분을 넘으면 그 run 의 정합성만 확인하고 S3 를 접는다(D-075 처분이 측정 조건에서 기대대로 동작하지
-  않는다는 결과이며 세션 안에서 고치지 않는다).
+  않는다는 결과이며 세션 안에서 고치지 않는다). 15분은 세션 시간 가드다. 배수가 5분을 넘은 run 은 이미 예약 미확정 만료
+  취소가 생기므로 그것만으로 ADR-0045 재검토 입력이다.
 - S4: preflight 나 가드가 1회 재시도 뒤에도 실패하면 결과로 적고 S5 로 간다.
 
 ## 6. 비용 (서울 온디맨드, 2026-10-22 Cloud Billing 카탈로그)
@@ -317,7 +322,7 @@ GKE 관리비 $0.10, 합계 약 $0.53~0.63. S4 의 3번째 노드 +$0.17.
 |---|---|---|---|
 | S1 | (준비·정리 1.5h 에 포함) | 0.3h | 2026-10-24 실측: 클러스터 생성 16:24Z, 첫 S2 run 16:37Z |
 | S2 | 2h (9셀 × 4회 = 36 run, MySQL 재기동 3회) | 1.2h (6셀 × 4회 = 24 run, MySQL 고정) | 토글 없는 run 간격 78초(2026-10-24 S2), 블록 전환 3회 각 3~4분, 배포·시드 10분, 캡처 15분 |
-| S3 | 1.5h | 1.5h (재시도 최악 2.2h) | run 5개 × 약 11분(k6 run 시작에서 배수 끝까지 6.4~10.9분 실측, setup 이 450명으로 약 1분 늘어남), 배포·시드·가드 20분, 캡처 15분. 재시도는 모드당 2회 × 2모드 × 약 11분 |
+| S3 | 1.5h | 1.5h (재시도 최악 2.2h) | run 5개 × 약 11분(k6 run 시작에서 배수 끝까지 6.4~10.9분 실측, setup 이 450명으로 약 1분 늘어남), 배포·시드·가드 20분, 캡처 15분. 재시도는 모드당 2회 × 2모드 × 약 11분. 실측 배수는 D-075 처분 전 값이라, ADR-0045 추정대로 부하 뒤 배수가 70초~2분이면 S3 는 약 1시간으로 준다. 표는 보수적 추정이다 |
 | S4 | 1.5h (⑧·D-092·E 포함) | 0.5h | D-065 ②⑤ 만 |
 | 캡처 | 0.5h | S2·S3 에 포함 | |
 | 정리 | 준비와 합쳐 1.5h | 0.3h | |
@@ -345,9 +350,11 @@ P1~P6 가 끝나고 §7 결과를 audit 에 남기고 PR CI 가 성공하면 D-1
 ## 9. 범위 밖과 미해결
 
 - 세션 실행(과금)과 증적·TASKS·PHASE5 반영은 세션 후속이다.
-- D-106 ⑥(배수가 lease 보다 길 때 대량 만료 취소)은 레인 C(D-075)가 outbox 기본값으로 처분한다. 이 PR 은 outbox 설정과
-  `gke-d078-contention` 의 order outbox patch 를 건드리지 않는다.
-- 배포 래퍼의 토픽 사전 생성은 레인 D(D-107)다. `scripts/deploy-overlay.sh` 는 고치지 않았고 S3·S4 가 그것을 전제로 한다.
+- D-106 ⑥(배수가 예약 미확정 만료(5분, `OrderTimeoutScheduler.cancelUnconfirmedReservations` 60초 주기)보다 길 때 대량
+  만료 취소)은 D-075 가 outbox 기본값으로 처분했다(#242, ADR-0045). `gke-d078-contention` 의 order outbox patch 도 #242 가
+  지웠다. 예약 lease(30분)는 이 취소와 관계가 없다.
+- 배포 래퍼의 토픽 사전 생성은 D-107(#241)이다. S2·S3·S4 의 첫 배포가 그 래퍼를 쓴다. 블록마다 하는 `d026-run-block.sh` 의
+  raw 재적용은 토픽이 이미 있어 그대로 둔다.
 - 상한 증액 결정(ADR-0037 갱신)은 세션 결과를 보고 사용자가 정한다. 예약 소비와 겹친 상태의 풀 여유는 재지 않는다.
 - `d002bc-order-create.js` 도 같은 순차 로그인 setup 이라 USERS 를 늘리면 같은 60초 제한에 걸린다. 이번 세션은 그 스크립트를
   쓰지 않아(E 는 끝났다) 고치지 않는다.
