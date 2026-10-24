@@ -956,3 +956,11 @@ D-106 11건 중 재측정 최소 조건이면서 과금 없이 고칠 수 있는
 D-106 ⑨③④⑧⑪ 은 #232 를 포함한 `2c9aa36` 의 main CI40031226500 성공으로 해소를 기록하고 계획서를 함께 옮겼다. #232 머지 커밋의 main CI 는 #231 병합 push 에 밀려 cancelled 됐다. D-106 에 남은 것은 ①⑦ 설계 확정, ⑥(D-075), ⑩ 원인 분리, ②⑤ 다.
 
 PR 근거 없음으로 보류됐던 6건도 계획서를 바꾼 커밋을 GitHub 에서 조회해 모두 머지된 PR(#202·#207·#211·#212·#215·#219)에 들어 있음을 확인했다. 스크립트는 `pull/NNN` URL 만 세는데 이 계획서들은 PR 을 텍스트로만 적거나 자기 PR 을 적지 않았다. D-065 네 건과 D-092-slack-split 은 같은 방식으로 근거를 대조해 옮겼고, D-065-signed-gateway 는 실행 계획(PR210)으로 수행된 plan-only 계획이다. D-089 는 부채 자체의 계획서이고 stale 보고 한계와 원인 미확정이 남아 PR 링크와 상태만 적고 옮기지 않았다. 이 PR 의 CI(run40039880106)가 #231 문서 전용 경로의 첫 실제 실행이었다(test·guards·images·e2e skipped, gate 성공).
+
+## 2026-10-24 — 과금과 무관한 부채 병렬 처리
+
+D-078 재측정과 관계없는 열린 작업을 worktree 두 개로 나눠 처리했다. [PR234](https://github.com/Kimgyuilli/PeekCart/pull/234) 는 main 이 expected 를 지난 뒤에도 여섯 서비스 승격이 확인되고 각 latest 가 이 run 의 이미지이거나 현재 main 의 이미지이면 `publication-state` 를 `superseded` 로 성공 처리한다. 그 밖의 stale, 조회 오류, 부분 승격은 계속 실패다(ADR-0030 Update Log). 병합 `4ab907f` 의 main CI 에서 관측은 `aligned (6/6)` 였다. 과거 unknown blob 원인은 원자료가 없어 미확정으로 두고 D-089 를 닫았다. 취소된 publish 뒤 다음 run 이 gate 전에 실패하면 latest 가 섞인 채 남는 경우는 실관측이 없어 한계로 기록했다.
+
+[PR235](https://github.com/Kimgyuilli/PeekCart/pull/235) 는 Slack webhook Secret 의 주입·교체·유출 대응 runbook 을 더하고, Outbox FAILED 재발행 조건에 중복 억제 창(7d)과 DLQ replay 소비쌍 정책을 넣었다. DENY 소비쌍이 있는 topic 7개는 재발행하지 않고 이관한다. D-092 원 계획의 P1~P3 는 #217·#219·D-078 세션·main CI40031226500 으로 이미 충족돼 있었다. 소유자를 저장소 소유자로 확정하고 D-092 를 닫았다. 실제 교체 리허설과 운영 DB 재발행은 외부 조건으로 남는다.
+
+TASKS 의 D-065 ① 은 [#210](https://github.com/Kimgyuilli/PeekCart/pull/210) 으로 이미 끝났는데 남은 항목으로 적혀 있어 정정했다. CI 임계경로(#231) 후속은 측정으로 마무리했다. 이미지 다운로드가 1분을 넘긴 8회는 모두 10-23 21:07 에서 10-24 00:10 UTC 사이 run 에 있었고, 10-24 10:05 이후 PR run 세 개의 9회는 5~28초였다. 3러너 분할 구조보다 시간대 변동으로 본다. push 에서 gate 까지는 약 13분(이전 약 19분)이고, 목표 10~11분 미달은 e2e fence 러너(시나리오 e 단계가 스택 기동 포함 8분 9초) 때문이다. 추가 단축은 별도 작업으로 두고 계획서를 옮겼다.
