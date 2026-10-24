@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 149개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 154개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-10-21 | 있음 |
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-10-21 |  |
 
-## 기타 (87)
+## 기타 (92)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -172,5 +172,10 @@
 | [D-078-session-dashboard](./D-078-session-dashboard.md) | D-078 측정 세션 대시보드와 캡처 기준 (부분 작업) | [#226](https://github.com/Kimgyuilli/PeakCart/pull/226) | 2026-10-23 | 있음 |
 | [D-078-scheduler-capacity](./D-078-scheduler-capacity.md) | D-078 실제 Boot scheduler의 유한 capacity 검사 | [#220](https://github.com/Kimgyuilli/PeakCart/pull/220) | 2026-10-24 | 있음 |
 | [D-078-session-plan](./D-078-session-plan.md) | D-078 GKE 측정 세션 계획 (부분 작업) | [#230](https://github.com/Kimgyuilli/PeakCart/pull/230) | 2026-10-24 | 있음 |
+| [D-089](./D-089.md) | D-089: 부분 publish 관측과 복구 계약 | [#234](https://github.com/Kimgyuilli/PeakCart/pull/234) | 2026-10-24 | 있음 |
+| [D-089-stale-state](./D-089-stale-state.md) | D-089 stale 판정 — main 이 expected 를 지난 뒤의 publication-state | [#234](https://github.com/Kimgyuilli/PeakCart/pull/234) | 2026-10-24 | 있음 |
+| [D-092](./D-092.md) | D-092: 운영 알림 전달과 Outbox 복구 경계 | [#235](https://github.com/Kimgyuilli/PeakCart/pull/235) | 2026-10-24 | 있음 |
+| [D-092-ops-closure](./D-092-ops-closure.md) | D-092-ops-closure: Slack webhook Secret 교체와 FAILED 재발행 소비쌍 조건 | [#235](https://github.com/Kimgyuilli/PeakCart/pull/235) | 2026-10-24 | 있음 |
 | [D-106-remeasure-prereq](./D-106-remeasure-prereq.md) | D-106 재측정 선행 수정 — ⑨③④⑧⑪ | [#232](https://github.com/Kimgyuilli/PeakCart/pull/232) | 2026-10-24 | 있음 |
+| [ci-critical-path](./ci-critical-path.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 | [#233](https://github.com/Kimgyuilli/PeakCart/pull/233) | 2026-10-24 | 있음 |
 

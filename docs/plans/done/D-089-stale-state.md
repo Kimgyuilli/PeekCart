@@ -60,3 +60,7 @@ expected 이고 관측 시작 때 main 이 expected 였던 경우다. 후자는 
 - `cancel-in-progress` 로 publish 가 중간에 취소되고 다음 push 가 publish 하지 못하면 latest 가 섞인 채 남고 이를
   알리는 observer 가 없다. 이 작업 범위 밖이며 root 에 보고한다
 - 과거 unknown blob 원인 처분과 D-089 종결은 범위 밖(사용자 결정 대기)
+
+## 완료 기록 (2026-10-24)
+
+[PR234](https://github.com/Kimgyuilli/PeekCart/pull/234) 의 최종 head `090e828` CI(run40084496982)가 성공한 뒤 병합했다(`4ab907f`). main CI40086117418 에서 publication-state 는 `aligned (6/6 aligned)` 였다. `superseded` 실관측은 연속 push 가 있을 때 생긴다. §미해결의 과거 원인 처분과 D-089 종결은 사용자 결정으로 확정됐고 부모 계획 [D-089](D-089.md) 완료 기록에 있다.
