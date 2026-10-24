@@ -14,3 +14,9 @@
   - P5: try/catch 를 지운 변이에서 `failureDoesNotPropagate` 가 실패했고, 복원 후 통과했다.
 - 테스트 주석: `D-102/check.py --scan` 20건으로 기준선과 같다. 새 주석의 `V-P4-1` 표식은 메서드 참조로 바꿔 후보에서 뺐다.
 - 계획 대비: P1 테스트를 새 클래스 대신 기존 `KafkaTopicConfigMechanismIntegrationTest` 에 넣었다(헬퍼 재사용, 계획서 먼저 정정). P6 의 TASKS·progress 갱신은 `/ship` 에서 한다.
+
+## 2026-10-24 21:40 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/237 (base `main`). 분류별 커밋 4개(`bced35c` plans, `9dc5882` src, `0e4395a` test, `fa18a35` adr)와 done 갱신 커밋 1개.
+- precheck: `hpx_ship_preflight` 는 처음에 blocked 였다. P6 가 PR URL 뒤에만 닫히는 TASKS·progress 갱신을 포함했기 때문이고, 계획서에서 그 기록을 §완료 조건으로 옮겨 정정한 뒤 ok. consistency precheck ok(warnings 0), `hpx_review_health` ok, `writing-lint.sh` 커밋 4건·본문·제목 통과.
+- ADR-0020 Update Log 에서 브로커 자동 생성 비활성화 문장을 뺐다. 대안 추가는 Update Log 로 우회하지 않는다(`docs/adr/README.md` §원칙). 그 내용은 계획서 §미해결과 PR 본문 §미충족에 둔다. GKE 원인 문장은 코드 경로와 로컬 재현으로 한정해 다시 적었다(예외가 DEBUG 라 GKE 기록이 없다).
+- 갱신: TASKS D-106 ⑩ 상태와 PR 링크, D-065 ⑤ 재확인 조건(파티션 수 포함), PHASE5 이력. D-106 은 ①⑦·⑥·②⑤ 가 남아 완료 이동하지 않았다.

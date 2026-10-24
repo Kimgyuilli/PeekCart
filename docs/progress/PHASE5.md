@@ -964,3 +964,11 @@ D-078 재측정과 관계없는 열린 작업을 worktree 두 개로 나눠 처�
 [PR235](https://github.com/Kimgyuilli/PeekCart/pull/235) 는 Slack webhook Secret 의 주입·교체·유출 대응 runbook 을 더하고, Outbox FAILED 재발행 조건에 중복 억제 창(7d)과 DLQ replay 소비쌍 정책을 넣었다. DENY 소비쌍이 있는 topic 7개는 재발행하지 않고 이관한다. D-092 원 계획의 P1~P3 는 #217·#219·D-078 세션·main CI40031226500 으로 이미 충족돼 있었다. 소유자를 저장소 소유자로 확정하고 D-092 를 닫았다. 실제 교체 리허설과 운영 DB 재발행은 외부 조건으로 남는다.
 
 TASKS 의 D-065 ① 은 [#210](https://github.com/Kimgyuilli/PeekCart/pull/210) 으로 이미 끝났는데 남은 항목으로 적혀 있어 정정했다. CI 임계경로(#231) 후속은 측정으로 마무리했다. 이미지 다운로드가 1분을 넘긴 8회는 모두 10-23 21:07 에서 10-24 00:10 UTC 사이 run 에 있었고, 10-24 10:05 이후 PR run 세 개의 9회는 5~28초였다. 3러너 분할 구조보다 시간대 변동으로 본다. push 에서 gate 까지는 약 13분(이전 약 19분)이고, 목표 10~11분 미달은 e2e fence 러너(시나리오 e 단계가 스택 기동 포함 8분 9초) 때문이다. 추가 단축은 별도 작업으로 두고 계획서를 옮겼다.
+
+## 2026-10-24 — D-106 ⑩ 토픽 생성 경합 원인 분리
+
+[PR237](https://github.com/Kimgyuilli/PeekCart/pull/237). GKE 세션 S4 에서 payment 토픽 6개가 선언 config 없이 남은 원인을 분리했다. 스냅샷의 동적 설정은 7키 전부(10개), 기본값과 다른 4키만(14개), 없음(6개)의 세 갈래였고 payment-service 한 번의 적용에서 뒤의 둘이 함께 나왔다. spring-kafka 3.3.14 `KafkaAdmin` 은 describe 에 실패한 토픽을 생성하다가 다른 서비스 컨슈머의 브로커 자동 생성과 겹쳐 `TopicExistsException` 이 나면, 그 예외를 DEBUG 로 삼키고 그 토픽을 config 갱신·파티션 증설 대상에서도 뺀다(3.3.16·4.1.2 동일). KRaft 브로커는 자동 생성이 끝날 때까지 그 토픽을 없다고 답해 경합 창이 넓다.
+
+createTopics 직전에 토픽을 자동 생성시키는 KafkaAdmin 으로 같은 세 갈래를 로컬에서 재현했다. 토픽을 선언하는 order·product·payment 가 `ApplicationReadyEvent` 뒤 `KafkaAdmin.initialize()` 를 한 번 더 부르도록 `KafkaTopicReconciler` 를 등록했고, 재현 테스트에서 경합 토픽이 선언 config 와 파티션 3 으로 맞춰졌다. ADR-0020 Update Log 에 사실을 정정했다.
+
+미충족: 기동 중 적용이 통째로 실패하면 재적용도 같은 경합을 겪을 수 있어 보장은 아니다. GKE 의 경합 업무 토픽 파티션 수는 덤프에 없어 확인하지 못했고, 재측정의 D-065 ⑤ 점검에 파티션 수 대조를 더한다. 브로커 자동 생성 비활성화와 E2E 토픽 설정 자동 대조는 후속 후보로 둔다. PR CI 와 머지는 대기 중이다.
