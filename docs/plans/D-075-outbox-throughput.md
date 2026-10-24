@@ -91,9 +91,9 @@ compileOnly 로, 단위 테스트용 런타임 검증은 testImplementation 으�
 
 ## 3. 작업 항목
 
-- [ ] P1. `docs/adr/0045-outbox-polling-throughput-defaults.md` 작성(Context·Decision·Alternatives·Consequences·재검토 조건·References)과
+- [x] P1. `docs/adr/0045-outbox-polling-throughput-defaults.md` 작성(Context·Decision·Alternatives·Consequences·재검토 조건·References)과
   `docs/adr/README.md` 인덱스 행.
-- [ ] P2. `peekcart-common-messaging`:
+- [x] P2. `peekcart-common-messaging`:
   - `build.gradle`: `compileOnly`·`testImplementation 'org.springframework.boot:spring-boot-starter-validation'`.
   - `OutboxPollingProperties`(prefix `app.outbox.polling`): `delay`·`lockAtLeastFor` `@NotNull`, `@AssertTrue` 셋(주기 0 초과,
     `0 <= lockAtLeastFor < delay`, `lockAtLeastFor < lockAtMostFor`).
@@ -101,16 +101,16 @@ compileOnly 로, 단위 테스트용 런타임 검증은 testImplementation 으�
     `lockAtLeastFor = "${app.outbox.polling.lock-at-least-for}"`(인라인 기본값 없음), `lockAtMostFor` 는 상수 `LOCK_AT_MOST_FOR = "PT5M"`
     로 두고 properties 가 같은 값으로 검사, `@EnableConfigurationProperties(OutboxPollingProperties.class)`, 주석 갱신.
   - `OutboxPollingService` 는 바꾸지 않는다(발행 의미 유지).
-- [ ] P3. 4서비스 base `application.yml` `app.outbox.polling`: order·product·payment `delay: 500ms`·`lock-at-least-for: 400ms`·`batch-size: 500`,
+- [x] P3. 4서비스 base `application.yml` `app.outbox.polling`: order·product·payment `delay: 500ms`·`lock-at-least-for: 400ms`·`batch-size: 500`,
   notification `delay: 5s`·`lock-at-least-for: 4s`·`batch-size: 100`(명시). 근거 주석은 ADR-0045 참조.
-- [ ] P4. 테스트:
+- [x] P4. 테스트:
   - common-messaging `OutboxPollingPropertiesTest`: 불변식(V1)과 placeholder 형식(V2).
   - common-messaging `OutboxPollingSchedulerWiringTest`: 실제 스케줄러·ShedLock 프록시·poller(V3).
   - 서비스별 `{Order,Product,Payment,Notification}OutboxPollingPolicyTest`: base yml 값과 프로파일 비선언(V4).
   - `OutboxThroughputLocalProbeTest` 의 `PT4S` 단언을 placeholder 단언으로 바꾼다.
   - order 통합 테스트 주석 4곳의 "5초" 를 주기 표현으로 바꾼다.
-- [ ] P5. `k8s/overlays/gke-d078-contention`: `patches/order-service-outbox-polling.yml` 삭제, kustomization patches 항목·주석 갱신.
-- [ ] P6. 낡은 전제: `scripts/e2e/saga_e2e.py` 예약 부재 창 주석(30초 유지 근거), `docs/06-testing-strategy.md` §13-1-b ① 창 칸,
+- [x] P5. `k8s/overlays/gke-d078-contention`: `patches/order-service-outbox-polling.yml` 삭제, kustomization patches 항목·주석 갱신.
+- [x] P6. 낡은 전제: `scripts/e2e/saga_e2e.py` 예약 부재 창 주석(30초 유지 근거), `docs/06-testing-strategy.md` §13-1-b ① 창 칸,
   `docs/04-design-deep-dive.md` §9-10 outbox 예시.
 
 ## 검증 방법
