@@ -347,10 +347,24 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
      * 대상이 마이그레이션이 아니라 복제본이 되는 false-green 이다. 파일이 단일 SSOT 이므로
      * V5 를 고치면 이 테스트가 자동으로 새 SQL 을 실행한다.
      *
+     * <p>V5 는 {@code record_kind} 가 생기기 전(replay 컬럼 V9 이전)의 migration 이라 1단계 INSERT 가 그 컬럼을
+     * 모른다. 실제 체인에서는 그 행을 V11 backfill 이 DOMAIN 으로 채우고 D-065 contract 가 DEFAULT 없는 NOT NULL 로
+     * 닫는다. 현재 스키마에서 원문을 그대로 실행하려고 그 결과(DOMAIN)만 INSERT 동안 DEFAULT 로 빌리고 바로 지운다 —
+     * 운영 스키마에는 DEFAULT 가 없다(ADR-0020 D3, {@code ReplayContractSchemaIntegrationTest}).
+     *
      * @param index 0 = 1단계(INSERT), 1 = 2단계(UPDATE)
      */
     private int runBackfillStatement(int index) {
-        return executeUpdate(backfillStatements().get(index));
+        String statement = backfillStatements().get(index);
+        if (!statement.startsWith("INSERT")) {
+            return executeUpdate(statement);
+        }
+        executeUpdate("ALTER TABLE outbox_events ALTER COLUMN record_kind SET DEFAULT 'DOMAIN'");
+        try {
+            return executeUpdate(statement);
+        } finally {
+            executeUpdate("ALTER TABLE outbox_events ALTER COLUMN record_kind DROP DEFAULT");
+        }
     }
 
     /** V5 에서 DML(INSERT/UPDATE) 문장만 추출한다. DDL 은 Flyway 가 이미 적용했으므로 제외한다. */

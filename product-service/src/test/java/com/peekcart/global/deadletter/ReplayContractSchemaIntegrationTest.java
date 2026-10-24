@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
@@ -55,7 +55,7 @@ class ReplayContractSchemaIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("root_record_id 를 빠뜨린 원장 INSERT 와 NULL 로 되돌리는 UPDATE 는 거부되고 값을 넣으면 들어간다")
     void ledgerRootIsRequired() {
         assertThatThrownBy(() -> jdbc.update(ledgerInsert(false)))
-                .isInstanceOf(DataIntegrityViolationException.class)
+                .isInstanceOf(DataAccessException.class)
                 .satisfies(error -> assertThat(mysqlCode(error)).isEqualTo(1364));
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM dead_letter_records", Long.class)).isZero();
 
@@ -63,7 +63,7 @@ class ReplayContractSchemaIntegrationTest extends AbstractIntegrationTest {
         assertThat(jdbc.update(ledgerInsert(true))).isEqualTo(1);
         assertThatThrownBy(() -> jdbc.update(
                 "UPDATE dead_letter_records SET root_record_id = NULL WHERE cluster_id = 'contract-fixture'"))
-                .isInstanceOf(DataIntegrityViolationException.class)
+                .isInstanceOf(DataAccessException.class)
                 .satisfies(error -> assertThat(mysqlCode(error)).isEqualTo(1048));
         assertThat(jdbc.queryForObject(
                 "SELECT root_record_id FROM dead_letter_records WHERE cluster_id = 'contract-fixture'", Long.class))
@@ -74,7 +74,7 @@ class ReplayContractSchemaIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("record_kind 를 빠뜨린 outbox INSERT 는 거부되고 값을 넣으면 들어간다")
     void outboxKindIsRequired() {
         assertThatThrownBy(() -> jdbc.update(outboxInsert(false)))
-                .isInstanceOf(DataIntegrityViolationException.class)
+                .isInstanceOf(DataAccessException.class)
                 .satisfies(error -> assertThat(mysqlCode(error)).isEqualTo(1364));
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM outbox_events", Long.class)).isZero();
 
@@ -106,6 +106,10 @@ class ReplayContractSchemaIntegrationTest extends AbstractIntegrationTest {
                 + "'contract-fixture-event', '{}', CURRENT_TIMESTAMP(6)" + (withKind ? ", 'DOMAIN'" : "") + ")";
     }
 
+    /**
+     * 거부의 계약은 예외 타입이 아니라 MySQL 오류 코드다. Spring 6 의 JdbcTemplate 은 사용자 sql-error-codes.xml 이
+     * 없으면 SQLExceptionSubclassTranslator 를 쓰고, 1364(SQLState HY000)는 UncategorizedSQLException 으로 나온다.
+     */
     private static int mysqlCode(Throwable error) {
         for (Throwable cause = error; cause != null; cause = cause.getCause()) {
             if (cause instanceof SQLException sql) {

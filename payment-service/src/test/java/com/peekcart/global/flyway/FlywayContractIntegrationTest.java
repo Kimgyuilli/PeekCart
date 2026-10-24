@@ -360,9 +360,12 @@ class FlywayContractIntegrationTest {
     }
 
     private Object snapshot(String schema) throws Exception {
+        // The upgrade scenario snapshots a pre-allocator version (the reservation table arrives later in the chain).
+        boolean allocator = !rows(schema, "SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE()"
+                + " AND table_name='dead_letter_record_ids'").isEmpty();
         return Map.of("ledger", rows(schema, "SELECT * FROM dead_letter_records ORDER BY id"),
                 "outbox", rows(schema, "SELECT * FROM outbox_events ORDER BY id"),
-                "allocator", rows(schema, "SELECT * FROM dead_letter_record_ids ORDER BY id"),
+                "allocator", allocator ? rows(schema, "SELECT * FROM dead_letter_record_ids ORDER BY id") : List.of(),
                 "history", rows(schema, "SELECT * FROM flyway_schema_history ORDER BY installed_rank"),
                 "columns", rows(schema, "SELECT TABLE_NAME,COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT "
                         + "FROM information_schema.columns WHERE table_schema=DATABASE() ORDER BY TABLE_NAME,ORDINAL_POSITION"));
