@@ -162,6 +162,9 @@ jobs:
           bash scripts/replay-entrypoint-lint.sh --self-test
           # drain 판정 자체의 fixture 검증(계획 V-37). 수집은 클러스터가 필요하지만 판정은 순수 함수다.
           bash scripts/replay-drain-preflight.sh --self-test
+          # 측정 전 토픽 상태 가드(D-106 ⑩)의 판정·진입점 fixture. 가드의 config 기대값 표가
+          # KafkaTopicConfigs·서비스 yml 과 갈라지면 여기서 실패한다 — 과금 세션에서 오경보로 알게 되지 않도록.
+          python3 -B scripts/tests/test_kafka_topic_state_guard.py
           # 마이그레이션이 **부여되지 않은 권한**을 요구하면 실제 스택에서만 부팅이 깨진다 —
           # Testcontainers 는 root 로 돌아 그 차이를 보지 못한다(PR #105 에서 실제로 났다).
           bash scripts/migration-grant-lint.sh
