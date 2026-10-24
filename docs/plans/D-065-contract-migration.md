@@ -123,21 +123,21 @@ strict ALTER 가 1138 로 실패해 실패 행이 남고, INSERT IGNORE 를 하�
 
 ## 3. 작업 항목
 
-- [ ] P1. 네 서비스에 contract migration 과 가드 callback 을 바이트 동일 사본으로 추가한다.
-- [ ] P2. parity lint: `MODIFY [COLUMN]` 해석, contract·가드 파일 존재·바이트 parity, 최종 스키마 규칙(root·kind 는 NOT NULL·
+- [x] P1. 네 서비스에 contract migration 과 가드 callback 을 바이트 동일 사본으로 추가한다.
+- [x] P2. parity lint: `MODIFY [COLUMN]` 해석, contract·가드 파일 존재·바이트 parity, 최종 스키마 규칙(root·kind 는 NOT NULL·
   DEFAULT 없음, 나머지 replay 축은 nullable), 변이 self-test.
-- [ ] P3. grant lint: `db/migration` 의 모든 `.sql`(callback 포함) 검사와 callback 음성 self-test.
-- [ ] P4. `peekcart-common-messaging`: 조회 단순화, `isRoot`, 두 엔티티 `nullable = false`, 관련 javadoc.
-- [ ] P5. JVM 테스트: 서비스별 계약 테스트 4종(order 에 가드 발견 음성 대조), V-30·V-18 교체, 상관 테스트 주석,
+- [x] P3. grant lint: `db/migration` 의 모든 `.sql`(callback 포함) 검사와 callback 음성 self-test.
+- [x] P4. `peekcart-common-messaging`: 조회 단순화, `isRoot`, 두 엔티티 `nullable = false`, 관련 javadoc.
+- [x] P5. JVM 테스트: 서비스별 계약 테스트 4종(order 에 가드 발견 음성 대조), V-30·V-18 교체, 상관 테스트 주석,
   ID 예약 테스트의 NULL 복귀 제거, product cleanup fixture 의 kind 명시.
-- [ ] P6. Flyway lab(`FlywayContractIntegrationTest`·`FlywayContractProcess`)을 실제 가드·contract 로 재구성하고 검증기와
+- [x] P6. Flyway lab(`FlywayContractIntegrationTest`·`FlywayContractProcess`)을 실제 가드·contract 로 재구성하고 검증기와
   검증기 테스트를 갱신한다.
-- [ ] P7. `dlq_contract_lab.py`: contract 직전까지 적용, 서비스별 가드·contract 적용과 누락 INSERT 거부, order 에서 위반 7종
+- [x] P7. `dlq_contract_lab.py`: contract 직전까지 적용, 서비스별 가드·contract 적용과 누락 INSERT 거부, order 에서 위반 7종
   거부와 행·스키마 불변, contract 이후 가드 비활성 확인, manifest 에 callback 포함.
-- [ ] P8. D-092 재개 SQL 의 NULL 분기 제거(runbook·통합 테스트·SQLite fixture).
-- [ ] P9. EXPECTED_MIGRATIONS 와 `docs/05-data-design.md` 현재 상태 정정.
-- [ ] P10. 로컬 검증(lint·self-test·unittest·컴파일)과 PR CI(ci·flyway-contract·replay-collector·approval-recovery·
-  signed-gateway) 확인.
+- [x] P8. D-092 재개 SQL 의 NULL 분기 제거(runbook·통합 테스트·SQLite fixture).
+- [x] P9. EXPECTED_MIGRATIONS 와 `docs/05-data-design.md` 현재 상태 정정.
+- [x] P10. 로컬 검증(lint·self-test·unittest·컴파일)을 실행한다.
+- [ ] P11. PR CI(ci·flyway-contract·replay-collector·approval-recovery·signed-gateway)를 최신 head 에서 확인한다.
 
 ## 4. 검증 방법
 
