@@ -112,7 +112,7 @@ class OutboxReplayPublicationIntegrationTest extends AbstractIntegrationTest {
 
         pollingService.pollAndPublish();
 
-        // **개수를 단언하지 않는다.** 배경 poller(@Scheduled 5초)가 같은 행을 집어갈 수 있고,
+        // **개수를 단언하지 않는다.** 배경 poller(@Scheduled)가 같은 행을 집어갈 수 있고,
         // 재발행 중복은 ADR-0020 D1 이 허용하는 것이다 — "정확히 1개" 는 계약이 말하지 않는 것을
         // 주장하면서 스케줄러 타이밍에 흔들린다. 대신 **발행된 모든 레코드가 계약을 만족**하는지 본다.
         List<ConsumerRecord<String, String>> records = drain("order.created", 1);

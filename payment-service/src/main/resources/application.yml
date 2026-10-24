@@ -128,8 +128,12 @@ app:
     retention: 7d          # PUBLISHED outbox_events 보존기간
     # 서비스별 poller 락 이름 — 다른 서비스와 겹치지 않아야 한다.
     lock-name: paymentOutboxPollingJob
+    # 발행 처리율 기본값 (ADR-0045). delay·lock-at-least-for 는 인라인 기본값이 없어 빠지면 부팅이 실패한다.
+    # lock-at-least-for 는 delay 보다 짧아야 한다 — 길면 같은 인스턴스의 다음 실행이 자기 lock 에 막힌다(D-075).
     polling:
-      batch-size: 100
+      delay: 500ms
+      lock-at-least-for: 400ms
+      batch-size: 500
       max-retry: 5
       publish-timeout: 6s
       cycle-timeout: 4m

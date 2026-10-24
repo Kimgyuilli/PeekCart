@@ -77,7 +77,8 @@ class OutboxThroughputLocalProbeTest extends AbstractIntegrationTest {
         assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
         SchedulerLock annotation = OutboxPollingScheduler.class.getMethod("pollAndPublish")
                 .getAnnotation(SchedulerLock.class);
-        assertThat(annotation.lockAtLeastFor()).isEqualTo("PT4S");
+        // ADR-0045 부터 최소 보존은 서비스 설정이다. 아래 profile 의 4000ms 는 D-075 측정 당시 운영값(5s·100·4s)을 재현한다.
+        assertThat(annotation.lockAtLeastFor()).isEqualTo("${app.outbox.polling.lock-at-least-for}");
         assertThat(annotation.lockAtMostFor()).isEqualTo("PT5M");
         ProducerConfig configuration = new ProducerConfig(kafka.getProducerFactory().getConfigurationProperties());
         assertThat(configuration.getBoolean("enable.idempotence")).isTrue();
