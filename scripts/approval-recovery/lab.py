@@ -3,6 +3,7 @@
 import argparse
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -13,31 +14,58 @@ ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/"scripts/signed-gateway"))
 import lab as signed
 
+# One exec for every declared topic, list on stdin: the same approach as scripts/saga-e2e-smoke.sh.
+TOPIC_CREATE_LOOP=('while IFS="\t" read -r topic parts; do '
+                   '/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists '
+                   '--topic "$topic" --partitions "$parts" --replication-factor 1 || exit 1; done')
+
+
+def declared_topics():
+    """Topics the services declare, with partition counts, from the inventory the E2E pre-creation uses."""
+    rows=[line.split("\t") for line in signed.output(["bash",str(ROOT/"scripts/kafka-subscription-contract-lint.sh"),"--emit-topics"],60).splitlines()]
+    signed.require(len(rows)>=10 and all(len(row)==2 and row[1].isdigit() for row in rows),"declared topic inventory unreadable")
+    return rows
+
+
+def partition_counts(described):
+    """Topic summary lines of kafka-topics.sh --describe only; per-partition lines start with a tab."""
+    return dict(re.findall(r"^Topic: (\S+)\s.*?PartitionCount: (\d+)",described,re.M))
+
 
 def execute(out):
     fixture=signed.Lab("payment",out)
     fixture.command[4:4]=["-f",str(ROOT/"docker-compose.approval-recovery.yml")]
     primary=None
 
-    def kafka(args, name, body=None):
+    def broker_exec(argv, name, body=None, timeout=30):
         identity=subprocess.check_output(fixture.command+["ps","-q","kafka"],env=fixture.env,text=True,timeout=10).strip()
         inspected=json.loads(signed.output(["docker","container","inspect",identity]))[0]
         labels=inspected["Config"]["Labels"]
         signed.require(inspected["Id"]==identity and labels.get("peekcart.fixture.nonce")==fixture.nonce
                        and labels.get("com.docker.compose.project")==fixture.project,"broker ownership differs")
-        response=subprocess.run(["docker","exec",*(["-i"] if body is not None else []),identity,
-                                 "/opt/kafka/bin/"+args[0],"--bootstrap-server","kafka:29092",*args[1:]],
-                                input=body,stdin=subprocess.DEVNULL if body is None else None,text=True,capture_output=True,timeout=30)
+        response=subprocess.run(["docker","exec",*(["-i"] if body is not None else []),identity,*argv],
+                                input=body,stdin=subprocess.DEVNULL if body is None else None,text=True,capture_output=True,timeout=timeout)
         (fixture.out/(name+".stdout")).write_text(response.stdout)
         (fixture.out/(name+".stderr")).write_text(response.stderr)
         signed.require(response.returncode==0,"owned Kafka command failed")
         return response.stdout
+
+    def kafka(args, name, body=None):
+        return broker_exec(["/opt/kafka/bin/"+args[0],"--bootstrap-server","kafka:29092",*args[1:]],name,body)
 
     try:
         fixture.prepare()
         source=json.loads((fixture.out/"source-images.json").read_text())
         source["images"]["product-service"]=signed.output(["docker","image","inspect","--format","{{.Id}}","product-service:ci"])
         signed.atomic_json(fixture.out/"source-images.json",source)
+        # Create declared topics before any service starts (D-107). If a consumer auto-creates an owner's topic
+        # with one partition and the owner's KafkaAdmin grows it later, subscribed consumers ignore the new
+        # partitions until their metadata refresh (5 minutes by default), and unkeyed duplicates there never land.
+        fixture.run(fixture.command+["up","-d","--wait","--wait-timeout","300","kafka"],"kafka-startup.log",360)
+        declared=declared_topics()
+        broker_exec(["sh","-c",TOPIC_CREATE_LOOP],"topics-create","".join(topic+"\t"+parts+"\n" for topic,parts in declared),180)
+        counts=partition_counts(kafka(["kafka-topics.sh","--describe"],"topics-describe"))
+        signed.require(all(counts.get(topic)==parts for topic,parts in declared),"pre-created topic partitions differ")
         fixture.run(fixture.command+["up","-d","--wait","--wait-timeout","420","user-service","resource-service","product-service","gateway","pg-stub"],"startup.log",600)
         groups=("product-svc-approval-recovery-request-group","product-svc-approval-recovery-execute-group",
                 "payment-svc-approval-recovery-snapshot-group","payment-svc-approval-recovery-result-group")
