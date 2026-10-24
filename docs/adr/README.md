@@ -65,4 +65,5 @@
 | [0042](./0042-canonical-pg-order-identity.md) | Checkout부터 복구까지 유지하는 PG 주문 식별자 | Accepted | Phase 5 | 03, 05, 06 |
 | [0043](./0043-dlq-preallocated-lineage-identity.md) | DLQ 최초 INSERT의 lineage와 ID 예약 | Accepted | Phase 5 | 05, 06 |
 | [0044](./0044-ci-critical-path-and-docs-only-skip.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 (ADR-0030 D1 부분 무효화) | Accepted | Phase 5 | 06 |
+| [0045](./0045-outbox-polling-throughput-defaults.md) | outbox poller 발행 처리율 기본값 (주기 500ms, 배치 500, 락 최소 보존 설정화) | Accepted | Phase 5 | 04, 06 |
 <!-- INDEX:END -->

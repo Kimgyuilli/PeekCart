@@ -1124,9 +1124,10 @@ SCENARIOS = {"a": scenario_a, "b": scenario_b, "c": scenario_c, "d": scenario_d,
 #   유도한 창 — 결함이 없었다면 결과가 도착했을 시간만 기다린다
 #   복원 확인 — 주입을 거두면 같은 흐름이 되살아난다. 창이 짧아서 못 본 것이 아님을 보장한다
 
-# 예약 부재 창. 정상 경로의 지연은 outbox poller 주기(`app.outbox.polling.delay`, 기본 5s,
-# e2e 가 덮지 않는다)와 한 홉의 소비로 정해진다. 6주기를 준다. poller 주기를 크게 바꾸면
-# 이 값을 다시 유도한다.
+# 예약 부재 창. 정상 경로의 지연은 outbox poller 주기(`app.outbox.polling.delay`, e2e 가 덮지
+# 않는다)와 한 홉의 소비로 정해진다. 30초는 주기 5s 일 때 6주기로 유도한 값이다. ADR-0045 로
+# order·product 주기가 500ms 가 되어 60주기가 됐지만 줄이지 않는다. 창이 길면 검출 범위만
+# 넓어진다(ADR-0031 D2). poller 주기를 다시 바꾸면 이 값이 6주기 이상인지 확인한다.
 RESERVATION_ABSENCE_WINDOW = 30
 
 # listener 부재 창. 멈춘 consumer 의 group 이탈은 세션 타임아웃(Kafka 기본 45s, 이 레포는

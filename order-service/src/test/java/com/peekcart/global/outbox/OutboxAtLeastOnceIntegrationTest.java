@@ -69,7 +69,7 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
      * save 실패 주입 스위치.
      *
      * <p><b>Mockito 재스터빙 대신 플래그를 쓰는 이유</b>: 이 spy 는 테스트 스레드만 쓰는 것이 아니다.
-     * {@code OutboxPollingScheduler} 가 {@code @Scheduled(fixedDelay = 5000)} 로 <b>같은 빈을 동시에</b>
+     * {@code OutboxPollingScheduler} 가 {@code @Scheduled} 주기로 <b>같은 빈을 동시에</b>
      * 호출한다. 그 상태에서 {@code doThrow(...)} → {@code doCallRealMethod(...)} 로 다시 스터빙하면
      * Mockito 의 스터빙 구간과 배경 스레드의 호출이 겹쳐 <b>새 answer 가 반영되지 않는다</b> —
      * CI 에서 두 번째 poll 이 여전히 "DB down" 을 던져 실패했다(로컬은 타이밍으로 통과했다).

@@ -31,7 +31,7 @@
 
 | # | 주장하는 불변식 | 주입 수단 | 실패 지점 | 부재 창 | 복원 확인 |
 |---|---|---|---|---|---|
-| ① | 시작 이벤트는 실제 outbox poller 를 지나야 예약에 닿는다 | ShedLock 행 선점 (해제는 `lock_until` UPDATE, DELETE 금지) | `reservation` + outbox `PENDING` 유지 | 30초 (poller 5초 × 6) | `lock_until` 을 과거로 UPDATE 한 뒤 같은 주문 예약 |
+| ① | 시작 이벤트는 실제 outbox poller 를 지나야 예약에 닿는다 | ShedLock 행 선점 (해제는 `lock_until` UPDATE, DELETE 금지) | `reservation` + outbox `PENDING` 유지 | 30초 (poller 주기 6회분 이상, see ADR-0045) | `lock_until` 을 과거로 UPDATE 한 뒤 같은 주문 예약 |
 | ② | 예약은 product-service 의 소비로만 성립한다 | product-service 정지 | `reservation` + outbox `PUBLISHED` | 30초 | 재기동 후 밀린 예약 도착 |
 | ④ | readiness 는 업무 listener 부재를 group 검사로 잡는다 | ② 의 정지 상태 재사용 | `consumer-group` | 60초 (세션 타임아웃 45초 + 여유) | 재기동 후 readiness 통과 |
 | ③ | 시나리오 B 의 단언은 아무 취소가 아니라 예약 실패 취소를 본다 | 재고 100 으로 주문 | 예약 성공 관측 후 취소 부재 | 45초 고정 (유도 근거 없음) | — |

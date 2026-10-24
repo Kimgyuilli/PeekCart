@@ -303,9 +303,11 @@ PENDING → PAYMENT_REQUESTED → PAYMENT_COMPLETED → PREPARING → SHIPPED �
 @Scheduled(fixedDelay = 60000)
 public void cancelExpiredOrders() { ... }
 
-// Outbox 폴링 → Kafka 발행 — 5초 주기, 락 최대 5분 / 최소 4초
-@SchedulerLock(name = "outboxPollingJob", lockAtMostFor = "PT5M", lockAtLeastFor = "PT4S")
-@Scheduled(fixedDelay = 5000)
+// Outbox 폴링 → Kafka 발행 — 주기·최소 보존은 서비스 base yml 소유, 락 최대 5분 (see ADR-0045)
+//   order·product·payment 500ms·400ms, notification 5s·4s. 최소 보존 < 주기를 부팅 시 검사한다
+@SchedulerLock(name = "${app.outbox.lock-name:outboxPollingJob}", lockAtMostFor = "PT5M",
+        lockAtLeastFor = "${app.outbox.polling.lock-at-least-for}")
+@Scheduled(fixedDelayString = "${app.outbox.polling.delay}")
 public void pollAndPublish() { ... }
 ```
 

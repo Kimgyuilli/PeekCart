@@ -20,6 +20,12 @@ dependencies {
     // DeadLetterEndpoint 의 replay 권한 검사(SecurityContextHolder/AccessDeniedException)
     implementation 'org.springframework.security:spring-security-core'
 
+    // OutboxPollingProperties 의 Bean Validation 어노테이션 컴파일용(ADR-0045).
+    // 런타임 검증(hibernate-validator)은 소유 서비스(starter-validation 보유)에서 수행 → compileOnly (:common 과 같은 관례).
+    compileOnly 'org.springframework.boot:spring-boot-starter-validation'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // 부팅 검증 불변식을 이 모듈 단위 테스트에서 실제로 실패시켜 보려면 런타임 검증기가 필요하다.
+    testImplementation 'org.springframework.boot:spring-boot-starter-validation'
     testImplementation testFixtures(project(':common'))
 }
