@@ -277,7 +277,7 @@ curl -s -X POST "$GW/api/v1/admin/deadletter/order/42" \
 ```bash
 # 표적 group 이 그 offset 을 소비했는가
 kubectl -n peekcart exec deploy/kafka -- /opt/kafka/bin/kafka-consumer-groups.sh \
-  --bootstrap-server localhost:9092 --describe --group order-svc-payment-completed-group
+  --bootstrap-server localhost:29092 --describe --group order-svc-payment-completed-group
 ```
 
 ```bash
@@ -345,7 +345,8 @@ replay-aware poller 만 올바르게 발행한다 — 구 poller 는 그 행의 
 
 토픽을 삭제하고 같은 이름으로 다시 만들면 **offset 이 0부터 재사용**된다. 그러면 원장의 물리 식별자
 `(cluster_id, topic_generation, origin_topic, origin_partition, origin_offset, failed_consumer_group)`
-가 과거 행과 충돌하고, 적재가 `INSERT IGNORE` 라 **새 실패가 정상 중복처럼 조용히 폐기된다.**
+가 과거 행과 충돌하고, 적재가 같은 좌표를 기존 행의 attempt 증가로 처리해(`INSERT ... ON DUPLICATE KEY UPDATE`,
+ADR-0043) **새 실패가 과거 행의 재시도처럼 흡수된다.**
 
 ### 절차 (순서 중요)
 
