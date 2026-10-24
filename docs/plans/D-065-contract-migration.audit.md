@@ -55,9 +55,8 @@
   notification 계약 3 모두 실패 0. `:payment-service:flywayContractTest` 1 test 통과(151.946초). 검증기의 lab 측 규칙으로
   report 를 대조해 invocation 88(migrate 60·validate 28)·의도된 실패 32·고유 pid 88·Flyway 11.7.2, 가드 거부 8건 모두 1231 과
   marker, 네 서비스 플래그 9종·가드 원문 hash·복원 contract hash 일치, 재시작 snapshot 12개 동일(실제 StartedAt 증가, host
-  port 55846 에서 56635)을 확인했다. 실제 메시지: `Variable 'sql_mode' can't be set to the value of 'D065_CONTRACT_GUARD
-  invalid_root_rows=1 invalid_kind_rows=1 (need root_record_id>0 and record_kind DOMAIN or REPLAY. nothing changed. fix rows
-  with provenance then restart)'`. 일반 payment 334 명단 대조는 CI 에서 한다.
+  port 55846 에서 56635)을 확인했다. 실제 메시지:
+  `Variable 'sql_mode' can't be set to the value of 'D065_CONTRACT_GUARD invalid_root_rows=1 invalid_kind_rows=1 (need root_record_id>0 and record_kind DOMAIN or REPLAY. nothing changed. fix rows with provenance then restart)'`. 일반 payment 334 명단 대조는 CI 에서 한다.
 - 이전 로컬 lint 결과의 출처: 앞선 61개 명령은 `scratchpad/laneB/` 의 래퍼(이 worktree 로 cd)로 돌렸고, 레인 A 가 덮어쓴
   `scratchpad/hpx.sh` 는 쓰지 않았다. 아래 /ship 전 재확인은 worktree 에서 직접 실행한 결과만 적는다.
 
