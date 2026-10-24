@@ -36,7 +36,7 @@ scripts/harness-context.sh
 ```
 
 `TASKS.md`(94KB) · `PHASE{N}.md`(294KB) · `adr/README.md` 를 **통독하지 않는다.** 위 한 줄이
-단계 · 진행 중/대기 행 · ADR 비-Accepted · progress 최근 엔트리 · 계획서 현황 · git 을 약 1KB 로
+단계 · 열린 행(진행 중 · 대기 · 부분 완료 · 보류) · ADR 비-Accepted · progress 최근 엔트리 · 계획서 현황 · git 을 약 1KB 로
 뽑아 준다. 아래 보고 템플릿이 요구하는 것은 전부 여기 들어 있다.
 
 다이제스트가 `경고: ... 파서 고장` 을 내면 **그때만** 해당 문서를 직접 읽는다. 형식이 바뀐
