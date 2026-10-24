@@ -11,6 +11,7 @@ on:
       - 'scripts/e2e/pg-stub/**'
       - 'scripts/signed-gateway/**'
       - 'scripts/ci-image-identity.sh'
+      - 'scripts/kafka-subscription-contract-lint.sh'
       - 'scripts/e2e/mysql-init/**'
       - 'Dockerfile'
       - '*-service/src/main/**'
