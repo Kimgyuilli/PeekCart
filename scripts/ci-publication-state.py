@@ -95,7 +95,7 @@ def observe(expected, inputs, output):
     rows = []
     for service in SERVICES:
         directory = output / service; directory.mkdir(exist_ok=True)
-        for name in ['expected', 'latest', 'identity']:
+        for name in ['expected', 'latest', 'identity', 'current-main']:
             for suffix in ['.stdout', '.stderr']: (directory / (name + suffix)).unlink(missing_ok=True)
         row = {'service': service, 'started_at': now(), 'status': 'unavailable'}
         try:
@@ -117,8 +117,22 @@ def observe(expected, inputs, output):
             row['error'] = str(error)
         row['finished_at'] = now(); rows.append(row)
     after = current_main(output, 'main-after', repository)
+    moved = before is not None and after is not None and after != expected
+    for row in rows:
+        if not moved or row['status'] != 'different_latest': continue
+        try:
+            row['current_main_manifest'] = manifest(output / row['service'], 'current-main',
+                                                    'ghcr.io/' + owner + '/peekcart-' + row['service'] + ':' + after)
+            if row['current_main_manifest'] == row['latest_manifest']: row['status'] = 'superseded'
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            row['current_main_error'] = str(error)
     aligned = sum(row['status'] == 'aligned' for row in rows)
-    if (before is not None and before != expected) or (after is not None and after != expected):
+    published = not unexpected and all(row.get('push_outcome') == 'success' for row in rows)
+    # An expected latest proves ordering only if main was still expected when observation began.
+    grounded = all(row['status'] == 'superseded' or (row['status'] == 'aligned' and before == expected) for row in rows)
+    if moved and published and grounded:
+        status = 'superseded'
+    elif (before is not None and before != expected) or (after is not None and after != expected):
         status = 'stale_or_concurrent_release'
     elif unexpected or before is None or after is None or any(row['status'] == 'unavailable' for row in rows):
         status = 'incomplete_observation'
@@ -132,7 +146,7 @@ def observe(expected, inputs, output):
               'limitation': 'Sequential observations, not an atomic snapshot. Compare each repository to its own expected SHA. Unknown reads do not prove partial promotion or its cause.'}
     save(output / 'summary.json', result)
     print('PUBLICATION: ' + status + ' (' + str(aligned) + '/6 aligned)')
-    return 0 if status == 'aligned' else 1
+    return 0 if status in {'aligned', 'superseded'} else 1
 
 
 if __name__ == '__main__':
