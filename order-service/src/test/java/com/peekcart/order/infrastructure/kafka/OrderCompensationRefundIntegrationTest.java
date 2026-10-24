@@ -88,7 +88,7 @@ class OrderCompensationRefundIntegrationTest extends AbstractIntegrationTest {
     /**
      * Outbox poller 를 무력화한다 — 두 가지를 동시에 막는다.
      *
-     * <p>① {@code OutboxEventRepository} 를 context-wide spy 로 바꾸면 **5초마다 도는**
+     * <p>① {@code OutboxEventRepository} 를 context-wide spy 로 바꾸면 **주기적으로 도는**
      * {@link OutboxPollingScheduler} 가 그 spy 를 호출한다. Mockito 의
      * {@code willThrow(...).given(spy)...} 는 두 단계라 그 사이에 다른 스레드가 spy 를 건드리면
      * {@code UnfinishedStubbingException} 이 난다 — 코드가 아니라 <b>주사위</b>가 결정하는 실패다.

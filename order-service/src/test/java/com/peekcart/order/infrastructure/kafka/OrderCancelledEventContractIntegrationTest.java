@@ -62,7 +62,7 @@ class OrderCancelledEventContractIntegrationTest extends AbstractIntegrationTest
     /**
      * Outbox poller 를 무력화한다.
      *
-     * <p>{@code OutboxEventRepository} 를 context-wide spy 로 바꾸는 순간, **5초마다 도는**
+     * <p>{@code OutboxEventRepository} 를 context-wide spy 로 바꾸는 순간, **주기적으로 도는**
      * {@link OutboxPollingScheduler} 가 그 spy 를 호출하게 된다
      * ({@code OutboxPollingService:71} 의 {@code findPendingEvents}). 그런데 Mockito 의
      * {@code willThrow(...).given(spy).save(...)} 는 <b>두 단계</b>라, 그 사이에 다른 스레드가
