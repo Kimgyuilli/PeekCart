@@ -13,7 +13,13 @@
 
 order/product/payment/notification DB는 `dead_letter_record_ids`의 AUTO_INCREMENT 값으로 ID를 예약한다. 적재 트랜잭션이 예약 행을 만들고 자신의 행을 삭제하며, 첫 `dead_letter_records` INSERT에 ID와 self 또는 검증된 parent root를 함께 기록한다. 좌표 중복은 attempt를 증가시킨 실제 affected count와 current read의 ID·예약 ID 점유를 함께 대조해 판정한다. 예상 밖 PK 충돌과 같은 ID의 재사용은 rollback한다. ID gap은 허용하며 예약 counter를 TRUNCATE/reset하지 않는다(see ADR-0043).
 
-migration은 기존 ledger 최대 ID 다음부터 예약하도록 준비하며 기존 ID를 바꾸지 않는다. 구 writer를 멈추고 bootstrap 및 모든 writer 전환을 완료해야 하며, 혼합 실행의 안전성은 보장하지 않는다. 이 단계에서 `root_record_id`와 `record_kind`는 nullable이며 NOT NULL contract는 별도 단계다. 운영 접수 중지·배포는 수행하지 않았다.
+migration은 기존 ledger 최대 ID 다음부터 예약하도록 준비하며 기존 ID를 바꾸지 않는다. 구 writer를 멈추고 bootstrap 및 모든 writer 전환을 완료해야 하며, 혼합 실행의 안전성은 보장하지 않는다. 운영 접수 중지·배포는 수행하지 않았다.
+
+### replay 판별자 NOT NULL contract
+
+`dead_letter_records.root_record_id`와 `outbox_events.record_kind`는 contract migration(order V15·product V14·payment V16·notification V10, 네 벌 동일)에서 DEFAULT 없는 NOT NULL이 된다. 값을 빠뜨린 INSERT는 strict 모드에서 실패하고, 원장 incident 집계는 `root_record_id = id`만 root로 센다(see ADR-0020 §D3·§D6-3).
+
+같은 디렉터리의 `beforeMigrate__dead_letter_replay_contract_guard.sql`이 매 migrate 시작에 두 컬럼이 아직 nullable이면 NULL·0 이하 root와 정확히 `DOMAIN`·`REPLAY`가 아닌 kind를 센다. 하나라도 있으면 migration 전에 실패하고(오류 1231, 메시지 `D065_CONTRACT_GUARD invalid_root_rows=N invalid_kind_rows=M`) Flyway history에 행을 남기지 않으며 자동 보정하지 않는다. 빈 DB와 contract 이후에는 검사하지 않는다. contract 이후 INSERT IGNORE가 만드는 0·빈 문자열은 막지 않으므로 writer 정지 전제가 남는다. 운영 DB 적용은 수행하지 않았다.
 
 ### User DB
 
