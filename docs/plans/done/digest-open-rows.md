@@ -46,3 +46,5 @@ grade: S
   `PR:` 줄의 번호를, 없으면 최대값을 고르고, 기존 스크립트(`6905952`)는 인용된 최대값을 골라야 한다. 실제 INDEX 는 위 네 행이
   자기 PR 로 바뀌고, 여러 PR 에 걸친 구현 계획 3건(impl1·impl3·pr3d-b2)은 `/ship` 이 마지막으로 기록한 자기 PR 로 바뀐다.
 - Gradle 소스 세트 변경이 없어 `./gradlew test` 는 PR CI 로 확인한다.
+
+PR: [#240](https://github.com/Kimgyuilli/PeekCart/pull/240) (병합 `2ffa8d6`, main CI40121797636 성공)

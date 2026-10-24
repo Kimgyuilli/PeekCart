@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 157개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 159개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-10-21 | 있음 |
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-10-21 |  |
 
-## 기타 (95)
+## 기타 (97)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -180,5 +180,7 @@
 | [D-106-topic-config-race](./D-106-topic-config-race.md) | D-106 ⑩ — 토픽 생성 경합으로 선언 config 가 적용되지 않는 문제 | [#237](https://github.com/Kimgyuilli/PeakCart/pull/237) | 2026-10-24 | 있음 |
 | [D-107-recovery-lab-topics](./D-107-recovery-lab-topics.md) | D-107-recovery-lab-topics | [#238](https://github.com/Kimgyuilli/PeakCart/pull/238) | 2026-10-24 |  |
 | [ci-critical-path](./ci-critical-path.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 | [#231](https://github.com/Kimgyuilli/PeakCart/pull/231) | 2026-10-24 | 있음 |
+| [D-075-outbox-throughput](./D-075-outbox-throughput.md) | D-075 outbox 발행 처리율 기본값 처분 (+ D-106 ⑥) | [#242](https://github.com/Kimgyuilli/PeakCart/pull/242) | 2026-10-25 | 있음 |
 | [D-106-topic-guard-throttle](./D-106-topic-guard-throttle.md) | D-106 ⑩·② — 측정 전 토픽 상태 가드와 CPU 스로틀 패널 | [#239](https://github.com/Kimgyuilli/PeakCart/pull/239) | 2026-10-25 | 있음 |
+| [digest-open-rows](./digest-open-rows.md) | digest-open-rows | [#240](https://github.com/Kimgyuilli/PeakCart/pull/240) | 2026-10-25 |  |
 
