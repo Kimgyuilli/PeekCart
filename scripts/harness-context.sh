@@ -113,29 +113,25 @@ def status_of(line):
     c = cells(line)
     return c[-1] if c else ''
 
-live = []
-for l in tasks.split('\n'):
-    if not re.match(r'^\s*\|', l):
-        continue
-    st = status_of(l)
-    if '🔄' in st or '🔲' in st:
-        live.append(l)
+# 열린 행은 D행 중 상태가 ✅ 로 시작하지 않는 전부다. 아는 표기만 고르면 범례에 없던 ◐ 행이
+# 경고 없이 빠진다(◐ 를 처음 쓴 2026-10-17 부터 빠졌고, 2026-10-25 에 5행이었다).
+# 범례 밖 표기는 숨기지 않고 그 글자를 보인다.
+OPEN_LABELS = {'🔲': '대기', '🔄': '진행중', '◐': '부분', '⏸': '보류'}
+active_debts = debt_rows(tasks, 'docs/TASKS.md')
+live = [(ident, l) for ident, l in active_debts if not status_of(l).startswith('✅')]
 out.append('')
-out.append('## 진행 중 / 대기 (%d)' % len(live))
+out.append('## 열린 행 (%d)' % len(live))
 if not live:
     out.append('(없음)')
-for l in live:
-    c = cells(l)
-    ident = c[0][:8] if c else '?'
-    desc = c[1] if len(c) > 1 else ''
-    out.append('- [%s] %s | %s'
-               % (ident, desc[:90], '진행중' if '🔄' in status_of(l) else '대기'))
+for ident, l in live:
+    st = status_of(l)
+    label = next((v for k, v in OPEN_LABELS.items() if st.startswith(k)), st[:1] or '?')
+    out.append('- [%s] %s | %s' % (ident, cells(l)[1][:90], label))
 
 # 완료 행은 TASKS-done.md 로 옮겨지므로 두 파일을 합쳐 센다.
 # 건강 검사는 현재 값, 명시 base 검사는 기대 감소를 아는 별도 계약이다.
 archive_path = 'docs/progress/TASKS-done.md'
 archive = read(archive_path)
-active_debts = debt_rows(tasks, 'docs/TASKS.md')
 archived_debts = archive_health(archive, archive_path)
 unique_ids(active_debts + archived_debts, '현행 task 문서')
 if args.base:
@@ -169,7 +165,7 @@ if args.base:
 done_rows = len([l for l in (tasks + '\n' + archive).split('\n')
                  if re.match(r'^\s*\|', l) and '✅' in status_of(l)])
 out.append('')
-out.append('완료 표기 행 %d · 진행중/대기 행 %d' % (done_rows, len(live)))
+out.append('완료 표기 행 %d · 열린 행 %d' % (done_rows, len(live)))
 
 # ---------- ADR 인덱스 ----------
 adr = read('docs/adr/README.md')
