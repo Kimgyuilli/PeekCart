@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-106-topic-guard-throttle.md",
+      "sha256": "e602f572dcbf4dc0c89635172188a3a3e62ba44a1ce39e4f32233dede5b257b4"
+    },
+    {
+      "path": "docs/plans/D-106-topic-guard-throttle.audit.md",
+      "sha256": "a5ec425d94bae6d13735635d9ae01dc6ba6f416f09e8136e5e10ab0006ac1aa2"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-106-topic-guard-throttle.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-106-topic-guard-throttle.md",
+          "start": 1,
+          "end": 142
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-106-topic-guard-throttle.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-106-topic-guard-throttle.audit.md",
+          "start": 1,
+          "end": 37
+        }
+      ]
+    }
+  ]
+}
