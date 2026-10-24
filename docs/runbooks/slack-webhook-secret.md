@@ -20,7 +20,7 @@
 | 사용자 알림 webhook | Secret Manager `peekcart-slack-user-webhook` | `peekcart/notification-service-secret` 의 `SLACK_USER_WEBHOOK_URL` | notification-service 사용자 알림(`notification.slack.user-webhook-url`) | notification-service 재시작 |
 | 운영 경보 webhook | Secret Manager `peekcart-slack-ops-webhook` | `peekcart/notification-service-secret` 의 `SLACK_OPS_WEBHOOK_URL`, `monitoring/grafana-ops-webhook` 의 `url` | notification-service `SlackPort` 운영 호출(Outbox·DLQ, `slack.webhook.url`), Grafana contact point `peekcart-operations`(env `PEAKCART_OPS_SLACK_WEBHOOK_URL`) | notification-service 와 Grafana 재시작 |
 
-- Slack 앱 `PeekCart Alerts`(`test` 워크스페이스, 채널 2개), Secret Manager 두 시크릿, Kubernetes Secret 의 Slack 키 셋은 운영자가 소유한다. 현재 값을 만들고 넣은 사람은 저장소 소유자다(D-078 S0).
+- Slack 앱 `PeekCart Alerts`(`test` 워크스페이스, 채널 2개), Secret Manager 두 시크릿, Kubernetes Secret 의 Slack 키 셋은 운영자인 저장소 소유자가 소유한다(2026-10-24 확정). 현재 값도 저장소 소유자가 만들고 넣었다(D-078 S0).
 - 정본은 Secret Manager 다. Kubernetes Secret 은 세션마다 정본에서 다시 만든다. 현재 프로젝트는 `peekcart-d078` 이고, D-078 세션 뒤 결제 연결이 끊겨 있다.
 - 저장소에는 값도 placeholder 도 두지 않는다. `secret.yml` 은 Slack 키를 선언하지 않는다. base·local 기본값은 서로 다른 loopback endpoint(`127.0.0.1:9`)라 밖으로 나가지 않는다.
 - 두 webhook 은 서로 다른 채널이어야 한다. notification-service 는 키가 없거나 두 URL 이 같으면 시작하지 않지만, 서로 다른 webhook 이 같은 채널을 가리키는지는 알 수 없다. 채널 분리는 §3 canary 로만 확인된다.
