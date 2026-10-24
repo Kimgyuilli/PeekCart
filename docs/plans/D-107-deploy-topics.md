@@ -87,21 +87,23 @@ kafka 선행 적용 실패, 롤아웃 실패·시간 초과, 생성 실패, desc
 
 ## 3. 작업 항목
 
-- [ ] P1. `scripts/deploy-overlay.sh`: drain preflight 와 `kubectl apply -k` 사이에 토픽 사전 생성 단계를 넣는다.
+- [x] P1. `scripts/deploy-overlay.sh`: drain preflight 와 `kubectl apply -k` 사이에 토픽 사전 생성 단계를 넣는다.
   `--emit-topics` 결과 확인(토픽<TAB>파티션, 10줄 이상) → `kubectl kustomize` 렌더에서 Namespace·kafka 3종 선택(kafka 3종 중
   하나라도 없으면 exit 2) → `kubectl apply -f` → `rollout status deploy/kafka --timeout=300s` → `exec -i deploy/kafka -- sh -c`
   생성 루프 → `exec deploy/kafka -- kafka-topics.sh --describe` 와 awk 대조. `TOPIC_PRECREATE_SKIP_REASON` 건너뛰기.
   헤더 주석에 흐름·사용법·Exit 예시·우회 한계를, 단계 주석에 이유·config 주체·가드 관계를 적는다.
-- [ ] P2. `scripts/tests/fixtures/deploy-overlay-kubectl.py`: argv 를 엄격히 대조하는 가짜 kubectl. `kustomize` 만 실제 kubectl 로
+- [x] P2. `scripts/tests/fixtures/deploy-overlay-kubectl.py`: argv 를 엄격히 대조하는 가짜 kubectl. `kustomize` 만 실제 kubectl 로
   오프라인 렌더(`KUBECONFIG=/dev/null`)하고 `apply -f`·`apply -k`·`rollout status`·`exec deploy/kafka` 를 흉내 낸다. exec 는
   `/opt/kafka/bin/` 을 가짜 디렉터리로 바꿔 래퍼의 실제 생성 루프를 로컬 sh 로 돌린다. 같은 파일이 `kafka-topics.sh` 이름으로
   불리면 브로커 상태(JSON)를 다루는 가짜 CLI 다(`--if-not-exists` 없이 기존 토픽을 만들면 실패, describe 는 3.8.1 형식).
   `get` 은 실패한다(drain preflight 차단 재현). 호출은 JSONL, 실패 주입은 JSON.
-- [ ] P3. `scripts/tests/test_deploy_overlay.py`(unittest): §검증 방법 V1~V6. `.github/workflows/ci.yml` lint job 의
+- [x] P3. `scripts/tests/test_deploy_overlay.py`(unittest): §검증 방법 V1~V6. `.github/workflows/ci.yml` lint job 의
   `test_kafka_topic_state_guard.py` 다음 줄에 배선한다.
-- [ ] P4. 문서: `docs/02-architecture.md` 배포 순서 4단계에 사전 생성 단계·적용 범위·우회 한계·config 주체·가드 관계,
-  `k8s/overlays/gke/README.md` 4단계 주석 두 줄, `loadtest/README.md` D-002b'/c §스택의 배포 명령을 래퍼로 바꾸고 이유 한 문장
-  (그 밖의 측정 절차는 레인 A 범위라 고치지 않는다).
+- [x] P4. 문서: `docs/02-architecture.md` 배포 순서 4단계에 사전 생성 단계·적용 범위·우회 한계·config 주체·가드 관계,
+  `k8s/overlays/gke/README.md` 4단계 주석 두 줄, `loadtest/README.md` D-002b'/c §스택의 배포 명령을 래퍼로 바꾸고 그 이유와
+  drain preflight 를 건너뛰는 사유(그 밖의 측정 절차는 레인 A 범위라 고치지 않는다).
+  (구현 중 정정: 초안은 "이유 한 문장" 이었으나, 측정 overlay 는 notification 이 없어 preflight 가 항상 막힌다는 사유를
+  같은 자리에 적어야 명령의 `DRAIN_PREFLIGHT_SKIP_REASON` 이 설명된다. 바꾼 줄은 명령 1줄과 설명 2줄이다.)
 
 ## 검증 방법
 
