@@ -77,6 +77,8 @@ kubectl apply -k k8s/monitoring/shared/
 
 # 4. app/infra + HPA + ServiceMonitor
 # 앱 overlay 배포는 래퍼를 쓴다 — drain preflight 선행 (ADR-0022 §D3)
+#    앱보다 kafka 를 먼저 올려 선언 토픽 30개를 선언 파티션 수로 만들고 대조한 뒤 앱을 적용한다(D-107).
+#    파티션이 선언과 다르면 앱을 적용하지 않는다. 건너뛰려면 TOPIC_PRECREATE_SKIP_REASON 에 사유를 남긴다.
 #    GW_URL 을 주면 배포 후 **인증 왕복 게이트**(D-022)까지 래퍼가 돌린다.
 #    주지 않으면 건너뛰고 그 사실을 경고로 남긴다 — 건너뛴 채로 두지 말 것.
 GW_URL=http://<gateway-internal-lb>:8080 bash scripts/deploy-overlay.sh k8s/overlays/gke

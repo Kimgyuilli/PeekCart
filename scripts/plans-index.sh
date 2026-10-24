@@ -48,12 +48,15 @@ for f in sorted(glob.glob(os.path.join(done, '*.md'))):
     title = re.sub(r'^%s\s*[—-]\s*' % re.escape(tid), '', title)
     title = title.replace('|', '\\|').strip()
 
+    # 계획서 자신의 PR 은 /ship 이 남기는 `PR:` 줄이 정본이다(여럿이면 가장 큰 번호). 본문이 원인·선례로
+    # 인용한 PR 까지 넣어 최대값을 고르면 D-106-topic-config-race 가 #238 로 표기됐다. 그 줄이 없을 때만 쓴다.
+    own = sorted({int(x) for x in re.findall(r'^\s*-?\s*PR:\s*\S*?pull/(\d+)', txt, re.M)})
     prs = sorted({int(x) for x in re.findall(r'pull/(\d+)', txt)})
     dates = sorted(set(re.findall(r'20\d{2}-\d{2}-\d{2}', txt)))
     rows.append({
         'tid': tid,
         'title': title,
-        'pr': prs[-1] if prs else None,
+        'pr': own[-1] if own else (prs[-1] if prs else None),
         'date': dates[-1] if dates else '',
         'audit': os.path.exists(audit),
     })

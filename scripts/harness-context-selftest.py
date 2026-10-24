@@ -78,8 +78,20 @@ class HarnessContextTest(unittest.TestCase):
 
     def test_digest_retains_status_and_plan_summary(self):
         result = self.check(digest=True)
-        self.assertIn('완료 표기 행 2 · 진행중/대기 행 2', result.stdout)
+        self.assertIn('완료 표기 행 2 · 열린 행 2', result.stdout)
         self.assertIn('진행 중 1개', result.stdout)
+
+    def test_digest_lists_every_open_row_by_leading_status(self):
+        # Picking known open marks hid partial rows; a later check mark in the status text is not completion.
+        statuses = {'D-900': '◐ 부분 병합', 'D-901': '⏸', 'D-902': '🔄 P1 ✅ 뒤 진행',
+                    'D-903': '◑ 범례 밖', 'D-904': '✅ 이동 전'}
+        self.write(TASKS, TASK_HEADER + ''.join('| %s | Docs | fixture | source | %s |\n' % row
+                                                for row in statuses.items()))
+        result = self.check(digest=True)
+        self.assertIn('## 열린 행 (4)', result.stdout)
+        for ident, label in (('D-900', '부분'), ('D-901', '보류'), ('D-902', '진행중'), ('D-903', '◑')):
+            self.assertIn('- [%s] Docs | %s\n' % (ident, label), result.stdout)
+        self.assertNotIn('D-904', result.stdout)
 
     def test_empty_archive_and_digest_are_failures(self):
         self.write(DONE, '')

@@ -155,11 +155,11 @@ notification 제외, HPA 제외(replicas 고정 — 오토스케일이 붙으면
 ServiceMonitor CRD)을 먼저 설치한다 — `k8s/overlays/gke/README.md` 1~3단계. CRD 가 없으면 apply 가 실패한다.
 
 ```bash
-kubectl kustomize --load-restrictor LoadRestrictionsNone k8s/overlays/gke-d002bc | kubectl apply -f -
+DRAIN_PREFLIGHT_SKIP_REASON="측정 overlay, notification 없음" bash scripts/deploy-overlay.sh k8s/overlays/gke-d002bc
 ```
 
-`--load-restrictor LoadRestrictionsNone` 은 `gke-d002a` 와 같은 이유로 필요하다(base 파일을
-디렉터리가 아니라 파일 단위로 참조한다).
+배포 래퍼가 kafka 를 먼저 올려 선언 토픽을 만들고 파티션 수를 대조한 뒤 앱을 적용한다(D-107). drain preflight 는
+notification 이 없는 이 overlay 에서 수집이 항상 실패하므로 사유를 남겨 건너뛴다.
 
 apply 직후 payment Secret 에 Toss **smoke 값**을 넣고 재기동한다(D-106 ④). k8s 프로파일은
 `TOSS_SECRET_KEY` 기본값이 없어 fail-fast 하고(CrashLoop), 매니페스트에는 이 값을 두지 않는다(GP-2 #3).
