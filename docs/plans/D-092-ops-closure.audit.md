@@ -10,3 +10,8 @@
 - 검증: `observability-ssot-lint.sh`, `gateway-exposure-lint.sh`, `kustomize-namespace-lint.sh`, `ci-lint-health-selftest.py`, `docs-preservation-ci.py --base origin/main`, `harness-context.sh --check --base origin/main`, `writing-lint.sh --commits`, consistency precheck(warnings 0) 통과.
 - 검증: 로컬 `./gradlew test` 미실행. Java 변경이 없고(resources 주석 1줄) 병렬 worktree 자원 경합을 피하려고 PR CI 에 맡김.
 - 확인한 전제: main CI40031226500(`2c9aa36`) notification shard XML 에서 `NotificationOutboxIntegrationTest` 5건 실패·오류·skip 0. 도메인 listener 27개가 모두 payload `eventId` 로 `IdempotencyChecker.executeIfNew` 를 거치고, `DlqTopology` 소비쌍 27개와 같음.
+
+## 2026-10-24 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/235
+- precheck: preflight ok, consistency ok(warnings 0), review health ok, 문체 lint 통과(커밋·본문·제목)
+- 갱신: D-089 와 병렬로 진행해 TASKS·progress 는 root 기록 PR 에서 갱신한다. 병합은 사용자 확인 뒤 진행한다
