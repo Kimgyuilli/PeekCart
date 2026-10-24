@@ -137,7 +137,7 @@ strict ALTER 가 1138 로 실패해 실패 행이 남고, INSERT IGNORE 를 하�
 - [x] P8. D-092 재개 SQL 의 NULL 분기 제거(runbook·통합 테스트·SQLite fixture).
 - [x] P9. EXPECTED_MIGRATIONS 와 `docs/05-data-design.md` 현재 상태 정정.
 - [x] P10. 로컬 검증(lint·self-test·unittest·컴파일)을 실행한다.
-- [ ] P11. PR CI(ci·flyway-contract·replay-collector·approval-recovery·signed-gateway)를 최신 head 에서 확인한다.
+- [x] P11. PR CI(ci·flyway-contract·replay-collector·approval-recovery·signed-gateway)를 최신 head 에서 확인한다.
 
 ## 4. 검증 방법
 
@@ -167,7 +167,6 @@ PR CI 최신 head 에서 ci.yml(lint 의 DLQ lab 포함, test 6 shard, guards, i
   (2026-10-25)으로 범위 밖. D-065 ③ 의 운영 적용 몫으로 남는다.
 - contract 이후 INSERT IGNORE·non-strict 강등(0·빈 문자열)은 DB 가 막지 않는다. writer 정지와 ADR-0043 이전 이미지 롤백
   금지가 운영 전제로 남는다.
-- `OutboxPollingService`:126-127 주석의 NULL 해석 문구는 레인 C 소유 파일이라 고치지 않았다. 병합 뒤 정정 대상이다.
 - `docs/runbooks/dlq-recovery.md` §7 의 "적재가 INSERT IGNORE 라" 는 ADR-0043 이후 낡은 문구다(이 작업과 무관, 보고만).
 
 ## 정정 이력
@@ -186,3 +185,5 @@ PR CI 첫 실행(head `e2decca`, run 40125691901·40125691919)이 초안의 두 
   snapshot 이 아직 없는 `dead_letter_record_ids` 를 읽어 실패했고, 테이블이 있을 때만 읽도록 고쳤다.
 - 사용자 지시 변경(2026-10-25, 레인 재개): 원인 확인에 필요한 서비스·클래스 단위 Testcontainers 실행을 로컬에서 허용한다.
   전체 검증은 계속 PR CI 로 한다.
+- §2.1 에서 레인 C 소유라 미룬 `OutboxPollingService`:126-127 주석은 레인 C 의 #242 가 이 파일을 바꾸지 않았음을 root 가
+  확인한 뒤 contract 상태로 정정했다(코드 동작 무변경).

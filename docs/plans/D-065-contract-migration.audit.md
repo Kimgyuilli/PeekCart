@@ -60,3 +60,21 @@
   with provenance then restart)'`. 일반 payment 334 명단 대조는 CI 에서 한다.
 - 이전 로컬 lint 결과의 출처: 앞선 61개 명령은 `scratchpad/laneB/` 의 래퍼(이 worktree 로 cd)로 돌렸고, 레인 A 가 덮어쓴
   `scratchpad/hpx.sh` 는 쓰지 않았다. 아래 /ship 전 재확인은 worktree 에서 직접 실행한 결과만 적는다.
+
+## 2026-10-25 05:37 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/244 (base main, 생성 시 `2ffa8d6`). CI 확인 head `d53bf84`.
+- push 전 재확인(worktree 직접 실행, head `d53bf84`): ci.yml lint job 명령 61개 exit 0, docs-preservation(base `2ffa8d6`)
+  PASS, consistency precheck ok(warnings 0), 커밋 문체 lint 10건 통과. `hpx_ship_preflight` 는 P11 미체크로 blocked 였고,
+  P11 이 PR CI 확인 항목이라 사용자 승인(push·PR) 범위에서 진행했다. 리뷰 처분 점검 ok.
+- PR CI(head `d53bf84`, 전부 success):
+  - CI 40129428038: lint(DLQ lab 포함)·changes·guards·test 6 shard·images 6·e2e 3러너(scenarios·fence·negative-control)·gate
+    성공, publish·publication-state 는 PR 이라 skipped. shard JUnit: order 443(skip 1, 기존 `OutboxThroughputLocalProbeTest`)·
+    product 251·payment 338·notification 62·platform 314·user 65, 실패 0.
+  - Flyway contract 40129428016: actual-flyway 성공. 검증기 출력 `childJvms 88, dedicatedTests 1, ordinaryTests 338`,
+    네 서비스.
+  - Actual replay collector adapters 40129428045, Signed gateway admission 40129428014(admission 4·images 6),
+    Signed approval recovery 40129428008(recovery·images 4) 성공.
+- 1차(head `e2decca`) 실패 원인과 수정은 위 블록에 있다.
+- 로컬 커밋(push 하지 않음): `99d78cb` poller kind 분기 주석 정정, 그리고 이 기록 커밋. 병합 순서가 #243 다음 #244 라
+  root 가 최신 main 을 합쳐 함께 push 하고 그 head 의 CI 를 확인한다(root 지시 2026-10-25).
+- 갱신: 계획서 P11 체크와 정정 이력, PR 본문(`gh pr edit`). TASKS·PHASE5·done 은 root 소유라 갱신하지 않았다.
