@@ -34,3 +34,13 @@
   `integration-test-container-lint` 통과, `test_kafka_topic_state_guard.py` 23 tests OK, D-102 `check.py --scan` 20건(baseline, 변경 파일 0),
   writing-lint 커밋 9건 통과, consistency precheck ok, docs-preservation(base `6905952`) PASS, harness-context check ok.
 - 로컬에서 돌리지 않은 것: Testcontainers 통합 테스트와 E2E(사용자 지시 2026-10-21). PR CI 로 확인한다.
+
+## 2026-10-25 04:06 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/242 (base main `2ffa8d6`). 브랜치는 push 전에 `6905952` 에서 `2ffa8d6` 위로
+  rebase 했다(그 사이 main 변경은 harness·기록 파일뿐이라 겹치는 파일 0).
+- precheck(rebase 뒤): ship preflight ok, consistency ok(warnings 0), review health ok, writing-lint(커밋 10건·본문·제목) 통과,
+  docs-preservation(base `2ffa8d6`) PASS, harness-context check(base `2ffa8d6`) ok. 새 테스트 41건(공유 모듈 33 + 정책 8) 재확인.
+- 커밋: plan `24fe7f1`, ADR `9a1b72e`, build `8e4c6a4`, config `e83247b`, src `b0afd22`, test `a3b50d9`, overlay `e787dff`,
+  e2e 주석 `8da459b`, 문서 `5a8d4e5`, 검증 기록 `da344a4`, 이 /ship 기록 1건.
+- 갱신: TASKS·PHASE5 는 병렬 캠페인 규칙에 따라 갱신하지 않았다(root 의 기록 PR 몫). ADR-0045 와 인덱스는 이 PR 에 있다.
+- PR CI 결과는 최종 head 의 실행으로 판정해 보고에 남긴다.
