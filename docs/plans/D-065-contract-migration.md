@@ -71,8 +71,8 @@ PLAN-BLINDSPOTS: 구조 변경이 아니어서 B1 이동 처분은 해당 없다
 ### 2.2 설계
 
 **contract migration.** `V{n}__dead_letter_replay_contract.sql`(order V15·product V14·payment V16·notification V10), 네 벌
-바이트 동일. `SET SESSION sql_mode = CONCAT(@@SESSION.sql_mode, ',STRICT_ALL_TABLES')` 뒤 `ALTER TABLE dead_letter_records
-MODIFY root_record_id BIGINT NOT NULL` 와 `ALTER TABLE outbox_events MODIFY record_kind VARCHAR(10) NOT NULL`. DEFAULT 는 두지
+바이트 동일. `SET SESSION sql_mode = CONCAT(@@SESSION.sql_mode, ',STRICT_ALL_TABLES')` 뒤
+`ALTER TABLE dead_letter_records MODIFY root_record_id BIGINT NOT NULL` 와 `ALTER TABLE outbox_events MODIFY record_kind VARCHAR(10) NOT NULL`. DEFAULT 는 두지
 않는다(ADR-0020 D3). strict 를 다시 거는 이유는 non-strict 세션의 MODIFY 가 NULL 을 0·빈 문자열로 바꾸며 성공하기 때문이다.
 두 ALTER 는 비트랜잭션이라 둘째가 실패하면 첫째가 남고 실패 행이 남는다(PR207). MODIFY 는 같은 정의로 재실행해도 결과가
 같으므로 원인 제거 뒤 repair 와 재기동으로 복구한다고 주석에 적는다.
@@ -82,14 +82,13 @@ MODIFY root_record_id BIGINT NOT NULL` 와 `ALTER TABLE outbox_events MODIFY rec
 1. `information_schema.COLUMNS` 에서 해당 컬럼이 **있고 nullable 일 때만** 검사문을 고른다. 빈 DB(테이블 부재)와
    contract 이후(NOT NULL)에는 `SELECT 0 INTO @...` 를 고른다. 테이블을 정적으로 참조하면 빈 DB 에서 1146 으로 부팅이
    깨지므로 `PREPARE`/`EXECUTE` 로 고른 문장만 실행한다(권한 불필요).
-2. 위반 정의: `root_record_id IS NULL OR root_record_id <= 0`, `record_kind IS NULL OR record_kind COLLATE
-   utf8mb4_0900_bin NOT IN ('DOMAIN', 'REPLAY')`. 이진 정렬을 쓰는 이유는 기본 정렬(`_ai_ci`)이 `domain` 을 DOMAIN 과 같게
+2. 위반 정의: `root_record_id IS NULL OR root_record_id <= 0`,
+   `record_kind IS NULL OR record_kind COLLATE utf8mb4_0900_bin NOT IN ('DOMAIN', 'REPLAY')`. 이진 정렬을 쓰는 이유는 기본 정렬(`_ai_ci`)이 `domain` 을 DOMAIN 과 같게
    보기 때문이다. JPA `EnumType.STRING` 은 `domain` 을 읽지 못한다.
 3. 거부: `SET SESSION sql_mode = IF(두 수 = 0, @@SESSION.sql_mode, CONCAT('D065_CONTRACT_GUARD invalid_root_rows=', ...))`.
    통과면 sql_mode 를 같은 값으로 다시 쓰는 무해한 문장이고, 위반이면 MySQL 이 ER_WRONG_VALUE_FOR_VAR(1231)로 그 값을
-   돌려준다. 운영자는 부팅 로그에서 `Error while executing beforeMigrate callback: Script
-   beforeMigrate__dead_letter_replay_contract_guard.sql failed ... Error Code : 1231 Message : Variable 'sql_mode' can't be
-   set to the value of 'D065_CONTRACT_GUARD invalid_root_rows=N invalid_kind_rows=M (...)'` 와 위치·문장을 본다. 메시지에는
+   돌려준다. 운영자는 부팅 로그에서
+   `Error while executing beforeMigrate callback: Script beforeMigrate__dead_letter_replay_contract_guard.sql failed ... Error Code : 1231 Message : Variable 'sql_mode' can't be set to the value of 'D065_CONTRACT_GUARD invalid_root_rows=N invalid_kind_rows=M (...)'` 와 위치·문장을 본다. 메시지에는
    쉼표를 쓰지 않는다(MySQL 이 첫 쉼표 앞 토큰만 돌려준다). 카운트가 비면 `unknown` 으로 표시하고 거부한다(fail-closed).
 4. 매 부팅 실행 의미: contract 이전에는 DDL 선행 조건 검사, 이후에는 information_schema 두 번 조회뿐이다. contract 이후의
    0·빈 문자열(INSERT IGNORE 강등)은 부팅에서 막지 않는다. 행 하나로 전 Pod 부팅을 막는 것은 contract 의 목적(DDL 선행

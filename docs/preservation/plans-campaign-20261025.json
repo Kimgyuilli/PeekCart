@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-075-outbox-throughput.md",
+      "sha256": "aa40e70f84c1a58db5f44468b6167ae9bc8510ad2bc0992ea0635f48f3ace35e"
+    },
+    {
+      "path": "docs/plans/D-075-outbox-throughput.audit.md",
+      "sha256": "1d51fe96d9abb0ee824001efafa5bda35e60fd25e86f18baaf88997d540e97cc"
+    },
+    {
+      "path": "docs/plans/digest-open-rows.md",
+      "sha256": "30b9aebffecc22bf6f6afb274384cfadca7322dc98b5450cfb28580b9952cdfa"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-075-outbox-throughput.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-075-outbox-throughput.md",
+          "start": 1,
+          "end": 156
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-075-outbox-throughput.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-075-outbox-throughput.audit.md",
+          "start": 1,
+          "end": 46
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/digest-open-rows.md",
+      "parts": [
+        {
+          "source": "docs/plans/digest-open-rows.md",
+          "start": 1,
+          "end": 48
+        },
+        {
+          "literal": "\nPR: [#240](https://github.com/Kimgyuilli/PeekCart/pull/240) (병합 `2ffa8d6`, main CI40121797636 성공)\n"
+        }
+      ]
+    }
+  ]
+}
