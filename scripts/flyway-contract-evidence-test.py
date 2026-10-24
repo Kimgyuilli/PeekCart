@@ -31,20 +31,28 @@ class EvidenceControls(unittest.TestCase):
         self.xml(self.lab_xml, [MODULE.LAB_CLASS + "::contract()"])
         services = {}
         for name in sorted(MODULE.SERVICES):
-            source = self.root / f"{name}-service/src/main/resources/db/migration/V1__fixture.sql"
-            source.parent.mkdir(parents=True)
+            folder = self.root / f"{name}-service/src/main/resources/db/migration"
+            folder.mkdir(parents=True)
+            source = folder / "V1__fixture.sql"
             source.write_text("SELECT 1;")
-            candidate = self.lab / f"{name}-candidate/V999__fixture_contract.sql"
-            candidate.parent.mkdir()
-            candidate.write_text("SELECT 2;")
+            contract = folder / ("V2" + MODULE.CONTRACT_SUFFIX)
+            contract.write_text("SELECT 2;")
+            guard = folder / MODULE.GUARD
+            guard.write_text("SELECT 3;")
+            restored = self.lab / f"{name}-checksum" / contract.name
+            restored.parent.mkdir()
+            restored.write_bytes(contract.read_bytes())
             services[name] = dict.fromkeys(MODULE.FLAGS, True)
             services[name].update(allocatorAfterLegacyMaximum=22,
-                                  productionMigrationSha256={str(source.relative_to(self.root)): self.hash(source)},
-                                  candidateSha256=self.hash(candidate))
+                                  productionMigrationSha256={str(path.relative_to(self.root)): self.hash(path)
+                                                             for path in (source, contract)},
+                                  restoredContractSha256=self.hash(restored), guardSha256=self.hash(guard))
         invocations = []
-        for i in range(76):
-            raw = dict(pid=1000+i, invocation=f"child-{i}", success=i >= 28,
-                       operation="migrate" if i < 48 else "validate", flywayVersion="11.7.2")
+        for i in range(88):
+            raw = dict(pid=1000+i, invocation=f"child-{i}", success=i >= 32,
+                       operation="migrate" if i < 60 else "validate", flywayVersion="11.7.2")
+            if i < 8:
+                raw.update(sqlErrorCode=1231, causeMessage="Variable 'sql_mode' ... 'D065_CONTRACT_GUARD invalid_root_rows=1'")
             (self.lab / f"child-{i}.json").write_text(json.dumps(raw))
             invocations.append(dict(raw, exitCode=0 if raw["success"] else 2))
         self.report = dict(complete=True, restartStatePreserved=True, mysqlImage="mysql:8.0.46",
@@ -133,6 +141,22 @@ class EvidenceControls(unittest.TestCase):
     def test_restart_data_loss_rejected(self):
         (self.lab / "after-restart.json").write_text("{}")
         with self.assertRaisesRegex(ValueError, "restart snapshot"): self.verify()
+
+    def test_guard_source_mutation_rejected(self):
+        (self.root / "payment-service/src/main/resources/db/migration" / MODULE.GUARD).write_text("SELECT 4;")
+        with self.assertRaisesRegex(ValueError, "guard source mismatch"): self.verify()
+
+    def test_contract_restore_mismatch_rejected(self):
+        (self.lab / "order-checksum" / ("V2" + MODULE.CONTRACT_SUFFIX)).write_text("SELECT 5;")
+        with self.assertRaisesRegex(ValueError, "contract restore mismatch"): self.verify()
+
+    def test_missing_guard_rejection_evidence_rejected(self):
+        del self.report["invocations"][0]["sqlErrorCode"]
+        with self.assertRaisesRegex(ValueError, "missing guard rejection evidence"): self.verify()
+
+    def test_guard_rejection_without_marker_rejected(self):
+        self.report["invocations"][1]["causeMessage"] = "Variable 'sql_mode' can't be set"
+        with self.assertRaisesRegex(ValueError, "missing guard rejection evidence"): self.verify()
 
     def test_child_result_tamper_rejected(self):
         (self.lab / "child-0.json").write_text(json.dumps(dict(self.report["invocations"][0], success=True)))
