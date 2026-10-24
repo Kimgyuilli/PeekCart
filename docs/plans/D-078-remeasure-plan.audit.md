@@ -41,3 +41,12 @@
   모듈 전체와 E2E 는 PR CI 로 확인한다.
 - 새 검사의 CI 배선: `test_d002bc_contention.mjs` 는 `scripts/*-lint.sh` 가 아니라 `ci-lint-wiring-lint.py` 의 배선 요구 대상이
   아니다. 기존 `loadtest/scripts/test_*.py` 와 같이 로컬 검사로 두었다(계획 §2.3).
+
+## 2026-10-25 04:22 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/243 (base main. 브랜치 기준 `6905952`, PR 생성 때 main `2ffa8d6`, 겹치는 파일 없음)
+- precheck: ship preflight ok, consistency ok(warnings 0. 첫 실행에서 이 브랜치에 없는 ADR-0045 참조 1건이 걸려 계획서 문구를
+  D-075 로 바꿨다), review health ok, writing lint(커밋 7건·본문·제목) 통과, docs-preservation 은 브랜치 트리(base `6905952`)와
+  main `2ffa8d6` 을 병합한 트리(base `2ffa8d6`, `--no-commit` 병합 뒤 abort) 모두 통과. 병합 트리에서 harness-context
+  `--check`·자기검증, plans-index `--check` 도 통과
+- 커밋: `cbab2bf` `f044e71` `b62f988` `0ed2134` `82edb40` `fa1e61b` `6fcfb5e`, audit 갱신 1건
+- 갱신: 없음. TASKS·PHASE5·done 이동은 캠페인 규칙대로 root 가 기록 PR 에서 한다. 이 계획서는 세션 실행 전까지 아카이브하지 않는다
