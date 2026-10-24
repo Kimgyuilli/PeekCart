@@ -11,6 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 ROUTING = ROOT / 'k8s/monitoring/shared/grafana-notification-routing.yml'
 RUNBOOK = ROOT / 'docs/runbooks/outbox-failed-recovery.md'
 MYSQL_TEST = ROOT / 'notification-service/src/test/java/com/peekcart/global/outbox/NotificationOutboxIntegrationTest.java'
+REPLAY_POLICY = ROOT / 'common/src/main/java/com/peekcart/global/replay/ReplayPolicyRegistry.java'
+DLQ_TOPOLOGY = ROOT / 'common/src/main/java/com/peekcart/global/kafka/DlqTopology.java'
+SECRET_RUNBOOK = ROOT / 'docs/runbooks/slack-webhook-secret.md'
+SERVICES = ('order', 'product', 'payment', 'notification')
+PAIR_LABELS = {'allow': 'ALLOW', 'deny': 'DENY', 'allowWithPrecondition': 'PRECONDITION'}
 
 
 def assert_routing_contract(contact_points, root_policy):
@@ -184,8 +189,121 @@ def check_reissue_fixture():
     connection.close()
 
 
+def expected_policy_table():
+    """Derive per-topic re-issue verdicts from the replay policy registry and DLQ topology."""
+    policies = re.findall(
+        r'put\(PeekcartService\.(\w+), "([^"]+)",\s*(deny|allow|allowWithPrecondition)\(',
+        REPLAY_POLICY.read_text()
+    )
+    assert policies, 'ReplayPolicyRegistry policies were not found'
+    producers = {}
+    for owner, body in re.findall(
+        r'QUARANTINE\.put\(PeekcartService\.(\w+), Set\.copyOf\(List\.of\((.*?)\)\)\);',
+        DLQ_TOPOLOGY.read_text(), flags=re.DOTALL
+    ):
+        for topic in re.findall(r'dlq\("([^"]+)"\)', body):
+            assert topic not in producers, f'topic has two producers: {topic}'
+            producers[topic] = owner.lower()
+    consumers = {}
+    for owner, topic, kind in policies:
+        pairs = consumers.setdefault(topic, {})
+        assert owner.lower() not in pairs, f'duplicate replay policy: {owner}/{topic}'
+        pairs[owner.lower()] = PAIR_LABELS[kind]
+    assert set(consumers) == set(producers), 'every consumed topic needs exactly one producer and vice versa'
+    table = {}
+    for topic, pairs in consumers.items():
+        labels = set(pairs.values())
+        verdict = '금지' if 'DENY' in labels else '사전조건' if 'PRECONDITION' in labels else '가능'
+        table[topic] = (producers[topic], pairs, verdict)
+    return table
+
+
+def runbook_policy_table(text):
+    section = text.split('### 2-1.', 1)[1].split('\n## ', 1)[0]
+    table = {}
+    for topic, producer, pairs, verdict in re.findall(
+        r'^\| `([a-z.-]+)` \| (\w+) \| ([^|]+?) \| (\S+) \|$', section, flags=re.MULTILINE
+    ):
+        assert topic not in table, f'duplicate runbook row: {topic}'
+        table[topic] = (producer, dict(re.findall(r'(\w+) (ALLOW|DENY|PRECONDITION)', pairs)), verdict)
+    return table
+
+
+def assert_policy_table(text, expected):
+    assert runbook_policy_table(text) == expected, 'runbook §2-1 must match ReplayPolicyRegistry and DlqTopology'
+
+
+def check_reissue_policy_table():
+    text = RUNBOOK.read_text()
+    expected = expected_policy_table()
+    assert_policy_table(text, expected)
+    windows = {}
+    for service in SERVICES:
+        config = (ROOT / f'{service}-service/src/main/resources/application.yml').read_text()
+        windows[service] = re.search(r'^\s+dlq-replay-window:\s*(\S+)', config, flags=re.MULTILINE).group(1)
+    assert len(set(windows.values())) == 1, f'dlq-replay-window differs across services: {windows}'
+    assert f'`app.idempotency.floor.dlq-replay-window`(현재 {windows["order"]})' in text, \
+        'runbook must state the current dedupe window'
+    for required in ('created_at', 'processed_events', 'ReplayPolicyRegistry', 'PRECONDITION'):
+        assert required in text, f'runbook missing re-issue condition: {required}'
+    # Mutation control: a flipped pair, a dropped row and a changed verdict must all be rejected.
+    row = '| `order.created` | order | product DENY, payment DENY, notification ALLOW | 금지 |'
+    assert row in text
+    for mutant in (
+        text.replace(row, row.replace('product DENY', 'product ALLOW')),
+        text.replace(row + '\n', ''),
+        text.replace(row, row.replace('| 금지 |', '| 가능 |')),
+    ):
+        try:
+            assert_policy_table(mutant, expected)
+        except AssertionError:
+            continue
+        raise AssertionError('policy table checker accepted a flipped, dropped or changed-verdict mutant')
+
+
+def assert_names_present(text, names):
+    for name in names:
+        assert re.search(rf'(?<![\w-]){re.escape(name)}(?![\w-])', text), f'Slack secret runbook must name {name}'
+
+
+def check_secret_runbook():
+    text = SECRET_RUNBOOK.read_text()
+    profile = (ROOT / 'notification-service/src/main/resources/application-k8s.yml').read_text()
+    env_names = set(re.findall(r'\$\{(SLACK_[A-Z_]+)\}', profile))
+    assert env_names == {'SLACK_USER_WEBHOOK_URL', 'SLACK_OPS_WEBHOOK_URL'}, env_names
+    deployment = next(
+        doc for doc in yaml.safe_load_all((ROOT / 'k8s/base/services/notification-service/deployment.yml').read_text())
+        if doc and doc['kind'] == 'Deployment'
+    )
+    secret_refs = {
+        source['secretRef']['name']
+        for container in deployment['spec']['template']['spec']['containers']
+        for source in container.get('envFrom', []) if 'secretRef' in source
+    }
+    assert secret_refs == {'notification-service-secret'}, secret_refs
+    routing = yaml.safe_load(ROUTING.read_text())
+    contact = yaml.safe_load(routing['data']['contact-points.yaml'])['contactPoints']
+    grafana_env = re.fullmatch(r'\$\{(\w+)\}', contact[0]['receivers'][0]['settings']['url']).group(1)
+    grafana_ref = yaml.safe_load((ROOT / 'k8s/monitoring/gke/values-prometheus.yml').read_text())[
+        'grafana']['envValueFrom'][grafana_env]['secretKeyRef']
+    names = sorted(env_names | secret_refs | {grafana_env, grafana_ref['name'], contact[0]['name']})
+    assert_names_present(text, names)
+    assert f'--from-file={grafana_ref["key"]}=' in text and f'.data.{grafana_ref["key"]}' in text, \
+        'runbook must inject and check the Grafana secret key used by values-prometheus.yml'
+    # Mutation control: a renamed variable must be rejected.
+    mutant = text.replace('SLACK_OPS_WEBHOOK_URL', 'SLACK_OPS_URL')
+    try:
+        assert_names_present(mutant, names)
+    except AssertionError:
+        return
+    raise AssertionError('secret runbook checker accepted a renamed environment variable')
+
+
 if __name__ == '__main__':
     check_routing()
     check_mysql_test_matches_runbook()
     check_reissue_fixture()
-    print('D-092 routing and SQLite logical fixtures passed; MySQL statement parity checked, no Grafana, Slack, cluster, or production DB was used.')
+    check_reissue_policy_table()
+    check_secret_runbook()
+    print('D-092 routing and SQLite logical fixtures passed; MySQL statement parity, re-issue policy table '
+          'and Slack secret runbook names checked, no Grafana, Slack, cluster, or production DB was used.')
