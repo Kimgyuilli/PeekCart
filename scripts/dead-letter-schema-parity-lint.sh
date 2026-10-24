@@ -18,6 +18,11 @@
 #       서비스마다 같은 스키마여야 한다. 여기는 **원문 해시로 대조할 수 없다**: order/product/payment 는
 #       V1 의 CREATE TABLE + P8 의 ALTER 로 만들어지고 notification 은 P9 의 CREATE TABLE 한 방으로
 #       만들어진다 — 생성 경로가 다르므로 "컬럼명 → 정의" 집합으로 정규화해 비교한다.
+#   (4) D-065 contract — V*__dead_letter_replay_contract.sql 과 그 선행 조건 callback
+#       beforeMigrate__dead_letter_replay_contract_guard.sql 이 4서비스에 정확히 하나씩, 원문 바이트로 같은지.
+#       최종 스키마에서 root_record_id·record_kind 는 NOT NULL·DEFAULT 없음, 나머지 replay 축은 nullable 이어야 한다.
+#       최종 스키마는 ADD COLUMN 과 MODIFY [COLUMN] 을 번호 순으로 합성한다 — MODIFY 를 읽지 않으면 contract 가
+#       없어도, 한 서비스만 정의를 바꿔도 green 이다.
 #
 # java 는 검사하지 않는다. 실행 세트는 peekcart-common-messaging 한 벌이고(ADR-0033), 서비스에 같은
 # FQCN 이 다시 생기면 assertNoDuplicateGlobalFqcn 이 빌드를 실패시킨다.
@@ -92,7 +97,8 @@ def table_columns(service, table):
         for alter in re.finditer(r"ALTER TABLE %s(.*?);" % re.escape(table), body, re.S):
             for line in alter.group(1).splitlines():
                 line = line.strip().rstrip(",").strip()
-                m2 = re.match(r"ADD COLUMN\s+(\S+)\s+(.*)$", line)
+                # MODIFY 는 정의 전체를 다시 쓴다(MySQL 은 다시 적지 않은 속성을 남기지 않는다) — ADD 와 같이 덮어쓴다.
+                m2 = re.match(r"(?:ADD COLUMN|MODIFY(?:\s+COLUMN)?)\s+(\S+)\s+(.*)$", line, re.I)
                 if m2:
                     # AFTER <col> 은 물리 배치일 뿐 계약이 아니다 — 서비스마다 컬럼 순서가 달라도
                     # 스키마는 같으므로 정의에서 떼어낸다.
@@ -189,8 +195,9 @@ if len(alter_prints) == len(services):
         for service, (fname, digest, _) in sorted(alter_prints.items()):
             violations.append("    %-22s %s  %s" % (service, digest[:12], fname))
 
-    # replay 축 컬럼은 **전부 nullable** 이어야 한다 — NOT NULL 을 먼저 걸면 롤링 배포 중 구버전 INSERT 가 깨지고,
-    # root_record_id 의 expand→backfill→contract 순서(ADR-0020 D6-3)가 성립하지 않는다.
+    # expand 파일의 replay 축 컬럼은 **전부 nullable** 이어야 한다 — NOT NULL 을 먼저 걸면 롤링 배포 중 구버전 INSERT 가
+    # 깨지고, root_record_id 의 expand→backfill→contract 순서(ADR-0020 D6-3)가 성립하지 않는다.
+    # 이 규칙은 expand 파일 기준이다. root_record_id 를 닫는 것은 contract 파일이고 최종 스키마는 (2d) 가 본다.
     # 서비스마다 검사한다 — 기준 1벌만 보면 변이가 다른 서비스에 있을 때 이 검사가 새 나간다.
     for service, (_, _, body) in sorted(alter_prints.items()):
         for column in ["root_record_id", "publication_status", "outbox_event_id",
@@ -240,6 +247,37 @@ if len(backfill_prints) == len(services):
         # drain 앵커 컬럼도 이 파일이 만든다 — 빠지면 4b 의 drain 판정이 설 자리가 없다.
         if "last_replay_settled_at" not in body:
             violations.append("[DLQ-PARITY-024] %s: backfill 에 last_replay_settled_at 컬럼 추가가 없다" % service)
+
+# --- (2d) contract migration·guard callback parity (D-065 contract) ---
+# 두 파일은 한 벌을 복사한 사본이라 주석·공백까지 원문 바이트로 대조한다. 가드는 V 파일이 아니어서 최종 스키마
+# 대조에 들어오지 않는다 — 한 서비스에서만 빠지면 그 서비스만 DDL 전 거부 없이 contract 를 실행한다.
+CONTRACT_GLOB = "V*__dead_letter_replay_contract.sql"
+GUARD_NAME = "beforeMigrate__dead_letter_replay_contract_guard.sql"
+contract_prints = {}
+guard_prints = {}
+for service in services:
+    folder = os.path.join(root, service, "src/main/resources/db/migration")
+    matches = glob.glob(os.path.join(folder, CONTRACT_GLOB))
+    if len(matches) != 1:
+        violations.append("[DLQ-PARITY-025] %s: dead_letter_replay_contract 마이그레이션이 %d개다 (정확히 1개여야 한다)"
+                          % (service, len(matches)))
+    else:
+        with open(matches[0], "rb") as f:
+            contract_prints[service] = (os.path.basename(matches[0]), hashlib.sha256(f.read()).hexdigest())
+    guard = os.path.join(folder, GUARD_NAME)
+    if not os.path.isfile(guard):
+        violations.append("[DLQ-PARITY-027] %s: %s 가 없다 (contract 의 DDL 전 거부가 그 서비스에서 빠진다)"
+                          % (service, GUARD_NAME))
+    else:
+        with open(guard, "rb") as f:
+            guard_prints[service] = (GUARD_NAME, hashlib.sha256(f.read()).hexdigest())
+
+for code, label, prints in (("DLQ-PARITY-026", "contract 마이그레이션", contract_prints),
+                            ("DLQ-PARITY-028", "contract guard callback", guard_prints)):
+    if len(prints) == len(services) and len({d for _, d in prints.values()}) != 1:
+        violations.append("[%s] 4서비스의 %s 이 다르다 (주석·공백 포함 원문 대조):" % (code, label))
+        for service, (fname, digest) in sorted(prints.items()):
+            violations.append("    %-22s %s  %s" % (service, digest[:12], fname))
 
 # --- (2b) dead_letter_records **최종 스키마** parity (④-c-2b-3a P14 f-2) ---
 #
@@ -298,6 +336,25 @@ for service, columns in sorted(dlr_schemas.items()):
             violations.append("[DLQ-PARITY-020] %s: %s 에 DEFAULT 가 있다 "
                               "(기본값은 앵커 미기록을 조용히 삼킨다 — ADR-0020 D3)" % (service, column))
 
+# contract 이후 최종 스키마 (D-065, ADR-0020 D6-3): root_record_id 만 NOT NULL·DEFAULT 없음이다.
+#   DEFAULT 가 있으면 root 를 빠뜨린 INSERT 가 실패하지 않고 그 값으로 들어간다. 나머지 replay 축은 그대로 nullable 이다
+#   — 요청 없음(NULL)이 정식 상태인 발행 축·종결 축까지 닫으면 기존 행과 정상 writer 가 깨진다.
+DLR_REPLAY_NULLABLE = ["publication_status", "outbox_event_id", "last_replay_attempt_id", "last_replay_target_group",
+                       "replay_deadline", "replay_policy", "resolved_at", "resolved_by", "reopened_at",
+                       "reopened_reason"]
+for service, columns in sorted(dlr_schemas.items()):
+    definition = columns.get("root_record_id") or ""
+    if "NOT NULL" not in definition:
+        violations.append("[DLQ-PARITY-029] %s: 최종 스키마의 root_record_id 가 NOT NULL 이 아니다 — %s "
+                          "(contract 가 빠졌거나 MODIFY 가 없다)" % (service, definition or "(없음)"))
+    if "DEFAULT" in definition:
+        violations.append("[DLQ-PARITY-030] %s: root_record_id 에 DEFAULT 가 있다 — %s "
+                          "(root 를 빠뜨린 INSERT 가 실패하지 않는다 — ADR-0020 D3)" % (service, definition))
+    for column in DLR_REPLAY_NULLABLE:
+        if "NOT NULL" in (columns.get(column) or ""):
+            violations.append("[DLQ-PARITY-031] %s: replay 축 컬럼 %s 가 최종 스키마에서 NOT NULL 이다 "
+                              "(contract 대상은 root_record_id 뿐이다)" % (service, column))
+
 # --- (3) outbox_events 최종 스키마 parity (④-c-2b-2 P9-b) ---
 #
 # 생성 경로가 서비스마다 다르므로(3서비스 = CREATE + ALTER · notification = CREATE 단독) 원문이 아니라
@@ -330,18 +387,23 @@ if len(outbox_schemas) == len(services):
             if here != there:
                 violations.append("    %-24s %s  vs  %s" % (name, here, there))
 
-    # replay 축 9컬럼: 4서비스 전부에 존재 · 전부 nullable · DEFAULT 없음 (ADR-0020 D3)
+    # replay 축 9컬럼: 4서비스 전부에 존재 · DEFAULT 없음 (ADR-0020 D3)
     #   DEFAULT 를 두면 신버전 writer 가 record_kind 를 빠뜨려도 DB 가 조용히 DOMAIN 으로 분류한다 —
     #   누락을 실패시키려던 명시적 kind 계약이 그 자리에서 약해진다.
+    #   nullability: record_kind 만 contract(D-065)로 NOT NULL 이고 나머지 8컬럼은 도메인 행에서 NULL 이 정상이다.
     for service, columns in sorted(outbox_schemas.items()):
         for name in REPLAY_OUTBOX_COLUMNS:
             definition = columns.get(name)
             if definition is None:
                 violations.append("[OUTBOX-PARITY-003] %s: replay 축 컬럼 %s 가 없다" % (service, name))
                 continue
-            if "NOT NULL" in definition:
+            if name == "record_kind":
+                if "NOT NULL" not in definition:
+                    violations.append("[OUTBOX-PARITY-006] %s: 최종 스키마의 record_kind 가 NOT NULL 이 아니다 — %s "
+                                      "(contract 가 빠졌거나 MODIFY 가 없다)" % (service, definition))
+            elif "NOT NULL" in definition:
                 violations.append("[OUTBOX-PARITY-004] %s: replay 축 컬럼 %s 가 nullable 이 아니다 "
-                                  "(롤링 배포 중 구버전 INSERT 가 깨진다)" % (service, name))
+                                  "(도메인 행이 깨진다 — contract 대상은 record_kind 뿐이다)" % (service, name))
             if "DEFAULT" in definition:
                 violations.append("[OUTBOX-PARITY-005] %s: replay 축 컬럼 %s 에 DEFAULT 가 있다 "
                                   "(판별자 누락이 조용히 DOMAIN 으로 분류된다 — ADR-0020 D3)" % (service, name))
@@ -353,7 +415,7 @@ if violations:
     sys.exit(1)
 
 print("dead-letter-schema-parity-lint OK — 4서비스 dead_letter_records 스키마·replay 축 마이그레이션 동일, "
-      "outbox_events 최종 스키마 동일")
+      "outbox_events 최종 스키마 동일, contract migration·guard 동일")
 PYEOF
 
 if [[ "${1:-}" == "--self-test" ]]; then
@@ -377,6 +439,11 @@ if [[ "${1:-}" == "--self-test" ]]; then
             # backfill(④-c-2b-4a P23). **DML 이라 최종 스키마 대조가 못 보는 축**이라 따로 심는다.
             cp order-service/src/main/resources/db/migration/V*__dead_letter_replay_backfill.sql \
                "$TMP/$svc/src/main/resources/db/migration/V6__dead_letter_replay_backfill.sql"
+            # contract(D-065). 마지막 번호로 심어 MODIFY 가 expand 정의를 덮는 순서를 실제와 같게 둔다.
+            cp order-service/src/main/resources/db/migration/V*__dead_letter_replay_contract.sql \
+               "$TMP/$svc/src/main/resources/db/migration/V7__dead_letter_replay_contract.sql"
+            cp order-service/src/main/resources/db/migration/beforeMigrate__dead_letter_replay_contract_guard.sql \
+               "$TMP/$svc/src/main/resources/db/migration/"
             # outbox 축 (④-c-2b-2 P9-b). **생성 경로를 실제와 같이 둘로 나눠 심는다** —
             #   3서비스는 CREATE(V1) + ALTER(V3), notification 은 CREATE 단독(V4).
             #   양쪽을 같은 파일로 심으면 "경로가 달라도 최종 스키마가 같다" 는 이 검사의 본체가 vacuous 해진다.
@@ -478,8 +545,10 @@ if [[ "${1:-}" == "--self-test" ]]; then
     fi
 
     # self-test 11: replay 축 컬럼에 DEFAULT 부여 → 005 로 검출 (ADR-0020 D3)
+    #   record_kind 가 아니라 destination_topic 을 변조한다 — record_kind 는 contract 의 MODIFY 가 정의 전체를 다시 써서
+    #   expand 파일의 DEFAULT 가 최종 스키마에 남지 않는다(MySQL 과 같다). contract 쪽 DEFAULT 는 contract-4 가 본다.
     seed_fixture
-    sed -i.bak "s/ADD COLUMN record_kind             VARCHAR(10)  NULL,/ADD COLUMN record_kind             VARCHAR(10)  NULL DEFAULT 'DOMAIN',/" \
+    sed -i.bak "s/ADD COLUMN destination_topic       VARCHAR(120) NULL,/ADD COLUMN destination_topic       VARCHAR(120) NULL DEFAULT '',/" \
         "$TMP/product-service/src/main/resources/db/migration/V3__outbox_replay_columns.sql"
     OUT="$(python3 "$LINT_PY" "$TMP" 2>&1 || true)"
     if ! grep -q "OUTBOX-PARITY-005" <<<"$OUT"; then
@@ -578,7 +647,92 @@ if [[ "${1:-}" == "--self-test" ]]; then
         echo "self-test backfill-3 실패: backfill 누락을 검출하지 못했다"; exit 1
     fi
 
-echo "dead-letter-schema-parity-lint self-test 19종 통과"
+    # --- D-065 contract self-test ---
+    # $1 이 출력에 있어야 하고, $3 이 있으면 그것은 없어야 한다. 4서비스를 함께 변이시키는 케이스는 $3 에 서비스 간
+    # 차이 코드(016·002)를 넣어, 그 검사에 업혀 가지 않고 해당 규칙 자신이 red 를 만든다는 것을 고정한다.
+    expect_code() {
+        OUT="$(python3 "$LINT_PY" "$TMP" 2>&1 || true)"
+        if ! grep -q "$1" <<<"$OUT"; then
+            echo "self-test $2 실패: $1 을 검출하지 못했다"; exit 1
+        fi
+        if [[ -n "${3:-}" ]] && grep -q "$3" <<<"$OUT"; then
+            echo "self-test $2 실패: 4서비스 동시 변이인데 $3 로 잡혔다 ($1 이 그 검사에 업혀 있다)"; exit 1
+        fi
+    }
+    contract_all() {
+        for svc in order-service product-service payment-service notification-service; do
+            sed -i.bak "$1" "$TMP/$svc/src/main/resources/db/migration/V7__dead_letter_replay_contract.sql"
+        done
+    }
+    contract_append() {
+        for svc in order-service product-service payment-service notification-service; do
+            printf '%s\n' "$1" >> "$TMP/$svc/src/main/resources/db/migration/V7__dead_letter_replay_contract.sql"
+        done
+    }
+
+    # contract-1: 한 서비스에서 contract 누락 → 025
+    seed_fixture
+    rm "$TMP/product-service/src/main/resources/db/migration/V7__dead_letter_replay_contract.sql"
+    expect_code "DLQ-PARITY-025" contract-1
+
+    # contract-2: 한 서비스 contract 주석만 drift → 026 (normalize 로는 같다)
+    seed_fixture
+    printf '\n-- drift\n' >> "$TMP/payment-service/src/main/resources/db/migration/V7__dead_letter_replay_contract.sql"
+    expect_code "DLQ-PARITY-026" contract-2
+
+    # contract-3: 4서비스 root MODIFY 에 DEFAULT 0 → 030
+    seed_fixture
+    contract_all 's/MODIFY root_record_id BIGINT NOT NULL/MODIFY root_record_id BIGINT NOT NULL DEFAULT 0/'
+    expect_code "DLQ-PARITY-030" contract-3 "DLQ-PARITY-016"
+
+    # contract-4: 4서비스 kind MODIFY 에 DEFAULT 'DOMAIN' → OUTBOX-005
+    seed_fixture
+    contract_all "s/MODIFY record_kind VARCHAR(10) NOT NULL/MODIFY record_kind VARCHAR(10) NOT NULL DEFAULT 'DOMAIN'/"
+    expect_code "OUTBOX-PARITY-005" contract-4 "OUTBOX-PARITY-002"
+
+    # contract-5: 4서비스 contract 가 다른 outbox replay 컬럼까지 NOT NULL 로 → OUTBOX-004
+    seed_fixture
+    contract_append "ALTER TABLE outbox_events MODIFY destination_topic VARCHAR(120) NOT NULL;"
+    expect_code "OUTBOX-PARITY-004" contract-5 "OUTBOX-PARITY-002"
+
+    # contract-6: 4서비스 contract 가 원장 발행 축까지 NOT NULL 로 → 031
+    seed_fixture
+    contract_append "ALTER TABLE dead_letter_records MODIFY publication_status VARCHAR(20) NOT NULL;"
+    expect_code "DLQ-PARITY-031" contract-6 "DLQ-PARITY-016"
+
+    # contract-7: 4서비스 contract 에서 root MODIFY 삭제 → 029 (파일은 있어도 최종 스키마가 nullable)
+    seed_fixture
+    contract_all '/MODIFY root_record_id/d'
+    expect_code "DLQ-PARITY-029" contract-7 "DLQ-PARITY-016"
+
+    # contract-8: 4서비스 contract 에서 kind MODIFY 삭제 → OUTBOX-006
+    seed_fixture
+    contract_all '/MODIFY record_kind/d'
+    expect_code "OUTBOX-PARITY-006" contract-8 "OUTBOX-PARITY-002"
+
+    # contract-9: 한 서비스에서 guard callback 누락 → 027 (V 파일이 아니라 최종 스키마로는 보이지 않는다)
+    seed_fixture
+    rm "$TMP/notification-service/src/main/resources/db/migration/beforeMigrate__dead_letter_replay_contract_guard.sql"
+    expect_code "DLQ-PARITY-027" contract-9
+
+    # contract-10: 한 서비스 guard 주석만 drift → 028
+    seed_fixture
+    printf '\n-- drift\n' >> "$TMP/order-service/src/main/resources/db/migration/beforeMigrate__dead_letter_replay_contract_guard.sql"
+    expect_code "DLQ-PARITY-028" contract-10
+
+    # modify-1: 한 서비스에만 outbox MODIFY → OUTBOX-002 (MODIFY 를 읽지 않던 때는 green 이었다)
+    seed_fixture
+    printf 'ALTER TABLE outbox_events MODIFY trace_id VARCHAR(32) NULL;\n' \
+        > "$TMP/product-service/src/main/resources/db/migration/V8__fixture_modify.sql"
+    expect_code "OUTBOX-PARITY-002" modify-1
+
+    # modify-2: 한 서비스에만 원장 MODIFY COLUMN → 016 (COLUMN 키워드가 있는 형태)
+    seed_fixture
+    printf 'ALTER TABLE dead_letter_records MODIFY COLUMN note VARCHAR(500) NULL;\n' \
+        > "$TMP/payment-service/src/main/resources/db/migration/V8__fixture_modify.sql"
+    expect_code "DLQ-PARITY-016" modify-2
+
+echo "dead-letter-schema-parity-lint self-test 31종 통과"
     exit 0
 fi
 

@@ -60,7 +60,9 @@ def strip_sql_comments(text):
     text = re.sub(r"/\*.*?\*/", " ", text, flags=re.S)
     return "\n".join(re.sub(r"--.*$", "", line) for line in text.splitlines())
 
-migrations = sorted(glob.glob(os.path.join(root, "*/src/main/resources/db/migration/V*.sql")))
+# V 파일만이 아니라 디렉터리의 모든 .sql 을 본다. Flyway SQL callback(beforeMigrate__*.sql 등)도 같은 서비스 계정으로
+# 매 migrate 마다 실행된다 — D-065 contract guard 가 그 예다. V 파일만 보면 callback 의 권한 부족이 실제 스택에서만 터진다.
+migrations = sorted(glob.glob(os.path.join(root, "*/src/main/resources/db/migration/*.sql")))
 if not migrations:
     violations.append("[MIG-GRANT-002] 검사할 마이그레이션을 찾지 못했다 (glob 이 비었다)")
 
@@ -120,7 +122,20 @@ UPDATE t SET c = 1 WHERE c IS NULL;
 EOS
     python3 "$LINT_PY" "$TMP" >/dev/null || { echo "self-test 6 실패: 주석 안 구문을 위반으로 오판"; exit 1; }
 
-    echo "migration-grant-lint self-test 6종 통과"
+    # 7: Flyway callback 도 같은 계정으로 돈다 — callback 안의 권한 없는 구문도 검출되어야 한다
+    printf 'CREATE PROCEDURE guard() BEGIN SELECT 1; END;\n' \
+        > "$TMP/svc-service/src/main/resources/db/migration/beforeMigrate__bad.sql"
+    if python3 "$LINT_PY" "$TMP" >/dev/null 2>&1; then
+        echo "self-test 7 실패: callback 의 권한 없는 구문을 검출하지 못했다"; exit 1
+    fi
+    rm "$TMP/svc-service/src/main/resources/db/migration/beforeMigrate__bad.sql"
+
+    # 8: 실제 contract guard(PREPARE/EXECUTE·세션 변수)는 부여된 권한만 쓴다 — 음성 대조
+    cp order-service/src/main/resources/db/migration/beforeMigrate__dead_letter_replay_contract_guard.sql \
+       "$TMP/svc-service/src/main/resources/db/migration/"
+    python3 "$LINT_PY" "$TMP" >/dev/null || { echo "self-test 8 실패: contract guard 를 위반으로 오판"; exit 1; }
+
+    echo "migration-grant-lint self-test 8종 통과"
     exit 0
 fi
 
