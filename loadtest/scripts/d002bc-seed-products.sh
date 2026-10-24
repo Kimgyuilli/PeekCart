@@ -60,8 +60,8 @@ for i in $(seq 1 "$COUNT"); do
 done
 echo "  생성된 productId: ${#CREATED[@]}개 (${CREATED[0]} … ${CREATED[${#CREATED[@]}-1]})"
 
-# product outbox 기본 처리율(5s 폴링·100건, 초당 약 20건)로 COUNT 건을 내보내려면 COUNT/20 초가 든다.
-# 그 두 배를 기다리되 60초 아래로는 내리지 않는다(10건은 종전과 같은 60초).
+# 대기 상한이다. 캐시가 다 차면 바로 넘어간다. 상한은 ADR-0045 이전 product outbox(5s 폴링·100건, 초당 약 20건)에서
+# COUNT 건에 드는 COUNT/20 초의 두 배로 잡았고 60초 아래로는 내리지 않는다. ADR-0045 기본값(500ms·500건)에서는 더 일찍 끝난다.
 WAIT=$(( COUNT / 10 > 60 ? COUNT / 10 : 60 ))
 echo "[3/4] order 의 product_price_cache 전파 대기 (최대 ${WAIT}s)"
 # 이 게이트가 없으면 부하 시작 시점에 캐시가 덜 차 있어 ORD-007 이 섞이고,
