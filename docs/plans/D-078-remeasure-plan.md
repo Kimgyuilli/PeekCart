@@ -169,25 +169,25 @@ run 인 r1(5.637s)을 넣으면 1,450, r2(2.764s)면 750 이다.
 
 ## 3. 작업 항목
 
-- [ ] P1. `loadtest/scripts/d002bc-contention.js`: `dropped_iterations` threshold(한도 ⌊RPS×DUR/100⌋), 요약 첫 줄의 부하 판정,
+- [x] P1. `loadtest/scripts/d002bc-contention.js`: `dropped_iterations` threshold(한도 ⌊RPS×DUR/100⌋), 요약 첫 줄의 부하 판정,
   DUR 해석(정수 h·m·s 조합이 아니면 init 실패), USERS 산식 출력(`usersFor`), `setupTimeout` = max(60, USERS)초, spread 의
   전역 순번 선택(`exec.scenario.iterationInTest`), PRODUCT_IDS 양의 정수 검사. 기존 429 threshold 와 USERS 검사는 그대로.
-- [ ] P2. 시드: `d002bc-user-seed.sql` 사용자 200 에서 450, `users.csv` 450행 재생성, `d002bc-seed-products.sh` 의 건당 50ms
+- [x] P2. 시드: `d002bc-user-seed.sql` 사용자 200 에서 450, `users.csv` 450행 재생성, `d002bc-seed-products.sh` 의 건당 50ms
   간격과 전파 대기 `max(60, COUNT/10)` 초. 초기화·정합성 SQL 은 상품 수와 무관함을 확인만 한다.
-- [ ] P3. 읽기 하네스: `gke-d002a` product patch 에 `PEEKCART_CACHE_DBMAXCONCURRENCY: "1"`, 새 overlay
+- [x] P3. 읽기 하네스: `gke-d002a` product patch 에 `PEEKCART_CACHE_DBMAXCONCURRENCY: "1"`, 새 overlay
   `k8s/overlays/gke-d078-read-bulkhead-4`(상위 `gke-d002a-mysql-2000m`, 값 "4"), `d026-run-block.sh` 의 `OVERLAY`·`BULKHEAD`,
   `d026-run-cell.sh` 의 상한 기록(`db_max_concurrency`)과 불일치 거부, `d002a-product-read.js` 의 `status_503` Rate.
   새 overlay 를 `kustomize-namespace-lint.sh`·`servicemonitor-selector-lint.sh`·`ci-lint-health-selftest.py` 목록에 넣는다.
-- [ ] P4. 문서: `loadtest/README.md` D-002b'/c 의 §절차 머리(부하 판정·USERS 산식), §1 시드(450명·상품 1,000개·PRODUCT_IDS
+- [x] P4. 문서: `loadtest/README.md` D-002b'/c 의 §절차 머리(부하 판정·USERS 산식), §1 시드(450명·상품 1,000개·PRODUCT_IDS
   저장), §4 명령(USERS 450·RPS 170·60s, 대조군 설명, 같은 블록의 브로커 주소 9092 를 k8s 리스너 29092 로 정정).
   `loadtest/captures.md` 의 ①②④ 행 항목·시점.
-- [ ] P5. 검사: `loadtest/scripts/test_d002bc_contention.mjs`(node, k6 대역으로 원 스크립트 실행)와 §7 의 실패 주입.
-- [ ] P6. §4 세션 절차, §5 중단 규칙, §6 비용.
+- [x] P5. 검사: `loadtest/scripts/test_d002bc_contention.mjs`(node, k6 대역으로 원 스크립트 실행)와 §7 의 실패 주입.
+- [x] P6. §4 세션 절차, §5 중단 규칙, §6 비용.
 
 ## 4. 재측정 세션 절차
 
-진입 조건: 캠페인 PR 4개(레인 A 이 PR, B D-065 ③ NOT NULL contract, C D-075 outbox 기본값과 ADR-0045, D D-107 배포
-래퍼의 토픽 사전 생성)가 main 에 병합되고 그 main CI 가 성공했다. 세션은 그 main SHA 하나로 돈다.
+진입 조건: 캠페인 PR 4개(레인 A 이 PR, B D-065 ③ NOT NULL contract, C D-075 outbox 처리율 기본값과 그 ADR, D D-107
+배포 래퍼의 토픽 사전 생성)가 main 에 병합되고 그 main CI 가 성공했다. 세션은 그 main SHA 하나로 돈다.
 
 ### S0. 클러스터 없이 하는 준비 (과금 미미)
 
