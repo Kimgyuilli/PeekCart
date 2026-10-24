@@ -32,3 +32,9 @@ Root가 실제 product ConfigData/production SchedulingConfig/Boot auto-configur
 2a3b2fe/run39622466849의target3case는모두line75의Runnable타입가정에서실패했다. 실제wrapper는Task.OutcomeTrackingRunnable이며기존config/core/단일빈/등록수assertion까지는통과했다. 점유검사/D078_SCHEDULER marker는0으로capacity결과는미측정이다. 원XML/log/API metadata/hash를보존한다.
 
 Root 승인교정은공개Runnable.run으로등록작업이정확probe.tick을호출하는지검사하는것이다. 현재검사thread만별도counter에세어다른schedulerthread의자동tick으로target검사가오탐하지않게한다. 다른probe/빈등록음성은거부하고, 직접검사이후새자동tick을따로확인한다. fragilewrapper타입/private delegate검사는없다. 기존3/4blocker/pool1/release기준은불변이며새Actions3case실측전P1–P3미완유지다.
+
+## 완료 기록
+
+교정 source의 [run39625382103](https://github.com/Kimgyuilli/PeekCart/actions/runs/39625382103)(head `de18d00`, 실제 checkout `a07da44`)에서 product shard의 `SchedulerPoolCapacityTest` 3 case가 모두 통과했다(실패·오류·skip 0). marker는 pool4/blocker3 `stalled=false`, pool4/blocker4와 pool1/blocker1 `stalled=true`다. 이 artifact와 checkout을 직접 확인한 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/220#issuecomment-6319781812)는 차단 없음이었다. 2026-10-24에 이 run의 target XML·job log·API metadata를 [증거 bundle](../evidence/D-078-scheduler-capacity/README.md)에 원바이트 gzip으로 보존했다.
+
+최신 main을 합친 최종 head `a7f7b25`는 작성 patch의 patch-id가 `de18d00`과 같고 [PR CI39674443598](https://github.com/Kimgyuilli/PeekCart/actions/runs/39674443598)이 성공했다. 병합 `8fbd658`의 [main CI39679620260](https://github.com/Kimgyuilli/PeekCart/actions/runs/39679620260)은 전체 테스트·E2E·gate·여섯 publish가 성공했다(2026-10-22). 이로써 P1–P3을 충족한다. 체크박스는 원문 그대로 둔다. §3의 미측정 범위(실제 7잡 비용·동시 경합·운영 적정성·TPS/GKE)와 D-078 ⑥ 전체는 이 완료에 포함하지 않는다.

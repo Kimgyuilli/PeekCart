@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-078-retry-load.md",
+      "sha256": "072b85c7ee7bf17c0a6d8efaeb8655525e8ef1dbdbb8aca02e1e680201eb4731"
+    },
+    {
+      "path": "docs/plans/D-078-retry-load.audit.md",
+      "sha256": "079537664a13c2003511b9d8b41667cac4ce9f4629a2c467089a2f2015aa9c93"
+    },
+    {
+      "path": "docs/plans/D-078-scheduler-capacity.md",
+      "sha256": "745f1639cd00631f68835a210e9fda5b0bc7781dab74311a3290cb371997a77e"
+    },
+    {
+      "path": "docs/plans/D-078-scheduler-capacity.audit.md",
+      "sha256": "4979e2ecf5019bcd8dde9449cc10fd67963b2ed40a35a297049b850a9ad0159d"
+    },
+    {
+      "path": "docs/plans/D-084-signed-recovery.md",
+      "sha256": "8d007bb55c8c0bde62132056b9a64fdd17a27d7c4658be6590c009d5e3360eac"
+    },
+    {
+      "path": "docs/plans/D-084-signed-recovery.audit.md",
+      "sha256": "f75e630c8d4f1bac2185498c5ccd9edc8e52308d3cea804f2f2b946e2ba374dc"
+    },
+    {
+      "path": "docs/plans/D-106-remeasure-prereq.md",
+      "sha256": "dc811ea2ad20841a08d9af2ea90aa62defed2672ec5b0d98f5fbe7087d423dc4"
+    },
+    {
+      "path": "docs/plans/D-106-remeasure-prereq.audit.md",
+      "sha256": "b0ebd0c802d66e6c64fa252b0f09057ff48832ccfa5fb46ad101373421c9a67c"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-078-retry-load.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-retry-load.md",
+          "start": 1,
+          "end": 44
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR221](https://github.com/Kimgyuilli/PeekCart/pull/221)은 head `0efc727`에서 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/221#issuecomment-6321057146) 차단 없음과 같은 head의 [CI39632204255](https://github.com/Kimgyuilli/PeekCart/actions/runs/39632204255) 필수 job 전부 성공을 받았다. 최신 main을 합친 최종 head `f8e662f`는 작성 patch의 patch-id가 `0efc727`과 같고 [PR CI39671458522](https://github.com/Kimgyuilli/PeekCart/actions/runs/39671458522)가 성공했다. 병합 `b3a7c60`의 [main CI39674425123](https://github.com/Kimgyuilli/PeekCart/actions/runs/39674425123)은 1차 시도가 `images (gateway)`의 `lombok-1.18.44.jar` 다운로드 실패로 끝났고, 재시도에서 전체 테스트·E2E·gate·여섯 publish가 성공했다(2026-10-22). 이로써 P4를 충족한다. 체크박스는 원문 그대로 둔다. 위 미해결/limits와 D-078 ⑤ 지속 부하 충돌률·정책 입력, D-078 전체는 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-retry-load.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-retry-load.audit.md",
+          "start": 1,
+          "end": 29
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-scheduler-capacity.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-scheduler-capacity.md",
+          "start": 1,
+          "end": 34
+        },
+        {
+          "literal": "\n## 완료 기록\n\n교정 source의 [run39625382103](https://github.com/Kimgyuilli/PeekCart/actions/runs/39625382103)(head `de18d00`, 실제 checkout `a07da44`)에서 product shard의 `SchedulerPoolCapacityTest` 3 case가 모두 통과했다(실패·오류·skip 0). marker는 pool4/blocker3 `stalled=false`, pool4/blocker4와 pool1/blocker1 `stalled=true`다. 이 artifact와 checkout을 직접 확인한 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/220#issuecomment-6319781812)는 차단 없음이었다. 2026-10-24에 이 run의 target XML·job log·API metadata를 [증거 bundle](../evidence/D-078-scheduler-capacity/README.md)에 원바이트 gzip으로 보존했다.\n\n최신 main을 합친 최종 head `a7f7b25`는 작성 patch의 patch-id가 `de18d00`과 같고 [PR CI39674443598](https://github.com/Kimgyuilli/PeekCart/actions/runs/39674443598)이 성공했다. 병합 `8fbd658`의 [main CI39679620260](https://github.com/Kimgyuilli/PeekCart/actions/runs/39679620260)은 전체 테스트·E2E·gate·여섯 publish가 성공했다(2026-10-22). 이로써 P1–P3을 충족한다. 체크박스는 원문 그대로 둔다. §3의 미측정 범위(실제 7잡 비용·동시 경합·운영 적정성·TPS/GKE)와 D-078 ⑥ 전체는 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-scheduler-capacity.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-scheduler-capacity.audit.md",
+          "start": 1,
+          "end": 15
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-084-signed-recovery.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-084-signed-recovery.md",
+          "start": 1,
+          "end": 57
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR214](https://github.com/Kimgyuilli/PeekCart/pull/214)는 head `2fa0942`에서 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/214#issuecomment-6321259541) 차단 없음과 같은 head의 전용 [run39633928741](https://github.com/Kimgyuilli/PeekCart/actions/runs/39633928741)·일반 [CI39633928865](https://github.com/Kimgyuilli/PeekCart/actions/runs/39633928865) 성공을 받았다. 원자료는 run39605979637 bundle에 보존돼 있고, [첫 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/214#issuecomment-6317172893)와 위 리뷰가 실행 source가 그 run의 `81fc518` 이후 바뀌지 않았음을 확인했다. 최신 main을 합친 최종 head `7df9a1c`는 작성 patch의 patch-id가 `2fa0942`와 같고, 전용 [run39654630929](https://github.com/Kimgyuilli/PeekCart/actions/runs/39654630929)와 일반 [PR CI39654630960](https://github.com/Kimgyuilli/PeekCart/actions/runs/39654630960)이 성공했다.\n\n병합 `b9faf58`의 [main CI39657501878](https://github.com/Kimgyuilli/PeekCart/actions/runs/39657501878)은 lint에서 실패했다. 실패 지점은 PR214가 바꾸지 않은 `scripts/tests/dlq_contract_lab.py`의 `backfill transaction did not reach observed pause`이고, images·E2E·publish는 돌지 않았다. 이를 고친 PR222 병합 `1f0920d`의 [main CI39665572218](https://github.com/Kimgyuilli/PeekCart/actions/runs/39665572218)이 PR214 변경을 포함한 main에서 전체 테스트·E2E·gate·여섯 publish 성공으로 끝났다(2026-10-22). 이로써 P6을 충족한다. 체크박스는 원문 그대로 둔다. 영구 404 신뢰 증빙, 실 PG·운영 실행, D-084 전체는 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-084-signed-recovery.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-084-signed-recovery.audit.md",
+          "start": 1,
+          "end": 29
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-106-remeasure-prereq.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-106-remeasure-prereq.md",
+          "start": 1,
+          "end": 71
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR232](https://github.com/Kimgyuilli/PeekCart/pull/232) 최종 head `534164b` 의 일반 [CI40024829599](https://github.com/Kimgyuilli/PeekCart/actions/runs/40024829599)와 [replay-collector run40024829634](https://github.com/Kimgyuilli/PeekCart/actions/runs/40024829634)가 성공했다. 병합 `6253429` 의 main CI40028498149 는 직후 [PR231](https://github.com/Kimgyuilli/PeekCart/pull/231) 병합 push 에 밀려 gate·publication-state·publish 가 cancelled 됐다. `6253429` 를 포함한 `2c9aa36` 의 [main CI40031226500](https://github.com/Kimgyuilli/PeekCart/actions/runs/40031226500)은 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-24). §완료 조건을 충족해 D-106 ⑨③④⑧⑪ 을 해소로 기록한다. §범위 밖 항목과 GKE 실제 스택 확인은 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-106-remeasure-prereq.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-106-remeasure-prereq.audit.md",
+          "start": 1,
+          "end": 27
+        }
+      ]
+    }
+  ]
+}

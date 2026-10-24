@@ -54,3 +54,7 @@ fixture는 생성 전에 random project+nonce ownership intent를 저장한다. 
 head5e74fcdd098ef6c6f4e6a9f5aee8f2d5977aacb6 / Actions39593585908 / actualcheckout4b302ea6f2ac7bb2d5ff23a5a5993d50ae865ef6에서 실제11case, 네 schema, baseline/restored 각5groups 두표본, 실제 no-commit 할당과 '-' offset, artifact9음성이 통과했다. 실제 lab은 약198.6초이며452raw files와 개별 hash를 보존했다. cleanup은 자기2containers/1network/2volumes다. 사전/부분생성·foreign cleanup 대조는 hermetic이며 실제운영 resource proof가 아니다.
 
 root가 독립review6315156941의 차단없음을 전달했다. 일반39593585902와 이 문서 기록 이후 최종head의 모든 CI, 선행189 실제main 정렬은 아직 별도 조건이다. P6는 그 조건을 충족할 때까지 미완이다. D065 전체/운영 drain 완료 주장은 없다.
+
+## 완료 기록
+
+[PR212](https://github.com/Kimgyuilli/PeekCart/pull/212) 최종 head `cd1cbb1` 의 전용 [run39633001119](https://github.com/Kimgyuilli/PeekCart/actions/runs/39633001119)와 일반 CI39633001050 이 성공했다. 최종 head 의 base `b2e8620` 은 선행 PR189 의 병합 `7915f26` 을 포함한다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/212#issuecomment-6321171226)는 작성 18파일이 이전 리뷰본과 같고 452개 원자료와 11사례를 직접 확인했으며 차단이 없었다. 병합 `e45d321` 의 [main CI39636215009](https://github.com/Kimgyuilli/PeekCart/actions/runs/39636215009)는 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-22). 이로써 P6 을 충족한다. 체크박스는 원문 그대로 둔다. §5 의 남는 범위와 D-065 전체는 이 완료에 포함하지 않는다.

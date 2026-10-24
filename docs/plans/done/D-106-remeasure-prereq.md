@@ -69,3 +69,7 @@ P1–P7 이 통과하고, PR 의 일반 CI 와 `replay-collector` 가 성공하�
 - D-106 ①⑦(측정 설계), ⑥(D-075), ⑩(payment 토픽 설정 원인), ②(스로틀 패널 메트릭), ⑤(VU 포화)는 D-106 잔여로 남긴다.
 - GKE 에서 preflight·SM·절차를 실제로 확인하는 일은 D-078 재측정에서 한다.
 - `loadtest/README.md` 의 `--load-restrictor LoadRestrictionsNone` 문구가 지금도 필요한지는 손대지 않는다.
+
+## 완료 기록
+
+[PR232](https://github.com/Kimgyuilli/PeekCart/pull/232) 최종 head `534164b` 의 일반 [CI40024829599](https://github.com/Kimgyuilli/PeekCart/actions/runs/40024829599)와 [replay-collector run40024829634](https://github.com/Kimgyuilli/PeekCart/actions/runs/40024829634)가 성공했다. 병합 `6253429` 의 main CI40028498149 는 직후 [PR231](https://github.com/Kimgyuilli/PeekCart/pull/231) 병합 push 에 밀려 gate·publication-state·publish 가 cancelled 됐다. `6253429` 를 포함한 `2c9aa36` 의 [main CI40031226500](https://github.com/Kimgyuilli/PeekCart/actions/runs/40031226500)은 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-24). §완료 조건을 충족해 D-106 ⑨③④⑧⑪ 을 해소로 기록한다. §범위 밖 항목과 GKE 실제 스택 확인은 이 완료에 포함하지 않는다.

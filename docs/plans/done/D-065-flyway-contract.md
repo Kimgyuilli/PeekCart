@@ -49,3 +49,7 @@ Actions는 Ubuntu/Java17, contents:read, 배포·secret·유료 기능 없이 �
 ## 5. 실행 결과
 
 수정headf834의Actions39583989047에서실제4서비스/76child/일반334/전용1/재시작보존검증이통과했다. 첫실패와수정후actualport변경증거는audit와 `evidence/D-065-flyway-contract/README.md`에분리보존했다. P2부터P6은이실제실행범위로완료이며P7의최종main통합CI/독립검토는아직미완이다. 운영계약완료로확대하지않는다.
+
+## 완료 기록
+
+[PR207](https://github.com/Kimgyuilli/PeekCart/pull/207) 의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/207#issuecomment-6321333169)는 head `7dd7a43` 에서 차단 없음이었다(334 tests 기준선, 전용 1 test, 76 child JVM, 재시작 보존, 정리). 최신 main 을 합친 최종 head `3ba3226` 은 작성 patch 의 patch-id 가 `7dd7a43` 과 같고, 일반 CI39648796709·Flyway 전용 [run39648796373](https://github.com/Kimgyuilli/PeekCart/actions/runs/39648796373)·signed run39648796274 가 성공했다. 병합 `de102a9` 의 [main CI39651993592](https://github.com/Kimgyuilli/PeekCart/actions/runs/39651993592)는 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-22). 이로써 P7 을 충족한다. 체크박스는 원문 그대로 둔다. §4 의 운영 writer 중지·운영 DDL·P22/GKE 와 D-065 전체는 이 완료에 포함하지 않는다.

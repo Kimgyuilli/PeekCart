@@ -23,3 +23,9 @@ catch-all에서 AccessDeniedException만 그대로 rethrow하여 기존 Exceptio
 - [ ] P4. 독립 검토와 PR210 위 stack의 네 실제 signed HTTP 경로를 검증하고 증거 범위를 기록한다.
 
 로컬 Gradle/Docker는 실행하지 않는다. 별도 workflow 없이 기존 CI의 platform/common-auth shard를 사용한다. 최초 회귀-only draft의 예상 red도 실제 결과 전 PASS/재현으로 적지 않는다. 이후 제품 fix head의 새 Actions를 요구한다. PR210은 이 fix를 명시적으로 의존한 별도 검증 PR로 유지하며 병합은 root 직렬 승인 뒤에만 한다. 공유 TASKS/progress/master는 수정하지 않는다.
+
+## 완료 기록
+
+[PR211](https://github.com/Kimgyuilli/PeekCart/pull/211) 최종 head `3cf3132` 의 PR CI39589619261 이 성공했다(platform 313 tests). [독립 재리뷰](https://github.com/Kimgyuilli/PeekCart/pull/211#issuecomment-6314585933)는 제품 5줄과 회귀 3개가 리뷰한 `d882fec` 와 byte 동일함을 확인했고 차단이 없었다. 병합 `89797c9` 의 [main CI39592220364](https://github.com/Kimgyuilli/PeekCart/actions/runs/39592220364)는 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-21). 이로써 P3 을 충족한다.
+
+네 실제 signed HTTP 경로는 이 수정을 포함한 [PR210](https://github.com/Kimgyuilli/PeekCart/pull/210) 최종 head `0be5aa3` 의 전용 run39592715075, [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/210#issuecomment-6315032985), 병합 `7894dcc` 뒤 main CI39595168219 성공으로 확인됐다. 이로써 P4 를 충족한다. 체크박스는 원문 그대로 둔다. replay 개방과 D-065 전체는 이 완료에 포함하지 않는다.

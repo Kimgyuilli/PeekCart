@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-065-access-denied-mvc.md",
+      "sha256": "466adb8d8656c2d0648b39ee16873cc763b494ca5dd144e61886e017909c0b2c"
+    },
+    {
+      "path": "docs/plans/D-065-access-denied-mvc.audit.md",
+      "sha256": "f4f5c2bda75ccde2d21597b57c69976cca84a4562481881c9d2a4998bf741ecc"
+    },
+    {
+      "path": "docs/plans/D-065-collector-adapter.md",
+      "sha256": "cfb10d98461b213e2730da236296825c9c3c51932f1bee8722698a4fd55eed61"
+    },
+    {
+      "path": "docs/plans/D-065-collector-adapter.audit.md",
+      "sha256": "e8f4d056770df9028e12bfd8265a6a071929d596cb623d58cdcb86385dd25c55"
+    },
+    {
+      "path": "docs/plans/D-065-flyway-contract.md",
+      "sha256": "eb39fc30472e2ff4130d1815db0a709ae7ae2848e67655d68d683f995e9cf724"
+    },
+    {
+      "path": "docs/plans/D-065-flyway-contract.audit.md",
+      "sha256": "4a81c7f9d9aeac9b4404f7b1db331ba3e7513972a1cc04103f24d31afaacda68"
+    },
+    {
+      "path": "docs/plans/D-065-signed-gateway.md",
+      "sha256": "f7861c4d83d6096e645de75f528383f53e472652a9a03eab0ed613058eff12e7"
+    },
+    {
+      "path": "docs/plans/D-065-signed-gateway.audit.md",
+      "sha256": "b20139e5a77f7d54c6875e2c3efc6338ad88a890899a0a354d8aac561dd632bb"
+    },
+    {
+      "path": "docs/plans/D-092-slack-split.md",
+      "sha256": "0efa5e5526ec32d1ef5a8e796a28eec3d5cf829bbc7f9b7a174a79b403716980"
+    },
+    {
+      "path": "docs/plans/D-092-slack-split.audit.md",
+      "sha256": "5ef745647b87bba4b3e349db37a19de57a7daf2a618774612cde65a5d89e8f23"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-065-access-denied-mvc.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-access-denied-mvc.md",
+          "start": 1,
+          "end": 25
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR211](https://github.com/Kimgyuilli/PeekCart/pull/211) 최종 head `3cf3132` 의 PR CI39589619261 이 성공했다(platform 313 tests). [독립 재리뷰](https://github.com/Kimgyuilli/PeekCart/pull/211#issuecomment-6314585933)는 제품 5줄과 회귀 3개가 리뷰한 `d882fec` 와 byte 동일함을 확인했고 차단이 없었다. 병합 `89797c9` 의 [main CI39592220364](https://github.com/Kimgyuilli/PeekCart/actions/runs/39592220364)는 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-21). 이로써 P3 을 충족한다.\n\n네 실제 signed HTTP 경로는 이 수정을 포함한 [PR210](https://github.com/Kimgyuilli/PeekCart/pull/210) 최종 head `0be5aa3` 의 전용 run39592715075, [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/210#issuecomment-6315032985), 병합 `7894dcc` 뒤 main CI39595168219 성공으로 확인됐다. 이로써 P4 를 충족한다. 체크박스는 원문 그대로 둔다. replay 개방과 D-065 전체는 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-access-denied-mvc.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-access-denied-mvc.audit.md",
+          "start": 1,
+          "end": 18
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-collector-adapter.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-collector-adapter.md",
+          "start": 1,
+          "end": 56
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR212](https://github.com/Kimgyuilli/PeekCart/pull/212) 최종 head `cd1cbb1` 의 전용 [run39633001119](https://github.com/Kimgyuilli/PeekCart/actions/runs/39633001119)와 일반 CI39633001050 이 성공했다. 최종 head 의 base `b2e8620` 은 선행 PR189 의 병합 `7915f26` 을 포함한다. [독립 최종 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/212#issuecomment-6321171226)는 작성 18파일이 이전 리뷰본과 같고 452개 원자료와 11사례를 직접 확인했으며 차단이 없었다. 병합 `e45d321` 의 [main CI39636215009](https://github.com/Kimgyuilli/PeekCart/actions/runs/39636215009)는 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-22). 이로써 P6 을 충족한다. 체크박스는 원문 그대로 둔다. §5 의 남는 범위와 D-065 전체는 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-collector-adapter.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-collector-adapter.audit.md",
+          "start": 1,
+          "end": 41
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-flyway-contract.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-flyway-contract.md",
+          "start": 1,
+          "end": 51
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR207](https://github.com/Kimgyuilli/PeekCart/pull/207) 의 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/207#issuecomment-6321333169)는 head `7dd7a43` 에서 차단 없음이었다(334 tests 기준선, 전용 1 test, 76 child JVM, 재시작 보존, 정리). 최신 main 을 합친 최종 head `3ba3226` 은 작성 patch 의 patch-id 가 `7dd7a43` 과 같고, 일반 CI39648796709·Flyway 전용 [run39648796373](https://github.com/Kimgyuilli/PeekCart/actions/runs/39648796373)·signed run39648796274 가 성공했다. 병합 `de102a9` 의 [main CI39651993592](https://github.com/Kimgyuilli/PeekCart/actions/runs/39651993592)는 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-22). 이로써 P7 을 충족한다. 체크박스는 원문 그대로 둔다. §4 의 운영 writer 중지·운영 DDL·P22/GKE 와 D-065 전체는 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-flyway-contract.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-flyway-contract.audit.md",
+          "start": 1,
+          "end": 43
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-signed-gateway.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-signed-gateway.md",
+          "start": 1,
+          "end": 61
+        },
+        {
+          "literal": "\n## 완료 기록\n\n이 계획은 [PR202](https://github.com/Kimgyuilli/PeekCart/pull/202)에서 plan-only 로 작성됐다. 같은 파일을 두 PR 에서 고치지 않도록 실행은 [D-065-signed-gateway-execution](D-065-signed-gateway-execution.md) 으로 분리됐고, 그 계획의 P1~P6 이 이 문서의 P2~P6 을 수행했다. 로컬 Docker 실행은 사용자 지시에 따라 Actions 실행으로 대체됐다. [PR210](https://github.com/Kimgyuilli/PeekCart/pull/210) 최종 head `0be5aa3` 의 전용 run39592715075 와 일반 CI39592715276 이 성공했고 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/210#issuecomment-6315032985)는 차단이 없었다. 병합 `7894dcc` 의 [main CI39595168219](https://github.com/Kimgyuilli/PeekCart/actions/runs/39595168219)는 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-21).\n\n검증 범위는 `docs/06-testing-strategy.md` §13-5 에 있고, D-084 복구 흐름은 별도 계획 [D-084-signed-recovery](D-084-signed-recovery.md)(PR214)로 진행됐다. 체크박스는 원문 그대로 둔다. §5 의 제외 항목(운영 replay 개방, GKE, 운영 표본)과 D-065 전체는 이 완료에 포함하지 않는다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-signed-gateway.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-signed-gateway.audit.md",
+          "start": 1,
+          "end": 11
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-092-slack-split.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-092-slack-split.md",
+          "start": 1,
+          "end": 32
+        },
+        {
+          "literal": "\n## 완료 기록\n\n[PR219](https://github.com/Kimgyuilli/PeekCart/pull/219) 최종 head `8c55ef3` 의 일반 CI39629291268 과 signed run39629291259 가 성공했다. [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/219#issuecomment-6320677035)는 구현·설정·테스트·계획 10파일이 이전 리뷰본과 byte 동일함과 notification 59 tests(실제 loopback 분리, 시작 거부 7건)를 확인했고 차단이 없었다. 병합 `b2e8620` 의 [main CI39632767287](https://github.com/Kimgyuilli/PeekCart/actions/runs/39632767287)은 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-22). 위 §미해결의 운영 조건은 이 완료에 포함하지 않는다. 실제 두 채널 분리 전달은 이후 D-078 GKE 세션에서 확인됐고, Secret 소유·교체는 D-092 에 남아 있다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-092-slack-split.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-092-slack-split.audit.md",
+          "start": 1,
+          "end": 21
+        }
+      ]
+    }
+  ]
+}

@@ -59,3 +59,9 @@ rate limiter가 권한 거부를 429로 가리지 않도록 계정/요청 순서
 ## 5. 완료 조건과 미해결
 
 네 서비스의 실제 signed 경로와 권한 양음 대조, DB 불변, cleanup·source 증거 및 전체 CI가 있어야 이 로컬 범위를 닫는다. `lastReplayBy` 영속 및 실제 replay claim/publish/drain은 kill-switch false 범위를 넘으므로 완료로 세지 않는다. GKE 적용/ACL, 운영 timestamp 표본 P22, production 키·토큰·데이터, PG 호출, 운영 replay 개방은 제외한다. constraint/backfill은 별도 D-065-constraints 계획이다. D084 결제 복구는 별도 PR로 검토하며 여기서는 수행하지 않는다. D-065 전체는 PARTIAL을 유지하고 TASKS/PHASE/master는 root가 갱신한다.
+
+## 완료 기록
+
+이 계획은 [PR202](https://github.com/Kimgyuilli/PeekCart/pull/202)에서 plan-only 로 작성됐다. 같은 파일을 두 PR 에서 고치지 않도록 실행은 [D-065-signed-gateway-execution](D-065-signed-gateway-execution.md) 으로 분리됐고, 그 계획의 P1~P6 이 이 문서의 P2~P6 을 수행했다. 로컬 Docker 실행은 사용자 지시에 따라 Actions 실행으로 대체됐다. [PR210](https://github.com/Kimgyuilli/PeekCart/pull/210) 최종 head `0be5aa3` 의 전용 run39592715075 와 일반 CI39592715276 이 성공했고 [독립 리뷰](https://github.com/Kimgyuilli/PeekCart/pull/210#issuecomment-6315032985)는 차단이 없었다. 병합 `7894dcc` 의 [main CI39595168219](https://github.com/Kimgyuilli/PeekCart/actions/runs/39595168219)는 전체 테스트·E2E·gate·여섯 publish 가 성공했다(2026-10-21).
+
+검증 범위는 `docs/06-testing-strategy.md` §13-5 에 있고, D-084 복구 흐름은 별도 계획 [D-084-signed-recovery](D-084-signed-recovery.md)(PR214)로 진행됐다. 체크박스는 원문 그대로 둔다. §5 의 제외 항목(운영 replay 개방, GKE, 운영 표본)과 D-065 전체는 이 완료에 포함하지 않는다.
