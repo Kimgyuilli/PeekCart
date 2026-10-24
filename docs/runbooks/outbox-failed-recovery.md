@@ -13,6 +13,7 @@ Outbox poller는 `PENDING`만 읽고 최대 재시도 뒤 행을 `FAILED`로 둔
 | broker/topic 또는 소비자가 아직 복구 중 | 중단; 원인 복구와 안정성 확인 후 처음부터 재평가 |
 | 같은 payload `eventId`의 outbox 행이 1개가 아님 | 중단; 수동으로 하나를 고르지 말고 사건 담당자에게 이관 |
 | 어느 consumer group이 처리했는지 알 수 없거나 멱등성이 증명되지 않음 | 재발행 금지; 중복 side effect 위험을 사건 기록에 남김 |
+| topic 소비쌍에 DENY·미등록이 있거나 `created_at`이 중복 억제 창(§2) 밖 | 재발행 금지; 늦은 첫 전달 또는 중복 처리 위험을 사건 기록에 남기고 이관 |
 | 격리 fixture에서 조건부 SQL이 정확히 한 행만 바꿈 | 이 결과만으로 production 실행을 승인하지 않음; §5 승인 게이트 필요 |
 
 ## 1. 대상 DB와 사전 승인
@@ -36,7 +37,7 @@ DB-per-service이므로 Outbox 행의 소유 서비스 DB 한 곳만 조회한�
 SELECT id, aggregate_type, aggregate_id, event_type, event_id,
        JSON_UNQUOTE(JSON_EXTRACT(payload, '$.eventId')) AS payload_event_id,
        SHA2(payload, 256) AS payload_sha256,
-       status, retry_count, last_attempted_at, published_at, record_kind
+       status, retry_count, created_at, last_attempted_at, published_at, record_kind
   FROM outbox_events
  WHERE id = :id AND event_id = :event_id;
 ```
@@ -55,7 +56,33 @@ SELECT COUNT(*) AS payload_event_rows
 - `record_kind`가 `NULL`(legacy domain) 또는 `DOMAIN`이다. `REPLAY`는 이 절차에서 금지한다.
 - `payload_event_id`가 `event_id`와 같다. 해당 DB에서 같은 payload `eventId`를 가진 행도 정확히 하나다.
 - event type에 등록된 모든 consumer group과 그 핸들러를 열거했다. 각 consumer가 **같은 payload `eventId`**로 이미 처리된 메시지를 중복 억제하는 코드/테스트 근거가 있다. 근거가 없거나 소비 여부가 불명확하면 중단한다.
+- `created_at`이 지금부터 `app.idempotency.floor.dlq-replay-window`(현재 7d) 안이다. consumer의 중복 억제는 `processed_events`(`event_id`, `consumer_group`) 행이 남아 있는 동안만 성립한다. 보존기간 `app.idempotency.retention`이 이 창에 시계 오차·정리 지연 여유를 더한 값 이상인지는 네 서비스가 부팅할 때 검사한다(`IdempotencyRetentionProperties`, ADR-0020 §D4-3). 재시도 중 어느 시도가 broker에 닿았는지 모르므로 마지막 시도가 아니라 행이 생긴 시각으로 잰다.
+- topic의 모든 소비쌍이 늦은 첫 전달을 견딘다. 이전 발행이 broker에 닿지 않았다면 재발행은 모든 consumer group에 대한 늦은 첫 전달이다. DLQ replay는 같은 위험을 소비쌍 정책 `ReplayPolicyRegistry`(default-deny, ADR-0020 §D5-2 축 5)로 거른다. §2-1에서 DENY이거나 미등록인 소비쌍이 하나라도 있으면 중단한다. PRECONDITION 쌍은 그 소비 서비스의 판정기(`OrderReplayPrecondition`, `PaymentReplayPrecondition`)와 같은 기준을 그 서비스 DB의 현재 상태로 읽기 전용 대조해 통과해야 한다. 대조할 수 없으면 중단한다.
 - broker와 대상 topic이 복구되어 있고, consumer가 정상 처리 가능한 상태다. publish 결과가 모호할 수 있다는 사실을 incident에 기록한다.
+
+### 2-1. topic별 소비쌍 판정
+
+정본은 `ReplayPolicyRegistry`(소비쌍 정책)와 `DlqTopology`(발행 소유)다. 아래 표는 두 파일에서 유도한 것이며 `scripts/d092-ops-fixture.py`가 CI에서 대조한다. 실행할 때는 표가 아니라 두 파일을 다시 확인한다. notification은 발행하는 업무 topic이 없다.
+
+| topic | 발행 | 소비쌍 | 재발행 |
+|---|---|---|---|
+| `order.created` | order | product DENY, payment DENY, notification ALLOW | 금지 |
+| `order.cancelled` | order | product ALLOW, payment ALLOW, notification ALLOW | 가능 |
+| `order.compensation.requested` | order | payment ALLOW | 가능 |
+| `payment.requested` | payment | order DENY, product DENY | 금지 |
+| `payment.completed` | payment | order ALLOW, product ALLOW, notification ALLOW | 가능 |
+| `payment.failed` | payment | order ALLOW, product ALLOW, notification ALLOW | 가능 |
+| `payment.refunded` | payment | order ALLOW, product ALLOW, notification ALLOW | 가능 |
+| `payment.approval-recovery.requested` | payment | product DENY | 금지 |
+| `payment.approval-recovery.execute` | payment | product DENY | 금지 |
+| `stock.reservation.result` | product | order PRECONDITION, payment PRECONDITION | 사전조건 |
+| `stock.approval.result` | product | payment DENY | 금지 |
+| `stock.compensation.requested` | product | payment ALLOW | 가능 |
+| `stock.approval-recovery.snapshot` | product | payment DENY | 금지 |
+| `stock.approval-recovery.result` | product | payment DENY | 금지 |
+| `product.updated` | product | order ALLOW | 가능 |
+
+`가능`도 §2의 나머지 조건을 모두 만족해야 한다. `금지` topic의 FAILED 행은 이 절차로 다루지 않고 사건 담당자에게 넘긴다.
 
 ## 3. 격리 fixture의 조건부 재개 문장
 
@@ -93,4 +120,6 @@ incident에 실행자/검토자, 승인 번호, 전후 상태, event ID와 paylo
 
 무료 검증은 두 계층이다. SQLite fixture는 행 상태/record kind/ID 가드와 runbook 절차의 논리 대조만 한다. notification-service CI의 MySQL 8 integration test는 runbook과 같은 UPDATE/JSON 함수를 실제 MySQL에서 실행해 한 행의 상태 변경과 duplicate payload 사전 거부를 확인한다. 두 검증 모두 동시 writer 제어·운영 잠금 절차·production 승인·실제 Kafka 전달을 증명하지 않는다.
 
-Production 재개는 모두 별도 충족되어야 한다: DB 소유자 승인과 유지보수 창, 별도 검토자, broker/topic 및 consumer 복구 확인, event별 모든 consumer의 `eventId` 멱등성 근거, 단일행 transaction 및 사후 관찰 담당자. 하나라도 불충분하면 실행을 보류한다.
+§2-1 판정표와 중복 억제 창 값은 fixture가 `ReplayPolicyRegistry`·`DlqTopology`·네 서비스 `application.yml`과 대조한다. 이 대조는 표가 코드와 같다는 것만 보이며, 각 consumer가 늦은 전달을 견딘다는 근거를 새로 만들지 않는다.
+
+Production 재개는 모두 별도 충족되어야 한다: DB 소유자 승인과 유지보수 창, 별도 검토자, broker/topic 및 consumer 복구 확인, event별 모든 consumer의 `eventId` 멱등성 근거, §2의 중복 억제 창과 소비쌍 판정, 단일행 transaction 및 사후 관찰 담당자. 하나라도 불충분하면 실행을 보류한다.
