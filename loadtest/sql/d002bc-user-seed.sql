@@ -7,7 +7,9 @@
 --         mysql -upeekcart_user -ppeekcart_user peekcart_user < d002bc-user-seed.sql
 --
 -- 사용자 수는 **부하 상한을 정한다** — gateway RateLimiter 가 사용자별 40 req/s 이므로
--- 주문 생성 목표 rps 는 40 × N 아래여야 한다(계획서 §2 V8). 기본 N=200.
+-- 주문 생성 목표 rps 는 40 × N 아래여야 한다(계획서 §2 V8). 기본 N=450.
+-- 450 은 VU 수 산식 RPS × 반복 p95 × 1.5(50 단위 올림)에 RPS 170 과 2026-10-24 contend r3 의 반복 p95 1.64s 를
+-- 넣은 값이다(D-106 ⑤, docs/plans/D-078-remeasure-plan.md). k6 는 VU 마다 다른 계정을 쓰므로 USERS 이상이어야 한다.
 --
 -- 비밀번호 해시는 "LoadTest123!" 의 BCrypt(cost=10) — seed.sql 과 동일 값이라 users.csv 를 그대로 쓴다.
 
@@ -20,9 +22,9 @@ SET SESSION cte_max_recursion_depth = 1000;
 DELETE FROM refresh_tokens;
 DELETE FROM users;
 
--- 부하 사용자 200명. id 를 1..200 으로 고정해 k6 가 사용자↔VU 를 결정적으로 매핑할 수 있게 한다.
+-- 부하 사용자 450명. id 를 1..450 으로 고정해 k6 가 사용자↔VU 를 결정적으로 매핑할 수 있게 한다.
 INSERT INTO users (id, email, password_hash, name, role, created_at, updated_at)
-WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 200)
+WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n + 1 FROM seq WHERE n < 450)
 SELECT n,
        CONCAT('loaduser', LPAD(n, 4, '0'), '@peekcart.test'),
        @password_hash,

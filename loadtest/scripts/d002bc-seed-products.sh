@@ -10,6 +10,7 @@
 #
 # 사용법:
 #   GW=http://<gateway-internal-lb>:8080 bash loadtest/scripts/d002bc-seed-products.sh [--count 10]
+#   D-078 재측정 spread 대조군은 --count 1000 이다(D-106 ⑦). 생성 약 1~2분, 전파 대기 최대 100초.
 #
 # 전제: loadtest/sql/d002bc-user-seed.sql 적용 완료(loadadmin@peekcart.test / ADMIN).
 set -euo pipefail
@@ -43,7 +44,10 @@ TOKEN=$(curl -sS -X POST "${GW}/api/v1/auth/login" \
 [[ -n "$TOKEN" ]] || { echo "로그인 실패" >&2; exit 1; }
 
 echo "[2/4] 상품 ${COUNT}건 생성 (admin API — product.updated 발행)"
-# admin 라우트는 **사용자 키 40 req/s**. 1건씩 순차 생성이라 한도에 닿지 않는다.
+# admin 라우트는 **사용자 키 40 req/s**(1초 창)다. 1건씩 순차 생성해도 건당 시간(curl·응답 파싱 포함)이
+# 25ms 보다 짧으면 1초 창에 40건을 넘어 429 가 나고, 응답 파싱이 실패해 스크립트가 중간에 멈춘다.
+# 10건이면 창 하나에 들어가지만 1,000건은 아니다. 지연 0 인 대역으로 재면 초당 36건까지 올라 한도에
+# 가까웠다. 건마다 50ms 를 쉬어 초당 20건 아래로 둔다.
 CREATED=()
 for i in $(seq 1 "$COUNT"); do
   body=$(printf '{"categoryId":1,"name":"d002bc-product-%d","description":"D-002b/c 측정용","price":%d,"stock":%d}' \
@@ -52,19 +56,23 @@ for i in $(seq 1 "$COUNT"); do
         -H "Authorization: Bearer ${TOKEN}" -H 'Content-Type: application/json' \
         -d "$body" | python3 -c 'import sys,json; print(json.load(sys.stdin)["data"]["id"])')
   CREATED+=("$id")
+  sleep 0.05
 done
-echo "  생성된 productId: ${CREATED[*]}"
+echo "  생성된 productId: ${#CREATED[@]}개 (${CREATED[0]} … ${CREATED[${#CREATED[@]}-1]})"
 
-echo "[3/4] order 의 product_price_cache 전파 대기 (최대 60s)"
+# product outbox 기본 처리율(5s 폴링·100건, 초당 약 20건)로 COUNT 건을 내보내려면 COUNT/20 초가 든다.
+# 그 두 배를 기다리되 60초 아래로는 내리지 않는다(10건은 종전과 같은 60초).
+WAIT=$(( COUNT / 10 > 60 ? COUNT / 10 : 60 ))
+echo "[3/4] order 의 product_price_cache 전파 대기 (최대 ${WAIT}s)"
 # 이 게이트가 없으면 부하 시작 시점에 캐시가 덜 차 있어 ORD-007 이 섞이고,
 # 그 실패율이 "주문 생성 경로가 느리다" 로 오독된다.
-deadline=$(( $(date +%s) + 60 ))
+deadline=$(( $(date +%s) + WAIT ))
 while :; do
   n=$(kubectl -n peekcart exec -i deploy/mysql -- \
         mysql -N -B -upeekcart_order -ppeekcart_order peekcart_order \
         -e "SELECT COUNT(*) FROM product_price_cache WHERE product_id IN ($(IFS=,; echo "${CREATED[*]}"));" 2>/dev/null || echo 0)
   [[ "$n" == "$COUNT" ]] && { echo "  캐시 ${n}/${COUNT} — 전파 완료"; break; }
-  (( $(date +%s) > deadline )) && { echo "  캐시 ${n}/${COUNT} — 60s 내 미전파. 부하 시작 금지" >&2; exit 1; }
+  (( $(date +%s) > deadline )) && { echo "  캐시 ${n}/${COUNT} — ${WAIT}s 내 미전파. 부하 시작 금지" >&2; exit 1; }
   sleep 2
 done
 
