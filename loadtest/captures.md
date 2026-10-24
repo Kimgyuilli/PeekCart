@@ -32,16 +32,16 @@
 
 | 항목 | 대시보드 | 패널 | 언제 |
 |---|---|---|---|
-| ① list 배속 | PeekCart — API & JVM | Request Rate, API Response Time (p95) | 블록 A·B·A′ 각 셀 1런 이상 |
-| ① list 배속 | PeekCart — Saga & Messaging | MySQL CPU 사용 / 한도, CPU 스로틀 | 같은 런 |
-| ② 2000m 새 천장 | PeekCart — Pod Resources & HPA | Pod CPU Usage | 블록 B detail OFF 런 |
-| ② 2000m 새 천장 | PeekCart — Saga & Messaging | HikariCP 대기 커넥션, CPU 스로틀 | 같은 런 |
-| ④ 노드 경합 | PeekCart — Saga & Messaging | 노드 CPU 사용률 | 블록 B list ON 런 (캐시 miss 0 인데 MySQL 한도에 반응한 셀) |
+| ①② bulkhead 상한 (`d078-1`) | PeekCart — API & JVM | Request Rate, API Response Time (p95) | S2 OFF 셀(상한 1·4)마다 측정 런 1개 이상 |
+| ①② bulkhead 상한 (`d078-1`) | PeekCart — Saga & Messaging | MySQL CPU 사용 / 한도, CPU 스로틀 | 같은 런 |
+| ①② bulkhead 상한 (`d078-2`) | PeekCart — Pod Resources & HPA | Pod CPU Usage | 같은 런 |
+| ①② bulkhead 상한 (`d078-2`) | PeekCart — Saga & Messaging | HikariCP 대기 커넥션, CPU 스로틀 | 같은 런 |
+| ④ 노드 경합 (`d078-4`) | PeekCart — Saga & Messaging | 노드 CPU 사용률 | S2 list ON 측정 런 (캐시 hit 경로) |
 | ⑤ 충돌·DLQ | PeekCart — Saga & Messaging | 소비 전달 실패율, 누적 실패 · DLQ 유입, 재고 예약 결과 | 경합 런마다 |
 | ⑤ 사가 배수 | PeekCart — Saga & Messaging | Outbox 발행률, Outbox backlog | 경합 런 시작부터 backlog 0 복귀까지 |
 | ⑥ 스케줄러 풀 | PeekCart — Saga & Messaging | taskScheduler active / pool, 대기 작업 | 경합 런 배수 구간 |
 | 공통 | PeekCart — Kafka Consumer Lag | Kafka Consumer Lag (Max) | 경합 런 |
-| D JVM | PeekCart — API & JVM | JVM Heap Memory, JVM GC Pause | 블록 B 런 1개, 경합 런 1개 (`d078-jvm`) |
+| D JVM | PeekCart — API & JVM | JVM Heap Memory, JVM GC Pause | S2 측정 런 1개, 경합 런 1개 (`d078-jvm`) |
 | E HPA | PeekCart — Pod Resources & HPA | HPA Current Replicas, Pod CPU Usage | S4 주문 부하 시작 1분 전부터 안정화까지 (`d078-hpa`) |
 
 ③ `product` 캐시와 ⑧ base 적용은 그래프가 아니라 counter 차분과 `kubectl get` 출력으로 남긴다.

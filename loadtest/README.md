@@ -189,6 +189,16 @@ Phase 4 세션이 이 게이트를 건너뛰어 **키쌍 불일치 2건**(사용
 2026-10-24 세션은 이 규칙이 없어 경합 run 의 주문 p50 이 r1→r2→r3 에서 1,205→701→151ms 로 떨어졌고,
 첫 run 의 주문 수는 r3 의 44% 였다. 한 번만 버려도 충분한지는 그 기록만으로 알 수 없다.
 
+§4 의 run 은 **목표 부하가 들어간 run 만 표본으로 쓴다**(D-106 ⑤). `d002bc-contention.js` 는 `dropped_iterations` 가
+목표 반복 수(RPS × DUR)의 1% 를 넘으면 threshold 실패로 exit 99 를 내고 요약 첫 줄에 `부하 판정: 무효` 를 찍는다.
+그 run 은 버리고 초기화 뒤 다시 돌린다(재시도 상한은 세션 계획). 2026-10-24 세션에 대입하면 RPS 170·60s 의 한도는
+102 이고 r1(5,763)·r2(1,871)는 무효, r3(89)·spread(0)는 유효다.
+
+USERS(VU 수)는 **RPS × 반복 p95 × 1.5 를 50 단위로 올린 값**이다. 반복 p95 는 워밍업이 끝난 run 의 k6
+`iteration_duration` p95 이고, 요약이 run 마다 이 산식의 값을 찍는다. RPS 170 은 2026-10-24 contend r3(1.64s)로 450 이다.
+종전 기준 `USERS ≥ RPS/40` 은 사용자별 한도만 보는 하한이라 VU 포화를 막지 못했다(r1 은 VU 200 이 모두 바빴다).
+사용자 시드와 `users.csv` 는 450명이고, setup 의 순차 로그인이 길어져 `setupTimeout` 을 USERS 초로 둔다.
+
 배포·재기동 뒤 첫 run(워밍업 포함) 전에는 **토픽 상태 가드를 통과시킨다**(D-106 ⑩). 선언 토픽 30개의 파티션 수와
 계약 7키의 실효값, 업무 consumer group 이 구독 토픽의 모든 파티션을 할당받았는지 본다. 손으로 하던 D-065 ⑤ 대조를
 대신하며, 원 출력과 판정이 증적으로 남는다.
@@ -208,7 +218,7 @@ exit 1 이면 run 을 시작하지 않는다. `[GROUP] ... 미할당` 은 구독
 ### 1. 시드
 
 ```bash
-# 사용자 (200명 + admin 1)
+# 사용자 (450명 + admin 1)
 kubectl -n peekcart exec -i deploy/mysql -- \
   mysql -upeekcart_user -ppeekcart_user peekcart_user < loadtest/sql/d002bc-user-seed.sql
 
@@ -216,12 +226,15 @@ kubectl -n peekcart exec -i deploy/mysql -- \
 GW_URL=http://<gateway-internal-lb>:8080 bash scripts/auth-roundtrip-gate.sh
 
 # k6 입력 CSV — **USERS 와 같은 수로** 재생성한다(적으면 계정이 겹쳐 사용자별 한도가 무너진다)
-bash loadtest/scripts/generate-users-csv.sh --count 200
+bash loadtest/scripts/generate-users-csv.sh --count 450
 
 # 상품 — SQL 직접 INSERT 금지. admin API 를 태워야 product.updated 가 발행되고
 # order 의 product_price_cache 가 찬다. 스크립트가 캐시 전파까지 기다린다.
-GW=http://<gateway-internal-lb>:8080 bash loadtest/scripts/d002bc-seed-products.sh --count 10
-#   → PRODUCT_IDS=... 를 출력한다. 이후 k6 에 그대로 넘긴다.
+# 대조군이 상품 1,000개를 쓰므로(D-106 ⑦) 1,000개를 만든다. contend 는 그중 첫 값만 쓴다.
+GW=http://<gateway-internal-lb>:8080 bash loadtest/scripts/d002bc-seed-products.sh --count 1000 \
+  | tee loadtest/reports/<날짜>/s3/seed-products.log
+#   → 출력의 PRODUCT_IDS=... 줄(1,000개, 약 4~6KB)을 k6 에 그대로 넘긴다.
+PRODUCT_IDS=$(sed -n 's/^PRODUCT_IDS=//p' loadtest/reports/<날짜>/s3/seed-products.log)
 ```
 
 ### 2. RateLimiter 배선 확인 (측정 전 필수)
@@ -260,17 +273,21 @@ kubectl -n peekcart exec -i deploy/mysql -- mysql -upeekcart_product -ppeekcart_
 ### 4. D-002c — 예약 락 경합 (+ 대조군)
 
 ```bash
-# 경합 — 전 주문이 상품 1개로
-k6 run -e GW=... -e PRODUCT_IDS=<ids> -e USERS=200 -e RPS=1000 -e MODE=contend  loadtest/scripts/d002bc-contention.js
-# 대조군 — 같은 부하량, 상품 분산
-k6 run -e GW=... -e PRODUCT_IDS=<ids> -e USERS=200 -e RPS=1000 -e MODE=spread   loadtest/scripts/d002bc-contention.js
+# 경합 — 전 주문이 상품 1개(PRODUCT_IDS 의 첫 값)로
+k6 run -e GW=... -e PRODUCT_IDS="$PRODUCT_IDS" -e USERS=450 -e RPS=170 -e DUR=60s -e MODE=contend loadtest/scripts/d002bc-contention.js
+# 대조군 — 같은 부하량, 상품 1,000개를 전역 반복 순번으로 한 바퀴씩(상품당 약 10건)
+k6 run -e GW=... -e PRODUCT_IDS="$PRODUCT_IDS" -e USERS=450 -e RPS=170 -e DUR=60s -e MODE=spread  loadtest/scripts/d002bc-contention.js
 ```
+
+대조군을 상품 10개로 돌린 2026-10-24 세션은 대조군의 전달 실패(129)가 경합 run(31~61)보다 많았다(D-106 ⑦).
+`order.created` 의 키가 주문 id 라 같은 상품의 주문도 세 파티션에 흩어지고, product replica 3 이 같은 상품 행에
+동시에 쓸 수 있다. 상품 수를 늘려 그 확률을 낮춘다.
 
 두 run 모두 끝난 뒤 서버에서 관측한다 — **응답 p95 는 이 축의 지표가 아니다**:
 
 ```bash
 kubectl -n peekcart exec deploy/kafka -- \
-  kafka-consumer-groups.sh --bootstrap-server localhost:9092 \
+  kafka-consumer-groups.sh --bootstrap-server localhost:29092 \
   --describe --group product-svc-order-created-group           # lag
 kubectl -n peekcart logs deploy/product-service | grep -c OptimisticLockingFailureException
 kubectl -n peekcart logs deploy/product-service | grep -c PRD-004
