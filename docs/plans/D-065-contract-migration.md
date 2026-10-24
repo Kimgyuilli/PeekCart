@@ -169,3 +169,20 @@ PR CI 최신 head 에서 ci.yml(lint 의 DLQ lab 포함, test 6 shard, guards, i
   금지가 운영 전제로 남는다.
 - `OutboxPollingService`:126-127 주석의 NULL 해석 문구는 레인 C 소유 파일이라 고치지 않았다. 병합 뒤 정정 대상이다.
 - `docs/runbooks/dlq-recovery.md` §7 의 "적재가 INSERT IGNORE 라" 는 ADR-0043 이후 낡은 문구다(이 작업과 무관, 보고만).
+
+## 정정 이력
+
+PR CI 첫 실행(head `e2decca`, run 40125691901·40125691919)이 초안의 두 전제를 반증했다. 상세는 audit 에 있다.
+
+- §2.1 의 "Spring 6.2 `sql-error-codes.xml` 은 1364 를 DataIntegrityViolation 으로 분류" 는 틀렸다. 그 파일은 jar 안의
+  기본 목록일 뿐이고, `JdbcAccessor.getExceptionTranslator` 는 사용자 `sql-error-codes.xml` 이 classpath 루트에 없으면
+  `SQLExceptionSubclassTranslator` 를 쓴다(spring-jdbc 6.2.17 바이트코드로 확인). 1364 는 SQLState HY000 이라
+  `UncategorizedSQLException` 이 된다. 계약 테스트는 `DataAccessException` 과 MySQL 오류 코드로 단언한다.
+- §2.1 의 raw INSERT 스윕은 `src/test` 의 문자열만 봤다. order `OrderCompensationRefundIntegrationTest` 와 product
+  `StockCompensationRefundIntegrationTest` 는 V5·V4 migration 파일의 backfill DML 을 읽어 현재 스키마에서 실행하는데,
+  그 INSERT 는 `record_kind` 이전 판본이라 contract 뒤 1364 로 실패한다(B1b 의 문자열 결합이 main 리소스에 있던 경우).
+  INSERT 동안만 실제 체인의 결과인 DOMAIN 을 DEFAULT 로 빌리고 바로 지운다.
+- Flyway lab 은 CI 에서 실행되지 않았다(같은 step 의 payment 일반 테스트가 먼저 실패). 로컬 실행에서 backfill 직전 버전의
+  snapshot 이 아직 없는 `dead_letter_record_ids` 를 읽어 실패했고, 테이블이 있을 때만 읽도록 고쳤다.
+- 사용자 지시 변경(2026-10-25, 레인 재개): 원인 확인에 필요한 서비스·클래스 단위 Testcontainers 실행을 로컬에서 허용한다.
+  전체 검증은 계속 PR CI 로 한다.
