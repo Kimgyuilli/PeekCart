@@ -30,8 +30,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * <p><b>여기서 지키는 것은 "행이 아니라 사건을 센다" 하나다.</b> 재발행이 실패할 때마다 자식 행이
  * 늘어나는데 행으로 세면 backlog 가 사건 수보다 계속 부풀고, ADR 이 약속한 "재실패 N회에도 미결 1건"이
- * 거짓이 된다. 반대로 조건을 {@code root_record_id = id} 로만 걸면 <b>root_record_id 컬럼 도입 전의 기존 행이 전부
- * 탈락해 backlog 가 0 으로 보인다</b> — 같은 표면에서 반대 방향의 false-green 이 난다. 두 방향을 함께 고정한다.
+ * 거짓이 된다. 집계 조건은 {@code root_record_id = id} 하나다 — contract migration 이후 이 컬럼은 NOT NULL 이라
+ * 전환 구간의 NULL root 가 없다. 그 전제(누락·NULL 쓰기 거부)는 {@link ReplayContractSchemaIntegrationTest} 가
+ * 고정한다(전환 구간 V-18 을 대체).
  *
  * <p><b>자식 행을 fixture 로 만드는 이유</b>: 재발행 재실패 상관 경로와 집계 계약을 분리해
  * 검증한다. 이 테스트는 그 경로가 만들 <b>DB 상태</b>를 직접 구성해 집계·종결·purge 계약을
@@ -150,38 +151,6 @@ class DeadLetterIncidentAggregationIntegrationTest extends AbstractIntegrationTe
         assertThat(publication.get("NOT_REQUESTED")).isEqualTo(2L);
         long sum = publication.values().stream().mapToLong(v -> (Long) v).sum();
         assertThat(sum).isEqualTo(backlog.get("unresolved"));
-    }
-
-    // ---------- 전환 구간: 기존 행은 탈락하지 않는다 (V-18) ----------
-
-    @Test
-    @DisplayName("root_record_id 가 NULL 인 기존 행도 집계에 잡힌다 — 컬럼 도입이 backlog 를 0 으로 만들지 않는다")
-    void legacyRowsWithoutRootAreStillCounted() {
-        recordRoot(1, 100L);
-        recordRoot(1, 101L);
-        recordRoot(1, 102L);
-        // 컬럼이 없던 시절의 기존 행 재현: root_record_id 가 NULL 이다.
-        jdbcTemplate.update("UPDATE dead_letter_records SET root_record_id = NULL");
-
-        assertThat(repository.countUnresolved()).isEqualTo(3);
-        assertThat(repository.findOldestUnresolvedOccurredAt()).isPresent();
-        assertThat(repository.findStaleUnresolved(LocalDateTime.now().plusDays(1),
-                org.springframework.data.domain.PageRequest.of(0, 10))).hasSize(3);
-    }
-
-    @Test
-    @DisplayName("root_record_id 가 NULL 인 기존 행도 종결할 수 있다 — 전환 구간 행이 '원장 없음' 으로 거부되지 않는다")
-    void legacyRowWithoutRootCanBeTransitioned() {
-        DeadLetterRecord root = recordRoot(1, 100L);
-        jdbcTemplate.update("UPDATE dead_letter_records SET root_record_id = NULL WHERE id = ?", root.getId());
-
-        Map<String, Object> response = endpoint.transition(root.getId(), "acknowledge", "ops", null);
-
-        // root id 해석이 rootRecordId 를 그대로 돌려주는 구현이면 NULL 이 되어 조회가 비고 "원장 없음" 이 된다.
-        assertThat(response.get("rootId")).isEqualTo(root.getId());
-        assertThat(response.get("changed")).isEqualTo(true);
-        assertThat(repository.findById(root.getId()).orElseThrow().statusValue())
-                .isEqualTo(DeadLetterStatus.ACKED);
     }
 
     // ---------- 종결은 root 로 정규화된다 (V-17) ----------

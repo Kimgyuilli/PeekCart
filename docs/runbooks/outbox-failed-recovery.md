@@ -53,7 +53,7 @@ SELECT COUNT(*) AS payload_event_rows
 다음 조건을 모두 만족하지 않으면 중단한다.
 
 - 결과가 정확히 한 행이며 `status='FAILED'`, `published_at IS NULL`이다.
-- `record_kind`가 `NULL`(legacy domain) 또는 `DOMAIN`이다. `REPLAY`는 이 절차에서 금지한다.
+- `record_kind`가 `DOMAIN`이다. `REPLAY`는 이 절차에서 금지한다. contract migration 이후 `NULL`은 저장될 수 없고, `NULL`이나 그 밖의 값이 보이면 재개하지 않고 사건 담당자에게 넘긴다.
 - `payload_event_id`가 `event_id`와 같다. 해당 DB에서 같은 payload `eventId`를 가진 행도 정확히 하나다.
 - event type에 등록된 모든 consumer group과 그 핸들러를 열거했다. 각 consumer가 **같은 payload `eventId`**로 이미 처리된 메시지를 중복 억제하는 코드/테스트 근거가 있다. 근거가 없거나 소비 여부가 불명확하면 중단한다.
 - `created_at`이 지금부터 `app.idempotency.floor.dlq-replay-window`(현재 7d) 안이다. consumer의 중복 억제는 `processed_events`(`event_id`, `consumer_group`) 행이 남아 있는 동안만 성립한다. 보존기간 `app.idempotency.retention`이 이 창에 시계 오차·정리 지연 여유를 더한 값 이상인지는 네 서비스가 부팅할 때 검사한다(`IdempotencyRetentionProperties`, ADR-0020 §D4-3). 재시도 중 어느 시도가 broker에 닿았는지 모르므로 마지막 시도가 아니라 행이 생긴 시각으로 잰다.
@@ -95,7 +95,7 @@ UPDATE outbox_events
    AND event_id = :event_id
    AND status = 'FAILED'
    AND published_at IS NULL
-   AND (record_kind IS NULL OR record_kind = 'DOMAIN')
+   AND record_kind = 'DOMAIN'
    AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.eventId')) = event_id;
 ```
 

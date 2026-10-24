@@ -123,8 +123,8 @@ public class OutboxPollingService {
         outboxEventRepository.save(event);
     }
 
-    // kind 분기 (ADR-0020 D3). record_kind 가 REPLAY 인 행만 replay 경로로 간다 —
-    // null(구버전 writer)·DOMAIN 은 전부 기존 도메인 경로다(OutboxEvent#isReplay).
+    // kind 분기 (ADR-0020 D3). record_kind 가 REPLAY 인 행만 replay 경로로 가고 DOMAIN 은 기존 도메인 경로다
+    // (OutboxEvent#isReplay). contract(D-065) 이후 이 컬럼은 DEFAULT 없는 NOT NULL 이라 NULL 행은 없다.
     private ProducerRecord<String, String> buildRecord(OutboxEvent event) {
         return event.isReplay() ? buildReplayRecord(event) : buildDomainRecord(event);
     }

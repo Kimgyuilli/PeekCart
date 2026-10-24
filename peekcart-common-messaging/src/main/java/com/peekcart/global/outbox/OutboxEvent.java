@@ -71,11 +71,11 @@ public class OutboxEvent {
     // --- replay 발행 축 (ADR-0020 D3) ---
 
     /**
-     * 레코드 종류 판별자. {@code null} 은 <b>구버전 writer 가 쓴 행</b>이라는 뜻이며 도메인으로 해석한다.
-     * DB 에 DEFAULT 를 두지 않는 이유는 {@link #isReplay()} 주석 참조.
+     * 레코드 종류 판별자. DB 컬럼은 <b>DEFAULT 없는 NOT NULL</b> 이다(contract migration, ADR-0020 D3 4단계) —
+     * 팩토리 두 개가 항상 명시하고, 값을 빠뜨린 INSERT 는 DB 가 거부한다. 근거는 {@link OutboxRecordKind} 참조.
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "record_kind", length = 10)
+    @Column(name = "record_kind", nullable = false, length = 10)
     private OutboxRecordKind recordKind;
 
     @Column(name = "destination_topic", length = 120)
@@ -162,9 +162,8 @@ public class OutboxEvent {
     }
 
     /**
-     * replay 레코드인가. <b>{@code null} 은 replay 가 아니다</b> — 구버전 writer 가 만든 행은 도메인이다
-     * (ADR-0020 D3 expand 단계). 이 해석을 {@code recordKind == DOMAIN} 으로 좁히면 마이그레이션 직후의
-     * 기존 PENDING 행이 어느 분기에도 걸리지 않아 <b>영원히 발행되지 않는다</b>.
+     * replay 레코드인가. {@link OutboxRecordKind#REPLAY} 만 replay 경로로 가고 나머지는 도메인 경로다.
+     * contract 이후 {@code null} 은 저장될 수 없다. expand 단계의 NULL 행은 backfill 이 DOMAIN 으로 채웠다.
      */
     public boolean isReplay() {
         return recordKind == OutboxRecordKind.REPLAY;

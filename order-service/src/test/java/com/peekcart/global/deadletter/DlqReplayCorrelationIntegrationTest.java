@@ -44,10 +44,10 @@ import static org.mockito.Mockito.reset;
  * 그래서 {@code axisXxx} 테스트들은 각각 <b>정확히 한 입력만</b> 바꾼다 — 두 축을 동시에 흔들면
  * 한 predicate 를 지워도 다른 predicate 가 잡아 <b>변이가 관측되지 않는다</b>.
  *
- * <p><b>음성 기대값을 "행이 생겼다" 로만 쓰지 않는다.</b> 집계 쿼리는 전환 호환성 때문에
- * {@code root_record_id IS NULL} 도 root 로 세므로, 상관 실패 시 self root 기록을
- * 빠뜨려도 행 존재·backlog 단언은 전부 green 이고 "root 행은 자기 id 를 가진다" 계약만 조용히 깨진다.
- * 그래서 <b>{@code root_record_id == 자기 id}</b> 를 음성 공통 단언에 넣는다.
+ * <p><b>음성 기대값을 "행이 생겼다" 로만 쓰지 않는다.</b> 행 존재만 보면 상관 실패 시 root 를 잘못 기록해도
+ * (예: 남의 root 를 가리킴) green 이고 "독립 root 는 자기 id 를 가진다" 계약만 조용히 깨진다.
+ * 그래서 <b>{@code root_record_id == 자기 id}</b> 를 음성 공통 단언에 넣는다. root 를 빠뜨린 INSERT 는
+ * contract 이후 DB 가 거부한다({@link ReplayContractSchemaIntegrationTest}).
  *
  * <p><b>앵커는 fixture 로 심는다</b> — 이 테스트는 상관 predicate 를 분리해 검증한다.
  * 진입점→발행→재실패→상관 관통은 {@code DlqReplayEntrypointIntegrationTest} 가 맡는다.
@@ -656,8 +656,7 @@ class DlqReplayCorrelationIntegrationTest extends AbstractIntegrationTest {
                 .max((a, b) -> Long.compare(a.getId(), b.getId()))
                 .orElseThrow();
 
-        // **"행이 생겼다" 로는 부족하다** — 집계가 root_record_id IS NULL 도 root 로 세므로
-        // self root 기록을 빠뜨려도 backlog 단언은 green 이다.
+        // **"행이 생겼다" 로는 부족하다** — 독립 root 가 자기 id 를 가리키는지까지 본다.
         assertThat(newest.getRootRecordId()).isNotNull();
         assertThat(newest.getRootRecordId()).isEqualTo(newest.getId());
         assertThat(correlationCount("independent", expectedReason)).isEqualTo(1.0);

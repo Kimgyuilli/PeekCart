@@ -71,22 +71,22 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
      * <p><b>집계 단위는 행이 아니라 root 다</b>(ADR-0020 §D6-3). 재발행이 실패할 때마다 자식 행이 늘어나므로
      * 행 단위로 세면 backlog 가 사건 수보다 계속 부풀고, "재실패해도 미결은 1건" 이 거짓이 된다.
      *
-     * <p><b>{@code root_record_id IS NULL} 을 함께 받는 것이 전환 구간 계약이다</b> — 이 컬럼은 additive 라
-     * 컬럼 추가 전에 적재된 행이 전부 NULL 이다. 조건을 {@code = id} 로만 걸면 <b>기존 미결이 전부 탈락해
-     * backlog 가 0 으로 보인다</b>. backfill 이후에도 이 분기는 남는다.
+     * <p><b>root 는 {@code root_record_id = id} 인 행뿐이다.</b> contract migration 이후 이 컬럼은 DEFAULT 없는
+     * NOT NULL 이고, 이전 NULL 행은 backfill 이 정규화했거나 가드가 DDL 전에 거부했다(ADR-0020 §D6-3 4단계).
+     * 그래서 전환 구간의 {@code IS NULL} 분기를 두지 않는다.
      */
     @Query("SELECT COUNT(r) FROM DeadLetterRecord r "
-            + "WHERE (r.rootRecordId IS NULL OR r.rootRecordId = r.id) AND r.status IN ('OPEN', 'ACKED')")
+            + "WHERE r.rootRecordId = r.id AND r.status IN ('OPEN', 'ACKED')")
     long countUnresolved();
 
     /** 가장 오래된 미결 incident 의 발생 시각 (age 경보). 없으면 empty. */
     @Query("SELECT MIN(r.occurredAt) FROM DeadLetterRecord r "
-            + "WHERE (r.rootRecordId IS NULL OR r.rootRecordId = r.id) AND r.status IN ('OPEN', 'ACKED')")
+            + "WHERE r.rootRecordId = r.id AND r.status IN ('OPEN', 'ACKED')")
     Optional<LocalDateTime> findOldestUnresolvedOccurredAt();
 
     /** age 임계값을 넘긴 미결 incident (경보 대상). */
     @Query("SELECT r FROM DeadLetterRecord r "
-            + "WHERE (r.rootRecordId IS NULL OR r.rootRecordId = r.id) AND r.status IN ('OPEN', 'ACKED') "
+            + "WHERE r.rootRecordId = r.id AND r.status IN ('OPEN', 'ACKED') "
             + "AND r.occurredAt < :threshold ORDER BY r.occurredAt ASC")
     List<DeadLetterRecord> findStaleUnresolved(@Param("threshold") LocalDateTime threshold, Pageable pageable);
 
@@ -98,7 +98,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
      * 미결이 있는데도 발행 분포가 전부 0 인 오해를 부른다.
      */
     @Query("SELECT COUNT(r) FROM DeadLetterRecord r "
-            + "WHERE (r.rootRecordId IS NULL OR r.rootRecordId = r.id) AND r.status IN ('OPEN', 'ACKED') "
+            + "WHERE r.rootRecordId = r.id AND r.status IN ('OPEN', 'ACKED') "
             + "AND r.publicationStatus IS NULL")
     long countUnresolvedWithoutPublication();
 
@@ -107,7 +107,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
      * <b>{@code PUBLISHED} 도 미결에 포함된다</b> — 발행 성공은 사건 해소가 아니다(ADR-0020 §D6-2).
      */
     @Query("SELECT COUNT(r) FROM DeadLetterRecord r "
-            + "WHERE (r.rootRecordId IS NULL OR r.rootRecordId = r.id) AND r.status IN ('OPEN', 'ACKED') "
+            + "WHERE r.rootRecordId = r.id AND r.status IN ('OPEN', 'ACKED') "
             + "AND r.publicationStatus = :publicationStatus")
     long countUnresolvedByPublicationStatus(@Param("publicationStatus") PublicationStatus publicationStatus);
 
@@ -119,9 +119,10 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
      * 이미 관리 중인 인스턴스의 상태를 refresh 하지 않는다</b>. 그러면 잠금을 기다리는 동안 다른
      * 트랜잭션이 커밋한 최신 상태를 못 보고 <b>캐시의 과거 상태를 기준으로 전이</b>하게 된다 —
      * "이미 terminal 이면 no-op" 계약이 그 경로에서 깨진다.
+     *
+     * <p>root 자신은 자기 id 를, 자식은 root id 를 담고 있으므로 컬럼을 그대로 돌려준다(contract 이후 NULL 없음).
      */
-    @Query("SELECT CASE WHEN r.rootRecordId IS NULL THEN r.id ELSE r.rootRecordId END "
-            + "FROM DeadLetterRecord r WHERE r.id = :id")
+    @Query("SELECT r.rootRecordId FROM DeadLetterRecord r WHERE r.id = :id")
     Optional<Long> findRootIdOf(@Param("id") Long id);
 
     /**
@@ -135,12 +136,12 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
      * <p><b>{@link #findRootIdOf} 와 같은 이유로 id 만 돌려준다</b> — 엔티티로 읽으면 그 인스턴스가
      * 영속성 컨텍스트에 적재돼 뒤이은 {@code FOR UPDATE} 가 잠금만 얻고 상태를 refresh 하지 않는다.
      *
-     * <p><b>canonical root 로 한정한다</b>({@code rootRecordId IS NULL OR = id}). 자식 행에 앵커가
+     * <p><b>canonical root 로 한정한다</b>({@code rootRecordId = id}). 자식 행에 앵커가
      * 실릴 일은 없지만 조건을 좁혀 둔다 — 앵커의 writer 는 replay 진입점 하나이고 대상은 root 다.
      */
     @Query("SELECT r.id FROM DeadLetterRecord r "
             + "WHERE r.lastReplayAttemptId = :attemptId "
-            + "AND (r.rootRecordId IS NULL OR r.rootRecordId = r.id)")
+            + "AND r.rootRecordId = r.id")
     Optional<Long> findRootIdByReplayAttemptId(@Param("attemptId") String attemptId);
 
     /**
@@ -181,7 +182,7 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
      * 시각만 본다. 감사 시각 자체는 재개방 시에도 지우지 않는다.
      */
     @Query("SELECT r.id FROM DeadLetterRecord r "
-            + "WHERE (r.rootRecordId IS NULL OR r.rootRecordId = r.id) "
+            + "WHERE r.rootRecordId = r.id "
             + "AND ((r.status = 'DISCARDED' AND r.discardedAt < :threshold) "
             + "  OR (r.status = 'RESOLVED' AND r.resolvedAt < :threshold)) "
             + "ORDER BY r.id ASC")
@@ -326,10 +327,10 @@ public interface DeadLetterRecordJpaRepository extends JpaRepository<DeadLetterR
      * incident 1건(root + 자식 전부)을 삭제한다. <b>자식 단독 purge 경로는 두지 않는다</b> —
      * 자식은 진단용이며 root 를 따라 종결·정리된다(ADR-0020 §D6-3).
      *
-     * <p>{@code r.id = :rootId} 를 함께 두는 이유: 전환 구간의 기존 root 는 {@code root_record_id} 가
-     * {@code NULL} 이라 {@code rootRecordId = :rootId} 조건에 자기 자신이 걸리지 않는다.
+     * <p>root 도 {@code root_record_id = id} 라 {@code rootRecordId = :rootId} 하나로 root 와 자식이 함께 걸린다.
+     * contract 이전에는 NULL root 때문에 {@code r.id = :rootId} 를 덧붙였다.
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("DELETE FROM DeadLetterRecord r WHERE r.id = :rootId OR r.rootRecordId = :rootId")
+    @Query("DELETE FROM DeadLetterRecord r WHERE r.rootRecordId = :rootId")
     int deleteIncident(@Param("rootId") Long rootId);
 }

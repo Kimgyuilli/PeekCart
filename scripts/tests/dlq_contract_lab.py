@@ -2,7 +2,9 @@
 """Disposable MySQL experiment for D-065; no existing DB/container is accepted.
 
 Uses actual migration SQL through mysql CLI (not Flyway/JPA). No published ports,
-network access, production connection options, or deployable contract migration.
+network access or production connection options. Fixtures are built on the chain
+before the contract migration; the repository's beforeMigrate guard and contract
+SQL are then applied in one session, in the order Flyway runs them.
 """
 import argparse
 import copy
@@ -21,6 +23,26 @@ from dlq_contract_preflight import (COORD, GRANTS, LEDGER, OUTBOX, Rejected,
 
 SERVICES = ('order', 'product', 'payment', 'notification')
 TABLES = (LEDGER, OUTBOX)
+CONTRACT_SUFFIX = '__dead_letter_replay_contract.sql'
+GUARD_NAME = 'beforeMigrate__dead_letter_replay_contract_guard.sql'
+GUARD_MARKER = 'D065_CONTRACT_GUARD'
+MISSING_DISCRIMINATOR = {
+    'root_record_id': "INSERT INTO dead_letter_records (cluster_id,topic_generation,origin_topic,origin_partition,"
+                      "origin_offset,failed_consumer_group,origin_kind,status,occurred_at) VALUES "
+                      "('fixture',1,'order.created',0,98,'fixture-group','RESOLVED_ORIGIN','OPEN',NOW(6))",
+    'record_kind': "INSERT INTO outbox_events (aggregate_type,aggregate_id,event_type,event_id,payload,created_at) "
+                   "VALUES ('Order','98','order.created','00000000-0000-0000-0000-000000000098','fixture',NOW(6))",
+}
+
+
+def migration_set(service):
+    """Versioned files before the contract, the contract itself and the guard callback."""
+    folder = ROOT / (service + '-service/src/main/resources/db/migration')
+    files = sorted(folder.glob('V*.sql'), key=lambda path: int(re.match(r'V(\d+)__', path.name)[1]))
+    if not files or not files[-1].name.endswith(CONTRACT_SUFFIX) or \
+            sum(path.name.endswith(CONTRACT_SUFFIX) for path in files) != 1:
+        raise RuntimeError(service + ': the contract must be the single latest migration')
+    return files[:-1], files[-1], folder / GUARD_NAME
 
 
 def command(args, data=None, timeout=40, check=True):
@@ -92,12 +114,27 @@ class Lab:
         self.sql(f'DROP DATABASE IF EXISTS lab_{service}; CREATE DATABASE lab_{service}; '
                  f"GRANT SELECT,INSERT,UPDATE,DELETE,CREATE,ALTER,INDEX,REFERENCES ON lab_{service}.* TO 'contract_lab'@'localhost';",
                  service=None, root=True)
-        files = sorted((ROOT / (service + '-service/src/main/resources/db/migration')).glob('V*.sql'),
-                       key=lambda path: int(re.match(r'V(\d+)__', path.name)[1]))
+        # Legacy NULL fixtures only exist before the contract; apply_contract() runs the rest.
+        files, contract, guard = migration_set(service)
         for path in files:
             self.sql(path.read_text(), service)
         self.seed(service)
-        return files
+        return files + [contract, guard]
+
+    def apply_contract(self, service='order', check=True):
+        # Flyway runs the beforeMigrate callback before any pending migration in the same run.
+        # A failing guard stops the mysql session before the contract DDL, as Flyway stops the run.
+        _, contract, guard = migration_set(service)
+        return self.sql(guard.read_text() + '\n' + contract.read_text(), service, check=check)
+
+    def guard_rejected(self, name, root_rows, kind_rows, service='order'):
+        before = self.export(service)
+        failed = self.apply_contract(service, check=False)
+        expected = f'{GUARD_MARKER} invalid_root_rows={root_rows} invalid_kind_rows={kind_rows}'
+        assert failed.returncode != 0 and '1231' in failed.stderr and expected in failed.stderr, (name, failed.stderr)
+        assert self.export(service) == before, name + ': guard rejection changed rows or schema'
+        self.passed('guard rejects ' + name + ' before contract DDL; rows and schema unchanged',
+                    {'mysql_error': 1231, 'invalid_root_rows': root_rows, 'invalid_kind_rows': kind_rows})
 
     def seed(self, service):
         self.sql("""
@@ -192,6 +229,7 @@ UPDATE outbox_events SET destination_topic='order.created',destination_partition
             self.backfill(after, empty, service)
             assert self.export(service) == after
             self.passed(service + ': actual migration chain, minimal grants, exact backfill, repeat unchanged', len(files))
+            self.contract_applies(service, after)
         self.evidence.joinpath('migration-files.json').write_text(json.dumps(migration_files, indent=2))
 
         self.reset()
@@ -248,6 +286,59 @@ UPDATE outbox_events SET destination_topic='order.created',destination_partition
         self.rejected('actual duplicate coordinate without unique index', duplicate, proof, 'coordinate_unique_index_missing')
 
         self.contract_experiments()
+        self.guard_experiments()
+
+    def contract_applies(self, service, proven):
+        # The minimal-grant account runs the repository's guard and contract on the fixture-proven export.
+        self.apply_contract(service)
+        contracted = self.export(service)
+        assert contracted['rows'] == proven['rows'], service + ': contract changed rows'
+        for table, field in ((LEDGER, 'root_record_id'), (OUTBOX, 'record_kind')):
+            column = contracted['columns'][table][field]
+            assert column['nullable'] == 'NO' and column['default'] is None, (service, table, column)
+        for field, statement in MISSING_DISCRIMINATOR.items():
+            failed = self.sql(statement, service, check=False)
+            assert failed.returncode != 0 and '1364' in failed.stderr and field in failed.stderr, (service, failed.stderr)
+        assert self.export(service) == contracted, service + ': rejected INSERT changed rows'
+        _, _, guard = migration_set(service)
+        self.sql(guard.read_text(), service)
+        self.passed(service + ': guard passes proven fixture, contract applied, missing discriminator INSERT rejected, '
+                    'guard inactive after contract', {'mysql_error': 1364})
+
+    def guard_experiments(self):
+        # Each case starts from the fixture-proven state and changes exactly one row before the contract.
+        for name, mutation, root_rows, kind_rows in [
+            ('NULL root', "UPDATE dead_letter_records SET root_record_id=NULL WHERE id=21", 1, 0),
+            ('zero root', "UPDATE dead_letter_records SET root_record_id=0 WHERE id=21", 1, 0),
+            ('negative root', "UPDATE dead_letter_records SET root_record_id=-1 WHERE id=21", 1, 0),
+            ('NULL kind', "UPDATE outbox_events SET record_kind=NULL WHERE id=20", 0, 1),
+            ('empty kind', "UPDATE outbox_events SET record_kind='' WHERE id=20", 0, 1),
+            ('lowercase kind', "UPDATE outbox_events SET record_kind='domain' WHERE id=20", 0, 1),
+            ('unknown kind', "UPDATE outbox_events SET record_kind='UNKNOWN' WHERE id=20", 0, 1),
+        ]:
+            self.reset()
+            before = self.export()
+            self.backfill(before, self.proof(before))
+            self.sql(mutation)
+            self.guard_rejected(name, root_rows, kind_rows)
+        # Legacy NULL straight from the actual chain: rejected, never normalized by the guard.
+        self.reset()
+        self.guard_rejected('unproven legacy NULL root and kind', 1, 1)
+        # After the contract the guard only reads information_schema. INSERT IGNORE still coerces a
+        # missing root to 0; that residual is a writer-stop prerequisite, not something boot can police.
+        self.reset()
+        before = self.export()
+        self.backfill(before, self.proof(before))
+        self.apply_contract()
+        ignored = self.sql("INSERT IGNORE INTO dead_letter_records (cluster_id,topic_generation,origin_topic,"
+                           "origin_partition,origin_offset,failed_consumer_group,origin_kind,status,occurred_at) VALUES "
+                           "('fixture',1,'order.created',0,97,'fixture-group','RESOLVED_ORIGIN','OPEN',NOW(6)); SHOW WARNINGS;")
+        assert '1364' in ignored.stdout, ignored.stdout
+        _, _, guard = migration_set('order')
+        self.sql(guard.read_text())
+        assert self.sql('SELECT root_record_id FROM dead_letter_records WHERE origin_offset=97').stdout.strip() == '0'
+        self.passed('guard is inactive after contract; INSERT IGNORE root 0 stays a writer-stop residual',
+                    {'warning': 1364, 'root': 0})
 
     def contract_experiments(self):
         self.reset()
@@ -421,7 +512,7 @@ def main():
                     ROOT / 'scripts/tests/test_dlq_contract_preflight.py',
                     ROOT / 'scripts/tests/test_dlq_contract_cleanup.py', ROOT / '.github/workflows/ci.yml']
     source_paths += [path for service in SERVICES for path in
-                     (ROOT / (service + '-service/src/main/resources/db/migration')).glob('V*.sql')]
+                     (ROOT / (service + '-service/src/main/resources/db/migration')).glob('*.sql')]
     import hashlib
     args.evidence_dir.joinpath('source-manifest.json').write_text(json.dumps({
         'git_head': command(['git', '-C', str(ROOT), 'rev-parse', 'HEAD']).stdout.strip(),

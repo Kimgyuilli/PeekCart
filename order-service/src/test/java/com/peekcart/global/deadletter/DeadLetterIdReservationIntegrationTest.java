@@ -67,8 +67,11 @@ class DeadLetterIdReservationIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void firstInsertHasSelfRootEvenUnderNotNullContract() {
-        jdbc.execute("ALTER TABLE dead_letter_records MODIFY root_record_id BIGINT NOT NULL, "
-                + "ADD CONSTRAINT d065_positive_root CHECK(root_record_id>0)");
+        // NOT NULL 은 contract migration 이 이미 걸었다. 공유 DB 계약을 되돌리지 않도록 양수 CHECK 만 잠시 더한다.
+        assertThat(jdbc.queryForObject("SELECT IS_NULLABLE FROM information_schema.COLUMNS "
+                + "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'dead_letter_records' "
+                + "AND COLUMN_NAME = 'root_record_id'", String.class)).isEqualTo("NO");
+        jdbc.execute("ALTER TABLE dead_letter_records ADD CONSTRAINT d065_positive_root CHECK(root_record_id>0)");
         try {
             assertThat(recorder.record(origin(10))).isTrue();
             DeadLetterRecord row = repository.findAll().get(0);
@@ -84,8 +87,7 @@ class DeadLetterIdReservationIntegrationTest extends AbstractIntegrationTest {
                     .satisfies(r -> assertThat(r.getRootRecordId()).isEqualTo(row.getId()).isNotEqualTo(r.getId()));
             assertNoReservations();
         } finally {
-            jdbc.execute("ALTER TABLE dead_letter_records DROP CHECK d065_positive_root, "
-                    + "MODIFY root_record_id BIGINT NULL");
+            jdbc.execute("ALTER TABLE dead_letter_records DROP CHECK d065_positive_root");
         }
     }
 

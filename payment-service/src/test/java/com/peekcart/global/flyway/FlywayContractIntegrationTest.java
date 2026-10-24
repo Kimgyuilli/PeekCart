@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Timeout;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -25,14 +26,34 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** No Spring context: the dedicated task owns this JVM and its singleton containers. */
+/**
+ * No Spring context: the dedicated task owns this JVM and its singleton containers.
+ *
+ * <p>D-065 contract: every service runs the repository's real {@code beforeMigrate} guard and contract
+ * migration. A guard rejection must leave no history row and no schema/data change; an explicit fixture
+ * repair then resumes with the same locations. The pre-contract release is emulated by a byte copy of the
+ * versioned files without the guard callback.
+ */
 @Tag("flyway-contract-lab")
 class FlywayContractIntegrationTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Map<String, Integer> BEFORE_BACKFILL = Map.of(
             "order", 10, "product", 8, "payment", 8, "notification", 6);
     private static final Map<String, Integer> LATEST = Map.of(
-            "order", 14, "product", 13, "payment", 15, "notification", 9);
+            "order", 15, "product", 14, "payment", 16, "notification", 10);
+    private static final String CONTRACT_SUFFIX = "__dead_letter_replay_contract.sql";
+    private static final String GUARD = "beforeMigrate__dead_letter_replay_contract_guard.sql";
+    /** One violation per service; the four guard copies are byte-identical (parity lint), legacy NULL is per service. */
+    private static final Map<String, Violation> VIOLATIONS = Map.of(
+            "order", new Violation("UPDATE dead_letter_records SET root_record_id=0 WHERE id=21",
+                    "UPDATE dead_letter_records SET root_record_id=20 WHERE id=21", 1, 0),
+            "product", new Violation("UPDATE dead_letter_records SET root_record_id=-1 WHERE id=21",
+                    "UPDATE dead_letter_records SET root_record_id=20 WHERE id=21", 1, 0),
+            "payment", new Violation("UPDATE outbox_events SET record_kind='' WHERE id=20",
+                    "UPDATE outbox_events SET record_kind='DOMAIN' WHERE id=20", 0, 1),
+            "notification", new Violation("UPDATE outbox_events SET record_kind='domain' WHERE id=20",
+                    "UPDATE outbox_events SET record_kind='DOMAIN' WHERE id=20", 0, 1));
+    private static final String OPEN_INCIDENTS = " AND status IN ('OPEN','ACKED')";
     private final Path root = Path.of(System.getProperty("flyway.lab.root"));
     private final Path evidence = Path.of(System.getProperty("flyway.lab.evidence"));
     private final String nonce = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
@@ -110,21 +131,27 @@ class FlywayContractIntegrationTest {
             }
         }
         assertThat(hashes).hasSize(LATEST.get(service));
+        Path contract = migrations.resolve("V" + LATEST.get(service) + CONTRACT_SUFFIX);
+        assertThat(contract).as("contract is the latest migration").exists();
+        assertThat(migrations.resolve(GUARD)).exists();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("productionMigrationSha256", hashes);
+        result.put("guardSha256", sha256(Files.readAllBytes(migrations.resolve(GUARD))));
         services.put(service, result);
         String locations = "filesystem:" + migrations;
+        String previousRelease = "filesystem:" + copyVersioned(migrations, service + "-previous-release", LATEST.get(service) - 1);
 
         String fresh = schema(service, "fresh");
         Scenario freshScenario = new Scenario(fresh, locations, false, 0);
         invoke(freshScenario, "migrate", "latest", true);
         historyMatches(fresh, hashes);
-        assertNullable(fresh, "dead_letter_records", "root_record_id", "YES");
-        assertNullable(fresh, "outbox_events", "record_kind", "YES");
+        assertContracted(fresh);
+        assertMissingDiscriminatorRejected(fresh);
         invoke(freshScenario, "validate", "latest", true);
         assertThat(((Number) invoke(freshScenario, "migrate", "latest", true).get("migrationsExecuted")).intValue()).isZero();
         scenarios.add(new Scenario(fresh, locations, false, reserve(fresh)));
         result.put("fresh", true);
+        result.put("missingDiscriminatorInsertRejected", true);
 
         String upgrade = schema(service, "upgrade");
         Scenario upgradeScenario = new Scenario(upgrade, locations, false, 0);
@@ -133,46 +160,57 @@ class FlywayContractIntegrationTest {
         List<Map<String, String>> oldLedger = rows(upgrade, "SELECT * FROM dead_letter_records ORDER BY id");
         List<Map<String, String>> oldOutbox = rows(upgrade, "SELECT * FROM outbox_events ORDER BY id");
         write(service + "-legacy-before.json", Map.of("ledger", oldLedger, "outbox", oldOutbox));
+        long openBefore = count(upgrade, "(root_record_id IS NULL OR root_record_id = id)" + OPEN_INCIDENTS);
+        Object beforeGuard = snapshot(upgrade);
+        // Pre-existing NULL is rejected even though the pending historical backfill could normalize it.
+        assertGuardRejected(invoke(upgradeScenario, "migrate", "latest", false), 1, 1);
+        assertThat(snapshot(upgrade)).isEqualTo(beforeGuard);
+        result.put("legacyNullRejectedWithoutHistory", true);
+        invoke(new Scenario(upgrade, previousRelease, false, 0), "migrate", "latest", true);
         invoke(upgradeScenario, "migrate", "latest", true);
         historyMatches(upgrade, hashes);
+        assertContracted(upgrade);
         oldLedger.get(0).put("root_record_id", "10");
         oldOutbox.get(0).put("record_kind", "DOMAIN");
         assertExistingColumnsPreserved(oldLedger, rows(upgrade, "SELECT * FROM dead_letter_records ORDER BY id"));
         assertExistingColumnsPreserved(oldOutbox, rows(upgrade, "SELECT * FROM outbox_events ORDER BY id"));
+        // ADR-0020 D6-3: the simplified root predicate keeps the open incident count of the transition predicate.
+        long openAfter = count(upgrade, "root_record_id = id" + OPEN_INCIDENTS);
+        assertThat(openAfter).isEqualTo(openBefore).isEqualTo(2);
+        result.put("openIncidentsPreserved", true);
         long reserved = reserve(upgrade);
         assertThat(reserved).isGreaterThan(21);
         result.put("upgrade", true);
         result.put("allocatorAfterLegacyMaximum", reserved);
 
-        Path candidate = evidence.resolve(service + "-candidate");
-        Files.createDirectories(candidate);
-        Path sqlFile = candidate.resolve("V999__fixture_contract.sql");
-        String validSql = "ALTER TABLE dead_letter_records MODIFY root_record_id BIGINT NOT NULL;\n"
-                + "ALTER TABLE outbox_events MODIFY record_kind VARCHAR(10) NOT NULL;\n";
-        Files.writeString(sqlFile, validSql);
-        Files.writeString(candidate.resolve("beforeMigrate__fixture_guard.sql"),
-                "SET SESSION sql_mode = 'STRICT_ALL_TABLES';\nUPDATE fixture_guard SET required_value = NULL WHERE blocked = 1;\n");
-        sql(upgrade, "CREATE TABLE fixture_guard (required_value INT NOT NULL, blocked INT NOT NULL)");
-        sql(upgrade, "INSERT INTO fixture_guard VALUES (1,1)");
-        Scenario guarded = new Scenario(upgrade, locations + ",filesystem:" + candidate, false, reserved);
-        Object beforeGuard = snapshot(upgrade);
-        invoke(guarded, "migrate", "latest", false);
-        assertThat(snapshot(upgrade)).isEqualTo(beforeGuard);
-        assertThat(rows(upgrade, "SELECT * FROM flyway_schema_history WHERE version='999'")).isEmpty();
-        sql(upgrade, "UPDATE fixture_guard SET blocked=0");
-        invoke(guarded, "migrate", "latest", true);
-        assertNullable(upgrade, "dead_letter_records", "root_record_id", "NO");
-        assertNullable(upgrade, "outbox_events", "record_kind", "NO");
+        String guarded = schema(service, "guard");
+        Scenario guardScenario = new Scenario(guarded, locations, false, 0);
+        invoke(guardScenario, "migrate", String.valueOf(LATEST.get(service) - 1), true);
+        seed(guarded, false);
+        Violation violation = VIOLATIONS.get(service);
+        sql(guarded, violation.inject());
+        Object beforeRejection = snapshot(guarded);
+        assertGuardRejected(invoke(guardScenario, "migrate", "latest", false), violation.rootRows(), violation.kindRows());
+        assertThat(snapshot(guarded)).isEqualTo(beforeRejection);
+        assertThat(rows(guarded, "SELECT * FROM flyway_schema_history WHERE version='" + LATEST.get(service) + "'")).isEmpty();
+        assertNullable(guarded, "dead_letter_records", "root_record_id", "YES");
+        assertNullable(guarded, "outbox_events", "record_kind", "YES");
+        sql(guarded, violation.repair());
+        invoke(guardScenario, "migrate", "latest", true);
+        assertContracted(guarded);
         result.put("callbackRejectedWithoutHistoryThenResumed", true);
-        Object beforeChecksum = snapshot(upgrade);
-        Files.writeString(sqlFile, validSql.replace("BIGINT NOT NULL", "BIGINT NULL"));
-        invoke(guarded, "validate", "latest", false);
-        assertThat(snapshot(upgrade)).isEqualTo(beforeChecksum);
-        Files.writeString(sqlFile, validSql);
-        invoke(guarded, "validate", "latest", true);
+        Path checksum = copyVersioned(migrations, service + "-checksum", LATEST.get(service));
+        Path contractCopy = checksum.resolve(contract.getFileName());
+        Object beforeChecksum = snapshot(guarded);
+        Files.writeString(contractCopy, Files.readString(contract).replace("BIGINT NOT NULL", "BIGINT NULL"));
+        Scenario checksumScenario = new Scenario(guarded, "filesystem:" + checksum, false, 0);
+        invoke(checksumScenario, "validate", "latest", false);
+        assertThat(snapshot(guarded)).isEqualTo(beforeChecksum);
+        Files.copy(contract, contractCopy, StandardCopyOption.REPLACE_EXISTING);
+        invoke(checksumScenario, "validate", "latest", true);
         result.put("checksumMismatchRejectedThenOriginalRestored", true);
-        result.put("candidateSha256", sha256(Files.readAllBytes(sqlFile)));
-        scenarios.add(guarded);
+        result.put("restoredContractSha256", sha256(Files.readAllBytes(contractCopy)));
+        scenarios.add(new Scenario(guarded, locations, false, reserve(guarded)));
 
         String failed = schema(service, "failed");
         Scenario failureBase = new Scenario(failed, locations, false, 0);
@@ -182,12 +220,13 @@ class FlywayContractIntegrationTest {
         Files.createDirectories(broken);
         Files.writeString(broken.resolve("V999__fixture_partial_failure.sql"),
                 "UPDATE outbox_events SET retry_count=retry_count+1 WHERE id=10;\n"
-                        + "ALTER TABLE dead_letter_records MODIFY root_record_id BIGINT NOT NULL;\n"
+                        + "ALTER TABLE dead_letter_records ADD COLUMN fixture_partial_marker INT NULL;\n"
                         + "ALTER TABLE outbox_events MODIFY fixture_missing_column BIGINT NOT NULL;\n");
         Scenario failedScenario = new Scenario(failed, locations + ",filesystem:" + broken, true, 0);
         invoke(failedScenario, "migrate", "latest", false);
-        assertNullable(failed, "dead_letter_records", "root_record_id", "NO");
-        assertNullable(failed, "outbox_events", "record_kind", "YES");
+        assertThat(rows(failed, "SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema=DATABASE()"
+                + " AND table_name='dead_letter_records' AND column_name='fixture_partial_marker'")).hasSize(1);
+        assertContracted(failed);
         assertThat(rows(failed, "SELECT retry_count FROM outbox_events WHERE id=10").get(0).get("retry_count")).isEqualTo("4");
         var failedHistory = rows(failed, "SELECT success FROM flyway_schema_history WHERE version='999'");
         assertThat(failedHistory).hasSize(1);
@@ -199,6 +238,62 @@ class FlywayContractIntegrationTest {
         result.put("partialDdlAndDmlCommittedWithFailedHistory", true);
         result.put("failedHistoryBlocksNewJvm", true);
         scenarios.add(failedScenario);
+    }
+
+    /** Versioned files up to {@code maxVersion}, byte for byte and without callbacks. */
+    private Path copyVersioned(Path migrations, String name, int maxVersion) throws Exception {
+        Path target = evidence.resolve(name);
+        Files.createDirectories(target);
+        try (var paths = Files.list(migrations)) {
+            for (Path file : paths.filter(p -> p.getFileName().toString().matches("V[0-9]+__.*\\.sql")).toList()) {
+                int version = Integer.parseInt(file.getFileName().toString().replaceAll("^V([0-9]+)__.*$", "$1"));
+                if (version <= maxVersion) Files.copy(file, target.resolve(file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        return target;
+    }
+
+    private void assertGuardRejected(Map<String, Object> result, int rootRows, int kindRows) {
+        assertThat(((Number) result.get("sqlErrorCode")).intValue()).as("guard rejects through ER_WRONG_VALUE_FOR_VAR").isEqualTo(1231);
+        assertThat((String) result.get("causeMessage"))
+                .contains("D065_CONTRACT_GUARD invalid_root_rows=" + rootRows + " invalid_kind_rows=" + kindRows);
+    }
+
+    private void assertContracted(String schema) throws Exception {
+        for (String[] column : new String[][]{{"dead_letter_records", "root_record_id"}, {"outbox_events", "record_kind"}}) {
+            assertNullable(schema, column[0], column[1], "NO");
+            assertThat(rows(schema, "SELECT COLUMN_DEFAULT FROM information_schema.columns WHERE table_schema=DATABASE()"
+                    + " AND table_name='" + column[0] + "' AND column_name='" + column[1] + "'").get(0).get("COLUMN_DEFAULT")).isNull();
+        }
+    }
+
+    /** As the minimal-grant account with the server's default strict sql_mode. */
+    private void assertMissingDiscriminatorRejected(String schema) throws Exception {
+        Map<String, String> statements = Map.of(
+                "root_record_id", "INSERT INTO dead_letter_records (cluster_id,topic_generation,origin_topic,origin_partition,"
+                        + "origin_offset,failed_consumer_group,origin_kind,status,occurred_at) VALUES "
+                        + "('fixture',1,'orders',0,99,'group','RESOLVED_ORIGIN','OPEN','2026-10-25 00:00:00.000001')",
+                "record_kind", "INSERT INTO outbox_events (aggregate_type,aggregate_id,event_type,event_id,payload,created_at)"
+                        + " VALUES ('Order','99','Created','fixture-missing-kind','{}','2026-10-25 00:00:00.000001')");
+        for (var statement : statements.entrySet()) {
+            SQLException failure = null;
+            try (Connection connection = connection(schema); Statement jdbc = connection.createStatement()) {
+                jdbc.setQueryTimeout(5);
+                jdbc.executeUpdate(statement.getValue());
+            } catch (SQLException rejected) {
+                failure = rejected;
+            }
+            assertThat(failure != null).as("missing %s accepted", statement.getKey()).isTrue();
+            assertThat(failure.getErrorCode()).isEqualTo(1364);
+            assertThat(failure.getMessage()).contains(statement.getKey());
+        }
+        assertThat(count(schema, "1=1")).isZero();
+        assertThat(rows(schema, "SELECT COUNT(*) AS n FROM outbox_events").get(0).get("n")).isEqualTo("0");
+    }
+
+    private long count(String schema, String ledgerPredicate) throws Exception {
+        return Long.parseLong(rows(schema, "SELECT COUNT(*) AS n FROM dead_letter_records WHERE " + ledgerPredicate)
+                .get(0).get("n"));
     }
 
     private String schema(String service, String suffix) throws Exception {
@@ -265,9 +360,12 @@ class FlywayContractIntegrationTest {
     }
 
     private Object snapshot(String schema) throws Exception {
+        // The upgrade scenario snapshots a pre-allocator version (the reservation table arrives later in the chain).
+        boolean allocator = !rows(schema, "SELECT 1 FROM information_schema.tables WHERE table_schema=DATABASE()"
+                + " AND table_name='dead_letter_record_ids'").isEmpty();
         return Map.of("ledger", rows(schema, "SELECT * FROM dead_letter_records ORDER BY id"),
                 "outbox", rows(schema, "SELECT * FROM outbox_events ORDER BY id"),
-                "allocator", rows(schema, "SELECT * FROM dead_letter_record_ids ORDER BY id"),
+                "allocator", allocator ? rows(schema, "SELECT * FROM dead_letter_record_ids ORDER BY id") : List.of(),
                 "history", rows(schema, "SELECT * FROM flyway_schema_history ORDER BY installed_rank"),
                 "columns", rows(schema, "SELECT TABLE_NAME,COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT "
                         + "FROM information_schema.columns WHERE table_schema=DATABASE() ORDER BY TABLE_NAME,ORDINAL_POSITION"));
@@ -386,4 +484,6 @@ class FlywayContractIntegrationTest {
     }
 
     private record Scenario(String schema, String locations, boolean failed, long lastReserved) {}
+
+    private record Violation(String inject, String repair, int rootRows, int kindRows) {}
 }

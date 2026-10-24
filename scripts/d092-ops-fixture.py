@@ -132,6 +132,7 @@ def check_reissue_fixture():
     ''')
     rows = [
         (1, 'domain-1', json.dumps({'eventId': 'domain-1', 'value': 'same'}), 'FAILED', 5, 't1', None, 'DOMAIN'),
+        # contract(D-065) 이후 NULL kind 는 저장될 수 없다. 남아 있어도 재개 대상이 아니다(fail-closed 음성 대조).
         (2, 'legacy-1', json.dumps({'eventId': 'legacy-1'}), 'FAILED', 5, 't1', None, None),
         (3, 'pending-1', json.dumps({'eventId': 'pending-1'}), 'PENDING', 2, 't2', None, 'DOMAIN'),
         (4, 'published-1', json.dumps({'eventId': 'published-1'}), 'PUBLISHED', 5, 't3', 't3', 'DOMAIN'),
@@ -151,7 +152,7 @@ def check_reissue_fixture():
         ).fetchone()
 
     before = {row[0]: snapshot(row[0]) for row in rows}
-    for row_id, event_id, expected_count in ((1, 'domain-1', 1), (2, 'legacy-1', 1)):
+    for row_id, event_id, expected_count in ((1, 'domain-1', 1),):
         connection.execute('BEGIN IMMEDIATE')
         count = connection.execute(duplicate_count_sql, {'payload_event_id': event_id}).fetchone()[0]
         assert count == expected_count
@@ -159,7 +160,7 @@ def check_reissue_fixture():
         assert cursor.rowcount == 1
         connection.commit()
 
-    for row_id, event_id in ((3, 'pending-1'), (4, 'published-1'), (5, 'replay-1'),
+    for row_id, event_id in ((2, 'legacy-1'), (3, 'pending-1'), (4, 'published-1'), (5, 'replay-1'),
                              (6, 'mismatch-1'), (9, 'published-marker')):
         connection.execute('BEGIN IMMEDIATE')
         cursor = connection.execute(update_sql, {'id': row_id, 'event_id': event_id})
@@ -180,11 +181,11 @@ def check_reissue_fixture():
     for row_id in (7, 8):
         assert snapshot(row_id) == before[row_id]
 
-    for row_id, event_id in ((1, 'domain-1'), (2, 'legacy-1')):
+    for row_id, event_id in ((1, 'domain-1'),):
         after = snapshot(row_id)
         assert after[:2] == before[row_id][:2]  # event_id and payload bytes stay unchanged
         assert after[2:] == ('PENDING', 0, None, None, before[row_id][6])
-    for row_id in (3, 4, 5, 6, 9):
+    for row_id in (2, 3, 4, 5, 6, 9):
         assert snapshot(row_id) == before[row_id]
     connection.close()
 

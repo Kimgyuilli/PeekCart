@@ -8,9 +8,13 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 SERVICES = {"order", "product", "payment", "notification"}
-FLAGS = ("fresh", "upgrade", "callbackRejectedWithoutHistoryThenResumed",
+FLAGS = ("fresh", "missingDiscriminatorInsertRejected", "upgrade", "legacyNullRejectedWithoutHistory",
+         "openIncidentsPreserved", "callbackRejectedWithoutHistoryThenResumed",
          "checksumMismatchRejectedThenOriginalRestored", "partialDdlAndDmlCommittedWithFailedHistory",
          "failedHistoryBlocksNewJvm")
+CONTRACT_SUFFIX = "__dead_letter_replay_contract.sql"
+GUARD = "beforeMigrate__dead_letter_replay_contract_guard.sql"
+GUARD_MARKER = "D065_CONTRACT_GUARD"
 LAB_CLASS = "com.peekcart.global.flyway.FlywayContractIntegrationTest"
 
 
@@ -53,13 +57,22 @@ def verify(root, lab, lab_xml, normal_xml, baseline):
         paths = sorted((root / f"{service}-service/src/main/resources/db/migration").glob("V*__*.sql"))
         actual = {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
         require(bool(actual) and result.get("productionMigrationSha256") == actual, f"production source manifest mismatch: {service}")
-        candidate = lab / f"{service}-candidate/V999__fixture_contract.sql"
-        require(hashlib.sha256(candidate.read_bytes()).hexdigest() == result.get("candidateSha256"), "fixture restore mismatch")
+        contracts = [path for path in actual if path.endswith(CONTRACT_SUFFIX)]
+        require(len(contracts) == 1, f"contract migration missing: {service}")
+        restored = lab / f"{service}-checksum" / Path(contracts[0]).name
+        require(restored.is_file() and hashlib.sha256(restored.read_bytes()).hexdigest() == actual[contracts[0]]
+                == result.get("restoredContractSha256"), f"contract restore mismatch: {service}")
+        guard = root / f"{service}-service/src/main/resources/db/migration" / GUARD
+        require(guard.is_file() and hashlib.sha256(guard.read_bytes()).hexdigest() == result.get("guardSha256"),
+                f"guard source mismatch: {service}")
     invocations = report.get("invocations", [])
-    require(len(invocations) == 76, "missing Flyway JVM invocations")
-    require(Counter(i.get("operation") for i in invocations) == Counter(migrate=48, validate=28), "missing operation coverage")
-    require(sum(i.get("success") is False for i in invocations) == 28, "missing negative Flyway outcomes")
-    require(len({i["pid"] for i in invocations}) == 76, "child JVM identity reused")
+    require(len(invocations) == 88, "missing Flyway JVM invocations")
+    require(Counter(i.get("operation") for i in invocations) == Counter(migrate=60, validate=28), "missing operation coverage")
+    require(sum(i.get("success") is False for i in invocations) == 32, "missing negative Flyway outcomes")
+    guard_rejections = [i for i in invocations if i.get("sqlErrorCode") == 1231]
+    require(len(guard_rejections) == 8 and all(i.get("success") is False and i.get("operation") == "migrate"
+            and GUARD_MARKER in str(i.get("causeMessage", "")) for i in guard_rejections), "missing guard rejection evidence")
+    require(len({i["pid"] for i in invocations}) == 88, "child JVM identity reused")
     require(all(i["pid"] != report["parentPid"] for i in invocations), "in-process Flyway substituted")
     require({i.get("flywayVersion") for i in invocations if "flywayVersion" in i} == {"11.7.2"}, "unexpected/missing actual Flyway version")
     for invocation in invocations:
