@@ -27,3 +27,11 @@
   이 변경을 얹은 깨끗한 worktree 에서는 통과했다. docs-preservation-ci(base `origin/main`)·자기검증 2종·D-099 check-mutants 통과.
   같은 job 의 DLQ contract lab(Docker) 단계는 로컬에서 돌리지 않았다.
 - `./gradlew test` 는 돌리지 않았다. Gradle 소스 세트에 들어가는 변경이 없다(스크립트·워크플로·대시보드·문서). 모듈 전체는 PR CI 로 확인한다.
+
+## 2026-10-25 01:59 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/239 (base main `0ab5de6`)
+- precheck: ship preflight ok, consistency ok(warnings 0), review health ok, writing lint(커밋 6건·본문·제목) 통과,
+  docs-preservation(base `0ab5de6`) 통과
+- 커밋: `7e53f43` `968591c` `5c689ba` `e8f8cc0` `cc84213` `599e598`, 기록 갱신 1건
+- 갱신: TASKS D-106(⑩ 가드·② 패널 #239, 남음 ①⑦⑥⑤)·D-065(⑤ 재확인을 가드로), PHASE5 2026-10-25 엔트리.
+  D-106 은 열린 행으로 남아 TASKS-done 으로 옮기지 않았다

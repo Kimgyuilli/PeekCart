@@ -982,3 +982,15 @@ PR237 머지 전에 토픽 생성 경로를 다시 검토했다. GKE 브로커 �
 lab 이 Kafka 를 먼저 띄우고 E2E 와 같은 `--emit-topics` 목록으로 토픽 30개를 선언 파티션 수대로 만든 뒤 서비스를 띄운다. 만든 뒤 describe 로 파티션 수를 대조하고, 목록 읽기와 파싱은 lab 계약 테스트로 고정했다. #238 의 lab run 40102059283 은 네 그룹 모두 3파티션, 증설 로그 0건으로 통과했다. 그 run 은 product 가 1.2초 먼저 떠 실패한 run 만큼 나쁜 순서는 아니었으므로, 통과의 근거는 서비스 기동 전에 토픽이 이미 3파티션이었다는 사실과 로컬 일회용 브로커의 양성·음성 확인이다.
 
 미충족: GKE 배포의 사전 생성(D-107 본체). PR237 에는 main 을 merge 해 이 수정을 반영했다.
+
+## 2026-10-25 — 측정 전 토픽 상태 가드와 스로틀 패널
+
+[PR239](https://github.com/Kimgyuilli/PeekCart/pull/239). D-106 ⑩ 의 남은 항목으로 측정 run 직전의 토픽·consumer group 상태 가드(`scripts/kafka-topic-state-guard.py`)를 더했다. 선언 토픽 30개의 파티션 수와 계약 7키의 실효값, 업무 group 27개가 구독 토픽의 모든 파티션을 할당받았는지 본다. 명령 실패와 형식을 알 수 없는 출력도 막는다. group 판정은 offsets 뷰에서 파티션마다 consumer 가 붙은 행을 요구하고, 행이 없으면 미할당으로 센다. config 기대값은 가드가 표로 갖고, 단위 테스트가 `KafkaTopicConfigs`·서비스 yml 에서 같은 값을 다시 유도해 CI lint job 에서 대조한다.
+
+GKE S4 원 출력을 넣으면 payment 6개 토픽의 4키만 위반으로 나와 손 대조(D-065 ⑤)와 같다. 로컬 `apache/kafka:3.8.1` 에서는 구독 중 3파티션으로 늘린 group 이 `1,2 미할당`으로 잡히고, metadata 갱신 약 5분 뒤 통과하는 것(D-107 ②)을 확인했다. 측정 절차(`loadtest/README.md`)에는 배포·재기동 뒤 첫 run 전에 돌리도록 적었다. 진입 시점 검사라 통과 뒤의 리밸런스는 막지 못한다.
+
+D-106 ② 스로틀 패널이 빈 원인은 kube-prometheus-stack 91.4.0 의 기본 cAdvisor relabel 이 `container_cpu_cfs_throttled_seconds_total` 을 버리는 것이었다. 기존 패널 설명은 ADR-0027 의 초 단위 축을 의도했지만, 되살리려면 차트 기본 목록 복제와 버전 고정이 필요해 사용자 결정으로 CFS 주기 비율로 바꿨다. minikube(containerd)에 같은 차트를 올려 기존 식은 빈 결과, 새 식은 CPU limit 100m busy 컨테이너에서 0.989 임을 확인했다. 초 단위 수치의 정본은 계속 하네스의 cgroup `cpu.stat` 차분이다.
+
+같은 PR 에 앞선 두 PR 의 기록을 담았다. #237 은 `0ab5de6` 으로 병합됐고 main CI40105508535 가 성공해, TASKS D-106 행의 "PR CI·머지 대기"를 고치고 계획서 `D-106-topic-config-race` 를 옮겼다. `D-107-recovery-lab-topics` 도 #238 의 main CI 성공과 #237 로 들어간 D-107 행 기록을 확인해 옮겼다.
+
+미충족: 실제 앱 스택에서의 양성 대조는 D-078 재측정 첫 사용에서 한다. DLQ intake·quarantine group 의 할당은 보지 않는다. D-106 에는 ①⑦ 설계 확정, ⑥(D-075), ⑤ 가 남는다. PR CI 와 머지는 대기 중이다.
