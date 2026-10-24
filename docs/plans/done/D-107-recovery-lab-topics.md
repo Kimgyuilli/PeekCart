@@ -43,3 +43,7 @@ metadata 갱신(기본 5분) 전이라, 키 없이 발행한 중복 이벤트가
 
 - GKE 배포의 토픽 사전 생성(또는 브로커 자동 생성 끄기)은 D-107 본체로 남는다.
 - D-107 행에 이번 CI 발생과 이 PR 을 적는 일은 #237 이 main 에 들어간 뒤 한다. 그 전에는 main 에 행이 없다.
+
+## 완료 기록
+
+PR: [#238](https://github.com/Kimgyuilli/PeekCart/pull/238) (병합 `d62eb3a`). 이 계획서에는 자기 PR 링크가 없어 `scripts/plans-index.sh` 가 본문이 인용한 #237 을 이 계획의 PR 로 표기했다.

@@ -21,7 +21,7 @@
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
-| [task-impl1-gradle-multimodule](./task-impl1-gradle-multimodule.md) | 구현 ① Gradle 멀티모듈 전환 (ADR-0011) | [#55](https://github.com/Kimgyuilli/PeakCart/pull/55) | 2026-06-15 | 있음 |
+| [task-impl1-gradle-multimodule](./task-impl1-gradle-multimodule.md) | 구현 ① Gradle 멀티모듈 전환 (ADR-0011) | [#52](https://github.com/Kimgyuilli/PeakCart/pull/52) | 2026-06-15 | 있음 |
 | [task-impl-saga1-stock-reservation](./task-impl-saga1-stock-reservation.md) | 사가 클러스터 strangler 1: 재고 예약/복구 이벤트화 (ADR-0010 F2 · ADR-0012 D3) | [#56](https://github.com/Kimgyuilli/PeakCart/pull/56) | 2026-06-16 | 있음 |
 | [task-impl-saga3-2phase-payment-gate](./task-impl-saga3-2phase-payment-gate.md) | 2-phase 예약 확정/해제 + Payment charge 예약 게이트 |  | 2026-06-16 | 있음 |
 | [task-impl-saga2-unit-price-cache](./task-impl-saga2-unit-price-cache.md) | 사가 클러스터 strangler 2: 단가 로컬 캐시 (ADR-0012 ⑤ CQRS · L-006) | [#57](https://github.com/Kimgyuilli/PeakCart/pull/57) | 2026-06-17 | 있음 |
@@ -32,7 +32,7 @@
 | [task-impl1-pr3-dockerfile-ci-k8s](./task-impl1-pr3-dockerfile-ci-k8s.md) | PR3: 서비스별 Dockerfile / CI / k8s 재구성 | [#67](https://github.com/Kimgyuilli/PeakCart/pull/67) | 2026-06-20 | 있음 |
 | [task-impl1-pr3c-observability](./task-impl1-pr3c-observability.md) | PR3c 관측성 per-service 재설계 + ADR-0015 | [#68](https://github.com/Kimgyuilli/PeakCart/pull/68) | 2026-06-21 | 있음 |
 | [task-impl2-db-per-service](./task-impl2-db-per-service.md) | 구현 ② 서비스별 DB 분리 (Flyway 독립 + 물리 스키마 분리) | [#72](https://github.com/Kimgyuilli/PeakCart/pull/72) | 2026-07-04 | 있음 |
-| [task-impl3-spring-cloud-gateway](./task-impl3-spring-cloud-gateway.md) | 구현 ③ Spring Cloud Gateway (RS256 + Reuse Detection + S9) | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-07-24 | 있음 |
+| [task-impl3-spring-cloud-gateway](./task-impl3-spring-cloud-gateway.md) | 구현 ③ Spring Cloud Gateway (RS256 + Reuse Detection + S9) | [#76](https://github.com/Kimgyuilli/PeakCart/pull/76) | 2026-07-24 | 있음 |
 | [task-impl3-pr3d-internal-token](./task-impl3-pr3d-internal-token.md) | 구현 ③ PR3d 재정의: Gateway 서명 내부 토큰 | [#83](https://github.com/Kimgyuilli/PeakCart/pull/83) | 2026-08-13 | 있음 |
 | [task-impl4-choreography-saga](./task-impl4-choreography-saga.md) | 구현 ④ Choreography Saga — 잔여 수렴 갭 종결 | [#87](https://github.com/Kimgyuilli/PeakCart/pull/87) | 2026-08-14 | 있음 |
 | [task-impl4-c1-refund-path](./task-impl4-c1-refund-path.md) | 구현 ④-c-1: 환불 요청 경로 (ADR-0018 이행) | [#88](https://github.com/Kimgyuilli/PeakCart/pull/88) | 2026-08-25 | 있음 |
@@ -43,7 +43,7 @@
 | [task-impl6-cursor-pagination](./task-impl6-cursor-pagination.md) | 구현 ⑥ — 주문 내역 Cursor 페이지네이션 | [#96](https://github.com/Kimgyuilli/PeakCart/pull/96) | 2026-08-30 | 있음 |
 | [task-impl4-c2b-dlq-replay](./task-impl4-c2b-dlq-replay.md) | ④-c-2b — DLQ replay 경로 (구현) | [#106](https://github.com/Kimgyuilli/PeakCart/pull/106) | 2026-09-13 | 있음 |
 | [task-impl3-pr4-auth-observability](./task-impl3-pr4-auth-observability.md) | 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-09-14 | 있음 |
-| [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#115](https://github.com/Kimgyuilli/PeakCart/pull/115) | 2026-09-15 | 있음 |
+| [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#109](https://github.com/Kimgyuilli/PeakCart/pull/109) | 2026-09-15 | 있음 |
 
 ## 부채 · 측정 (32)
 
@@ -160,7 +160,7 @@
 | [D-088](./D-088.md) | D-088: lint CI 배선과 외부 생존 대조 | [#213](https://github.com/Kimgyuilli/PeakCart/pull/213) | 2026-10-22 | 있음 |
 | [D-091](./D-091.md) | D-091 | [#191](https://github.com/Kimgyuilli/PeakCart/pull/191) | 2026-10-22 |  |
 | [D-092-slack-split](./D-092-slack-split.md) | D-092 P2: 사용자와 운영 Slack webhook 분리 | [#219](https://github.com/Kimgyuilli/PeakCart/pull/219) | 2026-10-22 | 있음 |
-| [D-093](./D-093.md) | D-093: 실제 alert 초기 평가 준비 대기 | [#217](https://github.com/Kimgyuilli/PeakCart/pull/217) | 2026-10-22 | 있음 |
+| [D-093](./D-093.md) | D-093: 실제 alert 초기 평가 준비 대기 | [#188](https://github.com/Kimgyuilli/PeakCart/pull/188) | 2026-10-22 | 있음 |
 | [D-095](./D-095.md) | D-095 | [#191](https://github.com/Kimgyuilli/PeakCart/pull/191) | 2026-10-22 |  |
 | [D-096](./D-096.md) | D-096 | [#192](https://github.com/Kimgyuilli/PeakCart/pull/192) | 2026-10-22 |  |
 | [D-100](./D-100.md) | D-100: Flyway 체크섬 근거 버전 정정 | [#194](https://github.com/Kimgyuilli/PeakCart/pull/194) | 2026-10-22 |  |
@@ -177,8 +177,8 @@
 | [D-092](./D-092.md) | D-092: 운영 알림 전달과 Outbox 복구 경계 | [#235](https://github.com/Kimgyuilli/PeakCart/pull/235) | 2026-10-24 | 있음 |
 | [D-092-ops-closure](./D-092-ops-closure.md) | D-092-ops-closure: Slack webhook Secret 교체와 FAILED 재발행 소비쌍 조건 | [#235](https://github.com/Kimgyuilli/PeakCart/pull/235) | 2026-10-24 | 있음 |
 | [D-106-remeasure-prereq](./D-106-remeasure-prereq.md) | D-106 재측정 선행 수정 — ⑨③④⑧⑪ | [#232](https://github.com/Kimgyuilli/PeakCart/pull/232) | 2026-10-24 | 있음 |
-| [D-106-topic-config-race](./D-106-topic-config-race.md) | D-106 ⑩ — 토픽 생성 경합으로 선언 config 가 적용되지 않는 문제 | [#238](https://github.com/Kimgyuilli/PeakCart/pull/238) | 2026-10-24 | 있음 |
-| [D-107-recovery-lab-topics](./D-107-recovery-lab-topics.md) | D-107-recovery-lab-topics | [#237](https://github.com/Kimgyuilli/PeakCart/pull/237) | 2026-10-24 |  |
-| [ci-critical-path](./ci-critical-path.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 | [#233](https://github.com/Kimgyuilli/PeakCart/pull/233) | 2026-10-24 | 있음 |
+| [D-106-topic-config-race](./D-106-topic-config-race.md) | D-106 ⑩ — 토픽 생성 경합으로 선언 config 가 적용되지 않는 문제 | [#237](https://github.com/Kimgyuilli/PeakCart/pull/237) | 2026-10-24 | 있음 |
+| [D-107-recovery-lab-topics](./D-107-recovery-lab-topics.md) | D-107-recovery-lab-topics | [#238](https://github.com/Kimgyuilli/PeakCart/pull/238) | 2026-10-24 |  |
+| [ci-critical-path](./ci-critical-path.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 | [#231](https://github.com/Kimgyuilli/PeakCart/pull/231) | 2026-10-24 | 있음 |
 | [D-106-topic-guard-throttle](./D-106-topic-guard-throttle.md) | D-106 ⑩·② — 측정 전 토픽 상태 가드와 CPU 스로틀 패널 | [#239](https://github.com/Kimgyuilli/PeakCart/pull/239) | 2026-10-25 | 있음 |
 
