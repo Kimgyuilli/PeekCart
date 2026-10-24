@@ -125,7 +125,7 @@ class NotificationOutboxIntegrationTest extends AbstractIntegrationTest {
                    AND event_id = ?
                    AND status = 'FAILED'
                    AND published_at IS NULL
-                   AND (record_kind IS NULL OR record_kind = 'DOMAIN')
+                   AND record_kind = 'DOMAIN'
                    AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.eventId')) = event_id
                 """;
 

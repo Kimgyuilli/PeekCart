@@ -45,8 +45,8 @@ class OutboxEventCleanupIntegrationTest extends AbstractIntegrationTest {
 
     private void insertOutbox(String status, LocalDateTime createdAt, LocalDateTime publishedAt) {
         jdbc.update("INSERT INTO outbox_events "
-                        + "(aggregate_type, aggregate_id, event_type, event_id, payload, status, retry_count, created_at, published_at) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        + "(aggregate_type, aggregate_id, event_type, event_id, payload, status, retry_count, created_at, published_at, "
+                        + "record_kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'DOMAIN')",
                 "PRODUCT", "p1", "product.test.probe", UUID.randomUUID().toString(), "{}",
                 status, 0, Timestamp.valueOf(createdAt),
                 publishedAt == null ? null : Timestamp.valueOf(publishedAt));

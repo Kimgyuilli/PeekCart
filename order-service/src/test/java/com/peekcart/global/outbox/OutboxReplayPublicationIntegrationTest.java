@@ -42,13 +42,15 @@ import static org.awaitility.Awaitility.await;
  * {@code REQUESTED} 상태는 fixture 로 구성한다 — 진입점이 만들 <b>DB 상태</b>를 직접 세워
  * 발행 경로·reconciler·cleanup 경쟁 계약을 먼저 고정한다.
  *
- * <p><b>여기서 지키는 것 넷</b>:
+ * <p><b>여기서 지키는 것 셋</b>:
  * <ul>
- *   <li>{@code record_kind IS NULL}(구버전 writer)은 도메인으로 발행된다 — expand 단계의 NULL 해석</li>
  *   <li>reconciler 는 {@code PENDING} 을 종착시키지 않는다 — 발행 중인 건의 조기 종결 금지</li>
  *   <li>cleanup 은 {@code REQUESTED} root 에 연결된 replay outbox 를 지우지 않는다</li>
  *   <li>outbox 행 <b>부재</b>를 {@code PUBLISH_FAILED} 로 강등하지 않는다 — 부재는 실패의 증거가 아니다</li>
  * </ul>
+ *
+ * <p>expand 단계의 {@code record_kind IS NULL} 도메인 해석(V-30)은 contract 이후 NULL 이 저장될 수 없어
+ * {@code com.peekcart.global.deadletter.ReplayContractSchemaIntegrationTest} 의 누락 INSERT 거부로 바뀌었다.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -99,27 +101,6 @@ class OutboxReplayPublicationIntegrationTest extends AbstractIntegrationTest {
 
     private void expireLock(String name) {
         jdbcTemplate.update("UPDATE shedlock SET lock_until = NOW() - INTERVAL 1 DAY WHERE name = ?", name);
-    }
-
-    // ---------- V-30: record_kind IS NULL 은 도메인이다 ----------
-
-    @Test
-    @DisplayName("record_kind 가 NULL 인 행(구버전 writer)은 도메인 경로로 발행된다")
-    void nullRecordKindPublishesThroughDomainPath() {
-        // 구버전 writer 를 흉내낸다 — 팩토리를 쓰면 DOMAIN 이 박히므로 판별자를 직접 비운다.
-        String eventId = UUID.randomUUID().toString();
-        insertRawOutbox(eventId, "order.created", "order-77", null);
-
-        pollingService.pollAndPublish();
-
-        // **개수를 단언하지 않는다.** 배경 poller(@Scheduled 5초)가 같은 행을 집어갈 수 있고,
-        // 재발행 중복은 ADR-0020 D1 이 허용하는 것이다 — "정확히 1개" 는 계약이 말하지 않는 것을
-        // 주장하면서 스케줄러 타이밍에 흔들린다. 대신 **발행된 모든 레코드가 계약을 만족**하는지 본다.
-        List<ConsumerRecord<String, String>> records = drain("order.created", 1);
-        assertThat(records).isNotEmpty();
-        // 도메인 경로의 계약: 토픽 = event_type, key = aggregate_id.
-        assertThat(records).allSatisfy(record -> assertThat(record.key()).isEqualTo("order-77"));
-        assertThat(status(eventId)).isEqualTo("PUBLISHED");
     }
 
     @Test
@@ -286,7 +267,7 @@ class OutboxReplayPublicationIntegrationTest extends AbstractIntegrationTest {
 
     // ---------- helpers ----------
 
-    /** 팩토리를 우회해 raw INSERT 한다 — {@code record_kind} 를 비운 구버전 writer 를 재현하기 위함이다. */
+    /** 팩토리를 우회해 raw INSERT 한다. {@code record_kind} 는 NOT NULL 이라 호출자가 명시한다. */
     private void insertRawOutbox(String eventId, String eventType, String aggregateId, String recordKind) {
         jdbcTemplate.update("""
                 INSERT INTO outbox_events (aggregate_type, aggregate_id, event_type, event_id, payload,

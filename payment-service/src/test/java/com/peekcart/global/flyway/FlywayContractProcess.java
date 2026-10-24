@@ -46,6 +46,9 @@ public final class FlywayContractProcess {
             if (cause instanceof java.sql.SQLException sql) {
                 result.put("sqlState", sql.getSQLState());
                 result.put("sqlErrorCode", sql.getErrorCode());
+                // DB 가 돌려준 문장만 남긴다 — contract guard 의 거부 사유(위반 행 수)가 여기 있다. 접속 정보는 없다.
+                String message = String.valueOf(sql.getMessage());
+                result.put("causeMessage", message.substring(0, Math.min(message.length(), 400)));
             }
         } finally {
             result.put("success", success);
