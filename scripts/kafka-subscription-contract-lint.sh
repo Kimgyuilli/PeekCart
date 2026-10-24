@@ -215,6 +215,18 @@ if os.environ.get("EMIT_GROUPS") == "1":
             print(group)
     sys.exit(0)
 
+if os.environ.get("EMIT_SUBSCRIPTIONS") == "1":
+    # 측정 전 토픽 상태 가드(scripts/kafka-topic-state-guard.py)가 쓴다. group 이 구독 토픽의
+    # **모든** 파티션을 받았는지 보려면 group 마다 토픽을 알아야 하고, 측정 overlay 처럼 서비스가
+    # 빠진 스택에서는 그 서비스의 group 을 제외해야 한다. 정본은 --emit-groups 와 같은 파서다.
+    if violations:
+        print("\n".join("  - %s" % v for v in violations), file=sys.stderr)
+        sys.exit(1)
+    for svc in sorted(business_expected):
+        for topic, group in sorted(business_expected[svc]):
+            print("%s\t%s\t%s" % (svc.lower(), topic, group))
+    sys.exit(0)
+
 if violations:
     print("\n".join("  - %s" % v for v in violations))
     sys.exit(1)
@@ -309,6 +321,11 @@ fi
 
 if [[ "${1:-}" == "--emit-topics" ]]; then
   EMIT_TOPICS=1 python3 "$LINT_PY" "$(pwd)"
+  exit 0
+fi
+
+if [[ "${1:-}" == "--emit-subscriptions" ]]; then
+  EMIT_SUBSCRIPTIONS=1 python3 "$LINT_PY" "$(pwd)"
   exit 0
 fi
 

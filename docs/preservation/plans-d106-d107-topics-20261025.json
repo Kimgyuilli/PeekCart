@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-106-topic-config-race.md",
+      "sha256": "b86499e375a33bedd93cabadc64534cf58ae1c5feb9c3c4403d2f252b14fd583"
+    },
+    {
+      "path": "docs/plans/D-106-topic-config-race.audit.md",
+      "sha256": "c57b23bfef3a0b2a015c91c447e9ef2ca904ddc2ea2a6f4c7b7de53588cffd54"
+    },
+    {
+      "path": "docs/plans/D-107-recovery-lab-topics.md",
+      "sha256": "79923f42313950097147542a3503190c6b1c549ba43a9b8da003f74902fabf23"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-106-topic-config-race.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-106-topic-config-race.md",
+          "start": 1,
+          "end": 132
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-106-topic-config-race.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-106-topic-config-race.audit.md",
+          "start": 1,
+          "end": 36
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-107-recovery-lab-topics.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-107-recovery-lab-topics.md",
+          "start": 1,
+          "end": 45
+        }
+      ]
+    }
+  ]
+}
