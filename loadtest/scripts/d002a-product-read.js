@@ -39,6 +39,9 @@ export const options = {
 
 const detailLatency = new Trend('detail_latency', true);
 const okRate = new Rate('ok_rate');
+// ADR-0037 조회 DB 진입 bulkhead 의 거절(PRD-005)은 503 이다. 200 이 아닌 응답 중 거절과 다른 오류를
+// 가르려고 따로 센다(D-078 재측정 S2 의 상한 1·4 비교, 계획서 docs/plans/D-078-remeasure-plan.md).
+const bulkheadRejected = new Rate('status_503');
 
 export default function () {
   const id = (__ITER % IDS) + 1;
@@ -48,5 +51,6 @@ export default function () {
   const res = http.get(url, { tags: { endpoint: EP } });
   detailLatency.add(res.timings.duration);
   okRate.add(res.status === 200);
+  bulkheadRejected.add(res.status === 503);
   check(res, { 'status 200': (r) => r.status === 200 });
 }

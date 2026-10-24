@@ -13,6 +13,11 @@
 #   MYSQL=2000m CELLS="detail:off detail:on list:off list:on" bash loadtest/scripts/d026-run-block.sh
 #   MYSQL=500m  LABEL=A2 CELLS="detail:off list:off"          bash loadtest/scripts/d026-run-block.sh
 #
+# D-078 재측정 S2(ADR-0037 bulkhead 상한 비교)는 overlay 를 이름으로 고르고 기대 상한을 준다.
+# 셀은 그 상한을 Pod env 에서 읽어 기록하고, 다르면 측정하지 않는다(docs/plans/D-078-remeasure-plan.md):
+#   MYSQL=2000m LABEL=L4 BULKHEAD=4 OVERLAY=gke-d078-read-bulkhead-4 CELLS="list:off detail:off" REPS=4 \
+#     bash loadtest/scripts/d026-run-block.sh
+#
 # 셀 순서는 호출자가 정한다 — 블록마다 교차시켜 고정 순서가 만드는 드리프트를 흩는다.
 
 set -uo pipefail
@@ -21,16 +26,18 @@ MYSQL="${MYSQL:?MYSQL=500m|2000m 필요}"
 CELLS="${CELLS:?CELLS=\"detail:off list:on\" 형식 필요}"
 REPS="${REPS:-3}"
 LABEL="${LABEL:-$MYSQL}"
+OVERLAY="${OVERLAY:-gke-d002a-mysql-${MYSQL}}"
+BULKHEAD="${BULKHEAD:-}"
 ROOT="$(git rev-parse --show-toplevel)"
 OUTDIR="${OUTDIR:-$ROOT/.cache/d026-runs}"
 
-echo "=== 블록 $LABEL (MySQL $MYSQL) ==="
+echo "=== 블록 $LABEL (MySQL $MYSQL · overlay $OVERLAY · bulkhead ${BULKHEAD:-기록만}) ==="
 
 # ── MySQL CPU 조건 전환 — overlay apply 로만 한다 ────────────────────────────
 # kubectl patch 를 쓰지 않는 이유는 N5 다. 조건이 파일 밖에 있으면 다음 세션이
 # "지금 어느 조건인가" 를 모른다 — D-002a 가 그래서 내내 500m 로 돌았다.
 kustomize build --load-restrictor LoadRestrictionsNone \
-  "$ROOT/k8s/overlays/gke-d002a-mysql-${MYSQL}" | kubectl apply -f - >/dev/null
+  "$ROOT/k8s/overlays/${OVERLAY}" | kubectl apply -f - >/dev/null
 
 echo "-- MySQL rollout 대기 (Recreate: 완전 종료 후 재기동) --"
 kubectl -n "$NS" rollout status deploy/mysql --timeout=420s || exit 1
@@ -64,7 +71,7 @@ done
 for rep in $(seq 1 "$REPS"); do
   for cell in $CELLS; do
     EP="${cell%%:*}"; CACHE="${cell##*:}"
-    EP="$EP" CACHE="$CACHE" MYSQL="$LABEL" REP="$rep" OUTDIR="$OUTDIR" \
+    EP="$EP" CACHE="$CACHE" MYSQL="$LABEL" REP="$rep" OUTDIR="$OUTDIR" BULKHEAD="$BULKHEAD" \
       bash "$ROOT/loadtest/scripts/d026-run-cell.sh" || echo "  !! 셀 실패: $cell rep$rep"
   done
 done

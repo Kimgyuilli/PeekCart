@@ -91,7 +91,11 @@ app:
     retention: 7d          # PUBLISHED outbox_events 보존기간 (다른 서비스와 동일 계약)
     # 서비스별 poller 소유권 분리 — order/product/payment 와 겹치지 않는 이름이어야 한다.
     lock-name: notificationOutboxPollingJob
+    # replay 재발행 전용이라 3서비스의 처리율 상향(500ms·400ms·500)을 따르지 않고 종전 값을 유지한다 (ADR-0045).
+    # delay·lock-at-least-for 는 인라인 기본값이 없어 여기서 명시한다 — 빠지면 부팅이 실패한다.
     polling:
+      delay: 5s
+      lock-at-least-for: 4s
       batch-size: 100
       max-retry: 5
       publish-timeout: 6s
