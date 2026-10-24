@@ -105,10 +105,10 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      # 자동 생성 토픽을 **1 파티션**으로 고정한다. 기본값 3 이면 브로커 1대에
-      # 토픽 20 × 3 파티션 × consumer group 28 의 메타데이터/리밸런스 부하가 걸려
-      # 소비가 수 분 단위로 지연된다(실측: product.updated 소비가 3분 지연).
-      # saga 이벤트는 aggregate 키 기준 순서가 필요해 단일 파티션이 의미상으로도 맞다.
+      # 자동 생성 토픽의 파티션 수. apache/kafka:3.8.1 이미지 기본값(num.partitions=1)과 같은 값을 명시한다.
+      # 선언 토픽은 scripts/saga-e2e-smoke.sh 가 앱 기동 전에 선언 파티션 수로 미리 만들므로 이 값을 받지 않는다.
+      # 미리 만드는 이유는 그 스크립트의 토픽 사전 생성 주석에 있다. 앱의 KafkaAdmin 이 구독 뒤에 파티션을
+      # 늘리면 이미 구독 중인 컨슈머가 metadata 갱신(기본 5분)까지 새 파티션을 소비하지 않는다(#92).
       KAFKA_NUM_PARTITIONS: 1
       CLUSTER_ID: peekcart-e2e-cluster-001
     volumes:

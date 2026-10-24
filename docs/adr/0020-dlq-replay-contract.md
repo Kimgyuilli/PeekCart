@@ -385,3 +385,8 @@ D4 매트릭스의 producer 컬럼은 두 가지를 함께 함의했다 — ① 
 - 선행 ADR: [ADR-0011](./0011-phase4-multimodule-structure.md) D2 · [ADR-0012](./0012-phase4-db-event-saga-contract.md) D1/D4/D5 · [ADR-0018](./0018-compensation-refund-contract.md)
 - 코드: `OutboxPollingService:83-125` · `DlqOrigin:41-63` · `DlqTopology` · `DeadLetterRecorder:25-69` · `DeadLetterRecordJpaRepository:77-96` · `DeadLetterEndpoint` · `IdempotencyRetentionProperties:43-47` · `ProcessedEventCleanupScheduler:41`
 - 선행 PR: ④-c-2a [#90](https://github.com/Kimgyuilli/PeakCart/pull/90)
+
+## Update Log
+
+- 2026-10-24, D-106 ⑩: §D4-1 은 `modify-topic-configs=true` 로 기존 토픽에도 선언 config 가 반영된다고 적었다. 생성 경합을 겪은 토픽은 예외다. `KafkaAdmin` 은 describe 에 실패한 토픽을 createTopics 하는데, 그 사이 다른 서비스 컨슈머가 브로커 자동 생성으로 같은 토픽을 만들면 `TopicExistsException` 을 DEBUG 로그로만 남기고 그 토픽을 config 갱신과 파티션 증설 대상에서도 뺀다(spring-kafka 3.3.14 `addOrModifyTopicsIfNeeded`, 3.3.16·4.1.2 도 같다). GKE 세션(2026-10-24) S4 에서 payment 토픽 6개가 브로커 기본값으로 남은 상태를 한 번의 적용에서 만드는 경로는 코드상 이것 하나이고, 로컬에서 같은 상태를 재현했다(그 예외는 DEBUG 로그라 GKE 기록은 없다).
+- 토픽을 선언하는 order·product·payment 가 기동 완료(`ApplicationReadyEvent`) 뒤 `KafkaAdmin.initialize()` 를 한 번 더 부르게 했다(`KafkaTopicReconciler`). 기동 중 적용이 끝까지 돌았으면 경합 토픽은 그때 이미 있어 기존 토픽 경로로 갱신된다. 기동 중 적용이 통째로 실패했으면 재적용도 같은 경합을 겪을 수 있으므로 보장은 아니다.

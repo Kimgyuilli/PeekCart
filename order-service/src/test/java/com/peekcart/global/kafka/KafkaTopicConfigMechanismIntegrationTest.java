@@ -5,20 +5,34 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.admin.CreateTopicsOptions;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.ForwardingAdmin;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.awaitility.core.ConditionTimeoutException;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,11 +53,15 @@ import static org.awaitility.Awaitility.await;
  * <p>브로커는 모듈 싱글톤({@link SharedContainers#KAFKA})이고 테스트마다 토픽 이름을 새로
  * 만든다 — 두 컨텍스트가 같은 브로커를 봐야 "기존 토픽" 이라는 조건이 성립한다.
  *
- * <p>이 클래스는 Spring 컨텍스트가 없다(raw {@code Admin} 클라이언트만 쓴다). 그래서
+ * <p>기존 토픽 경로가 있어도 <b>생성 경합</b>을 겪은 토픽은 그 경로를 타지 못한다(D-106). 맨 아래 절이
+ * 그 갈래를 재현하고 {@link KafkaTopicReconciler} 의 기동 뒤 재적용으로 맞춰지는지 본다.
+ *
+ * <p>이 클래스는 Spring Boot 테스트 컨텍스트가 없다. 대부분 raw {@code Admin} 클라이언트만 쓰고,
+ * 생성 경합 절만 {@code KafkaAdmin} 의 기동 경로를 타려고 최소 컨텍스트를 직접 만든다. 그래서
  * {@code @Import(SharedContainers.class)} 경로가 닫혀 있고 정적 필드를 직접 읽는다 —
  * 필드 접근만으로 static initializer 가 돌아 기동이 보장된다(D-032).
  */
-@DisplayName("토픽 config 적용 경로 — 신규/기존 토픽 · 미선언 config 처분 (ADR-0020 D4-1)")
+@DisplayName("토픽 config 적용 경로 — 신규/기존 토픽 · 미선언 config 처분 · 생성 경합 (ADR-0020 D4-1)")
 class KafkaTopicConfigMechanismIntegrationTest {
 
     private static final Duration RETENTION = Duration.ofDays(7);
@@ -315,5 +333,202 @@ class KafkaTopicConfigMechanismIntegrationTest {
                 .as("미선언 dynamic config 가 지워지면 배포마다 운영 설정이 조용히 되돌려진다 — "
                         + "그 경우 이 테스트는 red 로 남아야 하며 modify 전략을 재검토해야 한다")
                 .isEqualTo(foreignValue);
+    }
+
+    // ── 생성 경합 경로 (D-106) ──────────────────────────────────────────────────
+    // GKE 세션(2026-10-24) S4 의 payment 토픽은 한 번의 기동 중 적용에서 세 갈래로 나뉘었다
+    // (loadtest/reports/2026-10-24/s4/d065-5-effective-sample.txt).
+    //   A: 계약 키 7종 전부 동적 — KafkaAdmin 이 config 를 실어 만든 토픽
+    //   B: 기본값과 다른 4키만 동적 — 다른 서비스 컨슈머가 먼저 자동 생성했고 KafkaAdmin 이 다른 키만 갱신
+    //   C: 동적 0 — 자동 생성된 뒤 한 번도 갱신되지 않은 토픽
+    // C 는 KafkaAdmin 의 describe 와 createTopics 사이에 다른 클라이언트가 같은 토픽을 만들 때 생긴다.
+    // 생성은 TopicExistsException 으로 실패하고, KafkaAdmin 은 그 예외를 DEBUG 로그만 남긴 채 삼키며
+    // 그 토픽을 config 갱신·파티션 증설 대상에서도 뺀다.
+
+    /** 선언값이 브로커 기본값({@link #baselineIsBrokerDefault} 가 고정한 값)과 다른 계약 키. B 갈래가 동적 설정으로 갖는 키와 같다. */
+    private static final Set<String> KEYS_DIFFERING_FROM_DEFAULT = Set.of(
+            "retention.bytes", "segment.bytes", "segment.ms", "message.timestamp.before.max.ms");
+
+    /** 브로커 자동 생성 기본값({@code num.partitions=1})과 달라야 증설 누락이 보인다. */
+    private static final int DECLARED_PARTITIONS = 3;
+
+    /**
+     * createTopics 직전에 대상 토픽을 브로커 자동 생성시키는 {@link KafkaAdmin}.
+     *
+     * <p>describe 와 create 사이의 짧은 틈을 테스트가 기다려 맞출 수는 없으므로, 그 틈에 들어갈
+     * 자동 생성을 createTopics 위임 직전으로 고정한다. 자동 생성 자체는 실제와 같은 경로({@link #autoCreate})다.
+     */
+    private static final class RacingKafkaAdmin extends KafkaAdmin {
+
+        private final String racedTopic;
+        private final AtomicReference<KafkaFuture<Void>> racedCreate = new AtomicReference<>();
+
+        RacingKafkaAdmin(String racedTopic) {
+            super(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, SharedContainers.KAFKA.getBootstrapServers()));
+            this.racedTopic = racedTopic;
+            // 서비스 base YAML 의 spring.kafka.admin.modify-topic-configs: true 와 같은 조건
+            setModifyTopicConfigs(true);
+        }
+
+        @Override
+        protected Admin createAdmin() {
+            return new ForwardingAdmin(getAdminConfig()) {
+                @Override
+                public CreateTopicsResult createTopics(Collection<NewTopic> newTopics, CreateTopicsOptions options) {
+                    boolean racing = newTopics.stream().anyMatch(topic -> topic.name().equals(racedTopic));
+                    if (racing) {
+                        autoCreate(racedTopic);
+                    }
+                    CreateTopicsResult result = super.createTopics(newTopics, options);
+                    if (racing) {
+                        racedCreate.set(result.values().get(racedTopic));
+                    }
+                    return result;
+                }
+            };
+        }
+
+        /** 경합 토픽에 대한 KafkaAdmin 의 생성 결과. createTopics 에 그 토픽이 실리지 않았으면 null. */
+        KafkaFuture<Void> racedCreate() {
+            return racedCreate.get();
+        }
+    }
+
+    /**
+     * 컨슈머 metadata 요청으로 브로커 자동 생성을 일으키고, 토픽이 생길 때까지 기다린다.
+     *
+     * <p>다른 서비스의 컨슈머가 구독 시점에 소유 서비스보다 먼저 토픽을 만드는 경로와 같다.
+     * 토픽은 브로커 기본 config 와 {@code num.partitions} 로 만들어진다.
+     *
+     * <p><b>왜 반복하나</b>: KRaft 브로커는 자동 생성을 컨트롤러에 넘긴 요청에 생성 완료 전까지
+     * {@code UNKNOWN_TOPIC_OR_PARTITION} 으로 답하고, {@code partitionsFor} 는 그 응답에서 재시도 없이
+     * 빈 목록을 돌려준다(첫 실행에서 관측). 서비스 컨슈머도 구독 토픽이 보일 때까지 metadata 를 다시 묻는다.
+     * 빈 목록이 계속되면 브로커 자동 생성이 꺼진 것이고, 그때는 이 경합 자체가 일어나지 않는다.
+     */
+    private static void autoCreate(String topic) {
+        Map<String, Object> config = Map.of(
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, SharedContainers.KAFKA.getBootstrapServers(),
+                // 기본값도 true 다. 서비스 컨슈머는 이 키를 설정하지 않는다
+                ConsumerConfig.ALLOW_AUTO_CREATE_TOPICS_CONFIG, true);
+        try (KafkaConsumer<byte[], byte[]> consumer =
+                     new KafkaConsumer<>(config, new ByteArrayDeserializer(), new ByteArrayDeserializer())) {
+            await().alias("브로커 자동 생성으로 " + topic + " 가 생기지 않았다")
+                    .atMost(Duration.ofSeconds(10))
+                    .pollInterval(Duration.ofMillis(200))
+                    .until(() -> !consumer.partitionsFor(topic).isEmpty());
+        }
+    }
+
+    /**
+     * 선언 토픽과 {@link KafkaTopicReconciler} 를 가진 컨텍스트를 띄운다.
+     *
+     * <p>{@code refresh()} 안에서 {@link KafkaAdmin#afterSingletonsInstantiated()} 가 기동 중 적용을 한다.
+     * 서비스 기동과 같은 진입점이라 {@code createOrModifyTopics} 가 아니라 이 경로를 쓴다. 재적용은
+     * {@link #publishReady} 를 불러야 일어나므로, 그 전의 브로커 상태가 기동 중 적용만의 결과다.
+     */
+    private static AnnotationConfigApplicationContext startContext(KafkaAdmin kafkaAdmin, NewTopic... topics) {
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+        context.registerBean(KafkaAdmin.class, () -> kafkaAdmin);
+        for (NewTopic topic : topics) {
+            context.registerBean(topic.name(), NewTopic.class, () -> topic);
+        }
+        context.registerBean(KafkaTopicReconciler.class, () -> new KafkaTopicReconciler(kafkaAdmin));
+        context.refresh();
+        return context;
+    }
+
+    /** SpringApplication 이 기동 마지막에 발행하는 이벤트. 실제 서비스에서 재적용이 도는 시점이다. */
+    private static void publishReady(AnnotationConfigApplicationContext context) {
+        context.publishEvent(new ApplicationReadyEvent(new SpringApplication(), new String[0], context, Duration.ZERO));
+    }
+
+    private NewTopic declaredTopic(String name, Map<String, String> configs) {
+        return TopicBuilder.name(name).partitions(DECLARED_PARTITIONS).replicas(1).configs(configs).build();
+    }
+
+    private int partitionCount(String topic) throws Exception {
+        try (Admin admin = admin()) {
+            return admin.describeTopics(List.of(topic)).allTopicNames().get().get(topic).partitions().size();
+        }
+    }
+
+    /** 계약 키 중 토픽 동적 설정으로 박힌 것. 선언으로 생성되거나 갱신된 키만 여기 잡힌다. */
+    private Set<String> dynamicContractKeys(String topic) throws Exception {
+        return describe(topic).values().stream()
+                .filter(entry -> entry.source() == ConfigEntry.ConfigSource.DYNAMIC_TOPIC_CONFIG)
+                .map(ConfigEntry::name)
+                .filter(CONTRACT_KEYS::contains)
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
+    private void assertDeclaredValues(String topic, Map<String, String> declared) throws Exception {
+        Map<String, ConfigEntry> actual = describe(topic);
+        for (String key : CONTRACT_KEYS) {
+            assertThat(actual.get(key).value())
+                    .as("%s 의 %s 가 선언값이어야 한다", topic, key)
+                    .isEqualTo(declared.get(key));
+        }
+    }
+
+    /**
+     * 한 번의 기동 중 적용이 GKE S4 와 같은 세 갈래를 만들고, 기동 뒤 재적용이 C 를 선언값으로 맞춘다.
+     *
+     * <p>A·B 가 함께 단언되므로 C 의 상태가 "적용이 통째로 실패해서" 생긴 것이 아님도 드러난다.
+     * 통째로 실패하면 modify 단계도 돌지 않아 B 가 기본값으로 남는다.
+     */
+    @Test
+    @DisplayName("생성 경합 — 기동 중 적용은 경합 토픽을 갱신하지 않고, 기동 뒤 재적용이 config·파티션을 선언값으로 맞춘다")
+    void topicCreatedDuringRaceIsReconciledAfterStartup() throws Exception {
+        String created = "race-created-" + UUID.randomUUID();
+        String preExisting = "race-pre-" + UUID.randomUUID();
+        String raced = "race-raced-" + UUID.randomUUID();
+        Map<String, String> declared = KafkaTopicConfigs.business(RETENTION, BEFORE_MAX);
+
+        // 소유 서비스보다 먼저 다른 서비스 컨슈머가 만든 토픽 (B)
+        autoCreate(preExisting);
+        awaitTopicVisible(preExisting);
+
+        RacingKafkaAdmin kafkaAdmin = new RacingKafkaAdmin(raced);
+        try (AnnotationConfigApplicationContext context = startContext(kafkaAdmin,
+                declaredTopic(created, declared), declaredTopic(preExisting, declared), declaredTopic(raced, declared))) {
+            for (String topic : List.of(created, preExisting, raced)) {
+                awaitTopicVisible(topic);
+            }
+
+            // ① 기동 중 적용만의 결과
+            assertThat(kafkaAdmin.racedCreate())
+                    .as("경합 토픽이 createTopics 에 실리지 않았다면 describe 가 이미 그 토픽을 본 것이다")
+                    .isNotNull();
+            assertThatThrownBy(() -> kafkaAdmin.racedCreate().get())
+                    .as("주입이 빗나가면 경합 토픽이 정상 생성되어 아래 C 단언의 대비가 성립하지 않는다")
+                    .hasCauseInstanceOf(TopicExistsException.class);
+
+            assertThat(dynamicContractKeys(created))
+                    .as("A: KafkaAdmin 이 만든 토픽은 계약 키 7종이 전부 동적 설정이다")
+                    .containsExactlyInAnyOrderElementsOf(CONTRACT_KEYS);
+            assertThat(partitionCount(created)).isEqualTo(DECLARED_PARTITIONS);
+
+            assertThat(dynamicContractKeys(preExisting))
+                    .as("B: 먼저 있던 토픽은 기본값과 다른 키만 갱신된다")
+                    .isEqualTo(KEYS_DIFFERING_FROM_DEFAULT);
+            assertDeclaredValues(preExisting, declared);
+            assertThat(partitionCount(preExisting)).isEqualTo(DECLARED_PARTITIONS);
+
+            assertThat(dynamicContractKeys(raced))
+                    .as("C: 경합 토픽은 갱신 대상에서 빠져 동적 설정이 없다")
+                    .isEmpty();
+            assertThat(partitionCount(raced))
+                    .as("C: 파티션도 증설되지 않고 자동 생성 기본값으로 남는다")
+                    .isEqualTo(1);
+
+            // ② 기동 뒤 재적용
+            publishReady(context);
+
+            assertDeclaredValues(raced, declared);
+            assertThat(dynamicContractKeys(raced))
+                    .as("재적용은 기존 토픽 경로를 타므로 B 와 같은 키만 갱신된다")
+                    .isEqualTo(KEYS_DIFFERING_FROM_DEFAULT);
+            assertThat(partitionCount(raced)).isEqualTo(DECLARED_PARTITIONS);
+        }
     }
 }

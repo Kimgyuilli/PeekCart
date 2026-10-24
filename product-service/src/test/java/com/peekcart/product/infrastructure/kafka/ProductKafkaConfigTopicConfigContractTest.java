@@ -1,6 +1,7 @@
 package com.peekcart.product.infrastructure.kafka;
 
 import com.peekcart.global.kafka.KafkaTopicConfigs;
+import com.peekcart.global.kafka.KafkaTopicReconciler;
 import com.peekcart.global.retention.IdempotencyRetentionProperties;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.boot.env.YamlPropertySourceLoader;
@@ -78,6 +79,17 @@ class ProductKafkaConfigTopicConfigContractTest {
                 .map(Method::getReturnType)
                 .map(Class::getName))
                 .noneMatch(n -> n.endsWith("KafkaAdmin$NewTopics"));
+    }
+
+    @Test
+    @DisplayName("기동 뒤 토픽 재적용 빈을 등록한다 — 빠지면 생성 경합을 겪은 토픽이 브로커 기본값으로 남는다")
+    void registersTopicReconciler() {
+        // 재적용의 효과는 order-service 의 KafkaTopicConfigMechanismIntegrationTest 생성 경합 절이 본다.
+        // 그 테스트는 KafkaTopicReconciler 를 직접 등록하므로 이 서비스에서 빈이 빠져도 green 이다 — 그래서 배선을 따로 본다.
+        assertThat(java.util.Arrays.stream(ProductKafkaConfig.class.getMethods())
+                .filter(m -> m.isAnnotationPresent(Bean.class))
+                .map(Method::getReturnType))
+                .contains(KafkaTopicReconciler.class);
     }
 
     @Test
