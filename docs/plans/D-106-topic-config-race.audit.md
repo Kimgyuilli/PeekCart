@@ -27,3 +27,10 @@
 - 계획서: §2.2 에 두 행(브로커 기본 파티션, E2E 사전 생성) 추가, §2.3 부수 효과 정정(발견 지연 누락과 "E2E 도 빈 브로커" 서술), §미해결 처분 갱신.
 - 처분: PR 기록 보완(반영), 측정 전 토픽 상태 가드(D-106 ⑩ 남은 항목), 생성 경로 처방(D-107 등록, 재검토 조건 명시), E2E 자동 대조(따로 하지 않음).
 - 주석: `KafkaTopicReconciler` Javadoc 에 파티션 증설의 대가를 더했다. `docker-compose.e2e.yml` 의 자동 생성 파티션 주석은 "기본값 3" 과 부하 원인 서술을 이미지 실제 값과 #92 의 사전 생성 근거로 바꿨다. `docker compose config -q`, `e2e-network-contract-lint.sh`, `ci-e2e-parallel-lint.sh`, `:common:compileJava` 통과.
+
+## 2026-10-24 23:50 — PR CI 의 approval-recovery lab 실패
+- `406893f` 의 `Signed approval recovery`(run 40095843627)가 attempt 1·2 모두 duplicates 단계 `TimeoutExpired` 로 실패했다. 메인 CI(`gate`)는 성공했다.
+- 증적(`signed-approval-recovery` artifact): product 가 payment 보다 5.5초·4.2초 먼저 떴고, payment 의 기동 중 KafkaAdmin(`main` 스레드, 기동 완료 전)이 `payment.approval-recovery.*` 를 1에서 3으로 늘렸다. product 그룹은 파티션 0 만 할당받았다. 재적용은 기동 완료 뒤라 증설과 무관하다.
+- 같은 코드의 `d5b8679` run 은 두 서비스가 0.2초 차로 떠 payment 가 토픽을 먼저 만들었고 통과했다. 원인은 기동 순서에 따른 기존 결함(D-107 ②)이다.
+- 처분: lab 에 서비스 기동 전 토픽 사전 생성을 넣은 [#238](https://github.com/Kimgyuilli/PeekCart/pull/238) 을 먼저 머지하고(`d62eb3a`), 이 브랜치에 main 을 merge 했다(`1b8b4d1`, rebase·force push 없음).
+- 앞선 판단 정정: 파티션 발견 지연(②)을 "GKE 측정 자료에서 흔적 없음" 으로만 적었으나, CI lab 에서는 실제로 실패를 만들었다.
