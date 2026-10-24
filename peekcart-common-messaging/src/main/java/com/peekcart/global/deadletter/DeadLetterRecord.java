@@ -101,11 +101,11 @@ public class DeadLetterRecord {
      * canonical incident root 의 id. <b>{@code root_record_id = id} 인 행이 root</b> 이고,
      * 다른 값이면 replay 재실패로 생긴 자식이다.
      *
-     * <p><b>{@code NULL} 은 "root" 로 해석한다.</b> 이 컬럼이 생기기 전에 적재된 행은 값이 없기 때문이다.
-     * 집계 조건을 곧바로 {@code root_record_id = id} 로 걸면 <b>기존 미결이 전부 탈락해 backlog 가 0</b> 이
-     * 된다 — 자식 과다집계를 고치려다 정확히 반대 방향의 false-green 을 만드는 경로다(ADR-0020 §D6-3 전환 구간).
+     * <p><b>DEFAULT 없는 NOT NULL 이다</b>(contract migration, ADR-0020 §D6-3 4단계). writer 는 첫 INSERT 에
+     * 예약 ID 나 검증된 root 를 명시하고(ADR-0043), 값을 빠뜨린 INSERT 는 DB 가 거부한다. 전환 구간에 두던
+     * "NULL 은 root" 해석은 contract 이전 NULL 이 backfill 로 정규화되거나 가드에 거부된 뒤 없앴다.
      */
-    @Column(name = "root_record_id")
+    @Column(name = "root_record_id", nullable = false)
     private Long rootRecordId;
 
     // --- 발행 축 (ADR-0020 §D6-1) ---
@@ -298,9 +298,9 @@ public class DeadLetterRecord {
         return DeadLetterStatus.valueOf(status);
     }
 
-    /** 이 행이 canonical incident root 인가. {@code NULL} 은 root 로 본다(전환 구간). */
+    /** 이 행이 canonical incident root 인가({@code root_record_id = id}). 아직 저장되지 않은 행은 root 가 아니다. */
     public boolean isRoot() {
-        return rootRecordId == null || rootRecordId.equals(id);
+        return id != null && id.equals(rootRecordId);
     }
 
     /**
