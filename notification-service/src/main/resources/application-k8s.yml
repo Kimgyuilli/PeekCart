@@ -23,7 +23,7 @@ logging:
     com.peekcart: INFO
 
 # 두 credential을 별도로 주입한 뒤 rollout해야 한다. legacy SLACK_WEBHOOK_URL은 사용하지 않는다.
-# 누락 또는 같은 endpoint면 시작 실패 — docs/plans/D-092-slack-split.md 참고.
+# 누락 또는 같은 endpoint면 시작 실패 — 주입·교체 절차는 docs/runbooks/slack-webhook-secret.md 참고.
 slack:
   webhook:
     url: ${SLACK_OPS_WEBHOOK_URL}
