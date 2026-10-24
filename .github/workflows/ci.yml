@@ -165,6 +165,9 @@ jobs:
           # 측정 전 토픽 상태 가드(D-106 ⑩)의 판정·진입점 fixture. 가드의 config 기대값 표가
           # KafkaTopicConfigs·서비스 yml 과 갈라지면 여기서 실패한다 — 과금 세션에서 오경보로 알게 되지 않도록.
           python3 -B scripts/tests/test_kafka_topic_state_guard.py
+          # 배포 래퍼의 kafka 선행 적용·토픽 사전 생성(D-107). 가짜 kubectl 로 실제 래퍼를 돌려 생성 실패·
+          # 파티션 불일치·kafka 미기동·정본 실패가 앱 apply 전에 막히는지 본다. overlay 렌더에 위 kubectl 을 쓴다.
+          python3 -B scripts/tests/test_deploy_overlay.py
           # 마이그레이션이 **부여되지 않은 권한**을 요구하면 실제 스택에서만 부팅이 깨진다 —
           # Testcontainers 는 root 로 돌아 그 차이를 보지 못한다(PR #105 에서 실제로 났다).
           bash scripts/migration-grant-lint.sh
