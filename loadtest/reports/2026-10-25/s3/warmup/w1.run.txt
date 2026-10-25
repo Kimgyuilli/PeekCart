@@ -1,0 +1,25 @@
+=== S3 w1 (contend) 시작 2026-10-25T07:45:41Z ===
+  k6 exit=99  부하 판정: 무효. dropped_iterations 2357 > 한도 102 (목표 10200회의 1%). 이 run 은 버리고 초기화 뒤 다시 돌린다.
+  배수: outbox 0 까지 39초, lag 0 까지 125초
+--- 건수 ---
+## orders by status
+PENDING	1435
+## order outbox
+order.created	PUBLISHED	1435
+## product outbox
+product.updated	PUBLISHED	1000
+stock.reservation.result	PUBLISHED	1434
+## dlq order
+0
+## dlq product
+1
+--- 정합성 ---
+negative_stock_rows
+0
+status	cnt
+RESERVED	1434
+--- 차분 ---
+20	product-service	kafka_listener_delivery_failed_total{application="product-service",cause="optimistic_lock",topic="order.created"}
+1	product-service	kafka_listener_recovered_total{application="product-service",topic="order.created"}
+1434	product-service	saga_reservation_result_total{application="product-service",outcome="success"}
+=== S3 w1 끝 2026-10-25T07:51:09Z ===
