@@ -1,0 +1,41 @@
+=== 블록 b3 준비 (2026-10-25T07:18:36Z) ===
+=== 블록 L1 (MySQL 2000m · overlay gke-d002a-mysql-2000m · bulkhead 1) ===
+-- MySQL rollout 대기 (Recreate: 완전 종료 후 재기동) --
+deployment "mysql" successfully rolled out
+-- DB readiness --
+-- effective mysql cpu limit = 2 (2000m · 기대 2000m) --
+-- 버퍼풀 워밍업 (전 상품 풀스캔 3회) --
+=== 블록 L1 완료 ===
+[mysqlL1-detail-cacheon-r1] 워밍업 (detail 1..100 + list)
+[mysqlL1-detail-cacheon-r1] k6 run EP=detail VUS=400 DUR=60s
+[mysqlL1-detail-cacheon-r1] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL1-detail-cacheon-r1.{json,meta,k6.log}
+  run 기록: L1 detail ON r1 1792912768..1792912829 (61s)
+[mysqlL1-list-cacheon-r1] 워밍업 (detail 1..100 + list)
+[mysqlL1-list-cacheon-r1] k6 run EP=list VUS=400 DUR=60s
+[mysqlL1-list-cacheon-r1] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL1-list-cacheon-r1.{json,meta,k6.log}
+  run 기록: L1 list ON r1 1792912856..1792912917 (61s)
+[mysqlL1-detail-cacheon-r2] 워밍업 (detail 1..100 + list)
+[mysqlL1-detail-cacheon-r2] k6 run EP=detail VUS=400 DUR=60s
+[mysqlL1-detail-cacheon-r2] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL1-detail-cacheon-r2.{json,meta,k6.log}
+  run 기록: L1 detail ON r2 1792912944..1792913005 (61s)
+[mysqlL1-list-cacheon-r2] 워밍업 (detail 1..100 + list)
+[mysqlL1-list-cacheon-r2] k6 run EP=list VUS=400 DUR=60s
+[mysqlL1-list-cacheon-r2] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL1-list-cacheon-r2.{json,meta,k6.log}
+  run 기록: L1 list ON r2 1792913032..1792913093 (61s)
+[mysqlL1-detail-cacheon-r3] 워밍업 (detail 1..100 + list)
+[mysqlL1-detail-cacheon-r3] k6 run EP=detail VUS=400 DUR=60s
+[mysqlL1-detail-cacheon-r3] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL1-detail-cacheon-r3.{json,meta,k6.log}
+  run 기록: L1 detail ON r3 1792913120..1792913181 (61s)
+[mysqlL1-list-cacheon-r3] 워밍업 (detail 1..100 + list)
+[mysqlL1-list-cacheon-r3] k6 run EP=list VUS=400 DUR=60s
+[mysqlL1-list-cacheon-r3] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL1-list-cacheon-r3.{json,meta,k6.log}
+  run 기록: L1 list ON r3 1792913206..1792913267 (61s)
+[mysqlL1-detail-cacheon-r4] 워밍업 (detail 1..100 + list)
+[mysqlL1-detail-cacheon-r4] k6 run EP=detail VUS=400 DUR=60s
+[mysqlL1-detail-cacheon-r4] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL1-detail-cacheon-r4.{json,meta,k6.log}
+  run 기록: L1 detail ON r4 1792913296..1792913357 (61s)
+[mysqlL1-list-cacheon-r4] 워밍업 (detail 1..100 + list)
+[mysqlL1-list-cacheon-r4] k6 run EP=list VUS=400 DUR=60s
+[mysqlL1-list-cacheon-r4] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL1-list-cacheon-r4.{json,meta,k6.log}
+  run 기록: L1 list ON r4 1792913383..1792913444 (61s)
+=== 블록 b3(L1) 끝 (2026-10-25T07:30:53Z) ===
