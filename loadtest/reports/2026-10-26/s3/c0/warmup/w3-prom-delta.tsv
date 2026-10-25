@@ -1,0 +1,3 @@
+48	product-service	kafka_listener_delivery_failed_total{application="product-service",cause="optimistic_lock",topic="order.created"}
+5	product-service	kafka_listener_recovered_total{application="product-service",topic="order.created"}
+9279	product-service	saga_reservation_result_total{application="product-service",outcome="success"}
