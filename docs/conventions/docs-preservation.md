@@ -25,7 +25,7 @@ bash scripts/plans-index.sh
 python3 -B scripts/docs-preservation-ci.py --base <같은-PR-base-SHA>
 ```
 
-첫 명령은 후보 미리보기다. merged PR과 open PR 부재만으로 전체 계획 완료를 증명하지 않는다. 전체 완료를 확인하고 이미 승인된 작업 범위의 stem만 선택한다. D-084 같은 부분 완료나 전체 미완 orchestration을 후보 전체 apply로 옮기지 않는다. `--apply`는 선택/base/manifest 없이 실패한다. 선택 중 미머지·근거 없는 항목이 있으면 이동 전에 전체 실패한다. PR 조회 후보 판정의 의미는 기존 로직을 유지한다.
+첫 명령은 후보 미리보기다. merged PR과 open PR 부재만으로 전체 계획 완료를 증명하지 않는다. 전체 완료를 확인하고 이미 승인된 작업 범위의 stem만 선택한다. D-084 같은 부분 완료나 전체 미완 orchestration을 후보 전체 apply로 옮기지 않는다. 이런 계획은 frontmatter에 `archive: hold <PR...>`를 적어 후보에서 빼고(`유지`), 선택해도 이동 전에 전체 실패한다. 적힌 번호 밖의 PR이 머지되면 다시 후보가 된다. `--apply`는 선택/base/manifest 없이 실패한다. 선택 중 미머지·근거 없는 항목이 있으면 이동 전에 전체 실패한다. PR 조회 후보 판정의 의미는 기존 로직을 유지한다.
 
 선택한 plan/audit를 한 번에 이동하고 Markdown 링크의 상대 목적지만 고친다. 코드·일반 prose 경로와 과거 GitHub blob URL은 역사 원문이다. 기존 source 이후의 추기는 새 literal part로 기록한다. source의 기존 본문을 고쳤다면 정확한 사실 정정을 먼저 선언해야 한다. 원래 현행 preimage는 `.cache/docs-archive-backup-*`에 보관한다. 최종 검증 실패 시 일부 파일이 이동된 상태일 수 있으므로 이 백업과 git diff를 검토해 수정/복구한다. commit/push는 수행하지 않는다.
 
