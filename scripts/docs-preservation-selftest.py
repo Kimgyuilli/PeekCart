@@ -220,7 +220,8 @@ class PreservationTest(unittest.TestCase):
         self.write('docs/plans/task-partial.md', '# Partial\nPR: https://github.com/x/y/pull/777\n- [ ] Remaining scope\n')
         self.write('docs/plans/task-open.md', '# Open\nPR: https://github.com/x/y/pull/888\n')
         self.write('docs/index.md', '[plan](plans/task-merged.md#plan)\n')
-        self.write('bin/gh', '#!/bin/sh\ncase "$3" in 777) echo MERGED;; *) echo OPEN;; esac\n')
+        self.write('docs/plans/task-hold.md', '---\narchive: hold 777\n---\n# Hold\nPR: https://github.com/x/y/pull/777\n')
+        self.write('bin/gh', '#!/bin/sh\nprintf "777 MERGED\\n888 OPEN\\n"\n')
         (self.root / 'bin/gh').chmod(0o755)
         self.commit_changes()
 
@@ -261,6 +262,13 @@ class PreservationTest(unittest.TestCase):
         result = self.archive('task-merged,task-open')
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertTrue((self.root / 'docs/plans/task-merged.md').exists())
+        self.assertFalse((self.root / 'docs/plans/done/task-merged.md').exists())
+
+    def test_hold_selection_stops_all_archive_mutations(self):
+        self.install_archive_fixture()
+        result = self.archive('task-merged,task-hold')
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertTrue((self.root / 'docs/plans/task-hold.md').exists())
         self.assertFalse((self.root / 'docs/plans/done/task-merged.md').exists())
 
     def test_archive_nonappend_edit_needs_narrow_allowance(self):

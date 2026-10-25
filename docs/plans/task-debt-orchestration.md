@@ -1,5 +1,6 @@
 ---
 grade: L
+archive: hold 177 179 180 181
 ---
 # 남은 부채 병렬 처리 — root 조율 · 독립 PR 검증 · 무료 CI 우선
 
