@@ -1,0 +1,21 @@
+# product outbox 를 ADR-0045 이전 값으로 되돌린다(D-108 §3.2 C2). 주기 5s 에 배치 100 이면 발행 상한은 초당 20건이다.
+# env 이름은 `app.outbox.polling.*` 의 환경변수 형식(점은 밑줄, 하이픈 제거, 대문자)이다. 2026-10-24 S3 가 같은 형식의
+# APP_OUTBOX_POLLING_DELAY·APP_OUTBOX_POLLING_BATCHSIZE 로 order 를 덮었고, 최소 보존은 `${app.outbox.polling.lock-at-least-for}`
+# 라 APP_OUTBOX_POLLING_LOCKATLEASTFOR 다. OutboxPollingProperties 가 부팅 때 최소 보존(4s)이 주기(5s)보다 짧은지 검사한다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      containers:
+        - name: product-service
+          env:
+            - name: APP_OUTBOX_POLLING_DELAY
+              value: 5s
+            - name: APP_OUTBOX_POLLING_LOCKATLEASTFOR
+              value: 4s
+            - name: APP_OUTBOX_POLLING_BATCHSIZE
+              value: "100"
