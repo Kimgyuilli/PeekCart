@@ -1,0 +1,9 @@
+# order-service Hikari, 부하 구간 [t1-60s, t1]. capacity = pool_max / hold. 필요량 ≈ 170건/초 × acq_per_order
+run	pool_max	acq_per_s	hold_ms	capacity_per_s	util_rho	acq_per_order	verdict
+w4	10	335.0	26.7	375	0.89	1.97	유효
+c1	10	368.4	26.4	379	0.97	2.17	유효
+c2orig	10	342.5	28.7	348	0.98	2.07	무효
+c2r	10	345.6	28.6	350	0.99	2.10	무효
+c2	10	370.6	27.0	371	1.00	2.18	유효
+c3	10	325.0	28.2	354	0.92	2.00	무효
+s1	10	351.3	27.0	371	0.95	2.07	유효

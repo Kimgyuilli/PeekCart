@@ -1,0 +1,31 @@
+ok	d078-5-s3-c0-c1-saga-p7.jpg	121961
+ok	d078-5-s3-c0-c1-saga-p8.jpg	110416
+ok	d078-5-s3-c0-c1-saga-p5.jpg	121423
+ok	d078-5-s3-c0-c1-kafka-lag-p1.jpg	228390
+ok	d078-5-drain-s3-c0-c1-saga-p2.jpg	149906
+ok	d078-5-drain-s3-c0-c1-saga-p3.jpg	145354
+ok	d078-6-s3-c0-c1-saga-p12.jpg	154915
+ok	d078-6-s3-c0-c1-saga-p13.jpg	139589
+ok	d078-5-s3-c0-c2-saga-p7.jpg	128924
+ok	d078-5-s3-c0-c2-saga-p8.jpg	108991
+ok	d078-5-s3-c0-c2-saga-p5.jpg	117358
+ok	d078-5-s3-c0-c2-kafka-lag-p1.jpg	241003
+ok	d078-5-drain-s3-c0-c2-saga-p2.jpg	136607
+ok	d078-5-drain-s3-c0-c2-saga-p3.jpg	138807
+ok	d078-6-s3-c0-c2-saga-p12.jpg	152067
+ok	d078-6-s3-c0-c2-saga-p13.jpg	134940
+ok	d078-jvm-s3-c0-c2-api-jvm-p5.jpg	218596
+ok	d078-jvm-s3-c0-c2-api-jvm-p6.jpg	169228
+loadtest/reports/2026-10-26/session-scripts/capture.sh: line 17: 14663 Alarm clock: 14            perl -e 'alarm shift; exec @ARGV' 120 "$CHROME" --headless=new --disable-gpu --hide-scrollbars --window-size=1450,840 --virtual-time-budget=15000 --user-data-dir="$SCRATCH/chrome-capture" --screenshot="$png" "$url" > /dev/null 2>&1
+loadtest/reports/2026-10-26/session-scripts/capture.sh: line 17: 18593 Alarm clock: 14            perl -e 'alarm shift; exec @ARGV' 120 "$CHROME" --headless=new --disable-gpu --hide-scrollbars --window-size=1450,840 --virtual-time-budget=15000 --user-data-dir="$SCRATCH/chrome-capture" --screenshot="$png" "$url" > /dev/null 2>&1
+FAIL	d078-5-s3-c0-s1-saga-p7.jpg
+loadtest/reports/2026-10-26/session-scripts/capture.sh: line 17: 22259 Alarm clock: 14            perl -e 'alarm shift; exec @ARGV' 120 "$CHROME" --headless=new --disable-gpu --hide-scrollbars --window-size=1450,840 --virtual-time-budget=15000 --user-data-dir="$SCRATCH/chrome-capture" --screenshot="$png" "$url" > /dev/null 2>&1
+ok	d078-5-s3-c0-s1-saga-p8.jpg	36746
+ok	d078-5-s3-c0-s1-saga-p7.jpg	142548
+ok	d078-5-s3-c0-s1-saga-p8.jpg	118756
+ok	d078-5-s3-c0-s1-saga-p5.jpg	115974
+ok	d078-5-s3-c0-s1-kafka-lag-p1.jpg	236291
+ok	d078-5-drain-s3-c0-s1-saga-p2.jpg	141355
+ok	d078-5-drain-s3-c0-s1-saga-p3.jpg	119406
+ok	d078-6-s3-c0-s1-saga-p12.jpg	160304
+ok	d078-6-s3-c0-s1-saga-p13.jpg	143482

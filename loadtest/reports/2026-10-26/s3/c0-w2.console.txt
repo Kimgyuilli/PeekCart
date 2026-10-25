@@ -1,0 +1,25 @@
+=== S3 c0 w2 (contend, USERS=450 RPS=170 DUR=60s) 시작 2026-10-25T18:21:27Z ===
+  k6 exit=99  부하 판정: 무효. dropped_iterations 3234 > 한도 102 (목표 10200회의 1%). 이 run 은 버리고 초기화 뒤 다시 돌린다.
+워밍업 판정: 미수렴. 수락 4819건에서 6967건, 변화 +44.6% (임계 5%). 드롭 5382건에서 3234건
+  배수: outbox 0 까지 116초, lag 0 까지 226초
+--- 건수 ---
+## orders by status
+PENDING	6967
+## order outbox
+order.created	PUBLISHED	6967
+## product outbox
+stock.reservation.result	PUBLISHED	6962
+## dlq order
+0
+## dlq product
+5
+--- 정합성 ---
+negative_stock_rows
+0
+status	cnt
+RESERVED	6962
+--- 차분 ---
+38	product-service	kafka_listener_delivery_failed_total{application="product-service",cause="optimistic_lock",topic="order.created"}
+5	product-service	kafka_listener_recovered_total{application="product-service",topic="order.created"}
+6962	product-service	saga_reservation_result_total{application="product-service",outcome="success"}
+=== S3 c0 w2 끝 2026-10-25T18:28:37Z ===

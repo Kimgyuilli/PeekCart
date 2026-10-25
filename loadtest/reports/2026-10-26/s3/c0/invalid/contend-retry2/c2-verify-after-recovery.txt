@@ -1,0 +1,8 @@
+negative_stock_rows
+0
+status	cnt
+CANCEL_REQUESTED	2834
+RELEASED	7034
+RESERVED	1
+product_id	final_stock	reserved_qty	expected_stock	diff
+1	99998	1	99999	-1

@@ -1,0 +1,1 @@
+[TOPIC-STATE-GUARD] OK — 토픽 30개 파티션·config 일치, 업무 group 22개 전 파티션 할당

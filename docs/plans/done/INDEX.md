@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 161개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 164개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -82,7 +82,7 @@
 | [task-d037-branch-protection](./task-d037-branch-protection.md) | D-037 — main 필수 체크를 실제 CI gate 에 연결 | [#141](https://github.com/Kimgyuilli/PeakCart/pull/141) | 2026-10-21 | 있음 |
 | [task-d039-gradle-setup](./task-d039-gradle-setup.md) | task-d039-gradle-setup | [#157](https://github.com/Kimgyuilli/PeakCart/pull/157) | 2026-10-21 |  |
 
-## 기타 (99)
+## 기타 (102)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -167,6 +167,7 @@
 | [D-101](./D-101.md) | D-101: 현재 아키텍처 트리와 역사 참조 정정 | [#195](https://github.com/Kimgyuilli/PeakCart/pull/195) | 2026-10-22 |  |
 | [D-102](./D-102.md) | D-102: 테스트 주석의 의미와 출처 정리 | [#197](https://github.com/Kimgyuilli/PeakCart/pull/197) | 2026-10-22 | 있음 |
 | [D-104](./D-104.md) | D-104: 하네스 실측 근거의 모집단과 정정 | [#208](https://github.com/Kimgyuilli/PeakCart/pull/208) | 2026-10-22 | 있음 |
+| [task-debt-20261021](./task-debt-20261021.md) | 개발 부채 실행 기록 — 2026-10-21 | [#221](https://github.com/Kimgyuilli/PeakCart/pull/221) | 2026-10-22 |  |
 | [D-078-capture-prep](./D-078-capture-prep.md) | D-078 세션 캡처 도구와 세션 범위 확장 (부분 작업) | [#228](https://github.com/Kimgyuilli/PeakCart/pull/228) | 2026-10-23 | 있음 |
 | [D-078-latency-metrics](./D-078-latency-metrics.md) | D-078 README 보강 지표 A~E 와 지연 원자료 도구 (부분 작업) | [#229](https://github.com/Kimgyuilli/PeakCart/pull/229) | 2026-10-23 | 있음 |
 | [D-078-session-dashboard](./D-078-session-dashboard.md) | D-078 측정 세션 대시보드와 캡처 기준 (부분 작업) | [#226](https://github.com/Kimgyuilli/PeakCart/pull/226) | 2026-10-23 | 있음 |
@@ -185,4 +186,6 @@
 | [D-106-topic-guard-throttle](./D-106-topic-guard-throttle.md) | D-106 ⑩·② — 측정 전 토픽 상태 가드와 CPU 스로틀 패널 | [#239](https://github.com/Kimgyuilli/PeakCart/pull/239) | 2026-10-25 | 있음 |
 | [D-107-deploy-topics](./D-107-deploy-topics.md) | 배포 래퍼의 kafka 선행 기동과 토픽 사전 생성 | [#241](https://github.com/Kimgyuilli/PeakCart/pull/241) | 2026-10-25 | 있음 |
 | [digest-open-rows](./digest-open-rows.md) | digest-open-rows | [#240](https://github.com/Kimgyuilli/PeakCart/pull/240) | 2026-10-25 |  |
+| [sync-context-cost](./sync-context-cost.md) | sync-context-cost | [#247](https://github.com/Kimgyuilli/PeakCart/pull/247) | 2026-10-25 |  |
+| [D-064](./D-064.md) | D-064 Toss 테스트 환경 실호출 검증: 승인·조회·취소와 중복 응답 | [#249](https://github.com/Kimgyuilli/PeakCart/pull/249) | 2026-10-26 | 있음 |
 

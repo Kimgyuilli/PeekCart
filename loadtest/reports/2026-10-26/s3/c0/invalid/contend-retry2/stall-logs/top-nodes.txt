@@ -1,0 +1,4 @@
+NAME                                              CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+gke-peekcart-d078-default-pool-375fa79e-ghsd      382m         9%       4908Mi          36%         
+gke-peekcart-d078-default-pool-375fa79e-zvb8      441m         11%      6336Mi          47%         
+gke-peekcart-d078-monitoring-pool-26be1819-2cw9   292m         15%      3371Mi          55%         

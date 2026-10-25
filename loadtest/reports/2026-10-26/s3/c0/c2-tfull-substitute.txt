@@ -1,0 +1,12 @@
+# c2(복구 뒤) export 용 t_full 대체 (2026-10-25T21:1xZ 기록)
+# 스크립트 t_full(전 group lag 0)은 payment-svc-stock-result-group 고아 레코드 적체로 900초 안에 오지 않았다(c2-times.tsv t_full '-').
+# 측정 범위(order·product)의 배수 끝을 Prometheus kafka_consumer_fetch_manager_records_lag(클라이언트 측, application 합) 이 0 이 된 시각으로 대신한다.
+# 대조: 앞 run 들에서 스크립트 t_full 과 product-service lag 0 시각 (t1 기준, 5초 step)
+#   run     script t_full   order lag 0   payment lag 0   product lag 0
+#   w4      +244s           (늘 0)        +105s           +230s
+#   c1      +254s           (늘 0)        (늘 0)          +255s
+#   c2orig  +259s           (늘 0)        (늘 0)          +260s
+#   c2      -               (늘 0)        미도달(+930s 까지 >0)  +240s
+# 앞 세 run 에서 payment 가 마지막인 적이 없고 스크립트 t_full 과 product lag 0 이 1~14초 안에서 같다.
+# 그래서 c2 의 t_full 대체값 = 1792961570 (20:52:50Z, t1 1792961328 + 242초. 위 표의 c2 는 t1 을 1792961330 으로 잡은 값). c2-times.tsv 원자료는 고치지 않는다.
+t_full_substitute	1792961570

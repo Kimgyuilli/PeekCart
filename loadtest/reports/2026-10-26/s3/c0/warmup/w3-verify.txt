@@ -1,0 +1,5 @@
+negative_stock_rows
+0
+status	cnt
+CANCEL_REQUESTED	2
+RESERVED	9279

@@ -1,0 +1,10 @@
+## orders by status
+PENDING	10201
+## order outbox
+order.created	PUBLISHED	10201
+## product outbox
+stock.reservation.result	PUBLISHED	10194
+## dlq order
+0
+## dlq product
+7

@@ -195,8 +195,8 @@ run 인 r1(5.637s)을 넣으면 1,450, r2(2.764s)면 750 이다.
 1. 세션 main SHA 에서 이 계획서 §2.1 의 전제를 다시 grep 한다. 지난 세션의 사각(전제표가 기준 코드에서 bulkhead 를 대조하지
    않음)을 반복하지 않으려는 단계다. 레인 B·C·D 가 바꾼 것(outbox 기본값, 배포 래퍼, contract migration)이 S3·S4 절차와
    맞는지도 본다.
-2. gcloud configuration `peekcart-d078` 로 바꾸고 결제 계정을 다시 연결한다(`gcloud billing projects link peekcart-d078
-   --billing-account 01001D-E81E39-C489B0`). 예산 알림(월 ₩20,000, 50/90/100/150%)이 살아 있는지 콘솔에서 본다.
+2. gcloud configuration `peekcart-d078` 로 바꾸고 결제 계정을 다시
+   연결한다(`gcloud billing projects link peekcart-d078 --billing-account 01001D-E81E39-C489B0`). 예산 알림(월 ₩20,000, 50/90/100/150%)이 살아 있는지 콘솔에서 본다.
 3. 보존한 Secret Manager 시크릿 4개와 GSA 2개가 있는지, 시크릿 버전이 2026-10-23 업로드 그대로인지 본다. `local-keys` 공개키
    fingerprint(`908f1da22b4db672`·`17df680623f50fe6`)가 커밋된 ConfigMap 과 같은지 다시 대조한다.
 4. AR 리포지토리를 다시 만들고(지난 S5 에서 지웠다) `scripts/promote-images.sh --project peekcart-d078 --tag <main SHA>` 로
@@ -242,9 +242,8 @@ CI 40134547452 성공). 기록 브랜치 `docs/d078-remeasure-session`.
    50GB, workload pool, Dataplane V2), `monitoring-pool`(`e2-standard-2` × 1, label·taint), cleanup dry-run 을 먼저 확인,
    노드 SA `roles/artifactregistry.reader`, WI 바인딩 2개, CSI 드라이버 chart 1.6.1(`syncSecret.enabled=false`)과
    provider-gcp v1.17.0.
-2. 관측: 사용자가 `grafana-ops-webhook` Secret 을 먼저 만든 뒤 `helm upgrade --install kube-prometheus-stack
-   prometheus-community/kube-prometheus-stack --version 91.4.0 -n monitoring -f k8s/monitoring/gke/values-prometheus.yml
-   -f k8s/monitoring/gke/values-measurement-isolation.yml`, 이어서 `kubectl apply -k k8s/monitoring/shared/`. 차트 버전은
+2. 관측: 사용자가 `grafana-ops-webhook` Secret 을 먼저 만든 뒤
+   `helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack --version 91.4.0 -n monitoring -f k8s/monitoring/gke/values-prometheus.yml -f k8s/monitoring/gke/values-measurement-isolation.yml`, 이어서 `kubectl apply -k k8s/monitoring/shared/`. 차트 버전은
    2026-10-24 와 같게 명령에서 고정한다(`install.sh` 는 고치지 않는다). 관측 Pod 가 `monitoring-pool` 에 있는지 본 뒤 Grafana
    3000·Prometheus 9090 을 port-forward 한다.
 3. loadgen VM `peekcart-d078-loadgen`(`e2-medium`), k6 v2.2.0. `loadtest/scripts/d002a-product-read.js` 를
@@ -268,8 +267,8 @@ CI 40134547452 성공). 기록 브랜치 `docs/d078-remeasure-session`.
 
 ### S2. 읽기 경로: bulkhead 상한·③·④ (약 1.2시간)
 
-1. 빈 namespace 에 `DRAIN_PREFLIGHT_SKIP_REASON="S2 읽기 경로, order·payment·notification 없음" bash scripts/deploy-overlay.sh
-   k8s/overlays/gke-d002a-mysql-2000m`(digest 치환본)으로 배포한다. 래퍼가 kafka 를 먼저 올리고 토픽을 사전 생성한다(D-107, #241).
+1. 빈 namespace 에
+   `DRAIN_PREFLIGHT_SKIP_REASON="S2 읽기 경로, order·payment·notification 없음" bash scripts/deploy-overlay.sh k8s/overlays/gke-d002a-mysql-2000m`(digest 치환본)으로 배포한다. 래퍼가 kafka 를 먼저 올리고 토픽을 사전 생성한다(D-107, #241).
    mysql·product-service rollout 을 기다린다. `loadtest/sql/d002a-product-seed.sql` 을 넣고, `product-service-measure` Internal LB IP 를 확인한다.
    Prometheus target 에서 product-service 가 up 인지 본다(측정 overlay 의 ServiceMonitor, D-106 ③). 토픽 상태 가드는 돌리지
    않는다(§2.1, 읽기 경로는 Kafka 를 쓰지 않는다).
@@ -330,13 +329,13 @@ CI 40134547452 성공). 기록 브랜치 `docs/d078-remeasure-session`.
 
 S3 의 outbox 는 ADR-0045 의 base 기본값(500ms·배치 500·락 최소 보존 400ms)이다. 측정 overlay 는 order outbox 를 덮어쓰지 않는다(#242).
 
-1. 배포: `DRAIN_PREFLIGHT_SKIP_REASON="측정 overlay, notification 없음" bash scripts/deploy-overlay.sh
-   k8s/overlays/gke-d078-contention`(digest·PROJECT 치환본, `GW_URL` 없이). 래퍼가 kafka 를 먼저 올리고 선언 토픽을 사전
+1. 배포:
+   `DRAIN_PREFLIGHT_SKIP_REASON="측정 overlay, notification 없음" bash scripts/deploy-overlay.sh k8s/overlays/gke-d078-contention`(digest·PROJECT 치환본, `GW_URL` 없이). 래퍼가 kafka 를 먼저 올리고 선언 토픽을 사전
    생성한다(D-107, #241). 이어서 payment Secret 에 Toss smoke 값을 넣고 재기동한다(`loadtest/README.md` D-002b'/c §스택).
 2. 시드: 사용자 450명 → 인증 왕복 게이트 → `users.csv` 450행 확인 → 상품 1,000개(`--count 1000 | tee .../s3/seed-products.log`,
    `PRODUCT_IDS` 를 파일로 저장해 loadgen `/tmp/product-ids.txt` 로 복사, 개수 1,000 확인) → 429 프로브 PASS.
-3. 토픽 상태 가드: `python3 scripts/kafka-topic-state-guard.py --services order,product,payment --evidence-dir
-   loadtest/reports/<날짜>/s3/topic-guard`. exit 0 이어야 첫 run(워밍업 포함)을 시작한다. exit 1 이면 README 처치(5분 대기 또는
+3. 토픽 상태 가드:
+   `python3 scripts/kafka-topic-state-guard.py --services order,product,payment --evidence-dir loadtest/reports/<날짜>/s3/topic-guard`. exit 0 이어야 첫 run(워밍업 포함)을 시작한다. exit 1 이면 README 처치(5분 대기 또는
    소유 서비스 재기동) 뒤 다시 돌린다. 실제 앱 스택 양성 대조의 첫 기록(D-106 ⑩)이자 D-107 재검토 조건의 관측이다.
    재기동이 있으면 가드를 다시 돌린다.
 4. run 순서: 워밍업 `w1`(contend, 결과와 무관하게 버린다) → 측정 `c1`·`c2`·`c3`(contend) → 측정 `s1`(spread). spread 는

@@ -1,0 +1,104 @@
+[D-016] image promotion (GHCR → Artifact Registry)
+  owner=kimgyuilli  project=peekcart-d078  tag=2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf  tool=crane  dry-run=0
+  services: notification-service user-service product-service order-service payment-service gateway
+---
+[notification-service] ghcr.io/kimgyuilli/peekcart-notification-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf  ->  asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/notification-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:33:34 Copying from ghcr.io/kimgyuilli/peekcart-notification-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf to asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/notification-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:33:38 pushed blob: sha256:ff49f06302e95d99254ad1ced3d424c2384fb74068387a80fc125906f96edc72
+2026/10/26 02:33:39 pushed blob: sha256:5bf746862a74256590bd014a64101d7baddc9869a06970f8e2b84de3abc84c78
+2026/10/26 02:33:41 pushed blob: sha256:e98099d09b5ac43d29e938945236d40d88a10a18f07b7885b3ba09e38a51ed1e
+2026/10/26 02:33:42 pushed blob: sha256:5ab238129d6ce06a6532f695f03c2893b93f24a86fe97d2f054943301705463d
+2026/10/26 02:33:48 pushed blob: sha256:d1138b4ddaebefb926b2bb70b8296bd150a43391ea36a04f36d55bdc3a68e569
+2026/10/26 02:33:49 pushed blob: sha256:5e00c5b403b6615e5242d28424379ca65dd8867f9332260349c5fece9cdfdc4b
+2026/10/26 02:33:50 pushed blob: sha256:0ba9f52b8455d01657a221e830acc42a75fa53ec57a98f1b476a9807e68c12f3
+2026/10/26 02:33:54 pushed blob: sha256:b20230712a0fd999b474082834026eec82a5fce658704c4f0509d594e93374b3
+2026/10/26 02:33:57 pushed blob: sha256:dd847706531f17812ea38d3e6717105036f2184210b5e942a5ca2760298dac31
+2026/10/26 02:34:06 pushed blob: sha256:8add26d059e1493b3081d0e0d207c25ec8294e32171d7f74a19c6a285c33408f
+2026/10/26 02:34:06 asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/notification-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf: digest: sha256:72f2180c0f6c414b9305b8a41e0984b015ff656ec994192a1e44dbdc6c2f9bb9 size: 2202
+  AR digest: sha256:72f2180c0f6c414b9305b8a41e0984b015ff656ec994192a1e44dbdc6c2f9bb9
+  digest 고정: (cd k8s/overlays/gke && kustomize edit set image ghcr.io/kimgyuilli/peekcart-notification-service=asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/notification-service@sha256:72f2180c0f6c414b9305b8a41e0984b015ff656ec994192a1e44dbdc6c2f9bb9)
+---
+[user-service] ghcr.io/kimgyuilli/peekcart-user-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf  ->  asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/user-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:34:08 Copying from ghcr.io/kimgyuilli/peekcart-user-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf to asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/user-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:34:10 existing blob: sha256:dd847706531f17812ea38d3e6717105036f2184210b5e942a5ca2760298dac31
+2026/10/26 02:34:10 existing blob: sha256:d1138b4ddaebefb926b2bb70b8296bd150a43391ea36a04f36d55bdc3a68e569
+2026/10/26 02:34:10 existing blob: sha256:ff49f06302e95d99254ad1ced3d424c2384fb74068387a80fc125906f96edc72
+2026/10/26 02:34:10 existing blob: sha256:b20230712a0fd999b474082834026eec82a5fce658704c4f0509d594e93374b3
+2026/10/26 02:34:10 existing blob: sha256:5bf746862a74256590bd014a64101d7baddc9869a06970f8e2b84de3abc84c78
+2026/10/26 02:34:10 existing blob: sha256:e98099d09b5ac43d29e938945236d40d88a10a18f07b7885b3ba09e38a51ed1e
+2026/10/26 02:34:10 existing blob: sha256:5ab238129d6ce06a6532f695f03c2893b93f24a86fe97d2f054943301705463d
+2026/10/26 02:34:10 existing blob: sha256:5e00c5b403b6615e5242d28424379ca65dd8867f9332260349c5fece9cdfdc4b
+2026/10/26 02:34:11 pushed blob: sha256:5affdb5a1198d7fcab674e590853f6523feea995cbe947f6ed2103b93528dd1c
+2026/10/26 02:34:27 pushed blob: sha256:6f58d0a2313f8ebe6a9c54eb2c5eb0d3201a10d84f85f46488ba00d2512bcaee
+2026/10/26 02:34:27 asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/user-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf: digest: sha256:474a9b6d359b5fb7f6c5abfe3a87c4801fc247b7812cad40b954ed89d2e01b63 size: 2202
+  AR digest: sha256:474a9b6d359b5fb7f6c5abfe3a87c4801fc247b7812cad40b954ed89d2e01b63
+  digest 고정: (cd k8s/overlays/gke && kustomize edit set image ghcr.io/kimgyuilli/peekcart-user-service=asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/user-service@sha256:474a9b6d359b5fb7f6c5abfe3a87c4801fc247b7812cad40b954ed89d2e01b63)
+---
+[product-service] ghcr.io/kimgyuilli/peekcart-product-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf  ->  asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/product-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:34:28 Copying from ghcr.io/kimgyuilli/peekcart-product-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf to asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/product-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:34:31 existing blob: sha256:dd847706531f17812ea38d3e6717105036f2184210b5e942a5ca2760298dac31
+2026/10/26 02:34:31 existing blob: sha256:ff49f06302e95d99254ad1ced3d424c2384fb74068387a80fc125906f96edc72
+2026/10/26 02:34:31 existing blob: sha256:b20230712a0fd999b474082834026eec82a5fce658704c4f0509d594e93374b3
+2026/10/26 02:34:31 existing blob: sha256:5bf746862a74256590bd014a64101d7baddc9869a06970f8e2b84de3abc84c78
+2026/10/26 02:34:31 existing blob: sha256:d1138b4ddaebefb926b2bb70b8296bd150a43391ea36a04f36d55bdc3a68e569
+2026/10/26 02:34:31 existing blob: sha256:e98099d09b5ac43d29e938945236d40d88a10a18f07b7885b3ba09e38a51ed1e
+2026/10/26 02:34:32 pushed blob: sha256:68af0516ddf02ce20787f7a69320739172d9acfa4618627759e05e5c6f6be330
+2026/10/26 02:34:32 pushed blob: sha256:9cdd56b6c233c0a73560471186df60b54a3767fcc32f9d9194676277e8a0b7bf
+2026/10/26 02:34:32 pushed blob: sha256:de532d430844442c880cbb6d165a3ba49abc2b61176b561c4bcbb59e46b33542
+2026/10/26 02:34:48 pushed blob: sha256:e160422f3c9cdf8b3a78672cb96fce5b77b26e42d6798557dd27968741899b83
+2026/10/26 02:34:48 asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/product-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf: digest: sha256:1999651905f9e26abc732ab542b745db918d50c97a92eafe9930b1df5460be46 size: 2202
+  AR digest: sha256:1999651905f9e26abc732ab542b745db918d50c97a92eafe9930b1df5460be46
+  digest 고정: (cd k8s/overlays/gke && kustomize edit set image ghcr.io/kimgyuilli/peekcart-product-service=asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/product-service@sha256:1999651905f9e26abc732ab542b745db918d50c97a92eafe9930b1df5460be46)
+---
+[order-service] ghcr.io/kimgyuilli/peekcart-order-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf  ->  asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/order-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:34:50 Copying from ghcr.io/kimgyuilli/peekcart-order-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf to asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/order-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:34:52 existing blob: sha256:b20230712a0fd999b474082834026eec82a5fce658704c4f0509d594e93374b3
+2026/10/26 02:34:52 existing blob: sha256:dd847706531f17812ea38d3e6717105036f2184210b5e942a5ca2760298dac31
+2026/10/26 02:34:52 existing blob: sha256:ff49f06302e95d99254ad1ced3d424c2384fb74068387a80fc125906f96edc72
+2026/10/26 02:34:52 existing blob: sha256:d1138b4ddaebefb926b2bb70b8296bd150a43391ea36a04f36d55bdc3a68e569
+2026/10/26 02:34:52 existing blob: sha256:5bf746862a74256590bd014a64101d7baddc9869a06970f8e2b84de3abc84c78
+2026/10/26 02:34:52 existing blob: sha256:e98099d09b5ac43d29e938945236d40d88a10a18f07b7885b3ba09e38a51ed1e
+2026/10/26 02:34:53 pushed blob: sha256:052b77d23ff2b09437336767d1bb4ad3a08c7103b53e8674bcc63f4145383165
+2026/10/26 02:34:53 pushed blob: sha256:d53b8774a11b2e5be49ae9ba42857a274ed7351fe1c31548a8db3a5044521995
+2026/10/26 02:34:53 pushed blob: sha256:9af0cee517230ffdb00b4127df1d628d2f0692c441bcaee7bd9a54fd6f3589a1
+2026/10/26 02:35:07 pushed blob: sha256:5b4343cffad92ec2fcbd265b62e63d82707aaf0e340237ad1b33260763e60b33
+2026/10/26 02:35:07 asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/order-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf: digest: sha256:8be032df074f3716835cb620724c72be4ade9cfd224734834f68d6611ccf2bb2 size: 2202
+  AR digest: sha256:8be032df074f3716835cb620724c72be4ade9cfd224734834f68d6611ccf2bb2
+  digest 고정: (cd k8s/overlays/gke && kustomize edit set image ghcr.io/kimgyuilli/peekcart-order-service=asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/order-service@sha256:8be032df074f3716835cb620724c72be4ade9cfd224734834f68d6611ccf2bb2)
+---
+[payment-service] ghcr.io/kimgyuilli/peekcart-payment-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf  ->  asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/payment-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:35:09 Copying from ghcr.io/kimgyuilli/peekcart-payment-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf to asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/payment-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:35:11 existing blob: sha256:dd847706531f17812ea38d3e6717105036f2184210b5e942a5ca2760298dac31
+2026/10/26 02:35:11 existing blob: sha256:ff49f06302e95d99254ad1ced3d424c2384fb74068387a80fc125906f96edc72
+2026/10/26 02:35:11 existing blob: sha256:b20230712a0fd999b474082834026eec82a5fce658704c4f0509d594e93374b3
+2026/10/26 02:35:11 existing blob: sha256:d1138b4ddaebefb926b2bb70b8296bd150a43391ea36a04f36d55bdc3a68e569
+2026/10/26 02:35:11 existing blob: sha256:5bf746862a74256590bd014a64101d7baddc9869a06970f8e2b84de3abc84c78
+2026/10/26 02:35:11 existing blob: sha256:e98099d09b5ac43d29e938945236d40d88a10a18f07b7885b3ba09e38a51ed1e
+2026/10/26 02:35:13 pushed blob: sha256:538c296d5b43fa69da70ee47d45b4b3c226760ea6842e37334df876043c8de4b
+2026/10/26 02:35:13 pushed blob: sha256:a7d29c7c42826b19f52d6bcbe06e39a037b6a84c389f62dfb67ff414e4e97b0a
+2026/10/26 02:35:13 pushed blob: sha256:d14e10f1f2e570e905b66cb4a0af55cc1bd2a42c80d003d60406d488a61754fc
+2026/10/26 02:35:28 pushed blob: sha256:1a261ab43aaab15cdee0ff81bf7c016c0c94142df4682e1861f3557ed89a4a5e
+2026/10/26 02:35:29 asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/payment-service:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf: digest: sha256:92976c941fb20a91856184a83d7173c410ef88a375f80f6aee7c80f293263634 size: 2202
+  AR digest: sha256:92976c941fb20a91856184a83d7173c410ef88a375f80f6aee7c80f293263634
+  digest 고정: (cd k8s/overlays/gke && kustomize edit set image ghcr.io/kimgyuilli/peekcart-payment-service=asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/payment-service@sha256:92976c941fb20a91856184a83d7173c410ef88a375f80f6aee7c80f293263634)
+---
+[gateway] ghcr.io/kimgyuilli/peekcart-gateway:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf  ->  asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/gateway:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:35:30 Copying from ghcr.io/kimgyuilli/peekcart-gateway:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf to asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/gateway:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf
+2026/10/26 02:35:32 existing blob: sha256:dd847706531f17812ea38d3e6717105036f2184210b5e942a5ca2760298dac31
+2026/10/26 02:35:32 existing blob: sha256:b20230712a0fd999b474082834026eec82a5fce658704c4f0509d594e93374b3
+2026/10/26 02:35:32 existing blob: sha256:ff49f06302e95d99254ad1ced3d424c2384fb74068387a80fc125906f96edc72
+2026/10/26 02:35:32 existing blob: sha256:d1138b4ddaebefb926b2bb70b8296bd150a43391ea36a04f36d55bdc3a68e569
+2026/10/26 02:35:32 existing blob: sha256:e98099d09b5ac43d29e938945236d40d88a10a18f07b7885b3ba09e38a51ed1e
+2026/10/26 02:35:32 existing blob: sha256:5bf746862a74256590bd014a64101d7baddc9869a06970f8e2b84de3abc84c78
+2026/10/26 02:35:34 pushed blob: sha256:0fffba93a383397aee674cc1c22a68d60710470ea1264b4c49dcc37d0f9715cc
+2026/10/26 02:35:34 pushed blob: sha256:a84da92e6cfe203179ee75e4bb5d8c095617098cdcea4bb48a10777b0fa26194
+2026/10/26 02:35:34 pushed blob: sha256:31911b28258e2000383a3d8f350d1d1347d47e88b1dd48a1da5530c5a8ec5d67
+2026/10/26 02:35:40 pushed blob: sha256:800b40143d3f7397fee3664486a86ce6dfab2a94ead047d47727be7cdede5d28
+2026/10/26 02:35:40 asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/gateway:2ecc573876fa615dc8d5eaf249dd64abc5fcbcdf: digest: sha256:de50d4cb5744a36695afe3effe5ab18da74a9973668af0da26042b1d2496154a size: 2202
+  AR digest: sha256:de50d4cb5744a36695afe3effe5ab18da74a9973668af0da26042b1d2496154a
+  digest 고정: (cd k8s/overlays/gke && kustomize edit set image ghcr.io/kimgyuilli/peekcart-gateway=asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/gateway@sha256:de50d4cb5744a36695afe3effe5ab18da74a9973668af0da26042b1d2496154a)
+---
+[D-016] 완료. 위 'digest 고정' 명령으로 gke overlay images[] 를 AR digest 로 pin 하면
+  mutable latest 를 벗어나 CI 가 검증한 immutable 이미지가 배포된다(L-016a 재현성).
+  (committed manifest 는 newTag: latest 유지 — 실 digest 는 빌드 후에만 존재, operator-local pin.
+   image-contract-lint 의 digest 강제(렌더 산출에 @sha256 필수)는 후속 — 현재는 ci↔base↔gke ref 일치만 검증.)

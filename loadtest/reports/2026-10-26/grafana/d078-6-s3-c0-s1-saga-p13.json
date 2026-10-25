@@ -1,0 +1,593 @@
+{
+  "dashboard_uid": "peekcart-saga-messaging",
+  "panel_id": 13,
+  "title": "taskScheduler 대기 작업",
+  "start": 1792965776,
+  "end": 1792965974,
+  "step_seconds": 15,
+  "rate_interval": "1m",
+  "targets": [
+    {
+      "expr": "executor_queued_tasks{application=~\".*\", name=\"taskScheduler\"}",
+      "legendFormat": "{{application}} {{pod}}",
+      "result": [
+        {
+          "metric": {
+            "__name__": "executor_queued_tasks",
+            "application": "gateway",
+            "container": "gateway",
+            "endpoint": "management",
+            "instance": "10.100.0.18:8081",
+            "job": "gateway-metrics",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "gateway-866d4d8677-lmhkp",
+            "service": "gateway-metrics"
+          },
+          "values": [
+            [
+              1792965776,
+              "1"
+            ],
+            [
+              1792965791,
+              "1"
+            ],
+            [
+              1792965806,
+              "1"
+            ],
+            [
+              1792965821,
+              "1"
+            ],
+            [
+              1792965836,
+              "1"
+            ],
+            [
+              1792965851,
+              "1"
+            ],
+            [
+              1792965866,
+              "1"
+            ],
+            [
+              1792965881,
+              "1"
+            ],
+            [
+              1792965896,
+              "1"
+            ],
+            [
+              1792965911,
+              "1"
+            ],
+            [
+              1792965926,
+              "1"
+            ],
+            [
+              1792965941,
+              "1"
+            ],
+            [
+              1792965956,
+              "1"
+            ],
+            [
+              1792965971,
+              "1"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_queued_tasks",
+            "application": "gateway",
+            "container": "gateway",
+            "endpoint": "management",
+            "instance": "10.100.1.16:8081",
+            "job": "gateway-metrics",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "gateway-866d4d8677-k2mct",
+            "service": "gateway-metrics"
+          },
+          "values": [
+            [
+              1792965776,
+              "1"
+            ],
+            [
+              1792965791,
+              "1"
+            ],
+            [
+              1792965806,
+              "1"
+            ],
+            [
+              1792965821,
+              "1"
+            ],
+            [
+              1792965836,
+              "1"
+            ],
+            [
+              1792965851,
+              "1"
+            ],
+            [
+              1792965866,
+              "1"
+            ],
+            [
+              1792965881,
+              "1"
+            ],
+            [
+              1792965896,
+              "1"
+            ],
+            [
+              1792965911,
+              "1"
+            ],
+            [
+              1792965926,
+              "1"
+            ],
+            [
+              1792965941,
+              "1"
+            ],
+            [
+              1792965956,
+              "1"
+            ],
+            [
+              1792965971,
+              "1"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_queued_tasks",
+            "application": "order-service",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.100.1.13:8080",
+            "job": "order-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "order-service-65944d84c9-dpdbj",
+            "service": "order-service"
+          },
+          "values": [
+            [
+              1792965776,
+              "7"
+            ],
+            [
+              1792965791,
+              "8"
+            ],
+            [
+              1792965806,
+              "8"
+            ],
+            [
+              1792965821,
+              "8"
+            ],
+            [
+              1792965836,
+              "8"
+            ],
+            [
+              1792965851,
+              "8"
+            ],
+            [
+              1792965866,
+              "8"
+            ],
+            [
+              1792965881,
+              "8"
+            ],
+            [
+              1792965896,
+              "8"
+            ],
+            [
+              1792965911,
+              "8"
+            ],
+            [
+              1792965926,
+              "8"
+            ],
+            [
+              1792965941,
+              "8"
+            ],
+            [
+              1792965956,
+              "9"
+            ],
+            [
+              1792965971,
+              "9"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_queued_tasks",
+            "application": "payment-service",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.100.1.17:8080",
+            "job": "payment-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "payment-service-884cf8fd4-4b4fs",
+            "service": "payment-service"
+          },
+          "values": [
+            [
+              1792965776,
+              "10"
+            ],
+            [
+              1792965791,
+              "10"
+            ],
+            [
+              1792965806,
+              "10"
+            ],
+            [
+              1792965821,
+              "10"
+            ],
+            [
+              1792965836,
+              "10"
+            ],
+            [
+              1792965851,
+              "10"
+            ],
+            [
+              1792965866,
+              "10"
+            ],
+            [
+              1792965881,
+              "10"
+            ],
+            [
+              1792965896,
+              "10"
+            ],
+            [
+              1792965911,
+              "9"
+            ],
+            [
+              1792965926,
+              "10"
+            ],
+            [
+              1792965941,
+              "10"
+            ],
+            [
+              1792965956,
+              "9"
+            ],
+            [
+              1792965971,
+              "10"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_queued_tasks",
+            "application": "product-service",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.100.0.16:8080",
+            "job": "product-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "product-service-8645f76f-9slz2",
+            "service": "product-service"
+          },
+          "values": [
+            [
+              1792965776,
+              "7"
+            ],
+            [
+              1792965791,
+              "7"
+            ],
+            [
+              1792965806,
+              "7"
+            ],
+            [
+              1792965821,
+              "7"
+            ],
+            [
+              1792965836,
+              "7"
+            ],
+            [
+              1792965851,
+              "7"
+            ],
+            [
+              1792965866,
+              "7"
+            ],
+            [
+              1792965881,
+              "6"
+            ],
+            [
+              1792965896,
+              "7"
+            ],
+            [
+              1792965911,
+              "7"
+            ],
+            [
+              1792965926,
+              "7"
+            ],
+            [
+              1792965941,
+              "7"
+            ],
+            [
+              1792965956,
+              "7"
+            ],
+            [
+              1792965971,
+              "7"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_queued_tasks",
+            "application": "product-service",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.100.1.14:8080",
+            "job": "product-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "product-service-8645f76f-4npgm",
+            "service": "product-service"
+          },
+          "values": [
+            [
+              1792965776,
+              "7"
+            ],
+            [
+              1792965791,
+              "7"
+            ],
+            [
+              1792965806,
+              "7"
+            ],
+            [
+              1792965821,
+              "7"
+            ],
+            [
+              1792965836,
+              "6"
+            ],
+            [
+              1792965851,
+              "7"
+            ],
+            [
+              1792965866,
+              "6"
+            ],
+            [
+              1792965881,
+              "7"
+            ],
+            [
+              1792965896,
+              "7"
+            ],
+            [
+              1792965911,
+              "6"
+            ],
+            [
+              1792965926,
+              "7"
+            ],
+            [
+              1792965941,
+              "7"
+            ],
+            [
+              1792965956,
+              "7"
+            ],
+            [
+              1792965971,
+              "7"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_queued_tasks",
+            "application": "product-service",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.100.1.15:8080",
+            "job": "product-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "product-service-8645f76f-s7jx5",
+            "service": "product-service"
+          },
+          "values": [
+            [
+              1792965776,
+              "7"
+            ],
+            [
+              1792965791,
+              "7"
+            ],
+            [
+              1792965806,
+              "7"
+            ],
+            [
+              1792965821,
+              "7"
+            ],
+            [
+              1792965836,
+              "7"
+            ],
+            [
+              1792965851,
+              "7"
+            ],
+            [
+              1792965866,
+              "7"
+            ],
+            [
+              1792965881,
+              "6"
+            ],
+            [
+              1792965896,
+              "6"
+            ],
+            [
+              1792965911,
+              "7"
+            ],
+            [
+              1792965926,
+              "7"
+            ],
+            [
+              1792965941,
+              "7"
+            ],
+            [
+              1792965956,
+              "7"
+            ],
+            [
+              1792965971,
+              "7"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_queued_tasks",
+            "application": "user-service",
+            "container": "user-service",
+            "endpoint": "http",
+            "instance": "10.100.0.17:8080",
+            "job": "user-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "user-service-85dcb5c956-p47r6",
+            "service": "user-service"
+          },
+          "values": [
+            [
+              1792965776,
+              "0"
+            ],
+            [
+              1792965791,
+              "0"
+            ],
+            [
+              1792965806,
+              "0"
+            ],
+            [
+              1792965821,
+              "0"
+            ],
+            [
+              1792965836,
+              "0"
+            ],
+            [
+              1792965851,
+              "0"
+            ],
+            [
+              1792965866,
+              "0"
+            ],
+            [
+              1792965881,
+              "0"
+            ],
+            [
+              1792965896,
+              "0"
+            ],
+            [
+              1792965911,
+              "0"
+            ],
+            [
+              1792965926,
+              "0"
+            ],
+            [
+              1792965941,
+              "0"
+            ],
+            [
+              1792965956,
+              "0"
+            ],
+            [
+              1792965971,
+              "0"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

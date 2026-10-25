@@ -1,0 +1,73 @@
+WARNING: 
+
+To increase the performance of the tunnel, consider installing NumPy. For instructions,
+please see https://cloud.google.com/iap/docs/using-tcp-forwarding#increasing_the_tcp_upload_bandwidth
+
+loadgen PRODUCT_IDS: 1000개
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /tmp/d002bc-ratelimit-probe.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 20 max VUs, 45s max duration (incl. graceful stop):
+              * default: 20 looping VUs for 15s (gracefulStop: 30s)
+
+
+running (01.0s), 20/20 VUs, 93 complete and 0 interrupted iterations
+default   [   5% ] 20 VUs  00.8s/15s
+
+running (02.0s), 20/20 VUs, 323 complete and 0 interrupted iterations
+default   [  12% ] 20 VUs  01.8s/15s
+
+running (03.0s), 20/20 VUs, 585 complete and 0 interrupted iterations
+default   [  19% ] 20 VUs  02.8s/15s
+
+running (04.0s), 20/20 VUs, 868 complete and 0 interrupted iterations
+default   [  25% ] 20 VUs  03.8s/15s
+
+running (05.0s), 20/20 VUs, 1208 complete and 0 interrupted iterations
+default   [  32% ] 20 VUs  04.8s/15s
+
+running (06.0s), 20/20 VUs, 1554 complete and 0 interrupted iterations
+default   [  39% ] 20 VUs  05.8s/15s
+
+running (07.0s), 20/20 VUs, 1911 complete and 0 interrupted iterations
+default   [  45% ] 20 VUs  06.8s/15s
+
+running (08.0s), 20/20 VUs, 2315 complete and 0 interrupted iterations
+default   [  52% ] 20 VUs  07.8s/15s
+
+running (09.0s), 20/20 VUs, 2698 complete and 0 interrupted iterations
+default   [  59% ] 20 VUs  08.8s/15s
+
+running (10.0s), 20/20 VUs, 3055 complete and 0 interrupted iterations
+default   [  65% ] 20 VUs  09.8s/15s
+
+running (11.0s), 20/20 VUs, 3466 complete and 0 interrupted iterations
+default   [  72% ] 20 VUs  10.8s/15s
+
+running (12.0s), 20/20 VUs, 3945 complete and 0 interrupted iterations
+default   [  79% ] 20 VUs  11.8s/15s
+
+running (13.0s), 20/20 VUs, 4441 complete and 0 interrupted iterations
+default   [  85% ] 20 VUs  12.8s/15s
+
+running (14.0s), 20/20 VUs, 4925 complete and 0 interrupted iterations
+default   [  92% ] 20 VUs  13.8s/15s
+
+running (15.0s), 20/20 VUs, 5445 complete and 0 interrupted iterations
+default   [  99% ] 20 VUs  14.8s/15s
+
+=== RateLimiter 프로브 ===
+PASS — 429 4924건. 한도 배선 살아 있음. 측정 진행 가능.
+
+
+running (15.3s), 00/20 VUs, 5560 complete and 0 interrupted iterations
+default ✓ [ 100% ] 20 VUs  15s

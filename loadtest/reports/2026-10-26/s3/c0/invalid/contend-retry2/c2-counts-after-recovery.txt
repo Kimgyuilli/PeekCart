@@ -1,0 +1,12 @@
+## after recovery drain 2026-10-25T20:42:45Z
+## orders by status
+CANCELLED	9869
+## order outbox
+order.cancelled	PUBLISHED	9869
+order.created	PUBLISHED	9869
+## product outbox
+stock.reservation.result	PUBLISHED	9821
+## dlq order
+0
+## dlq product
+52

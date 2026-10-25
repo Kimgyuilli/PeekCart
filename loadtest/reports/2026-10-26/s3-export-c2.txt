@@ -1,0 +1,10 @@
+  loadtest/reports/2026-10-26/grafana/d078-5-s3-c0-c2-saga-p7.json	series=3
+  loadtest/reports/2026-10-26/grafana/d078-5-s3-c0-c2-saga-p8.json	series=3
+  loadtest/reports/2026-10-26/grafana/d078-5-s3-c0-c2-saga-p5.json	series=2
+  loadtest/reports/2026-10-26/grafana/d078-5-s3-c0-c2-kafka-lag-p1.json	series=76
+  loadtest/reports/2026-10-26/grafana/d078-5-drain-s3-c0-c2-saga-p2.json	series=6
+  loadtest/reports/2026-10-26/grafana/d078-5-drain-s3-c0-c2-saga-p3.json	series=6
+  loadtest/reports/2026-10-26/grafana/d078-6-s3-c0-c2-saga-p12.json	series=13
+  loadtest/reports/2026-10-26/grafana/d078-6-s3-c0-c2-saga-p13.json	series=8
+  loadtest/reports/2026-10-26/grafana/d078-jvm-s3-c0-c2-api-jvm-p5.json	series=48
+  loadtest/reports/2026-10-26/grafana/d078-jvm-s3-c0-c2-api-jvm-p6.json	series=15

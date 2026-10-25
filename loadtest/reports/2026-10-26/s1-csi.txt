@@ -1,0 +1,11 @@
+2026-10-25T17:41:21Z
+Update Complete. ⎈Happy Helming!⎈
+NAME: csi-secrets-store
+NAMESPACE: kube-system
+STATUS: deployed
+REVISION: 1
+serviceaccount/secrets-store-csi-driver-provider-gcp created
+clusterrolebinding.rbac.authorization.k8s.io/secrets-store-csi-driver-provider-gcp-rolebinding created
+clusterrole.rbac.authorization.k8s.io/secrets-store-csi-driver-provider-gcp-role created
+daemonset.apps/csi-secrets-store-provider-gcp created
+2026-10-25T17:41:35Z
