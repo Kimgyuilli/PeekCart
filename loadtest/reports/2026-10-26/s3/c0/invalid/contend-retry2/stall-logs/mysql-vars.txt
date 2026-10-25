@@ -1,0 +1,9 @@
+binlog_expire_logs_seconds	2592000
+binlog_format	ROW
+binlog_row_image	FULL
+innodb_max_undo_log_size	1073741824
+innodb_redo_log_capacity	104857600
+innodb_undo_log_truncate	ON
+log_bin	ON
+max_binlog_size	1073741824
+sync_binlog	1

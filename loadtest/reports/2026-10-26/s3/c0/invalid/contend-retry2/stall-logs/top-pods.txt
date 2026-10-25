@@ -1,0 +1,12 @@
+NAME                              CPU(cores)   MEMORY(bytes)   
+gateway-866d4d8677-k2mct          4m           438Mi           
+gateway-866d4d8677-lmhkp          5m           470Mi           
+kafka-7fd9dc8784-vcxhx            61m          682Mi           
+mysql-74f6f4cb4f-mf79n            21m          672Mi           
+order-service-65944d84c9-dpdbj    22m          870Mi           
+payment-service-884cf8fd4-4b4fs   19m          614Mi           
+product-service-8645f76f-4npgm    28m          594Mi           
+product-service-8645f76f-9slz2    19m          597Mi           
+product-service-8645f76f-s7jx5    18m          589Mi           
+redis-7456fd985-bgxqp             5m           5Mi             
+user-service-85dcb5c956-p47r6     6m           413Mi           

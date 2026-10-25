@@ -1,0 +1,24 @@
+# mysql-since-1750.log 발췌 (원본 .log 는 .gitignore 대상이라 로컬 보관). 첫 디스크 가득 참 오류와 오류 종류별 건수
+## 첫 오류 줄 (원본 54~61행)
+2026-10-25T19:08:29.520027638Z 2026-10-25T19:08:29.519483Z 1703 [ERROR] [MY-012144] [InnoDB] posix_fallocate(): Failed to preallocate data for file ./peekcart_payment/payments.ibd, desired size 4194304 bytes. Operating system error number 28. Check that the disk is not full or a disk quota exceeded. Make sure the file system supports this function. Refer to your operating system documentation for 
+2026-10-25T19:08:29.525295281Z 2026-10-25T19:08:29.524603Z 1703 [Warning] [MY-012637] [InnoDB] 1048576 bytes should have been written. Only 188416 bytes written. Retrying for the remaining bytes.
+2026-10-25T19:08:29.525388777Z 2026-10-25T19:08:29.524848Z 1703 [Warning] [MY-012638] [InnoDB] Retry attempts for writing partial data failed.
+2026-10-25T19:08:29.525402513Z 2026-10-25T19:08:29.524951Z 1703 [ERROR] [MY-012639] [InnoDB] Write to file ./peekcart_payment/payments.ibd failed at offset 36700160, 1048576 bytes should have been written, only 188416 were written. Operating system error number 28. Check that your OS and file system support files of this size. Check also that the disk is not full or a disk quota exceeded.
+2026-10-25T19:08:29.525485437Z 2026-10-25T19:08:29.525252Z 1703 [ERROR] [MY-012640] [InnoDB] Error number 28 means 'No space left on device'
+2026-10-25T19:08:29.525496993Z 2026-10-25T19:08:29.525315Z 1703 [Warning] [MY-012145] [InnoDB] Error while writing 4194304 zeroes to ./peekcart_payment/payments.ibd starting at offset 33554432
+2026-10-25T19:08:29.532180185Z 2026-10-25T19:08:29.531719Z 1703 [ERROR] [MY-013132] [Server] The table 'payments' is full!
+2026-10-25T19:08:29.533648280Z 2026-10-25T19:08:29.533380Z 1628 [ERROR] [MY-000035] [Server] Disk is full writing './binlog.000002' (OS errno 28 - No space left on device). Waiting for someone to free space... Retry in 60 secs. Message reprinted in 600 secs.
+## 오류 종류별 건수 (17:50Z~20:17Z)
+ 454 [Warning] [MY-012638] [InnoDB] Retry attempts for writing partial data failed
+ 454 [ERROR] [MY-013132] [Server] The table 'payments' is full
+ 454 [ERROR] [MY-012144] [InnoDB] posix_fallocate
+ 453 [Warning] [MY-012145] [InnoDB] Error while writing 860160 zeroes to 
+   7 [ERROR] [MY-000035] [Server] Disk is full writing '
+   3 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future rel
+   2 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is
+   2 [Warning] [MY-010068] [Server] CA certificate ca
+   1 [Warning] [MY-012637] [InnoDB] 1048576 bytes should have been written
+   1 [Warning] [MY-012145] [InnoDB] Error while writing 4194304 zeroes to 
+   1 [Warning] [MY-010453] [Server] root@localhost is created with an empty password 
+   1 [ERROR] [MY-012640] [InnoDB] Error number 28 means 'No space left on device'
+   1 [ERROR] [MY-012639] [InnoDB] Write to file 

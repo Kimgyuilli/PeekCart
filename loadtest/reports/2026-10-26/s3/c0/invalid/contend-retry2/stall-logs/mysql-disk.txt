@@ -1,0 +1,48 @@
+## df
+Filesystem     1K-blocks   Used Available Use% Mounted on
+/dev/sdb          996780 980396         0 100% /var/lib/mysql
+## du top
+4	/var/lib/mysql/peekcart_notification
+4	/var/lib/mysql/private_key.pem
+4	/var/lib/mysql/public_key.pem
+4	/var/lib/mysql/server-cert.pem
+4	/var/lib/mysql/server-key.pem
+8	/var/lib/mysql/ib_buffer_pool
+16	/var/lib/mysql/lost+found
+36	/var/lib/mysql/mysql
+116	/var/lib/mysql/sys
+192	/var/lib/mysql/#ib_16384_0.dblwr
+804	/var/lib/mysql/#innodb_temp
+1644	/var/lib/mysql/performance_schema
+2936	/var/lib/mysql/binlog.000001
+8384	/var/lib/mysql/#ib_16384_1.dblwr
+10732	/var/lib/mysql/peekcart_user
+12288	/var/lib/mysql/ibdata1
+12288	/var/lib/mysql/ibtmp1
+31748	/var/lib/mysql/mysql.ibd
+32768	/var/lib/mysql/undo_001
+32768	/var/lib/mysql/undo_002
+44204	/var/lib/mysql/peekcart_product
+51376	/var/lib/mysql/peekcart_order
+78564	/var/lib/mysql/peekcart_payment
+102404	/var/lib/mysql/#innodb_redo
+557068	/var/lib/mysql/binlog.000002
+## binlog
+-rw-r----- 1 mysql mysql    196608 Oct 25 20:22 #ib_16384_0.dblwr
+-rw-r----- 1 mysql mysql   8585216 Oct 25 18:04 #ib_16384_1.dblwr
+-rw-r----- 1 mysql mysql   3002817 Oct 25 18:04 binlog.000001
+-rw-r----- 1 mysql mysql 570433536 Oct 25 20:21 binlog.000002
+-rw-r----- 1 mysql mysql        32 Oct 25 18:04 binlog.index
+-rw-r----- 1 mysql mysql  12582912 Oct 25 20:22 ibdata1
+-rw-r----- 1 mysql mysql  12582912 Oct 25 18:04 ibtmp1
+-rw-r----- 1 mysql mysql  33554432 Oct 25 20:21 undo_001
+-rw-r----- 1 mysql mysql  33554432 Oct 25 20:22 undo_002
+## redo
+102404	/var/lib/mysql/#innodb_redo
+804	/var/lib/mysql/#innodb_temp
+## schema dirs
+4	/var/lib/mysql/peekcart_notification
+51376	/var/lib/mysql/peekcart_order
+78564	/var/lib/mysql/peekcart_payment
+44204	/var/lib/mysql/peekcart_product
+10732	/var/lib/mysql/peekcart_user
