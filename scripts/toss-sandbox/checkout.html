@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>PeekCart Toss 테스트 결제</title>
+  <!-- D-064 검증 도구. 제품 화면이 아니다. 결제위젯(주문서형) SDK 를 결제위젯 연동 키(test_gck_)로 연다.
+       호출 순서는 공식 샘플 tosspayments-sample 의 widget/checkout.html 과 같다. -->
+  <script src="https://js.tosspayments.com/v2/standard"></script>
+</head>
+<body>
+  <p>D-064 Toss 테스트 결제. test_ 키로만 열리며 실제 출금이 없다.</p>
+  <p id="order"></p>
+  <div id="payment-method"></div>
+  <div id="agreement"></div>
+  <button id="pay" disabled>결제하기</button>
+  <pre id="status"></pre>
+  <script>
+    // sandbox.py serve 가 run 의 state.json 과 키 파일로 채운다. 파일을 직접 열면 null 이다.
+    const config = /*__CONFIG__*/null;
+    const status = document.getElementById('status');
+    const button = document.getElementById('pay');
+
+    async function main() {
+      if (!config) {
+        status.textContent = 'sandbox.py serve 가 연 주소로 들어와야 한다';
+        return;
+      }
+      document.getElementById('order').textContent = `PG 주문 ${config.orderId}, ${config.amount}원`;
+      const widgets = TossPayments(config.clientKey).widgets({ customerKey: config.customerKey });
+      // 금액 설정이 렌더와 결제 요청보다 먼저다.
+      await widgets.setAmount({ currency: 'KRW', value: config.amount });
+      await Promise.all([
+        widgets.renderPaymentMethods({ selector: '#payment-method', variantKey: 'DEFAULT' }),
+        widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' }),
+      ]);
+      button.disabled = false;
+      button.addEventListener('click', () => {
+        widgets.requestPayment({
+          orderId: config.orderId,
+          orderName: config.orderName,
+          successUrl: config.successUrl,
+          failUrl: config.failUrl,
+        }).catch((e) => {
+          status.textContent = `결제 요청 오류: ${e.code || ''} ${e.message || e}`;
+        });
+      });
+    }
+
+    main().catch((e) => {
+      status.textContent = `위젯 오류: ${e.code || ''} ${e.message || e}`;
+    });
+  </script>
+</body>
+</html>

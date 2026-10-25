@@ -219,7 +219,7 @@ backlog/age 게이지가 없으면 "미결로 남기지 않는다"는 계약을 
 - **스케줄러가 2개 늘어난다**(dispatcher · reconciliation, 둘 다 `@SchedulerLock`). 소비 시점에 바로 환불하지 않으므로 **환불에 최대 1 dispatcher 주기의 지연**이 생긴다 — 즉시성을 포기하고 crash 안전성과 fence 무결성을 얻는 교환이다
 - **수동 종결 경로가 계약에 포함**된다(`UNRESOLVED` 24h 초과). 자동화가 닿지 않는 구간이 있음을 인정하는 것이며, 그 구간을 **없다고 적지 않는 대신 감사 필드로 추적**한다
 - `payments.status` 에 `REFUNDED` 가 추가돼 **`APPROVED` 를 종결로 가정한 기존 쿼리·테스트**를 점검해야 한다
-- **검증 한계**: 실제 Toss 취소 API 는 승인된 실거래가 필요해 호출할 수 없다. 구현 ④-c-1 의 검증은 **클라이언트 계약 테스트 + 상태머신/fence/crash 복구 테스트**로 한정되며, 외부 PG 장애 주입은 **D-020 과 같은 게이트**(외부 PG 환경)에 묶인다. 이 한계를 "검증됨"으로 기록하지 않는다
+- **검증 한계**: 실제 Toss 취소 API 는 승인된 결제가 있어야 호출할 수 있다(테스트 환경의 테스트 결제로도 된다. Update Log 2026-10-26). 구현 ④-c-1 의 검증은 **클라이언트 계약 테스트 + 상태머신/fence/crash 복구 테스트**로 한정되며, 외부 PG 장애 주입은 **D-020 과 같은 게이트**(외부 PG 환경)에 묶인다. 이 한계를 "검증됨"으로 기록하지 않는다
 - **잔여 위험**: PG 멱등키를 쓰더라도 "PG 가 성공했는데 우리 조회도 실패하는" 동시 장애 구간에서는 `UNRESOLVED` 가 사람 손을 요구한다. 이 계약은 그 구간을 **없애는 것이 아니라 보이게 만든다**
 
 ### 후속 결정에 미치는 영향
@@ -246,3 +246,11 @@ backlog/age 게이지가 없으면 "미결로 남기지 않는다"는 계약을 
 - 코드: `StockReservationService.compensatePaidButUnreserved` · `OrderEventConsumer.recordPaidButCancelled` · `PaymentEventConsumer.handleOrderCancelled` · `TossPaymentClient` · `PaymentStatus`
 - 계획서: `docs/plans/done/task-adr0018-compensation-refund-contract.md` · 구현 `docs/plans/done/task-impl4-choreography-saga.md` P8
 - `docs/plans/PLAN-BLINDSPOTS.md` **B12** — 계약 검사와 fence 의 혼동(D3 의 축)
+
+## Update Log
+
+본 ADR 은 `docs/adr/README.md` "본문 정정 예외 (Update Log)" 규칙에 따른 본문 직접 수정 이력을 기록합니다. 의사결정 자체는 변경되지 않았으며, 사실 오류만 정정되었습니다.
+
+| Date | Commit | 변경 내용 | 사유 |
+|------|--------|-----------|------|
+| 2026-10-26 | (본 커밋) | Consequences 의 "검증 한계" 에서 "실제 Toss 취소 API 는 승인된 실거래가 필요해 호출할 수 없다" 를 "승인된 결제가 있어야 호출할 수 있다(테스트 환경의 테스트 결제로도 된다)" 로 정정 | D-064 에서 Toss 테스트 환경의 테스트 키로 승인한 결제를 PeekCart 환불 경로(`RefundExecutor`)가 실제 취소 API 로 취소했다(`docs/progress/evidence/d064-toss-sandbox-20261026.md`). 구현 ④-c-1 당시의 검증 범위와 외부 PG 장애 주입 게이트에 대한 서술은 그대로다 |

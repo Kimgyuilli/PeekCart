@@ -1,0 +1,80 @@
+{
+  "status": 200,
+  "body": {
+    "mId": "tgen_fixture",
+    "lastTransactionKey": "txrd_fixture_last",
+    "paymentKey": "tsandbox_fixture_payment_key",
+    "orderId": "pc_fixture_order_0001",
+    "orderName": "PeekCart 테스트 주문 2",
+    "taxExemptionAmount": 0,
+    "status": "CANCELED",
+    "requestedAt": "2026-10-26T01:36:46+09:00",
+    "approvedAt": "2026-10-26T01:37:13+09:00",
+    "useEscrow": false,
+    "escrowKey": null,
+    "cultureExpense": false,
+    "card": {
+      "issuerCode": "24",
+      "acquirerCode": "21",
+      "number": "00000000****000*",
+      "installmentPlanMonths": 0,
+      "isInterestFree": false,
+      "interestPayer": null,
+      "approveNo": "00000000",
+      "useCardPoint": false,
+      "cardType": "신용",
+      "ownerType": "개인",
+      "acquireStatus": "READY",
+      "amount": 9979
+    },
+    "virtualAccount": null,
+    "transfer": null,
+    "mobilePhone": null,
+    "giftCertificate": null,
+    "cashReceipt": null,
+    "cashReceipts": null,
+    "discount": null,
+    "cancels": [
+      {
+        "transactionKey": "txrd_fixture_cancel",
+        "cancelReason": "주문 보상 환불",
+        "taxExemptionAmount": 0,
+        "canceledAt": "2026-10-26T01:38:25+09:00",
+        "cardDiscountAmount": 0,
+        "transferDiscountAmount": 0,
+        "easyPayDiscountAmount": 21,
+        "receiptKey": null,
+        "cancelStatus": "DONE",
+        "cancelRequestId": null,
+        "cancelAmount": 10000,
+        "taxFreeAmount": 0,
+        "refundableAmount": 0
+      }
+    ],
+    "secret": "ps_fixture_secret",
+    "type": "NORMAL",
+    "easyPay": {
+      "provider": "토스페이",
+      "amount": 0,
+      "discountAmount": 21
+    },
+    "country": "KR",
+    "failure": null,
+    "isPartialCancelable": true,
+    "receipt": {
+      "url": "https://example.invalid/toss-sandbox"
+    },
+    "checkout": {
+      "url": "https://example.invalid/toss-sandbox"
+    },
+    "currency": "KRW",
+    "totalAmount": 10000,
+    "balanceAmount": 0,
+    "suppliedAmount": 0,
+    "vat": 0,
+    "taxFreeAmount": 0,
+    "method": "간편결제",
+    "version": "2022-11-16",
+    "metadata": null
+  }
+}
