@@ -1,0 +1,74 @@
+start 2026-10-25T09:22:13Z
+[DEPLOY-OVERLAY] drain preflight 실행 — 통과해야 배포한다
+[DRAIN-PREFLIGHT] namespace=peekcart · drain 상한 564s · lag 재관측 간격 15s
+[DRAIN-PREFLIGHT] OK — drain 4조건 충족. 구 이미지 롤백이 안전하다
+[DEPLOY-OVERLAY] kafka 선행 적용 (Namespace, kafka PVC·Deployment·Service)
+namespace/peekcart unchanged
+service/kafka unchanged
+persistentvolumeclaim/kafka-pvc unchanged
+deployment.apps/kafka unchanged
+deployment "kafka" successfully rolled out
+[DEPLOY-OVERLAY] 선언 토픽 30개 생성 (--create --if-not-exists)
+[DEPLOY-OVERLAY] 토픽 30개 파티션 수 일치
+[DEPLOY-OVERLAY] kubectl apply -k k8s/overlays/gke
+namespace/peekcart unchanged
+serviceaccount/gateway unchanged
+serviceaccount/user-service unchanged
+configmap/gateway-config unchanged
+configmap/internal-token-binding unchanged
+configmap/internal-token-keys unchanged
+configmap/mysql-init-config unchanged
+configmap/notification-service-config unchanged
+configmap/order-service-config unchanged
+configmap/payment-service-config unchanged
+configmap/product-service-config unchanged
+configmap/user-jwt-binding unchanged
+configmap/user-jwt-public-keys unchanged
+configmap/user-service-config unchanged
+secret/mysql-secret configured
+secret/notification-service-secret configured
+secret/order-service-secret configured
+secret/payment-service-secret configured
+secret/product-service-secret configured
+secret/user-service-secret configured
+service/gateway unchanged
+service/gateway-metrics unchanged
+service/kafka unchanged
+service/mysql unchanged
+service/notification-service unchanged
+service/order-service unchanged
+service/payment-service unchanged
+service/product-service unchanged
+service/redis unchanged
+service/user-service unchanged
+persistentvolumeclaim/kafka-pvc unchanged
+persistentvolumeclaim/mysql-pvc unchanged
+persistentvolumeclaim/redis-pvc unchanged
+deployment.apps/gateway configured
+deployment.apps/kafka unchanged
+deployment.apps/mysql configured
+deployment.apps/notification-service configured
+deployment.apps/order-service configured
+deployment.apps/payment-service configured
+deployment.apps/product-service configured
+deployment.apps/redis unchanged
+deployment.apps/user-service configured
+horizontalpodautoscaler.autoscaling/gateway unchanged
+horizontalpodautoscaler.autoscaling/order-service unchanged
+servicemonitor.monitoring.coreos.com/gateway unchanged
+servicemonitor.monitoring.coreos.com/notification-service unchanged
+servicemonitor.monitoring.coreos.com/order-service unchanged
+servicemonitor.monitoring.coreos.com/payment-service unchanged
+servicemonitor.monitoring.coreos.com/product-service unchanged
+servicemonitor.monitoring.coreos.com/user-service unchanged
+networkpolicy.networking.k8s.io/backend-ingress-gateway-only unchanged
+secretproviderclass.secrets-store.csi.x-k8s.io/gateway-internal-signing-key unchanged
+secretproviderclass.secrets-store.csi.x-k8s.io/user-service-jwt-signing-key unchanged
+[DEPLOY-OVERLAY] 인증 왕복 게이트 실행 (GW_URL=http://localhost:18081)
+[DEPLOY-OVERLAY]   롤아웃 완료 대기…
+deployment "gateway" successfully rolled out
+[AUTH-GATE] (1) 로그인 OK
+[AUTH-GATE] (2) 보호 경로 200 OK — 인증 왕복 성립
+[AUTH-GATE] PASS
+wrapper exit=0
+end 2026-10-25T09:29:18Z

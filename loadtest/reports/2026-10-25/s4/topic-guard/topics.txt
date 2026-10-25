@@ -1,0 +1,141 @@
+Topic: product.updated.dlq	TopicId: GVm_ycNnTM2adUjK8qO8sA	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: product.updated.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.failed	TopicId: Oq6uu3iuRY2pHTSu5sC8PA	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.failed	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.failed	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.failed	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: order.created.dlq	TopicId: rxH_xlHaQeqMyaAKoxPh1A	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: order.created.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.approval.result	TopicId: u9-U3810TAKCfQmLoTu7Vg	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.approval.result	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.approval.result	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.approval.result	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.completed	TopicId: ll_E6tlxTNinGw7r7D5xWA	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.completed	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.completed	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.completed	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.completed.dlq	TopicId: mY2JDlIsSzqRZ3JwGEbHvQ	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.completed.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.compensation.requested	TopicId: Ky2bqA3ATDGo025Lu9sX9A	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.compensation.requested	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.compensation.requested	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.compensation.requested	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.compensation.requested.dlq	TopicId: ylDy58FFSeerlKHKspxnuQ	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.compensation.requested.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: product.updated	TopicId: OwFUiSmsQLOvYBZBAwQ02g	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: product.updated	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: product.updated	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: product.updated	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.reservation.result	TopicId: fkbeHPriSseRCiVxmNY5gg	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.reservation.result	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.reservation.result	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.reservation.result	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.approval-recovery.requested	TopicId: Vv-gvjZhSGOSZeEi0ZK68w	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.approval-recovery.requested	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.approval-recovery.requested	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.approval-recovery.requested	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: order.compensation.requested.dlq	TopicId: hFwkQ4hKTsyDgfEnv-x3mw	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: order.compensation.requested.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.approval-recovery.requested.dlq	TopicId: cfpMwebnTVWRfhG53VJreA	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.approval-recovery.requested.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: order.cancelled.dlq	TopicId: _P3ge5OFR2yw5YdHC0dZ0A	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: order.cancelled.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: order.compensation.requested	TopicId: WjY2jDUKT8CRd_MUKYxlvA	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: order.compensation.requested	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: order.compensation.requested	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: order.compensation.requested	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: order.cancelled	TopicId: UzdlStBRToKXUWJxDqqfCA	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: order.cancelled	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: order.cancelled	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: order.cancelled	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.approval-recovery.result.dlq	TopicId: BPfr56omTcyB6KQ9grzmMg	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.approval-recovery.result.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: order.created	TopicId: 0hwTcTdbRLWQHDqndWp7QQ	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: order.created	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: order.created	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: order.created	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.failed.dlq	TopicId: 5wf7C3FLQ6GhtXgZX6Sxzg	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.failed.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.refunded	TopicId: 9gJmh__gSbqVj2sS21BWZQ	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.refunded	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.refunded	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.refunded	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.approval-recovery.result	TopicId: REz9OgNXRC6i3BqUIwcwWA	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.approval-recovery.result	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.approval-recovery.result	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.approval-recovery.result	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.approval-recovery.snapshot.dlq	TopicId: Lg-t7BN9TZ2LVZFiTHz9Og	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.approval-recovery.snapshot.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.requested	TopicId: L1YYAQwuSIitwzlnz09Khw	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.requested	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.requested	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.requested	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.requested.dlq	TopicId: nuCWq2ZMSYm8-uWJQoLISw	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.requested.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.approval-recovery.execute.dlq	TopicId: InCm8aUbRXaOhRqgHWni-w	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.approval-recovery.execute.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.approval.result.dlq	TopicId: uOoglbj7SF2PCuAPtoEovA	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.approval.result.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.approval-recovery.execute	TopicId: JusFf2W1T1a8C3zhlbnwgg	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.approval-recovery.execute	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.approval-recovery.execute	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: payment.approval-recovery.execute	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.reservation.result.dlq	TopicId: ChTbTCK6RwqaaG2Ih92pcA	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.reservation.result.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: __consumer_offsets	TopicId: 2ch5leVXQMSbGD3Cx8uWbQ	PartitionCount: 50	ReplicationFactor: 1	Configs: compression.type=producer,cleanup.policy=compact,segment.bytes=104857600
+	Topic: __consumer_offsets	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 3	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 4	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 5	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 6	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 7	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 8	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 9	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 10	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 11	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 12	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 13	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 14	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 15	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 16	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 17	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 18	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 19	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 20	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 21	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 22	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 23	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 24	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 25	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 26	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 27	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 28	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 29	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 30	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 31	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 32	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 33	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 34	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 35	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 36	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 37	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 38	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 39	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 40	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 41	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 42	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 43	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 44	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 45	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 46	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 47	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 48	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: __consumer_offsets	Partition: 49	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: payment.refunded.dlq	TopicId: ccfuB-ikT02a2BhIneozyw	PartitionCount: 1	ReplicationFactor: 1	Configs: segment.bytes=2097152,retention.bytes=4194304,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: payment.refunded.dlq	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+Topic: stock.approval-recovery.snapshot	TopicId: o20rw030Q06atKF5W0s8RA	PartitionCount: 3	ReplicationFactor: 1	Configs: segment.bytes=4194304,retention.bytes=8388608,message.timestamp.before.max.ms=777600000,segment.ms=86400000
+	Topic: stock.approval-recovery.snapshot	Partition: 0	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.approval-recovery.snapshot	Partition: 1	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 
+	Topic: stock.approval-recovery.snapshot	Partition: 2	Leader: 1	Replicas: 1	Isr: 1	Elr: 	LastKnownElr: 

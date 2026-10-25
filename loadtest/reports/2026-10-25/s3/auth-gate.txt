@@ -1,0 +1,3 @@
+[AUTH-GATE] (1) 로그인 OK
+[AUTH-GATE] (2) 보호 경로 200 OK — 인증 왕복 성립
+[AUTH-GATE] PASS

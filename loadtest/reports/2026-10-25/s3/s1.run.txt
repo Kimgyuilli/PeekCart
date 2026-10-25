@@ -1,0 +1,22 @@
+=== S3 s1 (spread) 시작 2026-10-25T09:02:42Z ===
+  k6 exit=99  부하 판정: 무효. dropped_iterations 2453 > 한도 102 (목표 10200회의 1%). 이 run 은 버리고 초기화 뒤 다시 돌린다.
+  배수: outbox 0 까지 126초, lag 0 까지 171초
+--- 건수 ---
+## orders by status
+PENDING	7748
+## order outbox
+order.created	PUBLISHED	7748
+## product outbox
+stock.reservation.result	PUBLISHED	7748
+## dlq order
+0
+## dlq product
+0
+--- 정합성 ---
+negative_stock_rows
+0
+status	cnt
+RESERVED	7748
+--- 차분 ---
+7748	product-service	saga_reservation_result_total{application="product-service",outcome="success"}
+=== S3 s1 끝 2026-10-25T09:08:54Z ===

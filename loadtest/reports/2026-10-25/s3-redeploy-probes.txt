@@ -1,0 +1,22 @@
+start 2026-10-25T08:24:50Z
+[DEPLOY-OVERLAY] !! drain preflight 를 건너뛴다 — 사유: 측정 overlay, notification 없음 (order 프로브 완화 재적용)
+[DEPLOY-OVERLAY] !! replay 행이 남은 상태로 구 이미지를 배포하면 발행 경로가 손상된다(ADR-0022 §D2)
+[DEPLOY-OVERLAY] kafka 선행 적용 (Namespace, kafka PVC·Deployment·Service)
+[DEPLOY-OVERLAY] 선언 토픽 30개 생성 (--create --if-not-exists)
+[DEPLOY-OVERLAY] 토픽 30개 파티션 수 일치
+[DEPLOY-OVERLAY] kubectl apply -k k8s/overlays/gke-d078-contention
+secret/mysql-secret configured
+secret/order-service-secret configured
+secret/payment-service-secret configured
+secret/product-service-secret configured
+secret/user-service-secret configured
+deployment.apps/gateway configured
+deployment.apps/mysql configured
+deployment.apps/order-service configured
+deployment.apps/payment-service configured
+deployment.apps/product-service configured
+deployment.apps/user-service configured
+[DEPLOY-OVERLAY] !! 인증 왕복 게이트를 건너뛴다 — GW_URL 미설정
+[DEPLOY-OVERLAY] !! 키쌍이 어긋나면 배포·Ready·로그인이 전부 정상인데 인증 요청만 401 이 된다(D-022)
+[DEPLOY-OVERLAY] !! 수동 실행:  GW_URL=http://<gateway>:8080 bash scripts/auth-roundtrip-gate.sh
+end 2026-10-25T08:29:44Z
