@@ -1,0 +1,7 @@
+start 2026-10-25T17:41:08Z
+Creating node pool monitoring-pool...
+............................................................................................................................................................................................................................................................................................................................done.
+Created [https://container.googleapis.com/v1/projects/peekcart-d078/zones/asia-northeast3-a/clusters/peekcart-d078/nodePools/monitoring-pool].
+NAME             MACHINE_TYPE   DISK_SIZE_GB  NODE_VERSION
+monitoring-pool  e2-standard-2  50            1.35.6-gke.1250001
+exit=0 end 2026-10-25T17:42:17Z

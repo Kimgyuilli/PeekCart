@@ -1,0 +1,25 @@
+toss smoke 2026-10-25T18:03:47Z
+secret/payment-service-secret patched
+deployment.apps/payment-service restarted
+deployment "mysql" successfully rolled out
+deployment "redis" successfully rolled out
+deployment "kafka" successfully rolled out
+deployment "user-service" successfully rolled out
+deployment "product-service" successfully rolled out
+deployment "order-service" successfully rolled out
+deployment "payment-service" successfully rolled out
+deployment "gateway" successfully rolled out
+rollout end 2026-10-25T18:08:04Z
+NAME                               READY   RESTARTS
+gateway-866d4d8677-k2mct           true    0
+gateway-866d4d8677-lmhkp           true    0
+kafka-7fd9dc8784-vcxhx             true    0
+mysql-74f6f4cb4f-mf79n             true    0
+order-service-65944d84c9-dpdbj     true    2
+payment-service-564f4cc78f-v8fp5   true    2
+payment-service-884cf8fd4-4b4fs    true    4
+product-service-8645f76f-4npgm     true    3
+product-service-8645f76f-9slz2     true    3
+product-service-8645f76f-s7jx5     true    3
+redis-7456fd985-bgxqp              true    0
+user-service-85dcb5c956-p47r6      true    2

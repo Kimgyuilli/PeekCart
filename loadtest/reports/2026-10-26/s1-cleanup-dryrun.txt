@@ -1,0 +1,14 @@
+=== Phase 3 Task 3-4 정리 시작 (Mon Oct 26 02:41:08 KST 2026) ===
+cluster=peekcart-d078  loadgen=peekcart-d078-loadgen  zone=asia-northeast3-a  region=asia-northeast3
+--- 1) GKE 클러스터 삭제 ---
+[dry-run] gcloud container clusters delete peekcart-d078 --zone=asia-northeast3-a --quiet
+--- 2) 부하 발생기 VM 삭제 ---
+[dry-run] gcloud compute instances delete peekcart-d078-loadgen --zone=asia-northeast3-a --quiet
+--- 3) Orphan Persistent Disk 회수 ---
+미부착 disk 없음
+--- 4) 예약 IP (reserved addresses) 회수 ---
+미사용 예약 IP 없음
+--- 5) 잔여 0 검증 ---
+[dry-run] 삭제를 수행하지 않았으므로 잔여 검증을 건너뛴다
+=== 정리 완료 ===
+과금 재확인: 내보내기 적재 후 위 주석의 bq 쿼리 또는 콘솔 리포트로 직전 세션 비용을 본다.
