@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-064.md",
+      "sha256": "d31c0a6e15aa4521500026bfb36f9d5706810f914bcf653990cb03c8a4ca45b4"
+    },
+    {
+      "path": "docs/plans/D-064.audit.md",
+      "sha256": "14ab6a149bcc53233f6058983df5d583dfba78855674475941e52db82f6ede50"
+    },
+    {
+      "path": "docs/plans/sync-context-cost.md",
+      "sha256": "6ebea48d145edc7e4c59a355862578c934a54d978846a2be861891a30294ffe9"
+    },
+    {
+      "path": "docs/plans/task-debt-20261021.md",
+      "sha256": "b5b6112b817a5f4a9e896c223761c8facf3abd142e99dc57cdd1a2196cda7d29"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-064.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-064.md",
+          "start": 1,
+          "end": 147
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-064.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-064.audit.md",
+          "start": 1,
+          "end": 35
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/sync-context-cost.md",
+      "parts": [
+        {
+          "source": "docs/plans/sync-context-cost.md",
+          "start": 1,
+          "end": 49
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/task-debt-20261021.md",
+      "parts": [
+        {
+          "source": "docs/plans/task-debt-20261021.md",
+          "start": 1,
+          "end": 658
+        }
+      ]
+    }
+  ]
+}
