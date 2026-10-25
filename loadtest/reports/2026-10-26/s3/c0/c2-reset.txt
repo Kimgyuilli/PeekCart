@@ -1,0 +1,4 @@
+orders	outbox	dlq	price_cache_kept
+0	0	0	1000
+products	min_stock	reservations
+1000	100000	0

@@ -1,0 +1,110 @@
+## status before 2026-10-25T18:50:01Z 1792954201
+Com_commit	301926
+Handler_commit	2394962
+Innodb_buffer_pool_wait_free	0
+Innodb_data_fsyncs	579310
+Innodb_log_waits	0
+Innodb_os_log_fsyncs	477075
+Innodb_row_lock_time	19007
+Innodb_row_lock_waits	4599
+Threads_running	2
+## sample 1 2026-10-25T18:50:02Z
+# threads_running
+Threads_running	4
+# trx by state
+# lock waits
+0
+# waiting queries (top)
+# processlist states
+NULL	Waiting on empty queue	1
+NULL	executing	1
+## sample 2 2026-10-25T18:50:13Z
+# threads_running
+Threads_running	5
+# trx by state
+RUNNING	12
+# lock waits
+0
+# waiting queries (top)
+# processlist states
+peekcart_order	waiting for handler commit	3
+peekcart_payment	waiting for handler commit	1
+peekcart_product	starting	1
+NULL	executing	1
+NULL	Waiting on empty queue	1
+peekcart_order	Sending to client	1
+## sample 3 2026-10-25T18:50:25Z
+# threads_running
+Threads_running	12
+# trx by state
+RUNNING	10
+# lock waits
+0
+# waiting queries (top)
+# processlist states
+peekcart_order	waiting for handler commit	9
+NULL	Waiting on empty queue	1
+NULL	executing	1
+peekcart_order	update	1
+## sample 4 2026-10-25T18:50:37Z
+# threads_running
+Threads_running	8
+# trx by state
+RUNNING	9
+# lock waits
+0
+# waiting queries (top)
+# processlist states
+peekcart_order	waiting for handler commit	9
+NULL	executing	1
+NULL	Waiting on empty queue	1
+## sample 5 2026-10-25T18:50:49Z
+# threads_running
+Threads_running	5
+# trx by state
+RUNNING	12
+# lock waits
+0
+# waiting queries (top)
+# processlist states
+peekcart_order	waiting for handler commit	9
+peekcart_payment	waiting for handler commit	1
+peekcart_product	waiting for handler commit	1
+NULL	executing	1
+NULL	Waiting on empty queue	1
+## sample 6 2026-10-25T18:51:01Z
+# threads_running
+Threads_running	14
+# trx by state
+RUNNING	12
+# lock waits
+0
+# waiting queries (top)
+# processlist states
+peekcart_order	waiting for handler commit	4
+NULL	executing	1
+peekcart_order	statistics	1
+NULL	Waiting on empty queue	1
+## sample 7 2026-10-25T18:51:13Z
+# threads_running
+Threads_running	3
+# trx by state
+RUNNING	1
+# lock waits
+0
+# waiting queries (top)
+# processlist states
+peekcart_payment	Sending to client	1
+peekcart_order	waiting for handler commit	1
+NULL	executing	1
+NULL	Waiting on empty queue	1
+## status after 2026-10-25T18:51:24Z 1792954284
+Com_commit	331526
+Handler_commit	2676327
+Innodb_buffer_pool_wait_free	0
+Innodb_data_fsyncs	615018
+Innodb_log_waits	0
+Innodb_os_log_fsyncs	508149
+Innodb_row_lock_time	19546
+Innodb_row_lock_waits	4699
+Threads_running	5
