@@ -66,4 +66,5 @@
 | [0043](./0043-dlq-preallocated-lineage-identity.md) | DLQ 최초 INSERT의 lineage와 ID 예약 | Accepted | Phase 5 | 05, 06 |
 | [0044](./0044-ci-critical-path-and-docs-only-skip.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 (ADR-0030 D1 부분 무효화) | Accepted | Phase 5 | 06 |
 | [0045](./0045-outbox-polling-throughput-defaults.md) | outbox poller 발행 처리율 기본값 (주기 500ms, 배치 500, 락 최소 보존 설정화) | Accepted | Phase 5 | 04, 06 |
+| [0046](./0046-product-read-cache-coalescing-and-stale-serving.md) | 상품 조회 캐시의 로딩 묶기·재고 만료 전 갱신·장애 시 마지막 값 응답 (DB 진입 상한 1 유지) | Accepted | Phase 5 | 04 |
 <!-- INDEX:END -->

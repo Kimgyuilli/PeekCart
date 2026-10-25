@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ⚠️ D-108 재측정 S3 대조 C2 전용. 운영 매니페스트 아님. 계획서 docs/plans/D-108.md §3.2
+#
+# 무엇을 재나: 2026-10-25 S3 는 order 수신이 초당 약 122건에서 멈췄다(D-108 ①). 같은 order 풀로 168건을 받은
+# 2026-10-24 와 달라진 것 중 하나가 ADR-0045 의 product outbox 기본값(주기 500ms, 배치 500)이다. 이 overlay 는
+# product outbox 만 ADR-0045 이전 값(주기 5s, 최소 보존 4s, 배치 100)으로 되돌려, product 커밋이 공유 MySQL 의
+# 커밋 대기를 키웠다는 후보를 C0(`gke-d078-contention`)과 같은 세션에서 대조한다.
+#
+# C0·C1 이 초당 170건에 닿으면 이 overlay 는 쓰지 않는다. 여기서 잰 값은 base(ADR-0045)의 값이 아니다.
+# 렌더 결과는 상위 overlay 대비 product-service env 세 항목만 다르다.
+#
+# 렌더:
+#   kubectl kustomize k8s/overlays/gke-d078-contention-product-outbox-5s
+resources:
+  - ../gke-d078-contention
+
+patches:
+  - path: patches/product-service-outbox-polling.yml
