@@ -1,0 +1,64 @@
+start 2026-10-25T07:33:44Z
+[DEPLOY-OVERLAY] !! drain preflight 를 건너뛴다 — 사유: 측정 overlay, notification 없음
+[DEPLOY-OVERLAY] !! replay 행이 남은 상태로 구 이미지를 배포하면 발행 경로가 손상된다(ADR-0022 §D2)
+[DEPLOY-OVERLAY] kafka 선행 적용 (Namespace, kafka PVC·Deployment·Service)
+namespace/peekcart created
+service/kafka created
+persistentvolumeclaim/kafka-pvc created
+deployment.apps/kafka created
+Waiting for deployment "kafka" rollout to finish: 0 out of 1 new replicas have been updated...
+Waiting for deployment "kafka" rollout to finish: 0 of 1 updated replicas are available...
+deployment "kafka" successfully rolled out
+[DEPLOY-OVERLAY] 선언 토픽 30개 생성 (--create --if-not-exists)
+[DEPLOY-OVERLAY] 토픽 30개 파티션 수 일치
+[DEPLOY-OVERLAY] kubectl apply -k k8s/overlays/gke-d078-contention
+namespace/peekcart unchanged
+serviceaccount/gateway created
+serviceaccount/user-service created
+configmap/gateway-config created
+configmap/internal-token-binding created
+configmap/internal-token-keys created
+configmap/mysql-init-config created
+configmap/order-service-config created
+configmap/payment-service-config created
+configmap/product-service-config created
+configmap/user-jwt-binding created
+configmap/user-jwt-public-keys created
+configmap/user-service-config created
+secret/mysql-secret created
+secret/order-service-secret created
+secret/payment-service-secret created
+secret/product-service-secret created
+secret/user-service-secret created
+service/gateway created
+service/gateway-metrics created
+service/kafka unchanged
+service/mysql created
+service/order-service created
+service/payment-service created
+service/product-service created
+service/redis created
+service/user-service created
+persistentvolumeclaim/kafka-pvc unchanged
+persistentvolumeclaim/mysql-pvc created
+persistentvolumeclaim/redis-pvc created
+deployment.apps/gateway created
+deployment.apps/kafka unchanged
+deployment.apps/mysql created
+deployment.apps/order-service created
+deployment.apps/payment-service created
+deployment.apps/product-service created
+deployment.apps/redis created
+deployment.apps/user-service created
+servicemonitor.monitoring.coreos.com/gateway created
+servicemonitor.monitoring.coreos.com/order-service created
+servicemonitor.monitoring.coreos.com/payment-service created
+servicemonitor.monitoring.coreos.com/product-service created
+servicemonitor.monitoring.coreos.com/user-service created
+secretproviderclass.secrets-store.csi.x-k8s.io/gateway-internal-signing-key created
+secretproviderclass.secrets-store.csi.x-k8s.io/user-service-jwt-signing-key created
+[DEPLOY-OVERLAY] !! 인증 왕복 게이트를 건너뛴다 — GW_URL 미설정
+[DEPLOY-OVERLAY] !! 키쌍이 어긋나면 배포·Ready·로그인이 전부 정상인데 인증 요청만 401 이 된다(D-022)
+[DEPLOY-OVERLAY] !! 수동 실행:  GW_URL=http://<gateway>:8080 bash scripts/auth-roundtrip-gate.sh
+wrapper exit=0
+end 2026-10-25T07:38:41Z

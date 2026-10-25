@@ -1,0 +1,10 @@
+## orders by status
+PENDING	1957
+## order outbox
+order.created	PUBLISHED	1957
+## product outbox
+stock.reservation.result	PUBLISHED	1956
+## dlq order
+0
+## dlq product
+1

@@ -50,3 +50,13 @@
   `--check`·자기검증, plans-index `--check` 도 통과
 - 커밋: `cbab2bf` `f044e71` `b62f988` `0ed2134` `82edb40` `fa1e61b` `6fcfb5e`, audit 갱신 1건
 - 갱신: 없음. TASKS·PHASE5·done 이동은 캠페인 규칙대로 root 가 기록 PR 에서 한다. 이 계획서는 세션 실행 전까지 아카이브하지 않는다
+
+## 2026-10-25 18:5x — /ship (재측정 세션 결과)
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/246 (base main `1933002`, 브랜치 `docs/d078-remeasure-session`)
+- precheck: ship preflight ok, consistency ok(warnings 0), review health ok, writing lint(커밋 11건·본문·제목) 통과,
+  docs-preservation(base `1933002`) 통과, harness-context `--check`·plans-index `--check` 통과
+- 커밋: `3cb644a` 계획서 아카이브(/sync), `784a60a` 측정 overlay 프로브 완화, `a71a1c5` `4bc9ca4` `54721ef` `c1b88cb` `9d87e62`
+  `9141983` `53b0d5d` 원자료(커밋당 100파일 이하, `*.log` 는 저장소 규칙대로 `.txt` 로 바꾸고 k6 화면 출력은 제외), `edf24b6` 계획서
+  실행 기록, `219c879` 증적과 세션 발견 문제, `f5cae31` TASKS, `94376d0` PHASE5, 이 audit 갱신 1건
+- 갱신: TASKS D-078 을 ◐ 부분 완료로(⑤⑥ 미측정), D-065 상태에 ②⑤ 재확인 통과, D-108 신규 등록. PHASE5 이력. 계획서는 D-078 이
+  남아 이번 PR 에서 옮기지 않는다(다음 `/sync` 가 머지 뒤 판단)

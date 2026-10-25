@@ -22,3 +22,5 @@ resources:
 
 patches:
   - path: patches/product-service-replicas.yml
+  # order 프로브 완화(2026-10-25 재측정 S3 에서 추가). 이유는 patch 파일 주석.
+  - path: patches/order-service-probes.yml

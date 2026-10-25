@@ -1,0 +1,4 @@
+negative_stock_rows
+0
+status	cnt
+RESERVED	7336

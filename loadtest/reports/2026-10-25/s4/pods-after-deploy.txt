@@ -1,0 +1,10 @@
+gateway-659c7cbc9c-5z2xj                1/1   Running   0             118s    10.68.1.23   gke-peekcart-d078-default-pool-f969bca7-rpff   <none>   <none>
+gateway-659c7cbc9c-6rgsn                1/1   Running   0             102s    10.68.3.12   gke-peekcart-d078-default-pool-f969bca7-wh6p   <none>   <none>
+kafka-7fd9dc8784-w9gmf                  1/1   Running   0             7m34s   10.68.3.7    gke-peekcart-d078-default-pool-f969bca7-wh6p   <none>   <none>
+mysql-74f6f4cb4f-2khg5                  1/1   Running   0             117s    10.68.3.10   gke-peekcart-d078-default-pool-f969bca7-wh6p   <none>   <none>
+notification-service-658fc75474-w58lx   1/1   Running   1 (60s ago)   115s    10.68.0.29   gke-peekcart-d078-default-pool-f969bca7-28hh   <none>   <none>
+order-service-7bd869c55-wt276           1/1   Running   1 (66s ago)   117s    10.68.0.27   gke-peekcart-d078-default-pool-f969bca7-28hh   <none>   <none>
+payment-service-79b7746cb9-nqb25        1/1   Running   1 (61s ago)   115s    10.68.1.22   gke-peekcart-d078-default-pool-f969bca7-rpff   <none>   <none>
+product-service-54d5dbb69b-hc28z        1/1   Running   1 (64s ago)   117s    10.68.0.28   gke-peekcart-d078-default-pool-f969bca7-28hh   <none>   <none>
+redis-7456fd985-hfvdm                   1/1   Running   0             117s    10.68.3.11   gke-peekcart-d078-default-pool-f969bca7-wh6p   <none>   <none>
+user-service-668bb9bf6b-k75pb           1/1   Running   1 (54s ago)   117s    10.68.3.9    gke-peekcart-d078-default-pool-f969bca7-wh6p   <none>   <none>

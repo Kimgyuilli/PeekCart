@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-065-contract-migration.md",
+      "sha256": "92550d8e5ae0b72e856a3f860d2cdac18d4770f76d9b9c7319a9c4646587fac5"
+    },
+    {
+      "path": "docs/plans/D-065-contract-migration.audit.md",
+      "sha256": "e702e9b2477f9e4bf20724d935e2cf82fd1e3ef11d6a4a174ad9653ec3a11d40"
+    },
+    {
+      "path": "docs/plans/D-107-deploy-topics.md",
+      "sha256": "c73447635651436f0a4062fbd219c3c83b901a4f52a5309c04660ef9584b9a61"
+    },
+    {
+      "path": "docs/plans/D-107-deploy-topics.audit.md",
+      "sha256": "4c2ddcdba94d7a051a57ec3ffce2bfa8882751939e258c2852b63a997beec9ca"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-065-contract-migration.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-contract-migration.md",
+          "start": 1,
+          "end": 188
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-065-contract-migration.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-065-contract-migration.audit.md",
+          "start": 1,
+          "end": 79
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-107-deploy-topics.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-107-deploy-topics.md",
+          "start": 1,
+          "end": 149
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-107-deploy-topics.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-107-deploy-topics.audit.md",
+          "start": 1,
+          "end": 36
+        }
+      ]
+    }
+  ]
+}

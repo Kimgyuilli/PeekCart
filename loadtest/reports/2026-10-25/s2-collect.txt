@@ -1,0 +1,75 @@
+!! 캐시 차분만 제외: mysqlL1-detail-cacheoff-r2.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-detail-cacheoff-r2.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-detail-cacheoff-r2.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-detail-cacheoff-r3.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-detail-cacheoff-r3.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-detail-cacheoff-r3.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-detail-cacheoff-r4.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-detail-cacheoff-r4.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-detail-cacheoff-r4.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-list-cacheoff-r2.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-list-cacheoff-r2.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-list-cacheoff-r2.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-list-cacheoff-r3.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-list-cacheoff-r3.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-list-cacheoff-r3.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-list-cacheoff-r4.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-list-cacheoff-r4.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL1-list-cacheoff-r4.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-detail-cacheoff-r2.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-detail-cacheoff-r2.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-detail-cacheoff-r2.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-detail-cacheoff-r3.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-detail-cacheoff-r3.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-detail-cacheoff-r3.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-detail-cacheoff-r4.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-detail-cacheoff-r4.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-detail-cacheoff-r4.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-list-cacheoff-r2.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-list-cacheoff-r2.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-list-cacheoff-r2.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-list-cacheoff-r3.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-list-cacheoff-r3.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-list-cacheoff-r3.meta name=productStock (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-list-cacheoff-r4.meta name=product (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-list-cacheoff-r4.meta name=products (숫자가 아닌 counter)
+!! 캐시 차분만 제외: mysqlL4-list-cacheoff-r4.meta name=productStock (숫자가 아닌 counter)
+
+블록    EP      캐시    n      rps(중앙)       산포    p95ms  miss/s     적중률    MySQL스로틀s
+----------------------------------------------------------------------------------
+L1    detail  OFF   3       2216.6     8.2%    195.3     0.0    0.0%          0.0
+L1    detail  ON    3       3082.2     9.5%    186.5   186.6   96.7%          0.0
+L1    list    OFF   3       1910.3     5.0%    221.8     0.0    0.0%          0.0
+L1    list    ON    3       2638.0     3.1%    279.4     0.0  100.0%          0.0
+L4    detail  OFF   3       2120.5     9.1%    213.8     0.0    0.0%          0.0
+L4    list    OFF   3       1910.5    12.1%    231.9     0.0    0.0%          0.0
+
+=== 배속 (같은 블록 안 paired) ===
+  L1    detail  OFF  2216.6 → ON  3082.2 = ×1.39   (기준선 ×1.23)
+  L1    list    OFF  1910.3 → ON  2638.0 = ×1.38   (기준선 ×2.02)
+
+=== 게이트 ===
+  [미측정] 재현 detail OFF
+  [미측정] 재현 list OFF
+  [미측정] 대조군 list ON
+
+=== 캐시 이름별 차분 (미수집은 0이 아님) ===
+block	ep	mode	cache	valid_runs	total_runs	invalid_runs	uncollected_runs	hitrate_runs	hit_median	miss_median	hitrate_median
+L1	detail	OFF	product	0	3	3	0	0	미수집	미수집	미수집
+L1	detail	OFF	products	0	3	3	0	0	미수집	미수집	미수집
+L1	detail	OFF	productStock	0	3	3	0	0	미수집	미수집	미수집
+L1	detail	ON	product	3	3	0	0	3	185310.0	0.0	100.0%
+L1	detail	ON	products	3	3	0	0	0	0.0	0.0	분모0
+L1	detail	ON	productStock	3	3	0	0	3	173203.0	11196.0	93.5%
+L1	list	OFF	product	0	3	3	0	0	미수집	미수집	미수집
+L1	list	OFF	products	0	3	3	0	0	미수집	미수집	미수집
+L1	list	OFF	productStock	0	3	3	0	0	미수집	미수집	미수집
+L1	list	ON	product	3	3	0	0	0	0.0	0.0	분모0
+L1	list	ON	products	3	3	0	0	3	158572.0	0.0	100.0%
+L1	list	ON	productStock	3	3	0	0	0	0.0	0.0	분모0
+L4	detail	OFF	product	0	3	3	0	0	미수집	미수집	미수집
+L4	detail	OFF	products	0	3	3	0	0	미수집	미수집	미수집
+L4	detail	OFF	productStock	0	3	3	0	0	미수집	미수집	미수집
+L4	list	OFF	product	0	3	3	0	0	미수집	미수집	미수집
+L4	list	OFF	products	0	3	3	0	0	미수집	미수집	미수집
+L4	list	OFF	productStock	0	3	3	0	0	미수집	미수집	미수집

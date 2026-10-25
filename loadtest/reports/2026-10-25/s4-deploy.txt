@@ -1,0 +1,43 @@
+=== S4 배포 시작 2026-10-25T09:10:42Z ===
+............................................................................................................................................................................................................................done.
+Updated [https://container.googleapis.com/v1/projects/peekcart-d078/zones/asia-northeast3-a/clusters/peekcart-d078].
+  gke-peekcart-d078-default-pool-f969bca7-28hh Ready
+  gke-peekcart-d078-default-pool-f969bca7-rpff Ready
+  gke-peekcart-d078-default-pool-f969bca7-wh6p Ready
+  gke-peekcart-d078-monitoring-pool-bab01c40-7p61 Ready
+  첫 배포 래퍼 exit=0
+  [DEPLOY-OVERLAY] !! drain preflight 를 건너뛴다 — 사유: fresh namespace, no prior stack
+  [DEPLOY-OVERLAY] !! replay 행이 남은 상태로 구 이미지를 배포하면 발행 경로가 손상된다(ADR-0022 §D2)
+  [DEPLOY-OVERLAY] kafka 선행 적용 (Namespace, kafka PVC·Deployment·Service)
+  [DEPLOY-OVERLAY] 선언 토픽 30개 생성 (--create --if-not-exists)
+  [DEPLOY-OVERLAY] 토픽 30개 파티션 수 일치
+  [DEPLOY-OVERLAY] kubectl apply -k k8s/overlays/gke
+  [DEPLOY-OVERLAY] !! 인증 왕복 게이트를 건너뛴다 — GW_URL 미설정
+  [DEPLOY-OVERLAY] !! 키쌍이 어긋나면 배포·Ready·로그인이 전부 정상인데 인증 요청만 401 이 된다(D-022)
+  [DEPLOY-OVERLAY] !! 수동 실행:  GW_URL=http://<gateway>:8080 bash scripts/auth-roundtrip-gate.sh
+secret/payment-service-secret patched
+secret/notification-service-secret patched
+deployment.apps/payment-service restarted
+deployment.apps/notification-service restarted
+  mysql                  deployment "mysql" successfully rolled out
+  redis                  deployment "redis" successfully rolled out
+  kafka                  deployment "kafka" successfully rolled out
+  user-service           deployment "user-service" successfully rolled out
+  product-service        deployment "product-service" successfully rolled out
+  order-service          deployment "order-service" successfully rolled out
+  payment-service        deployment "payment-service" successfully rolled out
+  notification-service   deployment "notification-service" successfully rolled out
+  gateway                deployment "gateway" successfully rolled out
+  users	admins
+  451	1
+  gateway-659c7cbc9c-5z2xj                       Running    0
+  gateway-659c7cbc9c-6rgsn                       Running    0
+  kafka-7fd9dc8784-w9gmf                         Running    0
+  mysql-74f6f4cb4f-2khg5                         Running    0
+  notification-service-658fc75474-w58lx          Running    1
+  order-service-7bd869c55-wt276                  Running    1
+  payment-service-79b7746cb9-nqb25               Running    1
+  product-service-54d5dbb69b-hc28z               Running    1
+  redis-7456fd985-hfvdm                          Running    0
+  user-service-668bb9bf6b-k75pb                  Running    1
+=== S4 배포 끝 2026-10-25T09:19:05Z ===

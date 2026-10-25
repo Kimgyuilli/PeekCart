@@ -1,0 +1,25 @@
+# order-service 프로브 완화 — D-078 재측정 S3 에서 추가(2026-10-25, 사용자 결정).
+#
+# 무엇이 있었나: 콜드 JVM 에 RPS 170 · USERS 450 을 넣으면 order-service(한도 2000m)의 CPU 가 포화되고, 같은 8080 으로 가는
+#   liveness 가 기본 timeout 1초 × 3회를 넘겨 kubelet 이 컨테이너를 죽였다(워밍업 run 마다 부하 약 1분 뒤 재시작, exit 143).
+#   재기동 동안 gateway 는 Connection refused 로 order-cart 500 을 냈고, 재기동 직후라 다음 run 도 다시 워밍업이어야 했다.
+#   2026-10-24 세션(USERS 200)에서는 재시작이 없었다.
+# 무엇을 바꾸나: kubelet 의 판정만 늦춘다. 요청 처리 경로·CPU 한도·replicas 는 그대로라 ⑤⑥ 측정값의 조건은 같다.
+#   liveness 는 약 2분(10초 × 12회, 각 5초 대기)까지 응답이 없어도 죽이지 않고, readiness 는 약 1분까지 endpoint 에서 빼지 않는다.
+# 운영 overlay 에는 가져가지 않는다. 운영 프로브 정책은 별도 결정이다.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: peekcart
+spec:
+  template:
+    spec:
+      containers:
+        - name: order-service
+          livenessProbe:
+            timeoutSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            timeoutSeconds: 5
+            failureThreshold: 6

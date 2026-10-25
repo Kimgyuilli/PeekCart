@@ -1,0 +1,5 @@
+NAME                              READY   STATUS    RESTARTS        AGE     IP           NODE                                           NOMINATED NODE   READINESS GATES
+kafka-7fd9dc8784-4pt7q            1/1     Running   0               8m5s    10.68.1.10   gke-peekcart-d078-default-pool-f969bca7-rpff   <none>           <none>
+mysql-74f6f4cb4f-96k27            1/1     Running   0               2m53s   10.68.1.12   gke-peekcart-d078-default-pool-f969bca7-rpff   <none>           <none>
+product-service-b6dc7bdd8-6qbqw   1/1     Running   2 (2m22s ago)   2m52s   10.68.0.17   gke-peekcart-d078-default-pool-f969bca7-28hh   <none>           <none>
+redis-7456fd985-6t2zf             1/1     Running   0               2m52s   10.68.1.11   gke-peekcart-d078-default-pool-f969bca7-rpff   <none>           <none>

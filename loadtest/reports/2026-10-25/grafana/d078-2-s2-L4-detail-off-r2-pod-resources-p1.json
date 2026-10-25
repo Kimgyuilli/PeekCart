@@ -1,0 +1,408 @@
+{
+  "dashboard_uid": "peekcart-pod-resources",
+  "panel_id": 1,
+  "title": "Pod CPU Usage",
+  "start": 1792912248,
+  "end": 1792912489,
+  "step_seconds": 15,
+  "rate_interval": "1m",
+  "targets": [
+    {
+      "expr": "rate(container_cpu_usage_seconds_total{namespace=\"peekcart\", container!=\"\", container!=\"POD\"}[5m])",
+      "legendFormat": "{{pod}} / {{container}}",
+      "result": [
+        {
+          "metric": {
+            "container": "kafka",
+            "cpu": "total",
+            "endpoint": "https-metrics",
+            "id": "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod28668e7c_1014_4cf3_8624_c453014d7956.slice/cri-containerd-75ce3cd8856e3e32452f0ced64054ed4b986e29a9ae2f5c2cfeb429d59461aca.scope",
+            "image": "docker.io/apache/kafka:3.8.1",
+            "instance": "10.178.0.15:10250",
+            "job": "kubelet",
+            "metrics_path": "/metrics/cadvisor",
+            "name": "75ce3cd8856e3e32452f0ced64054ed4b986e29a9ae2f5c2cfeb429d59461aca",
+            "namespace": "peekcart",
+            "node": "gke-peekcart-d078-default-pool-f969bca7-rpff",
+            "pod": "kafka-7fd9dc8784-4pt7q",
+            "service": "kube-prometheus-stack-kubelet"
+          },
+          "values": [
+            [
+              1792912248,
+              "0.038032826597317534"
+            ],
+            [
+              1792912263,
+              "0.039139522564433406"
+            ],
+            [
+              1792912278,
+              "0.03887536918554385"
+            ],
+            [
+              1792912293,
+              "0.03867544421686538"
+            ],
+            [
+              1792912308,
+              "0.03845587551106721"
+            ],
+            [
+              1792912323,
+              "0.038123422321615724"
+            ],
+            [
+              1792912338,
+              "0.03680619826038045"
+            ],
+            [
+              1792912353,
+              "0.036837734171478814"
+            ],
+            [
+              1792912368,
+              "0.03635172853474764"
+            ],
+            [
+              1792912383,
+              "0.03656469471795742"
+            ],
+            [
+              1792912398,
+              "0.03652775623069737"
+            ],
+            [
+              1792912413,
+              "0.03640656081210223"
+            ],
+            [
+              1792912428,
+              "0.03630075906097624"
+            ],
+            [
+              1792912443,
+              "0.036288999445616435"
+            ],
+            [
+              1792912458,
+              "0.03610936935483308"
+            ],
+            [
+              1792912473,
+              "0.035896036964011245"
+            ],
+            [
+              1792912488,
+              "0.03576875042306907"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "container": "mysql",
+            "cpu": "total",
+            "endpoint": "https-metrics",
+            "id": "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod05a39a88_e4bb_4cd7_98dc_2db7b5550006.slice/cri-containerd-c77966c0cee524c433e978cac1cba2d13c082648a7ed7838e3adc15b6bc1c502.scope",
+            "image": "docker.io/library/mysql:8.0.46",
+            "instance": "10.178.0.15:10250",
+            "job": "kubelet",
+            "metrics_path": "/metrics/cadvisor",
+            "name": "c77966c0cee524c433e978cac1cba2d13c082648a7ed7838e3adc15b6bc1c502",
+            "namespace": "peekcart",
+            "node": "gke-peekcart-d078-default-pool-f969bca7-rpff",
+            "pod": "mysql-74f6f4cb4f-96k27",
+            "service": "kube-prometheus-stack-kubelet"
+          },
+          "values": [
+            [
+              1792912248,
+              "0.10907812250092733"
+            ],
+            [
+              1792912263,
+              "0.10542432028067836"
+            ],
+            [
+              1792912278,
+              "0.1119338558391077"
+            ],
+            [
+              1792912293,
+              "0.11602107681303932"
+            ],
+            [
+              1792912308,
+              "0.12240425100081188"
+            ],
+            [
+              1792912323,
+              "0.1268783687853815"
+            ],
+            [
+              1792912338,
+              "0.1383578048104987"
+            ],
+            [
+              1792912353,
+              "0.1547251144893078"
+            ],
+            [
+              1792912368,
+              "0.1739545791790618"
+            ],
+            [
+              1792912383,
+              "0.18118985056629172"
+            ],
+            [
+              1792912398,
+              "0.18068938685157276"
+            ],
+            [
+              1792912413,
+              "0.18683334689847725"
+            ],
+            [
+              1792912428,
+              "0.1918638175826133"
+            ],
+            [
+              1792912443,
+              "0.2067599363045929"
+            ],
+            [
+              1792912458,
+              "0.21358170363884024"
+            ],
+            [
+              1792912473,
+              "0.20729107142857142"
+            ],
+            [
+              1792912488,
+              "0.2081740954583176"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "container": "product-service",
+            "cpu": "total",
+            "endpoint": "https-metrics",
+            "id": "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod14391889_c6c8_410d_a69a_2f06cd3afa45.slice/cri-containerd-0351ab4195fa6cd701942b38b3656770aa479f2e6c98814e0de4d6320c0716d2.scope",
+            "image": "asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/product-service@sha256:60175d296688b02dc7f23dad821bacfd3c7f5309b09b18be4914907046ef17ad",
+            "instance": "10.178.0.14:10250",
+            "job": "kubelet",
+            "metrics_path": "/metrics/cadvisor",
+            "name": "0351ab4195fa6cd701942b38b3656770aa479f2e6c98814e0de4d6320c0716d2",
+            "namespace": "peekcart",
+            "node": "gke-peekcart-d078-default-pool-f969bca7-28hh",
+            "pod": "product-service-659c6664ff-4rmrj",
+            "service": "kube-prometheus-stack-kubelet"
+          },
+          "values": [
+            [
+              1792912248,
+              "0.36326706811889664"
+            ],
+            [
+              1792912263,
+              "0.2180282070361372"
+            ],
+            [
+              1792912278,
+              "0.1162207144755527"
+            ],
+            [
+              1792912293,
+              "0.022028827727348623"
+            ],
+            [
+              1792912308,
+              "0.00717906506119638"
+            ],
+            [
+              1792912323,
+              "0.0073257046013604395"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "container": "product-service",
+            "cpu": "total",
+            "endpoint": "https-metrics",
+            "id": "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod4362ba0f_96ad_44c8_9ce0_f79da4cd51ac.slice/cri-containerd-d4e27c00921ed5391c3598d1cca0ad055da278fdf78ffa4fa057bc6d5feb6de7.scope",
+            "image": "asia-northeast3-docker.pkg.dev/peekcart-d078/peekcart/product-service@sha256:60175d296688b02dc7f23dad821bacfd3c7f5309b09b18be4914907046ef17ad",
+            "instance": "10.178.0.14:10250",
+            "job": "kubelet",
+            "metrics_path": "/metrics/cadvisor",
+            "name": "d4e27c00921ed5391c3598d1cca0ad055da278fdf78ffa4fa057bc6d5feb6de7",
+            "namespace": "peekcart",
+            "node": "gke-peekcart-d078-default-pool-f969bca7-28hh",
+            "pod": "product-service-65b4f498-g24xl",
+            "service": "kube-prometheus-stack-kubelet"
+          },
+          "values": [
+            [
+              1792912248,
+              "1.5815781022988225"
+            ],
+            [
+              1792912263,
+              "1.7238882479581878"
+            ],
+            [
+              1792912278,
+              "1.8560824923806682"
+            ],
+            [
+              1792912293,
+              "1.9903119768222886"
+            ],
+            [
+              1792912308,
+              "2.108092403467791"
+            ],
+            [
+              1792912323,
+              "2.1091978104999543"
+            ],
+            [
+              1792912338,
+              "2.21552745271565"
+            ],
+            [
+              1792912353,
+              "2.2746322009498954"
+            ],
+            [
+              1792912368,
+              "2.361866706294493"
+            ],
+            [
+              1792912383,
+              "2.3061731259144955"
+            ],
+            [
+              1792912398,
+              "2.186359497197097"
+            ],
+            [
+              1792912413,
+              "2.1600750423839106"
+            ],
+            [
+              1792912428,
+              "2.1565749610750724"
+            ],
+            [
+              1792912443,
+              "2.2498433221376195"
+            ],
+            [
+              1792912458,
+              "2.2029109589521605"
+            ],
+            [
+              1792912473,
+              "2.0559616143353203"
+            ],
+            [
+              1792912488,
+              "2.05970333405581"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "container": "redis",
+            "cpu": "total",
+            "endpoint": "https-metrics",
+            "id": "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-podb0167ad5_5545_4dbf_8383_ec447767e9e9.slice/cri-containerd-2e4f7d8025ad6a0ebf31b4fc231d5f0ebcf0ef965cc06d1eb7a8d8e15837c091.scope",
+            "image": "docker.io/library/redis:7.2",
+            "instance": "10.178.0.15:10250",
+            "job": "kubelet",
+            "metrics_path": "/metrics/cadvisor",
+            "name": "2e4f7d8025ad6a0ebf31b4fc231d5f0ebcf0ef965cc06d1eb7a8d8e15837c091",
+            "namespace": "peekcart",
+            "node": "gke-peekcart-d078-default-pool-f969bca7-rpff",
+            "pod": "redis-7456fd985-6t2zf",
+            "service": "kube-prometheus-stack-kubelet"
+          },
+          "values": [
+            [
+              1792912248,
+              "0.004567437106422897"
+            ],
+            [
+              1792912263,
+              "0.00451534385636102"
+            ],
+            [
+              1792912278,
+              "0.004485876175255806"
+            ],
+            [
+              1792912293,
+              "0.004474812484711086"
+            ],
+            [
+              1792912308,
+              "0.0045394163570040575"
+            ],
+            [
+              1792912323,
+              "0.004549211505502048"
+            ],
+            [
+              1792912338,
+              "0.004566507918548158"
+            ],
+            [
+              1792912353,
+              "0.004583858548310462"
+            ],
+            [
+              1792912368,
+              "0.0043428990142003595"
+            ],
+            [
+              1792912383,
+              "0.0043581557252702265"
+            ],
+            [
+              1792912398,
+              "0.004522909065516818"
+            ],
+            [
+              1792912413,
+              "0.004627736695268824"
+            ],
+            [
+              1792912428,
+              "0.004470645660570259"
+            ],
+            [
+              1792912443,
+              "0.004469523763861397"
+            ],
+            [
+              1792912458,
+              "0.0045191875073545195"
+            ],
+            [
+              1792912473,
+              "0.00460031408686508"
+            ],
+            [
+              1792912488,
+              "0.004563784727624778"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

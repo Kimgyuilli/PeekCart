@@ -1,0 +1,2 @@
+[DRAIN-PREFLIGHT] namespace=peekcart · drain 상한 564s · lag 재관측 간격 15s
+[DRAIN-PREFLIGHT] OK — drain 4조건 충족. 구 이미지 롤백이 안전하다

@@ -1,0 +1,706 @@
+{
+  "dashboard_uid": "peekcart-saga-messaging",
+  "panel_id": 12,
+  "title": "taskScheduler active / pool",
+  "start": 1792917304,
+  "end": 1792917451,
+  "step_seconds": 15,
+  "rate_interval": "1m",
+  "targets": [
+    {
+      "expr": "executor_active_threads{application=~\".*\", name=\"taskScheduler\"}",
+      "legendFormat": "{{application}} {{pod}} active",
+      "result": [
+        {
+          "metric": {
+            "__name__": "executor_active_threads",
+            "application": "gateway",
+            "container": "gateway",
+            "endpoint": "management",
+            "instance": "10.68.0.25:8081",
+            "job": "gateway-metrics",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "gateway-659c7cbc9c-2ncdf",
+            "service": "gateway-metrics"
+          },
+          "values": [
+            [
+              1792917304,
+              "0"
+            ],
+            [
+              1792917319,
+              "0"
+            ],
+            [
+              1792917334,
+              "0"
+            ],
+            [
+              1792917349,
+              "0"
+            ],
+            [
+              1792917364,
+              "0"
+            ],
+            [
+              1792917379,
+              "0"
+            ],
+            [
+              1792917394,
+              "0"
+            ],
+            [
+              1792917409,
+              "0"
+            ],
+            [
+              1792917424,
+              "0"
+            ],
+            [
+              1792917439,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_active_threads",
+            "application": "gateway",
+            "container": "gateway",
+            "endpoint": "management",
+            "instance": "10.68.1.16:8081",
+            "job": "gateway-metrics",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "gateway-659c7cbc9c-bf6rq",
+            "service": "gateway-metrics"
+          },
+          "values": [
+            [
+              1792917304,
+              "0"
+            ],
+            [
+              1792917319,
+              "0"
+            ],
+            [
+              1792917334,
+              "0"
+            ],
+            [
+              1792917349,
+              "0"
+            ],
+            [
+              1792917364,
+              "0"
+            ],
+            [
+              1792917379,
+              "0"
+            ],
+            [
+              1792917394,
+              "0"
+            ],
+            [
+              1792917409,
+              "0"
+            ],
+            [
+              1792917424,
+              "0"
+            ],
+            [
+              1792917439,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_active_threads",
+            "application": "order-service",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "1"
+            ],
+            [
+              1792917319,
+              "1"
+            ],
+            [
+              1792917334,
+              "2"
+            ],
+            [
+              1792917349,
+              "1"
+            ],
+            [
+              1792917364,
+              "1"
+            ],
+            [
+              1792917379,
+              "0"
+            ],
+            [
+              1792917394,
+              "0"
+            ],
+            [
+              1792917409,
+              "0"
+            ],
+            [
+              1792917424,
+              "0"
+            ],
+            [
+              1792917439,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_active_threads",
+            "application": "payment-service",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "0"
+            ],
+            [
+              1792917319,
+              "0"
+            ],
+            [
+              1792917334,
+              "0"
+            ],
+            [
+              1792917349,
+              "0"
+            ],
+            [
+              1792917364,
+              "0"
+            ],
+            [
+              1792917379,
+              "0"
+            ],
+            [
+              1792917394,
+              "0"
+            ],
+            [
+              1792917409,
+              "0"
+            ],
+            [
+              1792917424,
+              "0"
+            ],
+            [
+              1792917439,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_active_threads",
+            "application": "product-service",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.23:8080",
+            "job": "product-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "product-service-7df777d6c8-s6h7r",
+            "service": "product-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "0"
+            ],
+            [
+              1792917319,
+              "1"
+            ],
+            [
+              1792917334,
+              "0"
+            ],
+            [
+              1792917349,
+              "0"
+            ],
+            [
+              1792917364,
+              "0"
+            ],
+            [
+              1792917379,
+              "0"
+            ],
+            [
+              1792917394,
+              "0"
+            ],
+            [
+              1792917409,
+              "0"
+            ],
+            [
+              1792917424,
+              "0"
+            ],
+            [
+              1792917439,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_active_threads",
+            "application": "product-service",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "0"
+            ],
+            [
+              1792917319,
+              "0"
+            ],
+            [
+              1792917334,
+              "0"
+            ],
+            [
+              1792917349,
+              "1"
+            ],
+            [
+              1792917364,
+              "1"
+            ],
+            [
+              1792917379,
+              "0"
+            ],
+            [
+              1792917394,
+              "0"
+            ],
+            [
+              1792917409,
+              "0"
+            ],
+            [
+              1792917424,
+              "0"
+            ],
+            [
+              1792917439,
+              "1"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_active_threads",
+            "application": "product-service",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.1.15:8080",
+            "job": "product-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "product-service-7df777d6c8-v7k5p",
+            "service": "product-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "0"
+            ],
+            [
+              1792917319,
+              "1"
+            ],
+            [
+              1792917334,
+              "0"
+            ],
+            [
+              1792917349,
+              "0"
+            ],
+            [
+              1792917364,
+              "1"
+            ],
+            [
+              1792917379,
+              "0"
+            ],
+            [
+              1792917394,
+              "1"
+            ],
+            [
+              1792917409,
+              "1"
+            ],
+            [
+              1792917424,
+              "0"
+            ],
+            [
+              1792917439,
+              "1"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "executor_active_threads",
+            "application": "user-service",
+            "container": "user-service",
+            "endpoint": "http",
+            "instance": "10.68.1.17:8080",
+            "job": "user-service",
+            "name": "taskScheduler",
+            "namespace": "peekcart",
+            "pod": "user-service-668bb9bf6b-78fl5",
+            "service": "user-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "0"
+            ],
+            [
+              1792917319,
+              "0"
+            ],
+            [
+              1792917334,
+              "0"
+            ],
+            [
+              1792917349,
+              "0"
+            ],
+            [
+              1792917364,
+              "0"
+            ],
+            [
+              1792917379,
+              "0"
+            ],
+            [
+              1792917394,
+              "0"
+            ],
+            [
+              1792917409,
+              "0"
+            ],
+            [
+              1792917424,
+              "0"
+            ],
+            [
+              1792917439,
+              "0"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "expr": "max by (application) (executor_pool_core_threads{application=~\".*\", name=\"taskScheduler\"})",
+      "legendFormat": "{{application}} pool",
+      "result": [
+        {
+          "metric": {
+            "application": "gateway"
+          },
+          "values": [
+            [
+              1792917304,
+              "1"
+            ],
+            [
+              1792917319,
+              "1"
+            ],
+            [
+              1792917334,
+              "1"
+            ],
+            [
+              1792917349,
+              "1"
+            ],
+            [
+              1792917364,
+              "1"
+            ],
+            [
+              1792917379,
+              "1"
+            ],
+            [
+              1792917394,
+              "1"
+            ],
+            [
+              1792917409,
+              "1"
+            ],
+            [
+              1792917424,
+              "1"
+            ],
+            [
+              1792917439,
+              "1"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "application": "order-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "4"
+            ],
+            [
+              1792917319,
+              "4"
+            ],
+            [
+              1792917334,
+              "4"
+            ],
+            [
+              1792917349,
+              "4"
+            ],
+            [
+              1792917364,
+              "4"
+            ],
+            [
+              1792917379,
+              "4"
+            ],
+            [
+              1792917394,
+              "4"
+            ],
+            [
+              1792917409,
+              "4"
+            ],
+            [
+              1792917424,
+              "4"
+            ],
+            [
+              1792917439,
+              "4"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "application": "payment-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "4"
+            ],
+            [
+              1792917319,
+              "4"
+            ],
+            [
+              1792917334,
+              "4"
+            ],
+            [
+              1792917349,
+              "4"
+            ],
+            [
+              1792917364,
+              "4"
+            ],
+            [
+              1792917379,
+              "4"
+            ],
+            [
+              1792917394,
+              "4"
+            ],
+            [
+              1792917409,
+              "4"
+            ],
+            [
+              1792917424,
+              "4"
+            ],
+            [
+              1792917439,
+              "4"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "application": "product-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "4"
+            ],
+            [
+              1792917319,
+              "4"
+            ],
+            [
+              1792917334,
+              "4"
+            ],
+            [
+              1792917349,
+              "4"
+            ],
+            [
+              1792917364,
+              "4"
+            ],
+            [
+              1792917379,
+              "4"
+            ],
+            [
+              1792917394,
+              "4"
+            ],
+            [
+              1792917409,
+              "4"
+            ],
+            [
+              1792917424,
+              "4"
+            ],
+            [
+              1792917439,
+              "4"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "application": "user-service"
+          },
+          "values": [
+            [
+              1792917304,
+              "1"
+            ],
+            [
+              1792917319,
+              "1"
+            ],
+            [
+              1792917334,
+              "1"
+            ],
+            [
+              1792917349,
+              "1"
+            ],
+            [
+              1792917364,
+              "1"
+            ],
+            [
+              1792917379,
+              "1"
+            ],
+            [
+              1792917394,
+              "1"
+            ],
+            [
+              1792917409,
+              "1"
+            ],
+            [
+              1792917424,
+              "1"
+            ],
+            [
+              1792917439,
+              "1"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

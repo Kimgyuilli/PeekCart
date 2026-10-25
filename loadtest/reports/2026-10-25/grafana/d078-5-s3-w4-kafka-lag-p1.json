@@ -1,0 +1,5853 @@
+{
+  "dashboard_uid": "peekcart-kafka-lag",
+  "panel_id": 1,
+  "title": "Kafka Consumer Lag (Max)",
+  "start": 1792917440,
+  "end": 1792917812,
+  "step_seconds": 15,
+  "rate_interval": "1m",
+  "targets": [
+    {
+      "expr": "kafka_consumer_fetch_manager_records_lag_max{application=~\".*\"}",
+      "legendFormat": "{{client_id}} — {{topic}}",
+      "result": [
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-dlq-quarantine-group-4",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-dlq-quarantine-group-4",
+            "topic": "order_created_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-payment-completed-group-7",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-payment-completed-group-7",
+            "topic": "payment_completed"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-payment-failed-group-1",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-payment-failed-group-1",
+            "topic": "payment_failed"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-payment-refunded-group-3",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-payment-refunded-group-3",
+            "topic": "payment_refunded"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-payment-refunded-group-3",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-payment-refunded-group-3",
+            "topic": "payment_refunded"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-payment-requested-group-6",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-payment-requested-group-6",
+            "topic": "payment_requested"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-product-updated-group-5",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-product-updated-group-5",
+            "topic": "product_updated"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-product-updated-group-5",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-product-updated-group-5",
+            "topic": "product_updated"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-stock-result-group-2",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-stock-result-group-2",
+            "topic": "stock_reservation_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "0"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-stock-result-group-2",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-stock-result-group-2",
+            "topic": "stock_reservation_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "0"
+            ],
+            [
+              1792917455,
+              "0"
+            ],
+            [
+              1792917470,
+              "0"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "order-service",
+            "client_id": "consumer-order-svc-stock-result-group-2",
+            "container": "order-service",
+            "endpoint": "http",
+            "instance": "10.68.1.20:8080",
+            "job": "order-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "order-service-5bddc94b8-xlxkd",
+            "service": "order-service",
+            "spring_id": "kafkaConsumerFactory.consumer-order-svc-stock-result-group-2",
+            "topic": "stock_reservation_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "0"
+            ],
+            [
+              1792917455,
+              "0"
+            ],
+            [
+              1792917470,
+              "0"
+            ],
+            [
+              1792917485,
+              "0"
+            ],
+            [
+              1792917500,
+              "0"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-approval-recovery-result-group-9",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-approval-recovery-result-group-9",
+            "topic": "stock_approval-recovery_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-approval-recovery-result-group-9",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-approval-recovery-result-group-9",
+            "topic": "stock_approval-recovery_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-approval-recovery-snapshot-group-10",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-approval-recovery-snapshot-group-10",
+            "topic": "stock_approval-recovery_snapshot"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-dlq-group-3",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-dlq-group-3",
+            "topic": "order_created_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-order-cancelled-group-4",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-order-cancelled-group-4",
+            "topic": "order_cancelled"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-order-cancelled-group-4",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-order-cancelled-group-4",
+            "topic": "order_cancelled"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-order-compensation-requested-group-6",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-order-compensation-requested-group-6",
+            "topic": "order_compensation_requested"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-order-created-group-8",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-order-created-group-8",
+            "topic": "order_created"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917665,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-order-created-group-8",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-order-created-group-8",
+            "topic": "order_created"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917665,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-order-created-group-8",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-order-created-group-8",
+            "topic": "order_created"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917665,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-stock-approval-group-7",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-stock-approval-group-7",
+            "topic": "stock_approval_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-stock-approval-group-7",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-stock-approval-group-7",
+            "topic": "stock_approval_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-stock-compensation-requested-group-5",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-stock-compensation-requested-group-5",
+            "topic": "stock_compensation_requested"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-stock-result-group-2",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-stock-result-group-2",
+            "topic": "stock_reservation_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "0"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917665,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-stock-result-group-2",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-stock-result-group-2",
+            "topic": "stock_reservation_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "0"
+            ],
+            [
+              1792917455,
+              "0"
+            ],
+            [
+              1792917470,
+              "0"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917665,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "payment-service",
+            "client_id": "consumer-payment-svc-stock-result-group-2",
+            "container": "payment-service",
+            "endpoint": "http",
+            "instance": "10.68.0.26:8080",
+            "job": "payment-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "payment-service-bf5d6c86-nshw8",
+            "service": "payment-service",
+            "spring_id": "kafkaConsumerFactory.consumer-payment-svc-stock-result-group-2",
+            "topic": "stock_reservation_result"
+          },
+          "values": [
+            [
+              1792917440,
+              "0"
+            ],
+            [
+              1792917455,
+              "0"
+            ],
+            [
+              1792917470,
+              "0"
+            ],
+            [
+              1792917485,
+              "0"
+            ],
+            [
+              1792917500,
+              "0"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917665,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-approval-recovery-execute-group-9",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.23:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "product-service-7df777d6c8-s6h7r",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-approval-recovery-execute-group-9",
+            "topic": "payment_approval-recovery_execute"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-approval-recovery-execute-group-9",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-approval-recovery-execute-group-9",
+            "topic": "payment_approval-recovery_execute"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-approval-recovery-request-group-10",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-approval-recovery-request-group-10",
+            "topic": "payment_approval-recovery_requested"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-dlq-group-5",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-dlq-group-5",
+            "topic": "order_cancelled_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-dlq-group-5",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-dlq-group-5",
+            "topic": "order_created_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-dlq-group-5",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-dlq-group-5",
+            "topic": "payment_approval-recovery_execute_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-dlq-group-5",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-dlq-group-5",
+            "topic": "payment_approval-recovery_requested_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-dlq-group-5",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-dlq-group-5",
+            "topic": "payment_completed_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-dlq-group-5",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-dlq-group-5",
+            "topic": "payment_failed_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-dlq-group-5",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-dlq-group-5",
+            "topic": "payment_refunded_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-dlq-group-5",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-dlq-group-5",
+            "topic": "payment_requested_dlq"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-order-cancelled-group-7",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-order-cancelled-group-7",
+            "topic": "order_cancelled"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-order-created-group-1",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.23:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "product-service-7df777d6c8-s6h7r",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-order-created-group-1",
+            "topic": "order_created"
+          },
+          "values": [
+            [
+              1792917440,
+              "342"
+            ],
+            [
+              1792917455,
+              "342"
+            ],
+            [
+              1792917470,
+              "342"
+            ],
+            [
+              1792917485,
+              "342"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "0"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917665,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "0"
+            ],
+            [
+              1792917800,
+              "0"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-order-created-group-1",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-order-created-group-1",
+            "topic": "order_created"
+          },
+          "values": [
+            [
+              1792917440,
+              "239"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917665,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "303"
+            ],
+            [
+              1792917785,
+              "398"
+            ],
+            [
+              1792917800,
+              "398"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-order-created-group-1",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.1.15:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "product-service-7df777d6c8-v7k5p",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-order-created-group-1",
+            "topic": "order_created"
+          },
+          "values": [
+            [
+              1792917440,
+              "0"
+            ],
+            [
+              1792917455,
+              "0"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "0"
+            ],
+            [
+              1792917665,
+              "0"
+            ],
+            [
+              1792917680,
+              "0"
+            ],
+            [
+              1792917695,
+              "0"
+            ],
+            [
+              1792917710,
+              "0"
+            ],
+            [
+              1792917725,
+              "0"
+            ],
+            [
+              1792917740,
+              "0"
+            ],
+            [
+              1792917755,
+              "0"
+            ],
+            [
+              1792917770,
+              "0"
+            ],
+            [
+              1792917785,
+              "857"
+            ],
+            [
+              1792917800,
+              "857"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-payment-completed-group-6",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.23:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-s6h7r",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-payment-completed-group-6",
+            "topic": "payment_completed"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-payment-completed-group-6",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-payment-completed-group-6",
+            "topic": "payment_completed"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-payment-completed-group-6",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.1.15:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "product-service-7df777d6c8-v7k5p",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-payment-completed-group-6",
+            "topic": "payment_completed"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-payment-failed-group-8",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "0",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-payment-failed-group-8",
+            "topic": "payment_failed"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-payment-refunded-group-4",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-payment-refunded-group-4",
+            "topic": "payment_refunded"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-payment-requested-group-2",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.23:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "1",
+            "pod": "product-service-7df777d6c8-s6h7r",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-payment-requested-group-2",
+            "topic": "payment_requested"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        },
+        {
+          "metric": {
+            "__name__": "kafka_consumer_fetch_manager_records_lag_max",
+            "application": "product-service",
+            "client_id": "consumer-product-svc-payment-requested-group-2",
+            "container": "product-service",
+            "endpoint": "http",
+            "instance": "10.68.0.24:8080",
+            "job": "product-service",
+            "kafka_version": "3.9.2",
+            "namespace": "peekcart",
+            "partition": "2",
+            "pod": "product-service-7df777d6c8-9rg2g",
+            "service": "product-service",
+            "spring_id": "kafkaConsumerFactory.consumer-product-svc-payment-requested-group-2",
+            "topic": "payment_requested"
+          },
+          "values": [
+            [
+              1792917440,
+              "NaN"
+            ],
+            [
+              1792917455,
+              "NaN"
+            ],
+            [
+              1792917470,
+              "NaN"
+            ],
+            [
+              1792917485,
+              "NaN"
+            ],
+            [
+              1792917500,
+              "NaN"
+            ],
+            [
+              1792917515,
+              "NaN"
+            ],
+            [
+              1792917530,
+              "NaN"
+            ],
+            [
+              1792917545,
+              "NaN"
+            ],
+            [
+              1792917560,
+              "NaN"
+            ],
+            [
+              1792917575,
+              "NaN"
+            ],
+            [
+              1792917590,
+              "NaN"
+            ],
+            [
+              1792917605,
+              "NaN"
+            ],
+            [
+              1792917620,
+              "NaN"
+            ],
+            [
+              1792917635,
+              "NaN"
+            ],
+            [
+              1792917650,
+              "NaN"
+            ],
+            [
+              1792917665,
+              "NaN"
+            ],
+            [
+              1792917680,
+              "NaN"
+            ],
+            [
+              1792917695,
+              "NaN"
+            ],
+            [
+              1792917710,
+              "NaN"
+            ],
+            [
+              1792917725,
+              "NaN"
+            ],
+            [
+              1792917740,
+              "NaN"
+            ],
+            [
+              1792917755,
+              "NaN"
+            ],
+            [
+              1792917770,
+              "NaN"
+            ],
+            [
+              1792917785,
+              "NaN"
+            ],
+            [
+              1792917800,
+              "NaN"
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

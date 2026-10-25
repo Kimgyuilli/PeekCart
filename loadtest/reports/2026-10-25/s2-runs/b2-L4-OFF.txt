@@ -1,0 +1,34 @@
+=== 블록 b2 준비 (2026-10-25T07:07:10Z) ===
+=== 블록 L4 (MySQL 2000m · overlay gke-d078-read-bulkhead-4 · bulkhead 4) ===
+-- MySQL rollout 대기 (Recreate: 완전 종료 후 재기동) --
+deployment "mysql" successfully rolled out
+-- DB readiness --
+-- effective mysql cpu limit = 2 (2000m · 기대 2000m) --
+-- 버퍼풀 워밍업 (전 상품 풀스캔 3회) --
+=== 블록 L4 완료 ===
+[mysqlL4-list-cacheoff-r1] cache env true -> false (재기동 동반)
+[mysqlL4-list-cacheoff-r1] k6 run EP=list VUS=400 DUR=60s
+[mysqlL4-list-cacheoff-r1] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL4-list-cacheoff-r1.{json,meta,k6.log}
+  run 기록: L4 list OFF r1 1792912071..1792912132 (61s)
+[mysqlL4-detail-cacheoff-r1] k6 run EP=detail VUS=400 DUR=60s
+[mysqlL4-detail-cacheoff-r1] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL4-detail-cacheoff-r1.{json,meta,k6.log}
+  run 기록: L4 detail OFF r1 1792912150..1792912211 (61s)
+[mysqlL4-list-cacheoff-r2] k6 run EP=list VUS=400 DUR=60s
+[mysqlL4-list-cacheoff-r2] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL4-list-cacheoff-r2.{json,meta,k6.log}
+  run 기록: L4 list OFF r2 1792912230..1792912291 (61s)
+[mysqlL4-detail-cacheoff-r2] k6 run EP=detail VUS=400 DUR=60s
+[mysqlL4-detail-cacheoff-r2] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL4-detail-cacheoff-r2.{json,meta,k6.log}
+  run 기록: L4 detail OFF r2 1792912308..1792912369 (61s)
+[mysqlL4-list-cacheoff-r3] k6 run EP=list VUS=400 DUR=60s
+[mysqlL4-list-cacheoff-r3] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL4-list-cacheoff-r3.{json,meta,k6.log}
+  run 기록: L4 list OFF r3 1792912387..1792912448 (61s)
+[mysqlL4-detail-cacheoff-r3] k6 run EP=detail VUS=400 DUR=60s
+[mysqlL4-detail-cacheoff-r3] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL4-detail-cacheoff-r3.{json,meta,k6.log}
+  run 기록: L4 detail OFF r3 1792912467..1792912528 (61s)
+[mysqlL4-list-cacheoff-r4] k6 run EP=list VUS=400 DUR=60s
+[mysqlL4-list-cacheoff-r4] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL4-list-cacheoff-r4.{json,meta,k6.log}
+  run 기록: L4 list OFF r4 1792912548..1792912609 (61s)
+[mysqlL4-detail-cacheoff-r4] k6 run EP=detail VUS=400 DUR=60s
+[mysqlL4-detail-cacheoff-r4] 완료 → /Users/kimgyuill/dev/projects/PeakCart/loadtest/reports/2026-10-25/s2-runs/mysqlL4-detail-cacheoff-r4.{json,meta,k6.log}
+  run 기록: L4 detail OFF r4 1792912628..1792912689 (61s)
+=== 블록 b2(L4) 끝 (2026-10-25T07:18:18Z) ===
