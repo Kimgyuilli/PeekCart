@@ -1,0 +1,34 @@
+## cluster
+1.35.6-gke.1250001	STABLE	ADVANCED_DATAPATH	peekcart-d078.svc.id.goog
+## node pools
+NAME             MACHINE_TYPE   DISK_TYPE    DISK_SIZE_GB  INITIAL_NODE_COUNT
+default-pool     e2-standard-4  pd-balanced  50            3
+monitoring-pool  e2-standard-2  pd-balanced  50            1
+## nodes
+N                                                 K                     CR                   T
+gke-peekcart-d078-default-pool-f969bca7-28hh      v1.35.6-gke.1250001   containerd://2.1.7   e2-standard-4
+gke-peekcart-d078-default-pool-f969bca7-rpff      v1.35.6-gke.1250001   containerd://2.1.7   e2-standard-4
+gke-peekcart-d078-default-pool-f969bca7-wh6p      v1.35.6-gke.1250001   containerd://2.1.7   e2-standard-4
+gke-peekcart-d078-monitoring-pool-bab01c40-7p61   v1.35.6-gke.1250001   containerd://2.1.7   e2-standard-2
+## helm
+NAME                 	NAMESPACE  	REVISION	UPDATED                             	STATUS  	CHART                         	APP VERSION
+csi-secrets-store    	kube-system	1       	2026-10-25 15:35:28.395006 +0900 KST	deployed	secrets-store-csi-driver-1.6.1	1.6.1      
+kube-prometheus-stack	monitoring 	1       	2026-10-25 15:43:11.632716 +0900 KST	deployed	kube-prometheus-stack-91.4.0  	v0.94.0    
+## images (S4 base)
+gateway-659c7cbc9c-5z2xj	gateway@sha256:ac1929491bbe823c752c106c4467abe0c63ff44385048e2f03aaa2ccec3b226e
+gateway-659c7cbc9c-6rgsn	gateway@sha256:ac1929491bbe823c752c106c4467abe0c63ff44385048e2f03aaa2ccec3b226e
+kafka-7fd9dc8784-w9gmf	docker.io/apache/kafka@sha256:22c4bea38875408e8f9fe52aca8e3a6ee67f9aa0090db59af99a2f6647558db5
+mysql-74f6f4cb4f-2khg5	docker.io/library/mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b
+notification-service-658fc75474-w58lx	notification-service@sha256:9d7dc6612079c340e478dd0e9fdbbb1a74c0326f679b169fd7357b32455dd52d
+order-service-7bd869c55-wt276	order-service@sha256:c8193a34eb86a6233136928c97de3e595358803aae709111350b1c211c3f1470
+payment-service-79b7746cb9-nqb25	payment-service@sha256:b33b016141b55fc7cec28e2e5f64e3375f0a515e293ddcdd43be68d46bc46e40
+product-service-54d5dbb69b-hc28z	product-service@sha256:60175d296688b02dc7f23dad821bacfd3c7f5309b09b18be4914907046ef17ad
+redis-7456fd985-hfvdm	docker.io/library/redis@sha256:1009f15ccd9ed271996d1c65745a1ab1dadedea188feb3f1ab938602a32e50a3
+user-service-668bb9bf6b-k75pb	user-service@sha256:04118de5fedf6e19b97c5c384b6c19d2a5d1f831fdd5427b343e54231b4fc605
+## loadgen
+e2-medium	10.178.0.13	debian-12-bookworm
+k6 v2.2.0 (commit 00a9a1b7f5)
+## tools
+helm v4.1.3+gc94d381, kubectl Client Version: v1.35.3, kustomize v5.8.1
+## session main
+19330024f242f99c7bd10e97e88f89ecec16d4d9

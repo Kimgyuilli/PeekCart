@@ -1,0 +1,43 @@
+=== Phase 3 Task 3-4 정리 시작 (Sun Oct 25 18:31:07 KST 2026) ===
+cluster=peekcart-d078  loadgen=peekcart-d078-loadgen  zone=asia-northeast3-a  region=asia-northeast3
+
+--- 1) GKE 클러스터 삭제 ---
+[exec] gcloud container clusters delete peekcart-d078 --zone=asia-northeast3-a --quiet
+Deleting cluster peekcart-d078...
+....................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................done.
+Deleted [https://container.googleapis.com/v1/projects/peekcart-d078/zones/asia-northeast3-a/clusters/peekcart-d078].
+
+--- 2) 부하 발생기 VM 삭제 ---
+[exec] gcloud compute instances delete peekcart-d078-loadgen --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/instances/peekcart-d078-loadgen].
+
+--- 3) Orphan Persistent Disk 회수 ---
+미부착 disk:
+  pvc-445c94e7-7502-4950-9b11-a7865fdcecad
+  pvc-4fe989fa-291b-4c29-aa36-b4bcf2d7f964
+  pvc-5a86021d-7518-4afb-9cc0-b445f2164f6e
+  pvc-f98ce8df-bb23-411a-9679-e08b107879f6
+[exec] gcloud compute disks delete pvc-445c94e7-7502-4950-9b11-a7865fdcecad --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/disks/pvc-445c94e7-7502-4950-9b11-a7865fdcecad].
+[exec] gcloud compute disks delete pvc-4fe989fa-291b-4c29-aa36-b4bcf2d7f964 --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/disks/pvc-4fe989fa-291b-4c29-aa36-b4bcf2d7f964].
+[exec] gcloud compute disks delete pvc-5a86021d-7518-4afb-9cc0-b445f2164f6e --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/disks/pvc-5a86021d-7518-4afb-9cc0-b445f2164f6e].
+[exec] gcloud compute disks delete pvc-f98ce8df-bb23-411a-9679-e08b107879f6 --zone=asia-northeast3-a --quiet
+Deleted [https://www.googleapis.com/compute/v1/projects/peekcart-d078/zones/asia-northeast3-a/disks/pvc-f98ce8df-bb23-411a-9679-e08b107879f6].
+
+--- 4) 예약 IP (reserved addresses) 회수 ---
+미사용 예약 IP 없음
+
+--- 5) 잔여 0 검증 ---
+  [0] clusters
+  [0] instances
+  [0] disks
+  [0] addresses
+  [0] forwarding-rules
+  [0] backend-services
+  [0] health-checks
+
+=== 정리 완료 ===
+
+과금 재확인: 내보내기 적재 후 위 주석의 bq 쿼리 또는 콘솔 리포트로 직전 세션 비용을 본다.
