@@ -45,3 +45,5 @@ TASKS 열린 행과 묶는 판정은 쓰지 않았다. `docs/plans/done/` 에 D-
 
 - 남은 후보 `D-078-remeasure-plan`·`task-debt-20261021` 은 다음 `/sync` 에서 한 번 판정한다. 그 판정은 이 PR 범위가 아니다.
 - 고정 비용(첫 턴 약 54K)은 MCP 커넥터·플러그인 목록이 대부분으로 보이며 저장소 밖 설정이다. 처분: 사용자 판단.
+
+PR: [#247](https://github.com/Kimgyuilli/PeekCart/pull/247)
