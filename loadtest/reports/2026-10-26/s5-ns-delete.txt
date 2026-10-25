@@ -1,0 +1,4 @@
+namespace "peekcart" deleted
+2026-10-25T22:31:06Z
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                                                                                     STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE
+pvc-4e9769f2-8967-4d5f-8cae-a74560af9591   5Gi        RWO            Delete           Bound    monitoring/prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0   standard-rwo   <unset>                          4h36m
