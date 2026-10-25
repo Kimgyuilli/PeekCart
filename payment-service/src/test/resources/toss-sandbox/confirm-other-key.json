@@ -1,0 +1,7 @@
+{
+  "status": 400,
+  "body": {
+    "code": "ALREADY_PROCESSED_PAYMENT",
+    "message": "이미 처리된 결제 입니다."
+  }
+}
