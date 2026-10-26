@@ -184,26 +184,9 @@ DLQ 연계:
   앱의 Slack 직접 발송은 notification-service 에서만 실제로 나가는 보조 신호입니다.
 ```
 
-Phase 1에서는 `@TransactionalEventListener`만 사용하며 Kafka는 없습니다.
-**Phase 2**부터 Kafka + Outbox 패턴을 도입하고 `outbox_events` 테이블을 추가합니다.
-
 ### 9-4. Saga 패턴 — Phase별 구현 방식
 
-Phase 1과 Phase 4의 구현 방식은 다릅니다.
-
-```
-Phase 1 (모놀리식):
-  @TransactionalEventListener(phase = AFTER_COMMIT)
-  → 결제 실패 이벤트 수신 후 로컬 보상 트랜잭션 실행
-  → 분산 환경이 아니므로 Saga라고 부르기보다 보상 트랜잭션에 가까움
-
-Phase 4 (MSA):
-  Choreography-based Saga
-  → order.created → Product 재고 예약 → stock.reservation.result → 결제 시작(reserved=true)
-  → payment.failed 이벤트 → Order Service 소비 → 주문 취소
-  → order.cancelled 이벤트 → Product Service 소비 → 재고(예약) 복구
-  → 각 서비스가 이벤트에 반응해 자율적으로 보상 처리 (see ADR-0012 §D3/§D4 토폴로지 매트릭스)
-```
+Phase 1 과 Phase 4 의 구현 비교 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). 현재 Saga 흐름은 §8-5 와 ADR-0012 §D3/§D4 다.
 
 ### 9-5. 알림 발송 채널 — Slack Webhook
 
@@ -211,28 +194,7 @@ Notification Service는 이벤트를 수신한 후 Slack Webhook으로 실제 �
 
 ### 9-6. 재고 차감 시점 — 주문 생성 시 즉시 차감 (전략 A)
 
-재고 차감을 언제 수행하는지는 비즈니스 정합성과 구현 복잡도에 직접 영향을 미치는 핵심 설계 결정입니다.
-
-```
-전략 A (채택): 주문 생성 시 즉시 차감
-  주문 생성 트랜잭션 내에서 재고 차감 + 주문 저장을 단일 트랜잭션으로 처리
-  (Phase 2부터는 + Outbox 저장 포함)
-  결제 실패 시 order.cancelled 이벤트 → 재고 복구 (Saga 보상 트랜잭션)
-  장점: 이중 주문 방지, 구현 단순
-  단점: 결제 실패 → 복구 완료 사이 재고가 일시적으로 묶임
-
-전략 B (미채택): 결제 완료 후 확정 차감
-  주문 생성 시 재고 예약(soft lock) → 결제 완료 시 확정 차감
-  장점: 재고 묶임 최소화
-  단점: 예약 상태 관리, 예약 만료 처리 등 구현 복잡도 증가
-```
-
-> **Phase 4 (MSA) 전환 시**: Product Service 가 재고 소유자가 되어 Order 가 단일 트랜잭션으로 직접 차감할 수 없으므로, 전략 A 대신 **Product 예약 모델(전략 B 계열)** 로 전환한다 — `order.created → Product 예약 → stock.reservation.result → 결제`, 실패/취소 시 예약 해제·복구 (see ADR-0012 §D3). 모놀리스(Phase 1~3) 단계에서는 전략 A 유지.
-
-포트폴리오 범위에서는 전략 A를 채택합니다. 재고 묶임 시간을 최소화하기 위해 결제 타임아웃(Toss Payments 기준 15분)을 명시합니다.
-
-**Phase 1 결제 타임아웃 대응**:
-Phase 1에서는 단일 인스턴스이므로 `@Scheduled` 기반의 간단한 타임아웃 취소 스케줄러를 구현합니다 (ShedLock 불필요). 주기적으로 `PAYMENT_REQUESTED` 상태가 15분을 초과한 주문을 조회하여 자동 취소 + 재고 복구를 수행합니다. Phase 2에서 ShedLock을 추가하여 분산 환경 대비를 완료합니다.
+전략 A 를 채택하던 Phase 1~3 서술 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). Phase 4 부터 재고는 Product 예약 모델로 차감한다(see ADR-0012 §D3, ADR-0016).
 
 ### 9-7. Kafka Consumer 멱등성 처리
 
@@ -514,33 +476,7 @@ Outbox 패턴으로 이벤트 발행 실패는 방지할 수 있지만, Consumer
   - 포트폴리오 범위에서 DLQ 알림 + 수동 재처리는 허용 가능한 트레이드오프
 ```
 
-### 10-5. @TransactionalEventListener — AFTER_COMMIT 이후 실패 처리
-
-Phase 1에서 `@TransactionalEventListener(phase = AFTER_COMMIT)`를 사용할 때, 핸들러 내부에서 예외가 발생해도 주문 트랜잭션은 이미 커밋된 상태입니다.
-
-```java
-@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-public void handleOrderCreated(OrderCreatedEvent event) {
-    // 여기서 예외 발생 → 주문은 커밋되어 있으나 결제/알림 처리 누락
-    // 롤백 불가능
-}
-```
-
-```
-Phase 1 대응:
-  - try-catch로 감싸고 실패 로깅 처리
-  - 결제/알림 이벤트 처리 실패는 수동 확인 대상
-
-한계이자 Phase 2 전환 근거:
-  - 이 문제가 Phase 2에서 Outbox 패턴으로 전환하는 직접적인 이유임
-  - Outbox 패턴에서는 이벤트 저장이 주문 트랜잭션 안에서 이루어지므로
-    발행 실패 시 retry_count 증가 → 자동 재시도로 해결됨
-
-면접 대응:
-  "Phase 1에서 결제 이벤트 처리가 실패하면 어떻게 되나요?"
-  → "AFTER_COMMIT 이후이므로 주문 롤백은 불가하며, 로그 기록 후 수동 재처리합니다.
-     이 한계가 Phase 2 Outbox 전환의 핵심 근거입니다."
-```
+> 10-5(Phase 1 `@TransactionalEventListener` 의 AFTER_COMMIT 이후 실패 처리)는 Phase 2 Outbox 전환으로 해소돼 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).
 
 ### 10-6. Redis 단일 인스턴스 — JWT 블랙리스트 SPOF
 
@@ -572,28 +508,7 @@ Redis 장애 시:
 - 측정 시 환경·시나리오·도구 버전을 함께 기록하여 재현 가능성을 확보한다.
 - 환경이 바뀌면 이전 수치와 동일 축에서 비교하지 않고 환경별 baseline 을 재수집한다.
 
-#### Phase 1·2 — 기능 검증 단계 (로컬 Docker Compose)
-
-- **목적**: 기능 동작 검증 및 통합 테스트. 정식 부하 측정은 수행하지 않음
-- **환경**: 로컬 Docker Compose (MySQL / Redis / Kafka 컨테이너) + 앱 로컬 실행
-- **수치 기록**: 단위/통합 테스트 통과 여부 중심. TPS·p99 등의 성능 수치는 Phase 3 에서 수집
-- **선택 근거**: 기본 로컬 개발 환경 (별도 ADR 없음)
-
-#### Phase 3 초기 (Task 3-1 ~ 3-3) — K8s 도입 (로컬 minikube)
-
-- **목적**: CI, K8s 매니페스트 작성, kube-prometheus-stack 구축의 반복 사이클 확보
-- **환경**: 로컬 minikube, CPU 4 / Memory 8GB (macOS)
-- **수치 기록**: 기능 검증 중심. 본격적인 부하 측정은 Task 3-4 에서 GKE 로 수행
-- **선택 근거**: ADR-0004 §Context (Phase 3 Task 3-1~3-3 minikube 선택 근거 포함. 구 ADR-0003 은 Deprecated 처리되어 내용이 ADR-0004 로 흡수됨)
-
-#### Phase 3 — 부하 테스트 단계 (GCP / GKE)
-
-- **목적**: 상품 조회 TPS(캐싱 전/후), 동시 주문 정합성(1,000 VUser), HPA 스케일아웃, Kafka Consumer Lag 의 실측
-- **환경**: GCP GKE Standard (asia-northeast3-a), 노드 e2-standard-4 × 1 (일반), 부하 발생기는 같은 zone 의 별도 Compute Engine VM
-- **수치 기록 방침**: 각 시나리오마다 (a) 환경 스펙 (b) 도구 버전·설정 (c) 시나리오 파라미터 (d) baseline 수치 (e) 개선 후 수치 (f) 개선 비율을 함께 기록
-- **선택 근거**: ADR-0004 (minikube 의 메모리/네트워크 한계가 측정 정확도를 제약하는 점이 직접 원인)
-
-> Phase 1·2 측정값과 Phase 3 측정값은 환경이 다르므로 동일 축 비교 대상이 아닙니다. Phase 3 의 캐싱 전/후·HPA 전/후 비교는 모두 **동일 GKE 환경 내에서** 수행합니다.
+Phase 1~3 의 단계별 측정 환경 서술 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).
 
 ### 승인과 재고 회수의 경합 (see ADR-0034)
 
