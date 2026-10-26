@@ -68,3 +68,7 @@ python3 -B docs/plans/evidence/D-075/extract-results.py /private/tmp/d075-rechec
 ```
 
 전체 로컬 Gradle suite, GKE·유료 실행·외부 PG/Slack·운영 변경은 수행하지 않았다. 전체 PR CI는 별도 확인하며 D-075 전체 정책 선택과 D-078의 실제 jitter/DLQ·scheduler 부하 후속은 열린 상태다.
+
+## 도구 위치 (2026-10-26, D-116 P3a)
+
+이 폴더는 `docs/plans/evidence/D-075/` 에서 `docs/evidence/D-075/` 로 옮겼다. 위 명령의 `docs/plans/evidence/D-075/` 는 옮기기 전 경로이고, 지금은 `docs/evidence/D-075/` 로 바꿔 실행한다.

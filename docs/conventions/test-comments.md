@@ -11,7 +11,7 @@
 
 작업 이력은 현재 행동 설명으로 바꾸거나 구체적인 역사 문서에 연결한다. 특히 '이 PR에는 진입점이 없다' 같은 상대적 시점 표현은 이후에도 남는 코드 주석에 쓰지 않는다. 과거 실패에서 배운 이유는 보존하되 그 실패의 메커니즘을 함께 설명한다.
 
-D-102 정리 범위는 Java `src/test`의 comment다. DisplayName, assertion 문자열, method 이름과 로컬 시나리오 구분은 실행 토큰이므로 이 작업에서 바꾸지 않았다. 정리 결과와 예외는 [D-102 inventory와 재현 검사](../plans/evidence/D-102/README.md)에 있다. 다른 언어·testFixtures·main의 주석까지 검사했다고 해석하지 않는다.
+D-102 정리 범위는 Java `src/test`의 comment다. DisplayName, assertion 문자열, method 이름과 로컬 시나리오 구분은 실행 토큰이므로 이 작업에서 바꾸지 않았다. 정리 결과와 예외는 [D-102 inventory와 재현 검사](../evidence/D-102/README.md)에 있다. 다른 언어·testFixtures·main의 주석까지 검사했다고 해석하지 않는다.
 
 ## 재발 감시와 CI 후속 조건
 

@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 168개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 169개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -45,7 +45,7 @@
 | [task-impl3-pr4-auth-observability](./task-impl3-pr4-auth-observability.md) | 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-09-14 | 있음 |
 | [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#109](https://github.com/Kimgyuilli/PeakCart/pull/109) | 2026-09-15 | 있음 |
 
-## 부채 · 측정 (122)
+## 부채 · 측정 (123)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -171,6 +171,7 @@
 | [D-064](./D-064.md) | D-064 Toss 테스트 환경 실호출 검증: 승인·조회·취소와 중복 응답 | [#249](https://github.com/Kimgyuilli/PeakCart/pull/249) | 2026-10-26 | 있음 |
 | [D-108](./D-108.md) | D-108 마지막 재측정: 수신 상한 대조와 D-078 ⑤⑥ 측정 | [#250](https://github.com/Kimgyuilli/PeakCart/pull/250) | 2026-10-26 | 있음 |
 | [D-116-loadtest](./D-116-loadtest.md) | 측정 산출물 정리 (D-116 P1) | [#251](https://github.com/Kimgyuilli/PeakCart/pull/251) | 2026-10-26 | 있음 |
+| [D-116-tooling](./D-116-tooling.md) | 도구 경로와 계획 폴더 정비 (D-116 P2) | [#252](https://github.com/Kimgyuilli/PeakCart/pull/252) | 2026-10-26 | 있음 |
 
 ## 기타 (16)
 

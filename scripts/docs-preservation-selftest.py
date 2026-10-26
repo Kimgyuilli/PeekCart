@@ -17,6 +17,8 @@ ROW2 = '| D-022 | docs | second body | origin | 🔲 |\n'
 OLDROW = '| D-020 | docs | history body | origin | ✅ |\n'
 FOOTER = '\n## Historical correction\nRepeated history.\nRepeated history.\n'
 SOURCE = '# Source\n\nRepeated substantive source content.\nRepeated substantive source content.\n## Section\n[guide](guide.md#guide)\nLast source line.\n'
+EVIDENCE = 'docs/evidence-old/run-77'
+MOVED = 'docs/evidence-new/run-77'
 
 
 def digest(text):
@@ -59,7 +61,7 @@ class PreservationTest(unittest.TestCase):
     def read(self, path):
         return (self.root / path).read_bytes().decode('utf-8')
 
-    def check(self, passes=True):
+    def check(self, passes=True, reason=None):
         command = [sys.executable, '-B', str(CHECK), '--root', str(self.root), '--base', self.base]
         if self.manifest:
             self.write('manifest.json', json.dumps(self.manifest))
@@ -67,6 +69,7 @@ class PreservationTest(unittest.TestCase):
         result = subprocess.run(command, text=True, capture_output=True)
         self.assertEqual(result.returncode, 0 if passes else 1, result.stdout + result.stderr)
         if not passes: self.assertIn('[preservation] FAIL:', result.stderr)
+        if reason: self.assertIn(reason, result.stderr)
 
     def move_task(self):
         self.write(TASKS, '# Active\n' + ROW2)
@@ -468,6 +471,84 @@ class PreservationTest(unittest.TestCase):
     def test_existing_destination_must_be_preserved_source(self):
         self.transfer(['docs/source.md'], [{'path': 'docs/guide.md', 'parts': [
             {'source': 'docs/source.md', 'start': 1, 'end': 7}]}]); self.check(False)
+
+    def evidence_fixture(self, readme='# Run\n[data](data.json)\n[guide](../../guide.md)\n'):
+        self.write(f'{EVIDENCE}/README.md', readme)
+        self.write(f'{EVIDENCE}/data.json', '{}\n')
+        self.commit_changes()
+
+    def move_evidence(self, routes=True):
+        readme = f'{EVIDENCE}/README.md'
+        count = len(self.read(readme).splitlines(keepends=True))
+        self.transfer([readme], [{'path': f'{MOVED}/README.md', 'parts': [
+            {'source': readme, 'start': 1, 'end': count}]}])
+        data = self.read(f'{EVIDENCE}/data.json')
+        (self.root / f'{EVIDENCE}/data.json').unlink()
+        self.write(f'{MOVED}/data.json', data)
+        if routes: self.manifest['routes'] = [{'from': EVIDENCE, 'to': MOVED}]
+
+    def test_route_keeps_sibling_links_of_moved_directory(self):
+        self.evidence_fixture()
+        self.move_evidence(routes=False); self.check(False, 'Destination ordered content differs')
+        self.manifest['routes'] = [{'from': EVIDENCE, 'to': MOVED}]; self.check()
+
+    def test_route_rejects_unmoved_leftover_and_empty_routes(self):
+        self.evidence_fixture()
+        self.move_evidence()
+        data = self.read(f'{MOVED}/data.json')
+        (self.root / f'{MOVED}/data.json').unlink(); self.check(False, 'Routed file missing at new path')
+        self.write(f'{MOVED}/data.json', data); self.write(f'{EVIDENCE}/data.json', data)
+        self.check(False, 'Routed file still exists at old path')
+        (self.root / f'{EVIDENCE}/data.json').unlink(); self.check()
+        self.manifest['routes'] = [{'from': 'docs/evidence-old/run-78', 'to': MOVED}]
+        self.check(False, 'Route has no base files')
+
+    def test_route_requires_markdown_under_it_to_be_declared(self):
+        self.write(f'{EVIDENCE}/notes.md', '# Notes\n')
+        self.evidence_fixture()
+        self.move_evidence(); self.check(False, 'Routed Markdown needs a source/destination manifest')
+
+    def test_overlapping_routes_rejected(self):
+        self.evidence_fixture()
+        self.move_evidence()
+        self.manifest['routes'].append({'from': 'docs/evidence-old', 'to': 'docs/evidence-other'})
+        self.check(False, 'Overlapping/duplicate route path')
+
+    def test_route_lets_protected_history_follow_moved_data(self):
+        path = 'docs/plans/done/history.md'
+        self.write(path, self.read(path) + '[data](../../evidence-old/run-77/data.json)\n'
+                   '[folder](../../evidence-old/run-77)\n')
+        self.evidence_fixture('# Run\nBody.\n')
+        self.move_evidence(routes=False)
+        self.write(path, self.read(path).replace('evidence-old', 'evidence-new'))
+        self.check(False, 'Protected archive changed')
+        self.manifest['routes'] = [{'from': EVIDENCE, 'to': MOVED}]; self.check()
+        self.write(path, self.read(path).replace('evidence-new/run-77/data.json', 'guide.md'))
+        self.check(False, 'Protected archive changed')
+
+    def test_same_named_link_elsewhere_does_not_parse_unrelated_document(self):
+        self.write('docs/other/README.md', '# Other\n')
+        self.write('docs/notes.md', 'Start `code\ncontinues` end.\n[other](other/README.md)\n')
+        self.evidence_fixture('# Run\nBody.\n')
+        self.move_evidence(); self.check()
+
+    def test_unparseable_document_linking_moved_source_fails_closed(self):
+        self.write('docs/notes.md', 'Start `code\ncontinues` end.\n[run](evidence-old/run-77/README.md)\n')
+        self.evidence_fixture('# Run\nBody.\n')
+        self.move_evidence(); self.check(False, 'Unsupported multiline backtick span')
+
+    def test_outside_detour_link_still_needs_retarget(self):
+        self.write('docs/notes.md', '[run](evidence-old/run-77/sub/../README.md)\n')
+        self.evidence_fixture('# Run\nBody.\n')
+        self.move_evidence(); self.check(False, 'Inbound source references not preserved/retargeted')
+        self.write('docs/notes.md', '[run](evidence-new/run-77/README.md)\n'); self.check()
+
+    def test_document_inside_source_directory_is_checked_by_name(self):
+        self.write(f'{EVIDENCE}/notes.md', '[readme](README.md)\n')
+        self.evidence_fixture('# Run\nBody.\n')
+        self.move_evidence(routes=False)
+        self.check(False, 'Inbound source references not preserved/retargeted')
+        self.write(f'{EVIDENCE}/notes.md', '[readme](../../evidence-new/run-77/README.md)\n'); self.check()
 
 
 if __name__ == '__main__':

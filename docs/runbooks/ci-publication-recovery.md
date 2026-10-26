@@ -60,6 +60,6 @@ GITHUB_REPOSITORY=Kimgyuilli/PeekCart GITHUB_RUN_ID="$RUN_ID" GITHUB_RUN_ATTEMPT
 
 run38973369532/head9275556 payment publish는2026-10-16T22:18:34Z SHA push 중 unknown blob/exit1이다. 당시 stdout은 실패한 command substitution 안에 남아 layer/request 상세가 없다. 다른5개 publish job 성공과 그 뒤복구run38981041166의6개성공을 구분한다. PR179는 진단출력 보존을 개선했으며 원서버 원인을 해결한 변경은 아니다.
 
-2026-10-21의 무료 read-only 조회에서는 원9275556 SHA tag가5repo에서200, payment에서404였다. 이는 현재 가용성이고 당시 latest snapshot/원인의 증거는 아니다. 원run image payload는 현재artifact목록에없으며이를복구했다고주장하지않는다. 원자료와해시는 [D-089 evidence](../plans/evidence/D-089/README.md)에 있다.
+2026-10-21의 무료 read-only 조회에서는 원9275556 SHA tag가5repo에서200, payment에서404였다. 이는 현재 가용성이고 당시 latest snapshot/원인의 증거는 아니다. 원run image payload는 현재artifact목록에없으며이를복구했다고주장하지않는다. 원자료와해시는 [D-089 evidence](../evidence/D-089/README.md)에 있다.
 
 원인분리를재개하려면재발run의정확시각/서비스/원pushstdout·stderr/검증artifact configID/SHA·manifest와가능한registry응답·요청식별자/서버진단이필요하다. 현재메타데이터관측의성공이나과거build record만으로이없는publish서버자료를대체하지않는다. 추적·감지·복구절차구현과원장애근본원인미해결은부분해결로별도기록한다.

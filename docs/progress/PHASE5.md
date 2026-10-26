@@ -1162,3 +1162,18 @@ CI·규약·하네스가 실행하거나 읽는 docs 안 파일을 `scripts/` �
 미충족과 관찰:
 - 보수적 기본값으로 정한 해석 6건을 PR 본문 "확인 요청" 에 올렸다. 모듈별 `application-local.yml` 은 추적 중이라 ignore 하지 않았고, `docs/plans/.archive/` 로컬 삭제는 P6 에서 당겼다.
 - D-078 의 `check-mutants.py` 와 D-099·D-102 증적의 README·결과 파일은 P3 의 증적 이동에서 옮긴다.
+
+## 2026-10-26 — Phase 5 마감 정리 3a단계: 증적 통합
+
+[PR253](https://github.com/Kimgyuilli/PeekCart/pull/253) · 계획 `D-116-evidence`(상위 `D-116`) · 결정 `docs/evidence/D-116/decisions.md` 2-3·2-6·2-7.
+`docs/plans/evidence/` 의 26 폴더를 `docs/evidence/` 로 합치고, 그 이동에 필요한 기능을 보존 검사기에 더했다.
+
+- 결정: 보존 검사기를 넓혔다. 사전 필터가 소스 이름만 봐서 `README.md` 이동이 무관한 파싱 불가 문서(ADR-0028)에 막혔고, 경로 대응이 Markdown 에만 있어 README 의 형제 파일 링크가 비교에서 실패했다. 필터는 폴더 밖 문서에서 상위 폴더 이름을 요구하고, manifest 는 디렉터리 단위 `routes` 를 선언한다.
+- D-104 README 는 PHASE4(파싱 불가)가 링크해 명시 이전했다. 원문은 새 위치에, 옛 자리에는 안내 파일을 두었다.
+- 색인 `docs/evidence/README.md`(32 폴더, Actions 원본 만료일 포함), 대응표 `docs/plans/evidence/README.md`, 규약 `docs/conventions/evidence.md` 를 만들었다. README 가 없던 6 폴더에 README 를 더했다.
+- P3 은 P3a(이 PR, 전체 매트릭스)와 P3b(문서 전용)로 나눴다.
+
+미충족과 관찰:
+- 파싱 불가 문서 14개는 그대로다. 그 문서들이 링크하는 대상을 옮길 때마다 같은 명시 이전이 필요하다.
+- `routes` 는 비-Markdown 인바운드 링크의 재표적을 강제하지 않는다. 이번에는 corpus 대조로 깨진 링크 0건을 확인했다.
+- 보수적 기본값으로 정한 해석 5건을 PR 본문 "확인 요청" 에 올렸다.

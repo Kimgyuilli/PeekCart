@@ -57,7 +57,7 @@ ADR-0043을 production 코드 전에 작성했다. 별도 AUTO_INCREMENT 예약 
 선행 #196 최종 head `3bec8ae`(실제 main `a7ffa11` 포함)를 정상 merge한 기준은 `1bcbe86`이다. source snapshot SHA256 `caf2f01196f32011bf67f922988174a5c59c89b3d0c8e01236420e35f6e14d73`, 실제 명령·실패/반증·cleanup은 audit에 보존한다. smoke self-test 59개와 migration/container lint도 통과했다. #196 의존성과 product timeout 원인 미확정 잔여를 상속하며, 최종 head의 전체 CI와 독립 검토 및 #196 실제 merge 뒤 main 재통합은 대기다.
 
 
-PR 준비 단계에서 #196 최종 `6b2b534`와 실제 #198 main `ec677b3`을 `63ce6bf`로 반영했다. 검증된 D065 소유 12개 source/test/migration/script 파일은 해시가 모두 같고 상위 변경은 별도 product test/doc뿐이다. 최종 전체 CI가 이 통합 상태를 확인한다. 재현 기록은 [증거 묶음](../evidence/D-065-lineage-writer/README.md)에 보존한다.
+PR 준비 단계에서 #196 최종 `6b2b534`와 실제 #198 main `ec677b3`을 `63ce6bf`로 반영했다. 검증된 D065 소유 12개 source/test/migration/script 파일은 해시가 모두 같고 상위 변경은 별도 product test/doc뿐이다. 최종 전체 CI가 이 통합 상태를 확인한다. 재현 기록은 [증거 묶음](../../evidence/D-065-lineage-writer/README.md)에 보존한다.
 
 
 ## 병합 후 확인 (2026-10-21)

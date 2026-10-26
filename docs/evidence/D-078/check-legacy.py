@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 BASE = 'af60cd6d9dceac541b6f457062093df70753f3ce'
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[3]
 SECTION = '=== 캐시 이름별 차분 (미수집은 0이 아님) ==='
 legacy = subprocess.run(['git', 'show', BASE + ':loadtest/scripts/d026-collect.py'],
                         cwd=ROOT, text=True, capture_output=True, check=True).stdout
