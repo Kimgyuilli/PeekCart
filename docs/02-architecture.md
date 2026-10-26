@@ -17,19 +17,20 @@
 
 ### 4-2. 서비스 전략: 모놀리식 → MSA 분리
 
-Phase 1~4 의 단계표 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).
+현재는 도메인 서비스 5개와 gateway 로 나뉘어 있다(§4-5, see ADR-0010). Phase 1~4 의 단계표 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).
 
 ### 4-3. 인프라 전략: Kubernetes + Kustomize
 
 - **환경**: 단계별 전환 서술은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). 현재 환경은 `docs/01-project-overview.md` §4 다
 - **매니페스트 구조**: Kustomize `base/` + `overlays/{minikube, gke}/` (ADR-0005)
 - **관측성 스택**: kube-prometheus-stack Helm 차트. base/ 와 분리된 `k8s/monitoring/` 트리에서 환경별로 관리 (ADR-0006). install.sh 로 멱등 설치
-- HPA 로 Order Service Pod 자동 수평 확장 검증
+- HPA 는 GKE overlay 에 order-service(1~3)와 gateway(2~4) 두 개다(`k8s/overlays/gke/hpa.yml`)
+- 공통 MySQL 의 CPU 상한은 2000m 이다. 읽기·쓰기 공통 천장이던 500m 을 실측한 값으로 올렸다 (see ADR-0027)
 - Liveness / Readiness / Startup Probe 설정으로 비정상 Pod 자동 재시작
 
 > 환경 진화와 선택 근거의 상세: `docs/01-project-overview.md` §4 (SSOT), ADR-0004 (§Context 가 Phase 3 초기 minikube 근거 포함), ADR-0005, ADR-0006 (monitoring 스택 환경 분리).
 
-### 4-4. 레포 전략: 모노레포 (Gradle 멀티모듈) (Phase 4 모듈 구조는 see ADR-0011, ADR-0014)
+### 4-4. 레포 전략: 모노레포 (Gradle 멀티모듈) (모듈 구조는 see ADR-0011, ADR-0014, ADR-0033)
 
 - 단일 GitHub 레포에서 전체 서비스 구조를 한눈에 파악 가능
 - `common` 모듈로 이벤트 DTO, 공통 예외, 응답 포맷 공유 + `peekcart-common-observability` 모듈(ADR-0009 선결정) + `peekcart-common-auth` 모듈(내부 토큰 검증 — 사용자 JWT 검증은 ADR-0014 D2-c 로 종료, ADR-0017) + `peekcart-common-messaging` 모듈(outbox·멱등성·DLQ 원장 실행 세트, ADR-0033) + `internal-token-contract` 모듈(내부 토큰 이름 계약, 프레임워크 의존 0 — 발행 `gateway`/검증 `peekcart-common-auth` 가 서로 의존 불가) + 5개 서비스 모듈 (경계·의존 규칙은 ADR-0011/ADR-0014/ADR-0033)
@@ -37,10 +38,10 @@ Phase 1~4 의 단계표 원문은 [Layer 1 이력 아카이브](progress/archive
 
 ### 4-5. MSA 분리 대상 서비스 (see ADR-0010)
 
-Phase 4 는 5개 도메인을 모두 독립 서비스로 분해한다 (경계·이벤트 토폴로지·Saga 골격의 SSOT 는 ADR-0010). 각 서비스의 분리 동기:
+5개 도메인은 모두 독립 서비스다 (경계·이벤트 토폴로지·Saga 골격의 SSOT 는 ADR-0010). 각 서비스의 분리 동기:
 
 - **User Service** — 회원·JWT 인증/인가 (Gateway 인증 경로의 기반)
-- **Product Service** — 상품·카테고리·**재고 소유자**, CQRS 로컬 캐시용 Product→Order 캐시 이벤트의 발행처 (이벤트 명칭·스키마는 A3 확정)
+- **Product Service** — 상품·카테고리·**재고 소유자**, CQRS 로컬 캐시용 Product→Order 캐시 이벤트(`product.updated`)의 발행처 (payload 는 see ADR-0012 §D2)
 - **Order Service** — 주문 폭주 시 독립 스케일아웃 필요
 - **Payment Service** — 결제 플로우 격리, 장애 전파 방지
 - **Notification Service** — Kafka Consumer + Slack 발송, 알림 영속(Notification DB 소유)
@@ -49,18 +50,18 @@ Phase 4 는 5개 도메인을 모두 독립 서비스로 분해한다 (경계·�
 
 ## 5. 시스템 아키텍처 다이어그램
 
-> Phase 1 모놀리식 다이어그램은 `docs/progress/design-archive-phase1-2.md` 로 옮겼다.
+> Phase 1 모놀리식 다이어그램은 [설계 아카이브](progress/archive/design-archive-phase1-2.md#02-architecturemd-5-시스템-아키텍처-다이어그램)로 옮겼다.
 
-### Phase 4 — MSA
+### 현재 구조 — MSA
 
-> 현재 이벤트 토폴로지는 **11개 토픽**이다. ADR-0012의 7개 토픽과 ADR-0018의 보상/환불 3개에 `stock.approval.result`가 추가됐다(see ADR-0034). `payment.requested`는 Order와 Product가 소비하고, Product의 보호 회신은 Payment가 소비한다. 서비스 직접 호출 없이 재고 보호 확인 뒤 PG를 호출한다. **토픽 생성은 producer-owns-topic**: Order는 `order.*`, Payment는 `payment.*`, Product는 `product.updated`/`stock.*` 및 각 `.dlq`를 소유한다. 계약의 현재 코드 정본은 `DlqTopology`이며 아래 다이어그램은 ADR-0010 시점의 4토픽 골격이다.
+> 현재 이벤트 토폴로지는 **업무 토픽 15개**다. ADR-0012의 7개, ADR-0018의 보상/환불 3개, `stock.approval.result`(see ADR-0034), 승인 대사 복구 4개(see ADR-0040)이며 토픽마다 `.dlq`를 둔다. `payment.requested`는 Order와 Product가 소비하고, Product의 보호 회신은 Payment가 소비한다. 서비스 직접 호출 없이 재고 보호 확인 뒤 PG를 호출한다. **토픽 생성은 producer-owns-topic**: Order는 `order.*`, Payment는 `payment.*`, Product는 `product.updated`/`stock.*` 및 각 `.dlq`를 소유한다. 계약의 현재 코드 정본은 `DlqTopology`이며 아래 다이어그램은 ADR-0010 시점의 4토픽 골격이다.
 
 ```mermaid
 graph TD
     Client["Client (Browser)"]
     Toss["Toss Payments API (외부)"]
     Slack["Slack Webhook (외부)"]
-    LB["nGrinder / k6 부하 테스트"]
+    LB["k6 부하 테스트"]
 
     Client -->|HTTP| Gateway["Spring Cloud Gateway\\nRS256 JWT 검증 · 서명 내부 토큰 발행 · 라우팅 · Rate Limit (see ADR-0013, ADR-0017)"]
 
@@ -107,7 +108,7 @@ graph TD
         OrderDB["Order DB / MySQL\\n(+ Outbox Table)"]
         PaymentDB["Payment DB / MySQL\\n(+ Outbox Table)"]
         NotificationDB["Notification DB / MySQL"]
-        Redis["Redis — 캐싱 · 분산 락 · 블랙리스트"]
+        Redis["Redis — 조회 캐시 · 토큰 deny · rate limit"]
     end
 
     UserSvc --- UserDB
@@ -116,7 +117,7 @@ graph TD
     PaymentSvc --- PaymentDB
     NotificationSvc --- NotificationDB
     ProductSvc --- Redis
-    OrderSvc --- Redis
+    Gateway --- Redis
     UserSvc --- Redis
     PaymentSvc -.->|결제 API 호출| Toss
     NotificationSvc -.->|알림 발송| Slack
@@ -212,7 +213,7 @@ k8s/
 - **GKE 운영 체크리스트** (ADR-0004): 측정 종료 시 클러스터/VM/PD/예약 IP 정리. 상세 명령은 `k8s/overlays/gke/README.md` 또는 ADR-0004 §운영 체크리스트
 - **서비스 추가 시**: `k8s/base/services/` 하위에 형제 디렉토리 추가 + 각 서비스의 `servicemonitor.yml` 동봉 + `base/kustomization.yml` 에 참조 추가 (ADR-0006 §긍정적 영향)
 
-### Phase 4 — MSA (Gradle 멀티모듈)
+### Gradle 멀티모듈
 
 [settings.gradle](../settings.gradle)이 포함하는 11개 모듈의 현재 위치다. 공유 라이브러리 5개와 도메인 서비스 5개, gateway로 구성되며 root는 배포 앱이 아니다(see ADR-0011, ADR-0014, ADR-0033).
 
