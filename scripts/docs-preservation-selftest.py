@@ -379,6 +379,17 @@ class PreservationTest(unittest.TestCase):
                 self.commit_changes()
                 self.move_source(); self.check(False)
 
+    def test_unmatched_backtick_stops_at_next_bullet_item(self):
+        # Sibling bullet items are separate blocks; one item's stray backtick cannot pair with the next.
+        self.write('docs/source.md', SOURCE + '- P2. `a \\`b\\` c` tail.\n- P4. Path `x.json` here.\n')
+        self.commit_changes()
+        self.move_source(); self.check()
+
+    def test_multiline_backtick_inside_one_bullet_item_fails_closed(self):
+        self.write('docs/source.md', SOURCE + '- P2. Start `code\n  continues` end.\n')
+        self.commit_changes()
+        self.move_source(); self.check(False, 'Unsupported multiline backtick span')
+
     def test_canonical_marker_injection_is_rejected(self):
         target = self.move_source()
         self.write(target, self.read(target).replace('[guide](../../guide.md#guide)', '[guide](@@LOCAL[docs/guide.md#guide?])'))
