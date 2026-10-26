@@ -47,10 +47,26 @@
 ③ `product` 캐시와 ⑧ base 적용은 그래프가 아니라 counter 차분과 `kubectl get` 출력으로 남긴다.
 A 사가 왕복 지연과 B outbox 발행 대기는 그래프가 아니라 DB 원자료다. 경합 런이 배수된 뒤, 초기화 SQL 전에
 `loadtest/sql/d078-saga-latency.sql`(order)과 `d078-outbox-latency.sql`(order·product)을 `mysql -B` 로 TSV 로
-내보내고 `loadtest/scripts/d078-latency.py` 로 집계한다. TSV 원본도 같은 디렉터리에 둔다.
+내보내고 `loadtest/scripts/d078-latency.py` 로 집계한다. 측정 run 의 TSV 원본도 같은 디렉터리에 둔다. 워밍업·무효 run 은
+아래 §세션 뒤 정리를 따른다.
 
 ## Phase 4 before 값과 함께 읽을 때
 
 같은 GKE 라도 세션 간 절대값 비교는 오염된다(`docs/progress/evidence/d026-d002a-read-ceiling-20260920.md` §읽는 법 ①).
 ⑤ 의 before(충돌 7 · DLQ 7, 주문 9,782)와 after 를 나란히 둘 때는 주문 수 대비 비율로 적고, 두 세션의
 노드·이미지·k6 버전을 함께 적는다.
+
+## 세션 뒤 정리
+
+기록을 마친 뒤 커밋 전에 아래를 따른다. D-116(2026-10-26)이 10월 세션 세 개에 적용한 기준이고, 결정 근거는
+`docs/evidence/D-116/decisions.md` 1-1~1-3 이다.
+
+- 지연 TSV 는 측정 run 것만 남긴다. 워밍업·무효 run 은 `d078-latency.py` 집계를 날짜 폴더의 `latency-summary.txt` 에
+  run 마다 실행 명령과 함께 남기고 TSV 는 커밋하지 않는다.
+- k6 `--summary-export` 의 `setup_data.tokens` 는 커밋 전에 걷어내고 개수만 `tokens_removed` 로 남긴다. 사용자 수만큼
+  JWT 가 들어 있어 파일 용량의 대부분을 차지하고, 만료됐어도 자격증명 모양이다.
+- 무효 관찰 블록의 jpg 캡처는 남기지 않는다. run 별 export json 은 남긴다. 파티션별 lag export 처럼 큰 것은
+  series 별 최댓값·시각을 요약해 남긴다. 판정 입력(k6 요약, `-counts`·`-times`·`-prom-delta`, 워밍업 판정)은 run 이
+  무효여도 남긴다.
+- 이미 커밋한 원자료를 지우거나 고치면 날짜 폴더의 `pruned.tsv` 에 경로·크기·base blob·근거를 적는다. 되살리기는
+  `git show <base>:<경로>` 다.

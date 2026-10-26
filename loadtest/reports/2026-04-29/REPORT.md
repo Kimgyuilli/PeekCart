@@ -287,3 +287,7 @@ kafka_consumer_fetch_manager_records_lag_max{
 - `grafana/02-pod-resources-run2.png` — Pod CPU/Memory/Restarts (Run 2, HPA 패널은 No data — Run 2 동안 HPA 일시 삭제 상태)
 - `grafana/03-pod-resources-hpa-scaleout.png` — HPA Current Replicas 패널의 1→3 전이 (Task 3-5 핵심 산출물)
 - `grafana/04-kafka-lag-both-runs.png` — Kafka Consumer Lag (Max) 양 run 구간 + Records Consumed Rate / Consumer Fetch Rate
+
+## 사후 정리 (2026-10-26, D-116)
+
+`run2/k6-stdout.log` 는 위 첨부 목록대로 추적되지 않는 로컬 파일이다. 이 로그가 근거인 수치(실패 원인 분포, 끝 요약)를 저장소에서도 볼 수 있게 Phase 5 마감 정리(D-116)에서 발췌 [run2/k6-stdout-excerpt.txt](run2/k6-stdout-excerpt.txt) 를 추적했다. 발췌 규칙과 원본 sha256 은 그 파일 머리에 있다. 원본은 운영자 로컬에 둔다. 결정은 `docs/evidence/D-116/decisions.md` 1-4 다.

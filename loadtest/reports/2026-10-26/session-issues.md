@@ -49,3 +49,11 @@
     port-forward 를 다시 띄우자 8장이 21초에 끝났다.
 13. [기록 편차] c2(복구 뒤)의 export 는 스크립트 t_full 이 없어(payment 적체) product 클라이언트 lag 0 시각(t1+242초)으로 대신했다.
     앞 세 run 에서 스크립트 t_full 과 그 시각이 1~14초 안에서 같았다(`s3/c0/c2-tfull-substitute.txt`).
+
+## 사후 정리 (2026-10-26, D-116)
+
+Phase 5 마감 정리(D-116)에서 이 폴더의 원자료 일부를 걷어냈다. 결정과 근거는 `docs/evidence/D-116/decisions.md` 1-1~1-4, 계획은 `docs/plans/D-116-loadtest.md` 다. 지우거나 고친 파일은 [pruned.tsv](pruned.tsv) 에 경로·크기·base blob 과 함께 있고 `git show 91cfa1f:<경로>` 로 되살린다.
+
+- 지연 TSV 21개(`s3/c0/warmup/w1`~`w4`, `s3/c0/invalid/` 의 세 run)를 지웠다. 측정 run c1·c2·s1 의 TSV 는 남긴다. 지운 run 의 백분위·최댓값·표본 수·제외 건수는 [latency-summary.txt](latency-summary.txt) 에 있다. `w4` 의 판정 입력과 `invalid/contend-retry2/` 의 사고 증적은 TSV 가 아니라서 그대로 둔다.
+- k6 요약 10개(`s3/c0/c1.json`·`c2.json`·`s1.json`, `s3/c0/warmup/w1.json`~`w4.json`, `invalid/` 세 run 의 json)의 `setup_data.tokens`(사용자 450명의 RS256 JWT)를 `"tokens_removed": 450` 한 줄로 바꿨다. 토큰은 30분 만료라 이미 쓸 수 없지만 자격증명 모양의 데이터이고 파일 용량의 95% 였다. 다른 키와 값, `startedAt` 은 그대로다. D-108 P2 의 "원자료를 고치지 않는다" 에 대한 예외이며 2026-10-26 사용자 결정이다.
+- 추적되지 않던 `s3/c0/c2-payment-service-2100.log`(D-112 의 원 로그, 대체물 없음)는 발췌 [s3/c0/c2-payment-service-2100-excerpt.txt](s3/c0/c2-payment-service-2100-excerpt.txt) 를 추적한다. 발췌 규칙과 원본 sha256 은 그 파일 머리에 있다. 원본은 운영자 로컬에 둔다.

@@ -28,3 +28,11 @@
 9. [운영 절차] 결제 계정 연결은 자동 모드 검사가 막아 사용자가 직접 실행했다. 세션 동안 gcloud·kubectl·helm·crane 허용 규칙을
    `.claude/settings.local.json` 에 임시로 두었다(S5 에서 제거).
 10. [S4 편차] notification Slack 두 값은 실제 webhook 대신 base 기본값과 같은 loopback 을 넣었다(D-092 를 반복하지 않음).
+
+## 사후 정리 (2026-10-26, D-116)
+
+Phase 5 마감 정리(D-116)에서 이 폴더의 원자료 일부를 걷어냈다. 결정과 근거는 `docs/evidence/D-116/decisions.md` 1-1~1-3, 계획은 `docs/plans/D-116-loadtest.md` 다. 지우거나 고친 파일은 [pruned.tsv](pruned.tsv) 에 경로·크기·base blob 과 함께 있고 `git show 91cfa1f:<경로>` 로 되살린다.
+
+- 지연 TSV 21개(`s3/s1`, `s3/warmup/w1`~`w6` 의 saga·outbox-order·outbox-product)를 지웠다. 이 세션 S3 는 측정 run 에 들어가지 못했다. run 별 백분위·최댓값·표본 수·제외 건수는 [latency-summary.txt](latency-summary.txt) 에 남겼다.
+- 무효 관찰 블록의 캡처 jpg 16개(`contend-obs-block`·`s1-spread`)와 파티션별 kafka-lag export 4개(`s1`·`w3`·`w4`·`w5`)를 지웠다. 같은 구간의 run 별 export json 은 남아 있다. 지운 lag export 는 series 별 최댓값·그 시각·마지막 값을 [grafana/kafka-lag-summary.tsv](grafana/kafka-lag-summary.tsv) 에 남겼다. `w6` 는 진단 표본(`warmup/w6-mysql-sample.txt`)이 인용된 run 이라 export 와 JVM 캡처를 그대로 둔다. `grafana/s3-capture-plan.tsv` 는 촬영 계획이라 지운 jpg 의 이름도 그대로 적혀 있다.
+- k6 요약 7개(`s3/s1.json`, `s3/warmup/w1.json`~`w6.json`)의 `setup_data.tokens`(사용자 450명의 RS256 JWT)를 `"tokens_removed": 450` 한 줄로 바꿨다. 토큰은 30분 만료라 이미 쓸 수 없지만 자격증명 모양의 데이터이고 파일 용량의 95% 였다. 다른 키와 값, `startedAt` 은 그대로다. D-108 P2 의 "원자료를 고치지 않는다" 에 대한 예외이며 2026-10-26 사용자 결정이다.
