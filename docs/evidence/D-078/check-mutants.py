@@ -6,7 +6,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS = ROOT / 'loadtest/scripts'
 MUTANTS = [
     ('capture-omits-product', 'd026-run-cell.sh',

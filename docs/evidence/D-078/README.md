@@ -1,6 +1,6 @@
 # D-078 로컬 수집기 검증
 
-기준 `af60cd6d9dceac541b6f457062093df70753f3ce`, 실행일 2026-10-21. D-078 전체 측정의 완료가 아니라 이름별 capture/collector의 부분 보완이다. 원래 8개 잔여와 무료 로컬 후속 가능 부분은 [계획](../../done/D-078.md)에 남겼다.
+기준 `af60cd6d9dceac541b6f457062093df70753f3ce`, 실행일 2026-10-21. D-078 전체 측정의 완료가 아니라 이름별 capture/collector의 부분 보완이다. 원래 8개 잔여와 무료 로컬 후속 가능 부분은 [계획](../../plans/done/D-078.md)에 남겼다.
 
 ## 출력 계약
 
@@ -34,3 +34,7 @@ bash -n loadtest/scripts/d026-run-cell.sh
 - [변이 대조](mutant-results.txt): 임시 복사본에 product capture 누락, 빈 scrape 0 변환, 역사적 누락 0 변환, reset 허용, 0분모 적중률 포함을 주입해 각각 unittest 실패를 확인한다. 원본 파일은 변경하지 않는다.
 
 전체 Gradle suite, 실제 GKE/loadgen/CPU 경합/부하/Billing/배포는 실행하지 않았다. 전체 PR CI 결과는 별도로 확인한다.
+
+## 도구 위치 (2026-10-26, D-116 P3a)
+
+이 폴더는 `docs/plans/evidence/D-078/` 에서 `docs/evidence/D-078/` 로 옮겼다. 위 명령의 `docs/plans/evidence/D-078/` 는 옮기기 전 경로이고, 지금은 `docs/evidence/D-078/` 로 바꿔 실행한다. 두 검사 도구의 저장소 루트 계산은 새 깊이(`parents[3]`)로 고쳤다.
