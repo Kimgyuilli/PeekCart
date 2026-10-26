@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-116-docs-move.md",
+      "sha256": "29516caa457968dc6031a3f03ee4cef968958badcede00463f163ab6b9396fe3"
+    },
+    {
+      "path": "docs/plans/D-116-docs-move.audit.md",
+      "sha256": "543b627aa55ec1e6e8c0a2f0be771100fc30f85c62bbe96ffc70d01f2437cc4d"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-116-docs-move.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116-docs-move.md",
+          "start": 1,
+          "end": 82
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-116-docs-move.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116-docs-move.audit.md",
+          "start": 1,
+          "end": 24
+        }
+      ]
+    }
+  ]
+}
