@@ -76,7 +76,7 @@ Markdown 밖의 파일(json·gz·로그·도구)은 내용 비교 대상이 아�
 
 ## Markdown 지원 경계와 검증
 
-표준 라이브러리만 사용하는 제한된 링크/heading 해석이다. inline `[label](path#anchor)`와 한 줄 reference definition, ATX/setext heading, 단순 명시 HTML anchor를 지원한다. fenced/same-line inline code를 링크로 재작성하지 않는다. 모호한 escaped/nested link와 entity-escaped target, 여러 줄 backtick span, 들여쓴 code/list의 link, HTML comment/link/block(quoted/unquoted href/src 모두 포함), 복잡한 heading, 내부 canonical marker 문자열은 관련 비교에서 실패한다. 짝 없는 backtick은 Markdown의 문자 원문으로 유지한다. parser를 우회하려고 원문을 바꾸지 말고 별도 검토 가능한 명시 이전 방식으로 처리한다. D-116 P3a 의 D-104 README 가 그 예다. 원문을 새 위치에 그대로 두고 옛 자리에 안내 파일을 남겨, 파싱되지 않는 PHASE4 의 링크가 안내로 이어지게 했다. 인바운드 링크를 찾는 사전 필터는 소스 이름을 링크 문맥에서 찾되, 소스 폴더 밖의 문서에서는 상위 폴더 이름이 파일 이름 앞에 있어야 후보로 본다. 폴더 밖에서 소스에 닿는 링크는 그 폴더 이름을 반드시 적기 때문이다. 이 제한은 일반 문서 전체의 Markdown lint가 아니다. 동일한 보호 archive 원문은 다시 해석하지 않는다.
+표준 라이브러리만 사용하는 제한된 링크/heading 해석이다. inline `[label](path#anchor)`와 한 줄 reference definition, ATX/setext heading, 단순 명시 HTML anchor를 지원한다. fenced/same-line inline code를 링크로 재작성하지 않는다. 모호한 escaped/nested link와 entity-escaped target, 여러 줄 backtick span, 들여쓴 code/list의 link, HTML comment/link/block(quoted/unquoted href/src 모두 포함), 복잡한 heading, 내부 canonical marker 문자열은 관련 비교에서 실패한다. 짝 없는 backtick은 Markdown의 문자 원문으로 유지한다. 글머리표 목록 항목은 별개 블록이라 그 앞에서 문단이 끝난 것으로 보므로, 한 항목의 짝 없는 backtick이 다음 항목의 backtick과 짝을 이루지 않는다. parser를 우회하려고 원문을 바꾸지 말고 별도 검토 가능한 명시 이전 방식으로 처리한다. D-116 P3a 의 D-104 README 가 그 예다. 원문을 새 위치에 그대로 두고 옛 자리에 안내 파일을 남겨, 파싱되지 않는 PHASE4 의 링크가 안내로 이어지게 했다. 인바운드 링크를 찾는 사전 필터는 소스 이름을 링크 문맥에서 찾되, 소스 폴더 밖의 문서에서는 상위 폴더 이름이 파일 이름 앞에 있어야 후보로 본다. 폴더 밖에서 소스에 닿는 링크는 그 폴더 이름을 반드시 적기 때문이다. 이 제한은 일반 문서 전체의 Markdown lint가 아니다. 동일한 보호 archive 원문은 다시 해석하지 않는다.
 
 ```bash
 python3 -B scripts/docs-preservation-selftest.py
