@@ -21,3 +21,9 @@
 - `./gradlew test --continue`: BUILD SUCCESSFUL(Java 입력 무변경, 54개 태스크 up-to-date).
 - 계획과 달라진 것: 06 의 saga E2E 수(5종에서 6종)와 04 §10-6 의 gateway deny 조회 fail-closed 는 코드 확인 중 찾은 사실 오류라 같은 절에서 함께 고쳤다. 05 인덱스 표에는 refresh_tokens 외에 lease·정리 인덱스 3행을 더했다. ShedLock 도입 근거는 Layer 1 이력 아카이브가 "이후 수정하지 않는다" 라 04 안에 과거 시점 주석으로 남겼다.
 - 대조 스크립트(ERD·API·토픽·ADR 색인·문구·링크)는 세션 scratchpad 에만 두었다(계획 §6). 재발 방지 자동화 여부는 PR 의 확인 요청으로 남긴다.
+
+## 2026-10-27 04:40 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/256 (base main `c65205d`)
+- 커밋 16개(chore 1 · docs 14 · adr 1). 분류 검사 통과, writing-lint(커밋 16건·본문·제목) 통과. 보존 검사기 수정이 있어 CI 는 전체 매트릭스
+- precheck: consistency ok, `hpx_review_health` ok, 보존 검사 `--base c65205d6` PASS
+- 갱신: TASKS D-116 행에 PR 링크(진행 중 유지), PHASE5 엔트리. 상위 계획의 P4b 칸과 P4 상자는 머지 뒤 다음 단계가 채운다

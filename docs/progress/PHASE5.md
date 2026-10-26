@@ -1202,3 +1202,19 @@ Layer 1 을 현행으로 다시 쓰기 전에 단계별 서술 블록 14개를 �
 
 미충족과 관찰:
 - P4b 할 일: 한 줄 안에 현행과 Phase 1 이 섞인 줄과 옛 경로 포인터(`docs/plans/D-116-layer1-archive.md` §1 끝 문단), 낡은 사실 24건과 모순 2건(`docs/evidence/D-116/survey-C-docs.md` §5), ADR-0027·0045·0046 반영, ADR 색인 정비, 루트·`loadtest/README.md` 재작성(`docs/plans/D-116.md` §3 P4).
+
+## 2026-10-27 — Phase 5 마감 정리 4b단계: 현행 문서 재기준선
+
+[PR256](https://github.com/Kimgyuilli/PeekCart/pull/256) · 계획 `D-116-layer1`(상위 `D-116`) · 결정 `docs/evidence/D-116/decisions.md` 3-1·3-4·3-8, 기본값(`loadtest/README.md` 재작성).
+Layer 1 7개 문서를 서술마다 코드로 확인해 현행으로 고치고 ADR 색인과 루트·loadtest README 를 정비했다.
+
+- 결정: `/sync` 아카이브를 막은 보존 검사기 오탐(한 목록 항목의 짝 없는 backtick 이 다음 항목의 backtick 과 짝지어짐)은 원문 대신 검사기를 고쳤다. 규약이 parser 우회용 원문 수정을 막기 때문이다. 검사기는 글머리표 항목에서 문단을 끊는다.
+- 결정: ADR-0046 은 상한 1 유지(D1)만 현행으로 적고 D2~D6 은 구현 전(D-109)으로 구분했다. ADR 의 목표를 현재 상태로 옮겨 적지 않는다(B2).
+- 05 ERD 를 마이그레이션 최종 스키마로 맞추고, 네 서비스에서 같은 메시징 테이블 다섯 개를 한 절로 모았다. ADR 색인의 "관련 Layer 1 문서" 열은 Layer 1 과 `CLAUDE.md` 의 실제 인용으로 정의해 다시 만들었다(제목 20건, 열 29행).
+- 코드 확인 중 찾은 반대 서술: gateway 의 토큰 deny 조회와 rate limit 은 Redis 장애 때 fail-closed 라 gateway 를 지나는 요청 전체가 503 이 된다(옛 서술은 블랙리스트 일시 무효화). 결제 실패는 주문을 `PAYMENT_FAILED` 를 거치지 않고 바로 `CANCELLED` 로 보낸다.
+- `loadtest/README.md` 원문 320줄은 `docs/progress/archive/loadtest-readme-phase3-4.md` 로 옮겼다. `docs/` 밖이라 manifest 대신 줄 순서와 다중집합 대조로 확인했다.
+
+미충족과 관찰:
+- P5 할 일: 마감 ADR(0047), TASKS 의 Phase 6 전환, PHASE5 재정렬과 헤딩 통일, 하네스 수정, `PHASE6.md`, 07 §16·문서 맵·루트 README 의 Phase 6 반영(`docs/plans/D-116.md` §3 P5)과 P6 로컬 정리.
+- 판단 필요: 쓰이지 않는 분산 락 코드(`DistributedLockManager`·`RedissonConfig`·lease 테스트)의 삭제, ERD·API·토픽·ADR 색인 대조를 lint 로 둘지(PR256 확인 요청 6·7).
+- `CLAUDE.md` 의 Flyway 경로가 모놀리스 기준이다(Layer 1 밖이라 고치지 않았다).
