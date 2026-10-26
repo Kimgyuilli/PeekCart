@@ -19,52 +19,55 @@
 
 > 신규 ADR 추가 시 이 표의 맨 아래에 행을 추가합니다.
 > Status 컬럼 값: `Proposed` · `Accepted` · `Deprecated` · `Superseded` · `Partially Superseded`
+> 제목은 각 ADR 파일의 H1 에서 `ADR-NNNN:` 을 뺀 문자열이다.
+> "관련 Layer 1 문서" 열은 `docs/01~07`(번호로 적는다)과 `CLAUDE.md` 가운데 본문에서 그 ADR 을 `ADR-NNNN` 으로 인용하는 문서다. 인용이 없으면 `—` 다. Layer 1 을 고치면 이 열도 다시 맞춘다.
+> 0038·0039 는 한 번도 쓰이지 않은 결번이다. 2026-10-17 병렬 작업에서 0040 이 두 번호를 건너뛰었다. 다음 번호는 0047 이다.
 
 <!-- INDEX:BEGIN -->
 | # | 제목 | Status | Phase | 관련 Layer 1 문서 |
 |---|------|--------|-------|-------------------|
-| [0001](./0001-layered-ddd-architecture.md) | 4-Layered + DDD 아키텍처 채택 | Accepted | 전체 | 02, 04 |
-| [0002](./0002-monolith-to-msa-evolution.md) | 모놀리식 → MSA 단계적 진화 전략 | Accepted | 전체 | 02, 07 |
-| [0003](./0003-phase3-initial-minikube.md) | Phase 3 초기 K8s 환경 — 로컬 minikube 채택 | Deprecated | Phase 3 Task 3-1~3-3 | (ADR-0004 흡수) |
-| [0004](./0004-phase3-gcp-gke-migration.md) | Phase 3 GCP/GKE 환경 전환 | Accepted | Phase 3+ | 01, 04, 07 |
-| [0005](./0005-kustomize-base-overlays-structure.md) | Kustomize base/overlays 매니페스트 구조 | Partially Superseded | Phase 3+ | 02 |
+| [0001](./0001-layered-ddd-architecture.md) | 4-Layered + DDD 아키텍처 채택 | Accepted | 전체 | — |
+| [0002](./0002-monolith-to-msa-evolution.md) | 모놀리식 → MSA 단계적 진화 전략 | Accepted | 전체 | 01 |
+| [0003](./0003-phase3-initial-minikube.md) | Phase 3 초기 K8s 환경 — 로컬 minikube 채택 | Deprecated | Phase 3 Task 3-1~3-3 | 04 |
+| [0004](./0004-phase3-gcp-gke-migration.md) | Phase 3 GCP/GKE 환경 전환 | Accepted | Phase 3+ | 01, 02, 03, 04 |
+| [0005](./0005-kustomize-base-overlays-structure.md) | Kustomize base/overlays 매니페스트 구조 | Partially Superseded | Phase 3+ | 01, 02 |
 | [0006](./0006-monitoring-stack-environment-separation.md) | Monitoring 스택 환경 분리 (base 에서 제외) | Accepted | Phase 3 Task 3-4+ | 02 |
-| [0007](./0007-yaml-profile-merge-principle.md) | YAML 프로파일 병합 원칙 — 연결 정보 vs 동작 정책 | Accepted | 전체 | CLAUDE.md |
-| [0008](./0008-outbox-trace-context-propagation.md) | Outbox Trace Context Propagation | Accepted | Phase 3 잔여 부채 | 02, 05 |
-| [0009](./0009-observability-contract-ssot.md) | 관측성 계약 SSOT 결정 | Partially Superseded | 전체 | 02 |
-| [0010](./0010-phase4-service-decomposition.md) | Phase 4 서비스 분해 — 5개 마이크로서비스 경계 확정 | Accepted | Phase 4 | 02, 03, 04, 05 |
-| [0011](./0011-phase4-multimodule-structure.md) | Phase 4 Gradle 멀티모듈 구조 — common + 관측성 + 5개 서비스 | Partially Superseded | Phase 4 | 02 |
+| [0007](./0007-yaml-profile-merge-principle.md) | YAML 프로파일 병합 원칙 — 연결 정보 vs 동작 정책 분리 | Accepted | 전체 | 01, 03, CLAUDE.md |
+| [0008](./0008-outbox-trace-context-propagation.md) | Outbox Trace Context Propagation | Accepted | Phase 3 잔여 부채 | 03, 05 |
+| [0009](./0009-observability-contract-ssot.md) | 관측성 계약 SSOT 결정 | Partially Superseded | 전체 | 02, 04, CLAUDE.md |
+| [0010](./0010-phase4-service-decomposition.md) | Phase 4 서비스 분해 — 5개 마이크로서비스 경계 확정 | Accepted | Phase 4 | 01, 02, 03, 05 |
+| [0011](./0011-phase4-multimodule-structure.md) | Phase 4 Gradle 멀티모듈 구조 — common + 관측성 + 5개 서비스 모듈 | Partially Superseded | Phase 4 | 02 |
 | [0012](./0012-phase4-db-event-saga-contract.md) | Phase 4 DB-per-service + 이벤트/Saga 계약 | Partially Superseded | Phase 4 | 02, 03, 04, 05 |
 | [0013](./0013-phase4-gateway-security.md) | Phase 4 Gateway 보안 — RS256 + Spring Cloud Gateway + Reuse Detection | Accepted | Phase 4 | 02, 03, 04, 05 |
 | [0014](./0014-transitional-auth-module.md) | 전환기 인증 검증 공유 모듈 — peekcart-common-auth (게이트웨이 이전) | Accepted | Phase 4 | 02 |
-| [0015](./0015-observability-per-service-contract.md) | 관측성 per-service 계약 — 5서비스 분리 완료 상태로 SSOT 위치·검증 정정 (ADR-0009 부분 무효화 · ADR-0019/0024 로 부분 무효화) | Partially Superseded | Phase 4 | 02 |
-| [0016](./0016-reservation-and-payment-table-model.md) | 재고 예약(별도 stock_reservations 테이블) + Payment 취소 테이블 모델 — ADR-0012 D1/D3 재기록 | Accepted | Phase 4 | 05 |
-| [0017](./0017-gateway-signed-internal-token.md) | Gateway 서명 내부 토큰 — header-trust 를 평문 헤더에서 서명 assertion 으로 격상 (defense-in-depth) | Accepted | Phase 4 | 02, 04 |
-| [0018](./0018-compensation-refund-contract.md) | 보상/환불 트리거 계약 — 감지 3지점 → Payment 환불 실행 → 원장 종결 (ADR-0012 D3 ④ 구체화) | Partially Superseded | Phase 4 | 03, 04, 05 |
-| [0019](./0019-alert-expression-pinning.md) | alert 식 정본 고정 — PromQL 정적 lint 를 라벨 invariant 에서 식 동일성으로 격상 (ADR-0015 부분 무효화) | Accepted | Phase 4 | 02 |
-| [0020](./0020-dlq-replay-contract.md) | DLQ replay 계약 — 재발행 보장·발행 권한 예외·좌표 유효성·종결 축 분리 (ADR-0012 D1/D4 · ADR-0018 producer 규약 부분 무효화 · ADR-0021/0022 로 부분 무효화) | Partially Superseded | Phase 4 | 02, 04 |
-| [0021](./0021-dlq-replay-correlation-anchor.md) | DLQ replay 재실패 상관 — 대조 축을 `record_kind` 에서 원장 앵커 + payload digest 로 (ADR-0020 D5-4 부분 무효화) | Accepted | Phase 4 | 02, 05 |
-| [0022](./0022-replay-entrypoint-rollout-and-drain.md) | replay 개시 진입점의 개방 절차 — 도달 경로 · drain/롤백 계약 · `PUBLISH_UNKNOWN` (ADR-0020 §D6-1/§D6-2b/§D6-4 부분 무효화) | Accepted | Phase 4 | 02, 04, 05 |
-| [0023](./0023-payment-approval-reconciliation.md) | 결제 승인 경계 계약 — 승인 원장 + 멱등키 + 조회 기반 reconciliation (D-020, ADR-0018 D2/D3/D5 를 승인 경로로 확장) | Partially Superseded | Phase 4 | 03, 04 |
-| [0024](./0024-observability-canonical-with-infra.md) | 관측성 canonical 집합 = 도메인 5 + 인프라 1 — gateway 편입과 세 집합(태그/Service/SM)의 분리 (ADR-0015 부분 무효화) | Accepted | Phase 4 | 02 |
-| [0025](./0025-inventory-concurrency-control.md) | 재고 동시성 제어 — 분산 락 제거, `@Version` 단일 수단 + jitter 재시도 (D-025, 흡수된 L-007) | Accepted | Phase 4 | 02, 04, 05 |
-| [0026](./0026-product-detail-stock-cache-boundary.md) | 상품 상세 재고 캐시 경계 — 재고 전용 짧은 TTL 캐시, 쓰기 경로 무효화 없음 (D-026) | Accepted | Phase 4 | 04, 05 |
-| [0027](./0027-mysql-cpu-limit-baseline.md) | base MySQL CPU 상한 = 2000m — 공통 읽기/쓰기 천장의 해제 (D-029) | Accepted | Phase 4 | 02 |
-| [0028](./0028-integration-test-container-lifecycle.md) | 통합 테스트 컨테이너 수명 = 모듈 싱글톤 — per-class 재부팅 폐기 | Accepted | Phase 5 | 06, CLAUDE.md |
+| [0015](./0015-observability-per-service-contract.md) | 관측성 per-service 계약 — 5서비스 분리 완료 상태로 SSOT 위치·검증 정정 | Partially Superseded | Phase 4 | CLAUDE.md |
+| [0016](./0016-reservation-and-payment-table-model.md) | 재고 예약 모델(별도 stock_reservations 테이블) + Payment 취소 테이블 모델 — ADR-0012 D1/D3 재기록 | Accepted | Phase 4 | 03, 04, 05 |
+| [0017](./0017-gateway-signed-internal-token.md) | Gateway 서명 내부 토큰 — header-trust 를 평문 헤더에서 서명 assertion 으로 격상 | Accepted | Phase 4 | 02, 04, 06 |
+| [0018](./0018-compensation-refund-contract.md) | 보상/환불 트리거 계약 — 감지 3지점 → Payment 환불 실행 → 원장 종결 | Partially Superseded | Phase 4 | 02, 03, 04, 05, 07 |
+| [0019](./0019-alert-expression-pinning.md) | alert 식 정본 고정 — PromQL 정적 lint 를 라벨 invariant 에서 식 동일성으로 격상 (ADR-0015 부분 무효화) | Accepted | Phase 4 | — |
+| [0020](./0020-dlq-replay-contract.md) | DLQ replay 계약 — 재발행 보장·발행 권한 예외·좌표 유효성·종결 축 분리 | Partially Superseded | Phase 4 | 04, 05 |
+| [0021](./0021-dlq-replay-correlation-anchor.md) | DLQ replay 재실패 상관 — 대조 축을 `record_kind` 에서 원장 앵커 + payload digest 로 | Accepted | Phase 4 | — |
+| [0022](./0022-replay-entrypoint-rollout-and-drain.md) | replay 개시 진입점의 개방 절차 — 도달 경로 · drain/롤백 계약 · `PUBLISH_UNKNOWN` | Accepted | Phase 4 | 02, 03, 04, 06 |
+| [0023](./0023-payment-approval-reconciliation.md) | 결제 승인 경계 계약 — 승인 원장 + 멱등키 + 조회 기반 reconciliation | Partially Superseded | Phase 4 | 05 |
+| [0024](./0024-observability-canonical-with-infra.md) | 관측성 canonical 집합 = 도메인 5 + 인프라 1 — gateway 편입과 세 집합의 분리 (ADR-0015 부분 무효화) | Accepted | Phase 4 | 04 |
+| [0025](./0025-inventory-concurrency-control.md) | 재고 동시성 제어 — 분산 락 제거, `@Version` + jitter 재시도 | Accepted | Phase 4 | 01, 03, 04, 07 |
+| [0026](./0026-product-detail-stock-cache-boundary.md) | 상품 상세 재고 조회 캐시 경계 — 재고 전용 짧은 TTL 캐시 | Accepted | Phase 4 | 04 |
+| [0027](./0027-mysql-cpu-limit-baseline.md) | base MySQL CPU 상한 = 2000m — 공통 읽기/쓰기 천장의 해제 (D-029) | Accepted | Phase 4 | 01, 02, 04 |
+| [0028](./0028-integration-test-container-lifecycle.md) | 통합 테스트 컨테이너 수명 = 모듈 싱글톤 — per-class 재부팅 폐기 | Accepted | Phase 5 | 01, 06, CLAUDE.md |
 | [0029](./0029-test-autonomous-writer-policy.md) | 테스트에서 자율 writer(스케줄러 · Kafka 리스너)는 기본 off + opt-in | Accepted | Phase 5 | 06, CLAUDE.md |
-| [0030](./0030-ci-final-gate-and-image-promotion.md) | CI 최종 게이트와 검증 이미지 승격 계약 (ADR-0044 로 D1 부분 무효화) | Partially Superseded | Phase 5 | 06 |
-| [0031](./0031-e2e-fault-injection-boundary.md) | e2e 음성 대조군의 결함 주입 경계 (스택 바깥 주입 · 실패 지점 특정 · 유도한 부재 창) | Accepted | Phase 5 | 06 |
-| [0032](./0032-e2e-jvm-verification-responsibility.md) | 실제 스택 e2e 와 JVM 테스트의 검증 책임 경계 (배선은 스택 · 로직은 JVM · 결함 주입으로만 중복 인정) | Accepted | Phase 5 | 06 |
-| [0033](./0033-shared-messaging-module.md) | Outbox · 멱등성 · DLQ 원장 실행 세트의 공유 모듈 승격 (`peekcart-common-messaging` · 스키마는 서비스 소유 유지) | Accepted | Phase 5 | 02 |
-| [0034](./0034-approval-reservation-fence.md) | 비동기 결제 승인과 재고 예약 fence | Accepted | Phase 5 | 02, 03, 04, 05 |
+| [0030](./0030-ci-final-gate-and-image-promotion.md) | CI 최종 게이트와 검증 이미지 승격 계약 | Partially Superseded | Phase 5 | 01, 06 |
+| [0031](./0031-e2e-fault-injection-boundary.md) | e2e 음성 대조군의 결함 주입 경계 | Accepted | Phase 5 | 06 |
+| [0032](./0032-e2e-jvm-verification-responsibility.md) | 실제 스택 e2e 와 JVM 테스트의 검증 책임 경계 | Accepted | Phase 5 | 06 |
+| [0033](./0033-shared-messaging-module.md) | Outbox · 멱등성 · DLQ 원장 실행 세트를 공유 모듈 `peekcart-common-messaging` 으로 승격 | Accepted | Phase 5 | 02, 05 |
+| [0034](./0034-approval-reservation-fence.md) | 비동기 결제 승인과 재고 예약 fence | Accepted | Phase 5 | 02, 03, 04, 05, 06 |
 | [0035](./0035-protected-approval-manual-handoff.md) | 보호된 승인 미결의 운영 인수와 상태 조회 | Accepted | Phase 5 | 03, 04, 05, 06 |
-| [0036](./0036-cart-product-read-model.md) | 장바구니의 로컬 상품 정보 조합 | Accepted | Phase 5 | 03, 05 |
+| [0036](./0036-cart-product-read-model.md) | 장바구니의 로컬 상품 정보 조합 | Accepted | Phase 5 | 04, 05 |
 | [0037](./0037-product-read-cache-boundaries.md) | 상품 목록 정렬과 캐시 조회의 DB 진입 경계 | Accepted | Phase 5 | 03, 04 |
-| [0040](./0040-protected-approval-recovery.md) | 보호 승인 대사 복구 — PG 직접 증빙·역할 분리·예약 version·감사 | Accepted | Phase 5 | 03, 05 |
+| [0040](./0040-protected-approval-recovery.md) | 보호 승인 복구의 증빙과 역할 분리 | Accepted | Phase 5 | 02, 03, 04, 05 |
 | [0041](./0041-untrusted-payment-webhook-hints.md) | 일반 결제 웹훅의 제한된 비신뢰 신호 접수 | Accepted | Phase 5 | 03, 06 |
 | [0042](./0042-canonical-pg-order-identity.md) | Checkout부터 복구까지 유지하는 PG 주문 식별자 | Accepted | Phase 5 | 03, 05, 06 |
-| [0043](./0043-dlq-preallocated-lineage-identity.md) | DLQ 최초 INSERT의 lineage와 ID 예약 | Accepted | Phase 5 | 05, 06 |
-| [0044](./0044-ci-critical-path-and-docs-only-skip.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 (ADR-0030 D1 부분 무효화) | Accepted | Phase 5 | 06 |
+| [0043](./0043-dlq-preallocated-lineage-identity.md) | DLQ 최초 INSERT에 lineage를 완성하는 ID 예약 | Accepted | Phase 5 | 05, 06 |
+| [0044](./0044-ci-critical-path-and-docs-only-skip.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 | Accepted | Phase 5 | 01, 06 |
 | [0045](./0045-outbox-polling-throughput-defaults.md) | outbox poller 발행 처리율 기본값 (주기 500ms, 배치 500, 락 최소 보존 설정화) | Accepted | Phase 5 | 04, 06 |
 | [0046](./0046-product-read-cache-coalescing-and-stale-serving.md) | 상품 조회 캐시의 로딩 묶기·재고 만료 전 갱신·장애 시 마지막 값 응답 (DB 진입 상한 1 유지) | Accepted | Phase 5 | 04 |
 <!-- INDEX:END -->
