@@ -1,0 +1,53 @@
+# loadtest/reports/2026-10-25 정리 기록 (D-116, 2026-10-26)
+# 결정: docs/evidence/D-116/decisions.md 1-1(지연 TSV)·1-2(토큰)·1-3(무효 관찰 블록). 계획: docs/plans/D-116-loadtest.md
+# 되살리기: git show 91cfa1f:<path> > <path>  (base_blob 은 그 커밋의 blob 이라 git cat-file -p <base_blob> 도 같다)
+# action: 삭제 = 파일을 지웠다 · 토큰 제거 = setup_data.tokens 배열을 "tokens_removed": <개수> 한 줄로 바꾸고 다른 바이트는 두었다
+path	action	bytes_before	bytes_after	base_blob	decision	note
+loadtest/reports/2026-10-25/grafana/d078-5-drain-s3-contend-obs-block-saga-p2.jpg	삭제	81620	0	0ca79a222aa5a45db03a1847c4fbc946dbc68ac2	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-drain-s3-contend-obs-block-saga-p3.jpg	삭제	72207	0	23ebb8b6f6c3a011c9ce75717c7e04a01f59e21a	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-drain-s3-s1-spread-saga-p2.jpg	삭제	71598	0	bce459370203d0dd2c8ea8d96cd96825bd467b13	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-drain-s3-s1-spread-saga-p3.jpg	삭제	56222	0	a81320f5565f85aa838d5b8a6053b92dcc90494a	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-s3-contend-obs-block-kafka-lag-p1.jpg	삭제	156402	0	f56e7d25a1d2925d10eb0b02bc3d3b6cbb82e138	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-s3-contend-obs-block-saga-p5.jpg	삭제	77813	0	dd2bb2b4af5ac367c7aa65741aca88aee8b22677	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-s3-contend-obs-block-saga-p7.jpg	삭제	60456	0	dfcc59f62c16cb84ed6ecac838fef1418c1c98bd	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-s3-contend-obs-block-saga-p8.jpg	삭제	70680	0	36e52178f2ef5fa150fe077cdea072e2941651bc	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-s3-s1-kafka-lag-p1.json	삭제	129778	0	968a870905f3fe5d2d3a2ff45018de40238105d9	1-3	무효 관찰 run 의 파티션별 lag export. 요약은 grafana/kafka-lag-summary.tsv
+loadtest/reports/2026-10-25/grafana/d078-5-s3-s1-spread-kafka-lag-p1.jpg	삭제	142388	0	b40bdab623014b9c8d7fd99fa606b1c26122b13e	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-s3-s1-spread-saga-p5.jpg	삭제	63849	0	71a40716c2a8ab9c8d56adae6708ef42a7ee57ab	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-s3-s1-spread-saga-p7.jpg	삭제	52489	0	b28ee041b6b6d55e12337d611e122f35487be8c2	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-s3-s1-spread-saga-p8.jpg	삭제	52184	0	1ac5e9a4aecf85815b79fc342be3050fd79ca8ae	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-5-s3-w3-kafka-lag-p1.json	삭제	134326	0	244283d7b0d2525c098e906c639df98bd6293317	1-3	무효 관찰 run 의 파티션별 lag export. 요약은 grafana/kafka-lag-summary.tsv
+loadtest/reports/2026-10-25/grafana/d078-5-s3-w4-kafka-lag-p1.json	삭제	128953	0	8ce97f4a96b1cda2db63bc08bd266b1e92e5aef2	1-3	무효 관찰 run 의 파티션별 lag export. 요약은 grafana/kafka-lag-summary.tsv
+loadtest/reports/2026-10-25/grafana/d078-5-s3-w5-kafka-lag-p1.json	삭제	129777	0	ac4590344e26cea975121525be1ef5730d7b9640	1-3	무효 관찰 run 의 파티션별 lag export. 요약은 grafana/kafka-lag-summary.tsv
+loadtest/reports/2026-10-25/grafana/d078-6-s3-contend-obs-block-saga-p12.jpg	삭제	96439	0	cc97f19d8c2bccbe18b3805a4b1acc6ab5e9b7fc	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-6-s3-contend-obs-block-saga-p13.jpg	삭제	94653	0	ad1a50324325de1146a1425a80551b97edf13971	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-6-s3-s1-spread-saga-p12.jpg	삭제	72949	0	b7fa3f835d54809643ba5b54f604adebd325215d	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/grafana/d078-6-s3-s1-spread-saga-p13.jpg	삭제	71297	0	ddac8ea2fd23d585d512c594cc137af4eb94e395	1-3	무효 관찰 블록 캡처. 같은 구간 run 별 export json 은 남는다
+loadtest/reports/2026-10-25/s3/s1-outbox-order.tsv	삭제	258329	0	010b5d358c7806ef02d018b6c629f8af59b3bdf1	1-1	무효(spread 시도) run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/s1-outbox-product.tsv	삭제	333082	0	5a623c94451ae35946c8201e4c6cdffa531d21ad	1-1	무효(spread 시도) run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/s1-saga.tsv	삭제	181567	0	823c689ffa9e167354fcbb315ed39e4c97e11a0e	1-1	무효(spread 시도) run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w1-outbox-order.tsv	삭제	47384	0	d5b0a6b849060bf8a5defed590edc8abd5585d3f	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w1-outbox-product.tsv	삭제	93234	0	934e825e7dfac3970b44db4f15286385b185c3ef	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w1-saga.tsv	삭제	30861	0	d2eb348cf0d2bd701975d470a63e552daa02f58e	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w2-outbox-order.tsv	삭제	64610	0	d27e2885be9fe2e75e336c3ea8a3d54a12254a10	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w2-outbox-product.tsv	삭제	82203	0	d6660112040089a435357a22fee07281ebffbc6d	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w2-saga.tsv	삭제	43709	0	7d561b75a5a5d3339fb4611cacc417d9725c7c04	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w3-outbox-order.tsv	삭제	102596	0	e302a0760b73f07bcd38a5272ff76153e390b410	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w3-outbox-product.tsv	삭제	130572	0	c3248c440a8318de2ac97d0d290616dfabe33a0d	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w3-saga.tsv	삭제	69549	0	11b1dd972acfe6858d4e0337d2e28225157fe97f	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w4-outbox-order.tsv	삭제	186901	0	ee132b04a5d810edc327298746c61827b25528a2	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w4-outbox-product.tsv	삭제	238015	0	04962230fcf1fa6f5197344e9241f942c1f2e13b	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w4-saga.tsv	삭제	130309	0	5a3cf1bc62f9943224b69aab0beb64677e59d4bb	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w5-outbox-order.tsv	삭제	234048	0	0680279fd0b6de2009b05b7fed3cfb8fe023aa0b	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w5-outbox-product.tsv	삭제	296679	0	6250f1b95bd49bc764a100d5dcc977cd50e02a5e	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w5-saga.tsv	삭제	167011	0	373e6db8b2c56cd4d6abdb2525863918fea9375f	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w6-outbox-order.tsv	삭제	243480	0	00a9fb0fd947b33de4449fdaf1075c7a3ca5ce72	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w6-outbox-product.tsv	삭제	308435	0	82dc4478ea321470d88d2fed15db7447ab14d2d2	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/warmup/w6-saga.tsv	삭제	173932	0	ceb16a4568feeba666db759e05d7dcb4381a9433	1-1	워밍업 run 지연 TSV. 집계는 2026-10-25/latency-summary.txt
+loadtest/reports/2026-10-25/s3/s1.json	토큰 제거	258313	4271	6724730a5be2bd6213bed20ad188ffafe83a4707	1-2	setup_data.tokens 450개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-25/s3/warmup/w1.json	토큰 제거	258468	4426	6ecf699120baead5b0ab82609cdd45247e32212b	1-2	setup_data.tokens 450개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-25/s3/warmup/w2.json	토큰 제거	258422	4380	52231e2a78b5d458e980248afa4f2fa713daa120	1-2	setup_data.tokens 450개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-25/s3/warmup/w3.json	토큰 제거	258309	4267	87e9d4bea35e4dac89b23df5ffb4cda43c952e3a	1-2	setup_data.tokens 450개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-25/s3/warmup/w4.json	토큰 제거	258263	4221	92e8880ce2d2aa02eb11fa3d9cb15ac7e2bb059e	1-2	setup_data.tokens 450개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-25/s3/warmup/w5.json	토큰 제거	258294	4252	7e0ecc708cd2037c05d0e630f16707e31d143ae5	1-2	setup_data.tokens 450개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-25/s3/warmup/w6.json	토큰 제거	258341	4299	3b378d93eea1ac340a1c8c7afa684fe5cd873211	1-2	setup_data.tokens 450개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로

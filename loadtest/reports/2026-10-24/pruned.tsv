@@ -1,0 +1,10 @@
+# loadtest/reports/2026-10-24 정리 기록 (D-116, 2026-10-26)
+# 결정: docs/evidence/D-116/decisions.md 1-1(지연 TSV)·1-2(토큰)·1-3(무효 관찰 블록). 계획: docs/plans/D-116-loadtest.md
+# 되살리기: git show 91cfa1f:<path> > <path>  (base_blob 은 그 커밋의 blob 이라 git cat-file -p <base_blob> 도 같다)
+# action: 삭제 = 파일을 지웠다 · 토큰 제거 = setup_data.tokens 배열을 "tokens_removed": <개수> 한 줄로 바꾸고 다른 바이트는 두었다
+path	action	bytes_before	bytes_after	base_blob	decision	note
+loadtest/reports/2026-10-24/s3/contend-r1.json	토큰 제거	116979	4187	f09a0ab6b018ef11f70f69caac20c97941ae8a39	1-2	setup_data.tokens 200개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-24/s3/contend-r2.json	토큰 제거	117011	4219	b85d8824024cfbf9882105f6cfdf87251e1fdb60	1-2	setup_data.tokens 200개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-24/s3/contend-r3.json	토큰 제거	116937	4145	4ff4e58490288087c7eacee38be5a803aecb0249	1-2	setup_data.tokens 200개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-24/s3/spread-r1.json	토큰 제거	116862	4070	7ede23caefb3ac6d6373e2e4413dcbbc8316284a	1-2	setup_data.tokens 200개(RS256 JWT, 30분 만료) 제거, startedAt 유지. 나머지 키·값은 그대로
+loadtest/reports/2026-10-24/s4/e-hpa.json	토큰 제거	117240	4448	2365fe8035a3e2bd6de54071c3c2c3a7f9ee36ef	1-2	setup_data.tokens 200개(RS256 JWT, 30분 만료) 제거. 나머지 키·값은 그대로

@@ -1,0 +1,52 @@
+# loadtest/reports/2026-10-24 지연 집계 (D-116, 2026-10-26)
+#
+# 만든 방법: base 91cfa1f 의 TSV 를 loadtest/scripts/d078-latency.py 로 집계했다. 백분위는 nearest-rank, 단위는 ms 다.
+# 블록마다 실행한 명령을 적었다. 같은 TSV 로 다시 돌리면 같은 출력이 나온다.
+# TSV 를 지운 run 은 같은 폴더의 pruned.tsv 에 경로와 blob 이 있다. 되살리기: git show 91cfa1f:<경로>
+#
+# TSV 보존(측정 run): s3/contend-r1 s3/contend-r2 s3/contend-r3 s3/spread-r1
+# TSV 삭제(워밍업·무효 run): 없음
+# 10-24 의 네 run 은 세션에서 측정 run 으로 돌렸다. 결정 1-1 의 "측정 run 7개" 에 들어 TSV 를 남긴다.
+# contend-r1·r2 는 이후 D-078-remeasure-plan ⑤ 의 부하 판정 규칙(dropped_iterations 1% 한도)을 대입하면 무효다.
+
+## s3/contend-r1 (TSV 보존)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-24/s3/contend-r1-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	4435	3	153772.4	243204.1	247475.9	250627.2
+# excluded status=PENDING count=3
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-24/s3/contend-r1-outbox-order.tsv loadtest/reports/2026-10-24/s3/contend-r1-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+contend-r1-outbox-order:order.created	4438	0	68339.0	74855.5	76315.6	76588.2
+contend-r1-outbox-product:stock.reservation.result	4435	0	26955.9	58351.1	64660.3	68335.1
+
+## s3/contend-r2 (TSV 보존)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-24/s3/contend-r2-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	8325	5	250676.2	431836.4	441927.8	445663.4
+# excluded status=CANCELLED count=5
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-24/s3/contend-r2-outbox-order.tsv loadtest/reports/2026-10-24/s3/contend-r2-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+contend-r2-outbox-order:order.cancelled	2609	0	4264.5	4618.2	4699.8	4772.9
+contend-r2-outbox-order:order.created	8330	0	81011.2	101154.0	103347.8	103964.5
+contend-r2-outbox-product:stock.reservation.result	8325	0	120039.6	229534.8	240660.9	244363.8
+
+## s3/contend-r3 (TSV 보존)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-24/s3/contend-r3-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	10107	4	271818.6	503938.3	518513.3	522251.9
+# excluded status=CANCELLED count=4
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-24/s3/contend-r3-outbox-order.tsv loadtest/reports/2026-10-24/s3/contend-r3-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+contend-r3-outbox-order:order.cancelled	3839	0	4249.5	4675.1	4779.8	4842.0
+contend-r3-outbox-order:order.created	10111	0	83189.8	111202.1	113724.2	114424.3
+contend-r3-outbox-product:stock.reservation.result	10107	0	153639.1	309154.1	323685.2	327761.3
+
+## s3/spread-r1 (TSV 보존)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-24/s3/spread-r1-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	10201	0	255598.7	472947.5	494407.7	498006.6
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-24/s3/spread-r1-outbox-order.tsv loadtest/reports/2026-10-24/s3/spread-r1-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+spread-r1-outbox-order:order.cancelled	3180	0	4777.5	5248.2	5355.1	5392.7
+spread-r1-outbox-order:order.created	10201	0	70900.1	98930.5	101454.4	102095.3
+spread-r1-outbox-product:stock.reservation.result	10201	0	180081.6	366130.7	383215.1	387174.2
