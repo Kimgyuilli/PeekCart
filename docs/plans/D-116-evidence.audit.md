@@ -20,3 +20,9 @@
 - `./gradlew test --continue`: BUILD SUCCESSFUL, 54개 작업 up-to-date(Java 입력 무변경).
 - 계획과 달라진 것: README 없는 폴더가 계획의 5개 외에 `campaign-records-review` 도 있어 6개에 README 를 더했다(명제 그대로). D-075·D-078·D-104 README 에 옛 명령 경로를 설명하는 "도구 위치" 절을 추기했다(D-075·D-078 은 manifest literal).
 - 실행 메모: 이동 도구가 D-104 안내 파일을 쓰다 폴더 부재로 한 번 멈춰, 이동분만 되돌리고 다시 돌렸다. 커밋하지 않은 검사기 변경은 그 전에 커밋해 두었다.
+
+## 2026-10-26 23:45 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/253 (base main `7d4fa4d`)
+- 커밋 13개(docs 11 · chore 2). D-087 폴더 이동 커밋은 142파일 순수 rename 이라 100파일 기준으로 나누지 않았다. 분류 검사 통과, writing-lint(커밋 13건·본문·제목) 통과
+- precheck: consistency ok, `hpx_review_health` ok, 보존 검사 `--base 7d4fa4d` PASS, `harness-context.sh --check --base 7d4fa4d` ok
+- 갱신: TASKS D-116 행에 PR 링크(진행 중 유지), PHASE5 엔트리. 상위 계획의 P3a 칸은 머지 뒤 다음 단계가 채운다
