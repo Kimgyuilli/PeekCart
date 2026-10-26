@@ -12,6 +12,7 @@
 | [final-report.md](final-report.md) | `docs/review/final-report.md` | 2026-10-26 D-116 P3b | 최종 개선안 보고서(2026-04) |
 | [ci-optimization-analysis.md](ci-optimization-analysis.md) | `docs/review/ci-optimization-analysis.md` | 2026-10-26 D-116 P3b | CI 파이프라인 개선 가능성 분석(2026-04) |
 | [layer1-history-phase1-4.md](layer1-history-phase1-4.md) | `docs/01~07` 의 Phase 1~4 서술 블록 14개 | 2026-10-27 D-116 P4a | Layer 1 을 현행으로 다시 쓰기 전에 분리한 단계별 서술과 그 시점의 결정 원문 |
+| [loadtest-readme-phase3-4.md](loadtest-readme-phase3-4.md) | `loadtest/README.md` 전체 | 2026-10-27 D-116 P4b | Phase 3 모놀리스 측정 절차와 D-002b'/c(Phase 4) 세션 절차. 현재 절차는 `loadtest/README.md` |
 | [harness-smoke-fixtures-2026-04.md](harness-smoke-fixtures-2026-04.md) | `docs/plans/fixtures/` 의 스모크 계획 3개와 audit 2개 | 2026-10-26 D-116 P2 | 상태 파일 하네스의 스모크 fixture |
 
-보존 manifest 는 P2 이동이 `docs/preservation/d116-tooling-moves-20261026.json`, P3b 이동이 `docs/preservation/d116-docs-move-20261026.json`, P4a 이동이 `docs/preservation/d116-layer1-archive-20261027.json` 이다.
+보존 manifest 는 P2 이동이 `docs/preservation/d116-tooling-moves-20261026.json`, P3b 이동이 `docs/preservation/d116-docs-move-20261026.json`, P4a 이동이 `docs/preservation/d116-layer1-archive-20261027.json` 이다. `loadtest/README.md` 는 `docs/` 밖이라 manifest 로 선언할 수 없어, P4b 가 줄 다중집합 대조로 옮김을 확인했다(`docs/plans/D-116-layer1.audit.md`).
