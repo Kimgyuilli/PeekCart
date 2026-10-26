@@ -1,0 +1,115 @@
+# loadtest/reports/2026-10-26 지연 집계 (D-116, 2026-10-26)
+#
+# 만든 방법: base 91cfa1f 의 TSV 를 loadtest/scripts/d078-latency.py 로 집계했다. 백분위는 nearest-rank, 단위는 ms 다.
+# 블록마다 실행한 명령을 적었다. 같은 TSV 로 다시 돌리면 같은 출력이 나온다.
+# TSV 를 지운 run 은 같은 폴더의 pruned.tsv 에 경로와 blob 이 있다. 되살리기: git show 91cfa1f:<경로>
+#
+# TSV 보존(측정 run): s3/c0/c1 s3/c0/c2 s3/c0/s1
+# TSV 삭제(워밍업·무효 run): s3/c0/warmup/w1 s3/c0/warmup/w2 s3/c0/warmup/w3 s3/c0/warmup/w4 s3/c0/invalid/contend-c3-exhausted/c3 s3/c0/invalid/contend-retry1/c2 s3/c0/invalid/contend-retry2/c2
+# 측정 run c1·c2·s1 은 TSV 를 남긴다. 워밍업 w1~w4 와 무효 3 run(invalid/)은 TSV 를 지우고 이 집계만 남긴다.
+# contend-retry2 는 MySQL 볼륨이 가득 차 중단된 run 이라 확정 건만 집계됐다(D-114). 사고 증적 파일은 그대로 둔다.
+
+## s3/c0/c1 (TSV 보존)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/c1-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	10195	5	128547.8	239515.2	240654.5	241171.1
+# excluded status=CANCELLED count=3
+# excluded status=PENDING count=2
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/c1-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/c1-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+c1-outbox-order:order.cancelled	3	0	289.3	354.2	354.2	354.2
+c1-outbox-order:order.created	10200	0	93928.7	132520.7	136080.2	136945.9
+c1-outbox-product:stock.reservation.result	10195	0	502.8	933.8	1054.7	1213.0
+
+## s3/c0/c2 (TSV 보존)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/c2-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	10187	7	141781.0	241277.0	241894.6	250482.4
+# excluded status=CANCELLED count=7
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/c2-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/c2-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+c2-outbox-order:order.cancelled	7	0	424.0	428.7	428.7	428.7
+c2-outbox-order:order.created	10194	0	98732.1	142292.3	146171.2	147262.1
+c2-outbox-product:stock.reservation.result	10187	0	487.7	826.5	1013.4	1225.2
+
+## s3/c0/s1 (TSV 보존)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/s1-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	10200	0	109277.6	157040.1	169040.2	170266.9
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/s1-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/s1-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+s1-outbox-order:order.created	10200	0	103439.7	146206.3	149733.2	150740.0
+s1-outbox-product:stock.reservation.result	10200	0	1583.0	2170.7	2530.1	2575.9
+
+## s3/c0/warmup/w1 (TSV 삭제, 집계만)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/warmup/w1-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	4815	4	151588.7	237380.3	239741.1	240683.7
+# excluded status=PENDING count=4
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/warmup/w1-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/warmup/w1-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+w1-outbox-order:order.created	4819	0	75953.2	90371.7	92168.2	92638.1
+w1-outbox-product:product.updated	1000	0	301.5	521.6	561.4	726.5
+w1-outbox-product:stock.reservation.result	4815	0	467.5	696.0	797.4	1075.7
+
+## s3/c0/warmup/w2 (TSV 삭제, 집계만)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/warmup/w2-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	6962	5	112055.6	222529.1	224147.8	224809.7
+# excluded status=PENDING count=5
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/warmup/w2-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/warmup/w2-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+w2-outbox-order:order.created	6967	0	77633.2	100627.9	105585.5	106646.1
+w2-outbox-product:stock.reservation.result	6962	0	508.9	884.3	1027.3	1118.4
+
+## s3/c0/warmup/w3 (TSV 삭제, 집계만)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/warmup/w3-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	9279	5	153086.6	245937.2	246920.2	247836.3
+# excluded status=CANCELLED count=2
+# excluded status=PENDING count=3
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/warmup/w3-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/warmup/w3-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+w3-outbox-order:order.cancelled	2	0	319.9	321.8	321.8	321.8
+w3-outbox-order:order.created	9284	0	96068.9	132997.2	136671.5	137712.7
+w3-outbox-product:stock.reservation.result	9279	0	523.9	914.9	1027.8	1141.2
+
+## s3/c0/warmup/w4 (TSV 삭제, 집계만)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/warmup/w4-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	10194	7	143301.6	228745.0	230776.7	231048.5
+# excluded status=PENDING count=7
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/warmup/w4-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/warmup/w4-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+w4-outbox-order:order.created	10201	0	99131.0	139817.2	143585.8	144319.9
+w4-outbox-product:stock.reservation.result	10194	0	508.4	824.7	1013.0	1156.7
+
+## s3/c0/invalid/contend-c3-exhausted/c3 (TSV 삭제, 집계만)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/invalid/contend-c3-exhausted/c3-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	9762	8	133773.1	250769.4	252850.0	253831.8
+# excluded status=PENDING count=8
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/invalid/contend-c3-exhausted/c3-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/invalid/contend-c3-exhausted/c3-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+c3-outbox-order:order.created	9770	0	94469.2	131889.6	135553.5	136308.1
+c3-outbox-product:stock.reservation.result	9762	0	507.2	909.4	1049.0	1225.8
+
+## s3/c0/invalid/contend-retry1/c2 (TSV 삭제, 집계만)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/invalid/contend-retry1/c2-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	9917	7	142117.7	246365.2	247405.0	247701.1
+# excluded status=PENDING count=7
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/invalid/contend-retry1/c2-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/invalid/contend-retry1/c2-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+c2-outbox-order:order.created	9924	0	112757.9	152954.7	157205.6	158314.4
+c2-outbox-product:stock.reservation.result	9917	0	532.7	944.4	1038.1	1146.3
+
+## s3/c0/invalid/contend-retry2/c2 (TSV 삭제, 집계만)
+$ python3 loadtest/scripts/d078-latency.py saga loadtest/reports/2026-10-26/s3/c0/invalid/contend-retry2/c2-saga.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+saga-roundtrip	2830	7039	90841.2	111407.5	112341.3	112394.0
+# excluded status=PENDING count=7039
+$ python3 loadtest/scripts/d078-latency.py outbox loadtest/reports/2026-10-26/s3/c0/invalid/contend-retry2/c2-outbox-order.tsv loadtest/reports/2026-10-26/s3/c0/invalid/contend-retry2/c2-outbox-product.tsv
+group	n	excluded	p50_ms	p95_ms	p99_ms	max_ms
+c2-outbox-order:order.created	4933	4936	75686.3	92994.8	95026.9	95397.3
+c2-outbox-product:stock.reservation.result	2836	42	478.8	914.1	1047.2	1143.1

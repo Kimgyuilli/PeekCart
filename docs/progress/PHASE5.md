@@ -1126,3 +1126,25 @@ PeekCart 승인·환불 경로를 실제 API 로 돌렸다.
   정해야 한다.
 - 원자료 약 19MB 는 정리 없이 올렸다(사용자가 나중에 정리). `.log` 는 저장소 규칙상 빠졌다. D-078 ⑦ 결제 콘솔 확인(이번 세션
   비용 포함)은 사용자가 직접 한다.
+
+## 2026-10-26 — Phase 5 마감 정리 1단계: 측정 원자료 정리
+
+[PR251](https://github.com/Kimgyuilli/PeekCart/pull/251) · 계획 `D-116-loadtest`(상위 `D-116`) · 증적 `docs/evidence/D-116/`.
+Phase 5 를 마감하기 전에 문서·계획서·측정 산출물을 정리하기로 했다(사용자 요청). 병렬 전수조사 4레인과 질문지 답변으로 범위를 정했고,
+정리는 PR 5개로 나눈다. 이 PR 은 첫 단계로 `loadtest/reports/` 를 정리했다.
+
+- 결정: 하네스 앵커 7곳은 고정하고 나머지를 재배치한다. git 이력은 다시 쓰지 않는다. Phase 6 도 수요형이고 열린 행은 전부 이월한다
+  (질문지 0-1~0-4, `docs/evidence/D-116/decisions.md`).
+- 지연 TSV 는 측정 run 7개만 남기고 21 run 전부의 집계를 날짜별 `latency-summary.txt` 로 남겼다. k6 요약 22개의 토큰(JWT 8,650개)을
+  걷어냈다. D-108 P2 원자료 불변 원칙의 사용자 결정 예외다. 10-25 S3 관찰 블록 jpg 16개와 lag export 4개를 지웠다.
+- `loadtest/reports` 추적 바이트는 39.14MB 에서 24.19MB 로 줄었다. 지우거나 고친 84개 파일은 날짜별 `pruned.tsv` 에 base blob 과 함께
+  남겨 `git show 91cfa1f:<경로>` 로 되살린다.
+- 추적되지 않던 로그 2개(D-112 원 로그, 2026-04-29 Run 2 의 k6 출력)는 발췌를 추적한다. 토픽 상태 가드 테스트의 fixture 는
+  `scripts/tests/fixtures/` 로 옮겼다.
+
+미충족과 관찰:
+- `replay-entrypoint-lint.sh` 는 gitignore 된 `docs/learning/` 사본 때문에 로컬에서만 실패한다. P2 에서 추적 파일 기준으로 고친다.
+- 측정 run 의 kafka-lag export 7개(2.2MB)는 결정 1-3 의 범위 밖으로 보고 남겼다. 사용자 확인을 기다린다.
+- 조사 보고서의 "추적된 모든 md 는 manifest 가 필요하다" 는 실제로 `docs/` 아래만 해당했다. 첫 보고에서 토큰 서명키가 지워졌다고 한
+  것은 확인하지 못한 내용이라 기록에서 뺐다.
+- 새 문서가 파일 없는 ADR 번호를 적으면 `docs/consistency-hints.sh` 가 깨진 참조로 잡는다. P4 의 결번 표기에서 같은 함정을 피한다.

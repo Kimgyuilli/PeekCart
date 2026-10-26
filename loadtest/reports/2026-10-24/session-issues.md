@@ -11,3 +11,11 @@
 9. [D-065 ② 결함] scripts/replay-drain-preflight.sh:301 이 kafka-consumer-groups --bootstrap-server localhost:9092 고정. k8s Kafka 리스너는 29092(KAFKA_LISTENERS PLAINTEXT://0.0.0.0:29092) → 실제 GKE 스택에서 DLQ group 4개 lag 조회 전부 실패, exit 1 fail-closed. deploy-overlay 의 drain preflight 가 GKE 에서는 구조적으로 항상 막혀 skip 만 가능. 추가 확인 필요: 한 번도 소비 안 된 파티션의 LAG '-' 를 파서가 어떻게 다루는지.
 10. [D-065 ⑤] 앱 토픽 30개 중 6개(payment.completed, payment.requested, payment.{completed,failed,refunded,requested}.dlq)가 브로커 기본값(retention.bytes -1, segment.bytes 1GiB, segment.ms 7d, timestamp.before.max 무제한). 나머지 24개는 선언값과 effective 일치(product 토픽은 기본값과 같은 키는 동적 설정에 없음 — 차분만 ALTER). 원인 미분리(자동 생성 선점 후 미갱신 추정) — 로컬 재현 필요.
 11. [워밍업 규칙 부재] S3 경합 run 의 order_create p50 1205→701→151ms(contend r1~r3), spread 51ms. 배포 직후 첫 run 이 JVM·커넥션 미예열로 주문 수(4,438 vs 10,111)까지 달라졌다. S2 는 '첫 회 버림' 규칙이 있었지만 S3 에는 없었다 — 재측정 계획에 워밍업 run 을 사전 규칙으로 넣는다.
+
+## 사후 정리 (2026-10-26, D-116)
+
+Phase 5 마감 정리(D-116)에서 이 폴더의 원자료 일부를 고쳤다. 결정과 근거는 `docs/evidence/D-116/decisions.md` 1-1·1-2, 계획은 `docs/plans/D-116-loadtest.md` 다. 고친 파일은 [pruned.tsv](pruned.tsv) 에 경로·크기·base blob 과 함께 있고 `git show 91cfa1f:<경로>` 로 원래 바이트를 되살린다.
+
+- k6 요약 5개(`s3/contend-r1.json`·`contend-r2.json`·`contend-r3.json`·`spread-r1.json`, `s4/e-hpa.json`)의 `setup_data.tokens`(사용자 200명의 RS256 JWT)를 `"tokens_removed": 200` 한 줄로 바꿨다. 토큰은 30분 만료라 이미 쓸 수 없지만 자격증명 모양의 데이터이고 파일 용량의 95% 였다. 다른 키와 값, `startedAt` 은 그대로다. D-108 P2 의 "원자료를 고치지 않는다" 에 대한 예외이며 2026-10-26 사용자 결정이다.
+- 이 날짜의 지연 TSV 는 전부 측정 run 이라 남겼다. run 별 백분위·최댓값·표본 수·제외 건수를 [latency-summary.txt](latency-summary.txt) 에 따로 모았다.
+- `s4/d065-5-topic-configs-all.txt` 는 `scripts/tests/test_kafka_topic_state_guard.py` 가 읽던 fixture 다. 같은 바이트를 `scripts/tests/fixtures/` 로 복사해 테스트가 이 폴더를 읽지 않게 했다. 원본은 증적이라 그대로 둔다.
