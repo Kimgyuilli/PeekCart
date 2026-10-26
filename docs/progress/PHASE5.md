@@ -1148,3 +1148,17 @@ Phase 5 를 마감하기 전에 문서·계획서·측정 산출물을 정리하
 - 조사 보고서의 "추적된 모든 md 는 manifest 가 필요하다" 는 실제로 `docs/` 아래만 해당했다. 첫 보고에서 토큰 서명키가 지워졌다고 한
   것은 확인하지 못한 내용이라 기록에서 뺐다.
 - 새 문서가 파일 없는 ADR 번호를 적으면 `docs/consistency-hints.sh` 가 깨진 참조로 잡는다. P4 의 결번 표기에서 같은 함정을 피한다.
+
+## 2026-10-26 — Phase 5 마감 정리 2단계: 도구 경로와 계획 폴더
+
+[PR252](https://github.com/Kimgyuilli/PeekCart/pull/252) · 계획 `D-116-tooling`(상위 `D-116`) · 결정 `docs/evidence/D-116/decisions.md` 2-1·2-2·2-4·2-5·2-8·2-9·2-10·4-4.
+CI·규약·하네스가 실행하거나 읽는 docs 안 파일을 `scripts/` 로 옮기고, 계획 폴더에서 끝난 계획과 계획이 아닌 파일을 걷어냈다.
+
+- 결정: 끝난 계획 4개를 아카이브하면서 `archive: hold` 줄을 보존 manifest 의 corrections 로 지웠다. `task-debt-orchestration` 에는 남은 항목의 추적 위치를 적은 종결 절을 먼저 추기했다.
+- 도구 4종(D-099 변이 도구, D-102 주석 검사 도구와 baseline, saga 계약 매트릭스, `consistency-hints.sh`)을 `scripts/` 아래로 옮겼다. 매트릭스가 docs 밖으로 나가 문서 전용 판정의 예외 규칙이 필요 없어졌다.
+- PLAN-BLINDSPOTS 는 `docs/conventions/plan-blindspots.md` 로, 2026-04 스모크 fixture 5개는 `docs/progress/archive/` 의 문서 하나로 옮겼다. INDEX 는 `D-NNN` 을 "부채 · 측정" 으로 분류해 기타가 16개로 줄었다.
+- replay lint 가 추적 파일만 봐서 로컬에서만 나던 실패가 없어졌다. `.gitignore` 의 `gradle-wrapper.jar` 부정 규칙이 효력을 찾았고, `.dockerignore` 가 `loadtest`·`local-keys`·`.cache` 를 뺀다.
+
+미충족과 관찰:
+- 보수적 기본값으로 정한 해석 6건을 PR 본문 "확인 요청" 에 올렸다. 모듈별 `application-local.yml` 은 추적 중이라 ignore 하지 않았고, `docs/plans/.archive/` 로컬 삭제는 P6 에서 당겼다.
+- D-078 의 `check-mutants.py` 와 D-099·D-102 증적의 README·결과 파일은 P3 의 증적 이동에서 옮긴다.

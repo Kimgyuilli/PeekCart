@@ -26,3 +26,9 @@
 - `./gradlew test --continue`: BUILD SUCCESSFUL, 54개 작업 전부 up-to-date (Java·리소스 입력 무변경).
 - 계획과 달라진 것: 없음. 절차 메모: apply 가 만든 manifest 는 stage 해야 `docs-preservation-ci.py` 가 본다(untracked 는 `git diff <base>` 에 잡히지 않는다). apply 출력이 이미 안내하므로 따로 저장하지 않는다.
 - 로컬 정리: `docs/plans/.archive/` 46파일을 scratchpad tar 로 남긴 뒤 지웠다.
+
+## 2026-10-26 22:12 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/252 (base main `060dea1`)
+- 커밋 9개(docs 6 · chore 2 · src 1). 분류 검사 통과, writing-lint(커밋 9건·본문·제목) 통과
+- precheck: consistency ok(warnings 0), `hpx_review_health` ok, 보존 검사 `--base 060dea1` PASS, `harness-context.sh --check --base 060dea1` ok
+- 갱신: TASKS D-116 행에 PR 링크(5개 PR 중 두 번째라 진행 중 유지), PHASE5 엔트리. 상위 계획의 P2 상자는 머지 뒤 다음 단계가 채운다
