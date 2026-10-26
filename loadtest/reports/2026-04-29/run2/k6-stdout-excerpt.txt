@@ -1,0 +1,97 @@
+# 발췌: loadtest/reports/2026-04-29/run2/k6-stdout.log (D-116, 2026-10-26)
+# 원본: loadtest/reports/2026-04-29/run2/k6-stdout.log · 132,995B · 1,256줄 · sha256 caf0bc0271ac0c7eb65849ad332c3212aafece60ec23eb39e984234fe970d455
+# 원본은 .gitignore 의 *.log 규칙으로 추적되지 않는다. 운영자 로컬 디스크에만 있고 D-116 정리에서도 지우지 않았다.
+# 무엇: 2026-04-29 세션 B Run 2 의 k6 화면 출력. 같은 폴더 REPORT.md(§원본 데이터, §실패 원인 분포)가 이 로그를 원본으로 적는다.
+# 규칙: 첫 진행 줄 앞의 머리 전부, 진행 줄은 10초 구간마다 첫 줄과 그 아래 줄(마지막 진행도 포함),
+#       time=… level=… 줄은 (level, 나머지 문구) 별 건수와 첫·끝 시각, 끝 요약은 첫 체크 줄부터 전부 남긴다.
+# 이벤트 건수: warning 822 · error 1
+
+## 머리
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: /home/kimgyuill/order-concurrency.js
+        output: Prometheus remote write (http://localhost:9090/api/v1/write)
+
+     scenarios: (100.00%) 1 scenario, 1000 max VUs, 2m10s max duration (incl. graceful stop):
+              * contention: Up to 1000 looping VUs for 2m0s over 3 stages (gracefulRampDown: 10s, gracefulStop: 30s)
+
+
+
+## 진행 (10초 간격)
+running (0m00.4s), 0014/1000 VUs, 0 complete and 0 interrupted iterations
+contention   [   0% ] 0014/1000 VUs  0m00.4s/2m00.0s
+running (0m10.4s), 0347/1000 VUs, 0 complete and 0 interrupted iterations
+contention   [   9% ] 0347/1000 VUs  0m10.4s/2m00.0s
+running (0m20.4s), 0681/1000 VUs, 1 complete and 0 interrupted iterations
+contention   [  17% ] 0681/1000 VUs  0m20.4s/2m00.0s
+running (0m30.4s), 1000/1000 VUs, 6 complete and 0 interrupted iterations
+contention   [  25% ] 1000/1000 VUs  0m30.4s/2m00.0s
+running (0m40.4s), 1000/1000 VUs, 28 complete and 0 interrupted iterations
+contention   [  34% ] 1000/1000 VUs  0m40.4s/2m00.0s
+running (0m50.4s), 1000/1000 VUs, 672 complete and 0 interrupted iterations
+contention   [  42% ] 1000/1000 VUs  0m50.4s/2m00.0s
+running (1m00.4s), 1000/1000 VUs, 1519 complete and 0 interrupted iterations
+contention   [  50% ] 1000/1000 VUs  1m00.4s/2m00.0s
+running (1m10.4s), 1000/1000 VUs, 2379 complete and 0 interrupted iterations
+contention   [  59% ] 1000/1000 VUs  1m10.4s/2m00.0s
+running (1m20.4s), 1000/1000 VUs, 3249 complete and 0 interrupted iterations
+contention   [  67% ] 1000/1000 VUs  1m20.4s/2m00.0s
+running (1m30.4s), 1000/1000 VUs, 4249 complete and 0 interrupted iterations
+contention   [  75% ] 1000/1000 VUs  1m30.4s/2m00.0s
+running (1m40.4s), 0824/1000 VUs, 5249 complete and 0 interrupted iterations
+contention   [  84% ] 0824/1000 VUs  1m40.4s/2m00.0s
+running (1m50.4s), 0478/1000 VUs, 6072 complete and 0 interrupted iterations
+contention   [  92% ] 0478/1000 VUs  1m50.4s/2m00.0s
+running (2m00.4s), 0164/1000 VUs, 6550 complete and 0 interrupted iterations
+contention ↓ [ 100% ] 0167/1000 VUs  2m0s
+running (2m08.4s), 0001/1000 VUs, 6713 complete and 0 interrupted iterations
+contention ↓ [ 100% ] 0167/1000 VUs  2m0s
+
+## 경고·오류 (건수 · 첫 시각 · 끝 시각 · level · 문구)
+269	2026-04-29T13:55:12Z	2026-04-29T13:55:28Z	warning	msg="Request Failed" error="Post \"http://10.178.0.16:8080/api/v1/cart/items\": EOF"
+237	2026-04-29T13:55:12Z	2026-04-29T13:55:27Z	warning	msg="Request Failed" error="Post \"http://10.178.0.16:8080/api/v1/orders\": EOF"
+99	2026-04-29T13:55:13Z	2026-04-29T13:55:48Z	warning	msg="Request Failed" error="Post \"http://10.178.0.16:8080/api/v1/cart/items\": dial tcp 10.178.0.16:8080: connect: connection refused"
+74	2026-04-29T13:55:13Z	2026-04-29T13:55:47Z	warning	msg="Request Failed" error="Post \"http://10.178.0.16:8080/api/v1/orders\": dial tcp 10.178.0.16:8080: connect: connection refused"
+67	2026-04-29T13:55:51Z	2026-04-29T13:55:59Z	warning	msg="Request Failed" error="Post \"http://10.178.0.16:8080/api/v1/cart/items\": dial: i/o timeout"
+63	2026-04-29T13:55:51Z	2026-04-29T13:55:58Z	warning	msg="Request Failed" error="Post \"http://10.178.0.16:8080/api/v1/orders\": dial: i/o timeout"
+13	2026-04-29T13:55:17Z	2026-04-29T13:55:17Z	warning	msg="Request Failed" error="Post \"http://10.178.0.16:8080/api/v1/auth/login\": EOF"
+1	2026-04-29T13:56:38Z	2026-04-29T13:56:38Z	error	msg="thresholds on metrics 'http_req_failed{scenario:contention}, peekcart_auth_failures' have been crossed"
+
+## 끝 요약
+     ✗ login 200 + token present
+      ↳  96% — ✓ 967 / ✗ 33
+     ✗ cart 201
+      ↳  52% — ✓ 512 / ✗ 455
+     ✗ order 201|409|400
+      ↳  26% — ✓ 138 / ✗ 374
+
+     checks.........................: 65.22% 1617 out of 2479
+     data_received..................: 833 kB 6.5 kB/s
+     data_sent......................: 766 kB 6.0 kB/s
+     http_req_blocked...............: avg=284.56µs min=0s       med=6.9µs    max=36.68ms  p(90)=673.51µs p(95)=707.56µs
+     http_req_connecting............: avg=239.74µs min=0s       med=0s       max=36.43ms  p(90)=567.82µs p(95)=599.91µs
+     http_req_duration..............: avg=13.63s   min=0s       med=14.33s   max=40.47s   p(90)=26.89s   p(95)=30.21s  
+       { expected_response:true }...: avg=18.38s   min=160.36ms med=18.51s   max=40.47s   p(90)=28.88s   p(95)=30.48s  
+     http_req_failed................: 35.90% 890 out of 2479
+     ✗ { scenario:contention }......: 35.90% 890 out of 2479
+     http_req_receiving.............: avg=8.02ms   min=0s       med=891.29µs max=142.26ms p(90)=25.36ms  p(95)=33.75ms 
+     http_req_sending...............: avg=54.85µs  min=0s       med=38.1µs   max=395.79µs p(90)=100.77µs p(95)=112.02µs
+     http_req_tls_handshaking.......: avg=0s       min=0s       med=0s       max=0s       p(90)=0s       p(95)=0s      
+     http_req_waiting...............: avg=13.62s   min=0s       med=14.32s   max=40.44s   p(90)=26.89s   p(95)=30.2s   
+     http_reqs......................: 2479   19.297971/s
+     iteration_duration.............: avg=14.16s   min=10s      med=10s      max=1m18s    p(90)=30.59s   p(95)=40.97s  
+     iterations.....................: 6714   52.265663/s
+   ✗ peekcart_auth_failures.........: 33     0.256891/s
+     peekcart_cart_failures.........: 455    3.541983/s
+     vus............................: 1      min=1            max=1000
+     vus_max........................: 1000   min=1000         max=1000
+
+
+running (2m08.5s), 0000/1000 VUs, 6714 complete and 0 interrupted iterations
+contention ✓ [ 100% ] 0000/1000 VUs  2m0s
