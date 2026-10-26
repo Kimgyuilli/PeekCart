@@ -13,3 +13,8 @@
   3. 범위: 블록 14개의 첫·끝 줄을 시험 실행 출력으로 대조했다. 처음 정의에서 §9-4·§10-5 가 여는 펜스에서 끊겨 "다음 절 앞" 끝 지정으로 고쳤고, 04 §9-3 의 도입 시점 두 줄을 diff 머리글에서 찾아 더했다. 옮긴 제목을 가리키는 인바운드 링크는 없다(보존 검사 통과).
   4. CI lint 잡 단계 원문 실행 6단계 PASS, `harness-context.sh --check --base fbb839c` ok, `plans-index.sh --check` 최신, consistency precheck ok, 앵커·기존 manifest 이동/삭제 0건.
 - `./gradlew test --continue`: BUILD SUCCESSFUL(Java 입력 무변경).
+
+## 2026-10-27 01:50 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/255 (base main `fbb839c`)
+- 커밋 3개(docs 3). writing-lint(커밋·본문·제목) 통과. CI 는 문서 전용
+- 갱신: TASKS D-116 행에 PR 링크(진행 중 유지), PHASE5 엔트리. 상위 계획의 P4a 칸은 머지 뒤 다음 단계가 채운다

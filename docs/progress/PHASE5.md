@@ -1191,3 +1191,14 @@ CI·규약·하네스가 실행하거나 읽는 docs 안 파일을 `scripts/` �
 미충족과 관찰:
 - Layer 1 재작성과 ADR 색인 정비는 P4, Phase 6 개시와 맵의 Phase 갱신은 P5 다.
 - 보수적 기본값으로 정한 해석 4건을 PR 본문 "확인 요청" 에 올렸다.
+
+## 2026-10-27 — Phase 5 마감 정리 4a단계: Layer 1 의 Phase 1~4 서술 원문 이동
+
+[PR255](https://github.com/Kimgyuilli/PeekCart/pull/255) · 계획 `D-116-layer1-archive`(상위 `D-116`) · 결정 `docs/evidence/D-116/decisions.md` 3-1.
+Layer 1 을 현행으로 다시 쓰기 전에 단계별 서술 블록 14개를 원문 그대로 분리했다.
+
+- 결정: P4 를 원문 이동(P4a)과 현행 재작성(P4b)으로 나눴다. 블록을 manifest 로 옮기면 그 문서의 모든 줄을 정확히 한 번 배정해야 해서 같은 PR 에서 제자리 수정을 섞을 수 없다.
+- 01·02·03·04·07 의 블록을 `docs/progress/archive/layer1-history-phase1-4.md` 로 옮기고 빈 자리에 포인터 9개를 두었다(D-053 방식).
+
+미충족과 관찰:
+- P4b 할 일: 한 줄 안에 현행과 Phase 1 이 섞인 줄과 옛 경로 포인터(`docs/plans/D-116-layer1-archive.md` §1 끝 문단), 낡은 사실 24건과 모순 2건(`docs/evidence/D-116/survey-C-docs.md` §5), ADR-0027·0045·0046 반영, ADR 색인 정비, 루트·`loadtest/README.md` 재작성(`docs/plans/D-116.md` §3 P4).
