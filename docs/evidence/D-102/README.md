@@ -6,7 +6,7 @@
 
 - 후보 235행의 주석을 보정했고 12행은 구체 출처·로컬 시나리오·일반 용어로 보존했다. before/after와 보존 근거를 각 행에 남겼다.
 - 최종 변경 파일은 Java test 116개다. 후보 전체 117파일 중 GatewayObservabilityMetricsIntegrationTest는 ADR-0009가 정의한 P1-D를 사용하므로 그대로다.
-- 최종 broad scan의 20개 적중은 [보존 근거](../../../../scripts/test-comments/accepted-candidates.tsv)에 전부 기록했다. 기존에 보존된 12개뿐 아니라 풀어 쓴 뒤 검색에 남는 유효한 ADR·runbook 참조 등을 포함한다.
+- 최종 broad scan의 20개 적중은 [보존 근거](../../../scripts/test-comments/accepted-candidates.tsv)에 전부 기록했다. 기존에 보존된 12개뿐 아니라 풀어 쓴 뒤 검색에 남는 유효한 ADR·runbook 참조 등을 포함한다.
 - 후보 밖의 문맥도 읽어 기존 4서비스 복제본이라는 설명은 공유 구현의 서비스별 배선 검사로, 없는 replay 진입점이라는 설명은 실제 테스트 seam/fixture 경계로 고쳤다. 기존 ADR·D-/L- 식별자는 파일별로 모두 보존했다.
 
 재현 명령은 저장소 루트에서 실행한다.
