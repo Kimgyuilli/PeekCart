@@ -78,16 +78,16 @@ grade: L
 
 - [x] P1. 보존 검사기 보정. `visible()` 의 문단 꼬리 탐색을 글머리표 항목에서 끊고 셀프테스트 2건(목록 경계 통과, 한 항목 안 여러 줄 스팬의 실패 유지)을 더한다. 보존 규약의 Markdown 지원 경계 절에 한 문장을 더한다.
 - [x] P2. `/sync` 아카이브. `D-116-layer1-archive` 를 `--base c65205d6` 로 옮기고(manifest `docs/preservation/plans-d116-layer1-archive-20261027.json`) INDEX 를 다시 만든다. 상위 계획 §3 의 P4a 칸을 채운다.
-- [ ] P3. `docs/01-project-overview.md`. 작성 기준 줄, §1 서비스 구조·인프라, §2-1 부하 도구, §3-1 Redis 역할·부하 도구·Flyway, §3-2 분산 락 행(재고 동시성 행으로, see ADR-0025), §4 현재 환경(로컬 compose·minikube, CI, GKE 측정, 이미지 경로, MySQL 상한 see ADR-0027).
-- [ ] P4. `docs/02-architecture.md`. §4-3 HPA 둘과 MySQL 상한, §5 옛 경로 포인터·토픽 수(15, see ADR-0040)·다이어그램의 부하 도구와 Redis 역할·연결, 앵커 없는 "Phase 4 — MSA" 소제목 둘.
-- [ ] P5. `docs/03-requirements.md`. §6-3·§6-4·§6-5·§7-2·§7-6 의 단계 표기, §6-6 API 표(DLQ 관리자 경로, 승인 복구 prefix), §7-1 목표값 머리말과 측정 도구, §7-2 재고 차감 시점, §7-4 HPA·프로파일, §7-5 rate limit, §7-6 추적.
-- [ ] P6. `docs/04-design-deep-dive.md`. §8-1 토픽 표(승인 복구 4개), §8-3 DLQ 토픽과 내부 식별자, §8-4 규칙 문장, §8-5 사가 흐름도(예약과 승인 fence 경로), §9-2·§9-3·§9-10·§9-13 의 단계 표기, §9-6 제목과 본문(예약 모델), §9-8 상태 전이도, §9-9 파티션 설정, §9-10 ShedLock 예시, §9-11 grace, §9-12 예시와 예외 계층, §9-13 조회 캐시(ADR-0037·0046 의 상한 1, D-109 대기), §10-1 폴링 주기(ADR-0045), §10-2·§10-3 의 단계 표기와 식별자, §10-6 Redis 장애 서술, §10-7 현재 측정 환경(ADR-0027, 측정 overlay, 토픽 상태 가드).
-- [ ] P7. `docs/05-data-design.md`. 옛 경로 포인터, notification outbox, 도메인 ERD 동기화, 공통 메시징 테이블 절, 단계 표기, `(see ADR-0036)`, 인덱스 표(refresh_tokens).
-- [ ] P8. `docs/06-testing-strategy.md`. §13-1 Redis 행과 식별자, §13-1-a 제목, §13-2 게이트가 없다는 사실, §14 성능 시나리오(현재 k6 스크립트와 조건).
-- [ ] P9. `docs/07-roadmap-portfolio.md`. §15 스토리라인(증적 수치와 출처), 표의 단계 진화·Saga·재고·Redis 행, 꼬리말.
-- [ ] P10. ADR 색인과 템플릿. 제목을 H1 과 맞추고, 열의 정의를 적고 다시 만들며, 결번 0038·0039 와 다음 번호 0047 을 적는다. 템플릿 Status 에 `Partially Superseded by ADR-XXXX`, 관련 Phase 에 Phase 5·6 을 더한다.
-- [ ] P11. 루트 `README.md`. 현재 구조(도메인 서비스 5개와 gateway), 문서 맵·TASKS·ADR·runbook 진입점, 클론 뒤 설정을 둔다.
-- [ ] P12. `loadtest/README.md`. 원문을 `docs/progress/archive/loadtest-readme-phase3-4.md` 로 옮기고 아카이브 색인에 더한다. 새 README 는 현재 절차를 적는다. `loadtest/reports/TEMPLATE.md:4` 의 04 §10-7 참조를 아카이브로 고친다. `docs/README.md` 의 아카이브 설명을 갱신한다.
+- [x] P3. `docs/01-project-overview.md`. 작성 기준 줄, §1 서비스 구조·인프라, §2-1 부하 도구, §3-1 Redis 역할·부하 도구·Flyway, §3-2 분산 락 행(재고 동시성 행으로, see ADR-0025), §4 현재 환경(로컬 compose·minikube, CI, GKE 측정, 이미지 경로, MySQL 상한 see ADR-0027).
+- [x] P4. `docs/02-architecture.md`. §4-3 HPA 둘과 MySQL 상한, §5 옛 경로 포인터·토픽 수(15, see ADR-0040)·다이어그램의 부하 도구와 Redis 역할·연결, 앵커 없는 "Phase 4 — MSA" 소제목 둘.
+- [x] P5. `docs/03-requirements.md`. §6-3·§6-4·§6-5·§7-2·§7-6 의 단계 표기, §6-6 API 표(DLQ 관리자 경로, 승인 복구 prefix), §7-1 목표값 머리말과 측정 도구, §7-2 재고 차감 시점, §7-4 HPA·프로파일, §7-5 rate limit, §7-6 추적.
+- [x] P6. `docs/04-design-deep-dive.md`. §8-1 토픽 표(승인 복구 4개), §8-3 DLQ 토픽과 내부 식별자, §8-4 규칙 문장, §8-5 사가 흐름도(예약과 승인 fence 경로), §9-2·§9-3·§9-10·§9-13 의 단계 표기, §9-6 제목과 본문(예약 모델), §9-8 상태 전이도, §9-9 파티션 설정, §9-10 ShedLock 예시, §9-11 grace, §9-12 예시와 예외 계층, §9-13 조회 캐시(ADR-0037·0046 의 상한 1, D-109 대기), §10-1 폴링 주기(ADR-0045), §10-2·§10-3 의 단계 표기와 식별자, §10-6 Redis 장애 서술, §10-7 현재 측정 환경(ADR-0027, 측정 overlay, 토픽 상태 가드).
+- [x] P7. `docs/05-data-design.md`. 옛 경로 포인터, notification outbox, 도메인 ERD 동기화, 공통 메시징 테이블 절, 단계 표기, `(see ADR-0036)`, 인덱스 표(refresh_tokens).
+- [x] P8. `docs/06-testing-strategy.md`. §13-1 Redis 행과 식별자, §13-1-a 제목, §13-2 게이트가 없다는 사실, §14 성능 시나리오(현재 k6 스크립트와 조건).
+- [x] P9. `docs/07-roadmap-portfolio.md`. §15 스토리라인(증적 수치와 출처), 표의 단계 진화·Saga·재고·Redis 행, 꼬리말.
+- [x] P10. ADR 색인과 템플릿. 제목을 H1 과 맞추고, 열의 정의를 적고 다시 만들며, 결번 0038·0039 와 다음 번호 0047 을 적는다. 템플릿 Status 에 `Partially Superseded by ADR-XXXX`, 관련 Phase 에 Phase 5·6 을 더한다.
+- [x] P11. 루트 `README.md`. 현재 구조(도메인 서비스 5개와 gateway), 문서 맵·TASKS·ADR·runbook 진입점, 클론 뒤 설정을 둔다.
+- [x] P12. `loadtest/README.md`. 원문을 `docs/progress/archive/loadtest-readme-phase3-4.md` 로 옮기고 아카이브 색인에 더한다. 새 README 는 현재 절차를 적는다. `loadtest/reports/TEMPLATE.md:4` 의 04 §10-7 참조를 아카이브로 고친다. `docs/README.md` 의 아카이브 설명을 갱신한다.
 
 ## 4. 검증 방법
 
