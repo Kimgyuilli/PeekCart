@@ -19,7 +19,7 @@
 ### 6-3. 주문 (Order)
 
 - 장바구니 담기 / 수정 / 삭제
-- 주문 생성 → Outbox 테이블 저장 → Kafka 이벤트 발행 (Phase 2 이후)
+- 주문 생성 → Outbox 테이블 저장 → Kafka 이벤트 발행
 - 주문 내역 조회 (페이징)
 - 주문 취소 (재고 롤백 포함)
 
@@ -27,17 +27,17 @@
 
 - Toss Payments 결제 위젯 연동 (가상 결제)
 - 결제 승인 / 실패 처리
-- 결제 실패 시 주문 롤백 (Phase 1: `@TransactionalEventListener` / Phase 4: Choreography Saga)
+- 결제 실패 시 주문 취소와 재고 복구 (Choreography Saga, see ADR-0012)
 - 결제 내역 조회
 - 웹훅(Webhook) 수신 처리
-- **자동 환불 보상 (Phase 4)** — "결제는 승인됐는데 재고가 확정되지 않았거나 주문이 취소된" saga 최악 경로에서
+- **자동 환불 보상** — "결제는 승인됐는데 재고가 확정되지 않았거나 주문이 취소된" saga 최악 경로에서
   사람의 개입 없이 환불을 실행하고 결과를 원장에 종결 상태로 남깁니다. 확정할 수 없는 구간(외부 PG 결과 불명)은
   없애는 것이 아니라 **관측 가능한 미해결 상태**(`UNRESOLVED` + backlog/age 게이지)로 만들고, 24시간 내
   미확정 시 감사 필드를 요구하는 수동 종결 경로로 넘어갑니다 (see ADR-0018)
 
 ### 6-5. 알림 (Notification)
 
-- **Phase 2+**: Kafka Consumer로 이벤트 수신 → Slack Webhook으로 알림 발송
+- Kafka Consumer로 이벤트 수신 → Slack Webhook으로 알림 발송
 - 알림 내역 DB 저장 및 조회
 - 환불 완료 알림 — **성공(`payment.refunded(SUCCEEDED)`)만** 발송합니다. 실패·미확정은 내부 미결 상태이며
   사용자에게 전가하지 않고, 운영이 해소한 뒤 성공 알림으로 수렴합니다 (see ADR-0018 §D6)
@@ -73,6 +73,10 @@
 | GET | `/api/v1/payments/{orderId}` | 결제 내역 조회 | O |
 | POST | `/api/v1/payments/webhook` | 일반 결제 상태 알림의 제한된 조회 가속 접수 | X (비신뢰 신호, ADR-0041) |
 | GET | `/api/v1/notifications` | 알림 내역 조회 | O |
+| GET | `/api/v1/admin/deadletter/{service}` | DLQ 원장 미결 집계 (`service` = order·product·payment·notification, see ADR-0022) | O |
+| POST | `/api/v1/admin/deadletter/{service}/{id}` | DLQ 원장 전이(`acknowledge`·`resolve`·`discard`·`replay`·`publication-unknown`, actor 필수) | O (`replay`·`publication-unknown` 은 ADMIN) |
+
+DLQ 관리자 경로는 gateway 가 각 서비스의 `/actuator/deadletter` 로 바꿔 전달하며, replay 는 kill-switch(`app.dead-letter.replay.enabled`) 기본값이 꺼져 있다. 승인 대사 복구 경로(`/api/v1/payments/approval-recoveries`)는 아래 "보호 승인 대사 복구" 절에 있다.
 
 ---
 
@@ -80,35 +84,34 @@
 
 ### 7-1. 성능
 
-> 아래 수치는 일반적인 이커머스 레퍼런스 기준의 초기 목표값입니다. 최종 목표값은 Phase 3 Task 3-4 부하 테스트의 baseline 측정 결과로 확정합니다.
+> 아래 수치는 일반적인 이커머스 레퍼런스 기준의 초기 목표값입니다. 측정으로 확정한 목표값은 없고, 실측값은 환경·조건과 함께 측정 증적(`docs/progress/evidence/`, `loadtest/reports/`)에 있습니다.
 >
 > **측정 환경**: GCP GKE (asia-northeast3-a, e2-standard-4), 부하 발생기는 같은 zone 의 별도 Compute Engine VM. 측정 방침 및 수치 해석은 `docs/04-design-deep-dive.md` §10-7, 환경 선택 근거는 ADR-0004 참고. 환경 요약은 `docs/01-project-overview.md` §4.
 >
 
 | 항목 | 목표 수치 | 측정 방법 |
 | --- | --- | --- |
-| 상품 목록 API 응답시간 | p99 기준 100ms 이하 | nGrinder 부하 테스트 |
+| 상품 목록 API 응답시간 | p99 기준 100ms 이하 | k6 읽기 경로 시나리오 (`loadtest/scripts/d002a-product-read.js`) |
 | Redis 캐싱 개선 효과 | 캐시 미적용 대비 TPS 3배 이상 | 캐싱 전/후 TPS 비교 (동일 GKE 환경 내) |
 | 동시 주문 처리 | 1,000 VUser 동시 주문 정합성 100% | k6 동시성 시나리오 |
 | 주문 이벤트 처리 | Kafka Consumer Lag 0 유지 (정상 구간) | Prometheus 모니터링 |
-| K8s HPA 스케일아웃 | 부하 급증 시 Pod 자동 증설 검증 | nGrinder + Grafana 연계 |
+| K8s HPA 스케일아웃 | 부하 급증 시 Pod 자동 증설 검증 | k6 주문 부하 + Grafana HPA 패널 |
 
 ### 7-2. 안정성
 
-- **이벤트 처리 (Phase별 구분)**
-    - Phase 2~: Outbox 패턴 + Kafka로 전환, 이벤트 유실 방지
+- **이벤트 처리**: Outbox 패턴 + Kafka, 이벤트 유실 방지
 - **Outbox 발행 실패 처리**: `retry_count` 증가 → 최대 재시도 횟수 초과 시 `FAILED` 상태로 전환, 별도 알림
-- **Saga 패턴 (Phase별 구분)** (Phase 4 경계는 see ADR-0010)
-    - Phase 4: Choreography-based Saga — `order.created` → Product 재고 예약 → `stock.reservation.result` → 결제, `payment.failed`/`order.cancelled` → **Product 재고(예약) 복구** (재고 소유자가 Product). 재고 예약/차감 경계·토픽 매트릭스 확정은 ADR-0012 §D3/§D4 (see ADR-0012). **보상 수렴**: 환불이 필요한 상태를 감지한 서비스가 요청 토픽(`stock.compensation.requested` · `order.compensation.requested`)을 발행하고, Payment 가 `payment_refunds.order_id` UNIQUE fence 로 합류시켜 실행한 뒤 `payment.refunded` 로 각 원장을 닫습니다 (see ADR-0018)
+- **Saga 패턴** (경계는 see ADR-0010)
+    - Choreography-based Saga — `order.created` → Product 재고 예약 → `stock.reservation.result` → 결제, `payment.failed`/`order.cancelled` → **Product 재고(예약) 복구** (재고 소유자가 Product). 재고 예약/차감 경계·토픽 매트릭스 확정은 ADR-0012 §D3/§D4 (see ADR-0012). **보상 수렴**: 환불이 필요한 상태를 감지한 서비스가 요청 토픽(`stock.compensation.requested` · `order.compensation.requested`)을 발행하고, Payment 가 `payment_refunds.order_id` UNIQUE fence 로 합류시켜 실행한 뒤 `payment.refunded` 로 각 원장을 닫습니다 (see ADR-0018)
 - **재고 동시성 제어**
     - `Inventory.@Version`과 DB 트랜잭션 원자성으로 보호하며 재고 경로에는 Redis 분산 락을 사용하지 않습니다 (see ADR-0025).
     - Product Kafka 소비 중 낙관락 충돌은 jitter를 적용해 최대 3회 재시도하고, 소진하면 DLQ로 보냅니다. HTTP 경로의 낙관락 충돌은 `PRD-004`/409로 응답합니다.
 - **JWT Refresh Token 전략**
     - `refresh_tokens` 테이블(DB)에 토큰 저장 → 영속성 보장, 발급 이력 관리
-    - Redis는 로그아웃된 토큰 블랙리스트 (+ Phase 4: family/session deny — 탈취 즉시 차단, see ADR-0013) 용도 → 역할 분리(저장은 DB, 즉시 차단/deny enforcement는 Redis)
-    - Refresh Token Rotation 적용 (재발급 시 기존 토큰 즉시 무효화). Phase 4: `family_id` 이력 모델 기반 **Reuse Detection**(재사용 감지 시 family 전체 무효화), RS256 + Gateway 검증 (see ADR-0013)
+    - Redis는 로그아웃된 토큰 블랙리스트와 family/session deny(탈취 즉시 차단, see ADR-0013) 용도 → 역할 분리(저장은 DB, 즉시 차단/deny enforcement는 Redis)
+    - Refresh Token Rotation 적용. `family_id` 이력 모델 기반 **Reuse Detection**(재사용 감지 시 family 전체 무효화)이며, 이미 교체된 토큰을 10초 grace 안에 다시 내는 동시 요청은 1회만 허용한다. RS256 + Gateway 검증 (see ADR-0013)
 - **Kafka Consumer 멱등성**: `processed_events` 테이블로 중복 이벤트 체크 (at-least-once + 멱등성 처리)
-- **재고 차감 시점**: 주문 생성 시 즉시 차감 (전략 A) — 결제 타임아웃 15분 초과 시 자동 취소 + 재고 복구 스케줄러 적용
+- **재고 차감 시점**: Product 가 `order.created` 를 소비해 예약 원장(`stock_reservations`)에 차감한다 (see ADR-0012 §D3, ADR-0016). 예약 미확정 5분, 예약 lease 만료(30분), 결제 요청 뒤 15분을 넘긴 주문은 Order 스케줄러가 취소하고, Product 가 취소 이벤트와 lease sweeper 로 예약을 복구한다. 승인 중(`APPROVAL_HELD`) 예약은 시간만으로 풀지 않는다 (see ADR-0034)
 - Kafka Consumer 장애 시 메시지 유실 방지 (at-least-once 보장)
 - K8s Liveness / Readiness Probe로 비정상 Pod 자동 재시작
 
@@ -121,22 +124,21 @@
 
 ### 7-4. 확장성
 
-- K8s HPA 기반 Order Service 자동 수평 확장
+- K8s HPA 기반 order-service·gateway 자동 수평 확장
 - MSA 분리 시 비동기 통신(Kafka 이벤트)을 기본으로 하되, 필요 시 로컬 캐시(CQRS)로 동기 호출을 대체 (상세: 섹션 9-13)
-- 환경 변수 기반 설정 분리 (`application-dev` / `prod` profile)
+- 설정 분리: 동작 정책은 `application.yml`, 연결 정보·자격증명은 `application-local.yml`·`application-k8s.yml` (see ADR-0007)
 - 모노레포(Gradle 멀티모듈)로 전체 구조 관리, `common` 모듈 공유
 
 ### 7-5. 보안
 
 - **입력값 검증**: Bean Validation(`@NotBlank`, `@Min`, `@Email` 등) 활용, Controller DTO 레벨에서 유효성 검사
-- **Rate Limiting**: Spring Cloud Gateway에서 API별 요청 제한 (기본: 분당 60회, 로그인 시도: 분당 10회)
+- **Rate Limiting**: Spring Cloud Gateway 가 라우트별로 1초 고정 윈도우 한도를 건다. 인증 전 경로(signup·login·refresh) IP당 10, 상품 조회 IP당 100, 인증이 필요한 경로 사용자당 40, DLQ 관리자 경로 사용자당 20 이다. Redis 오류 때는 통과시키지 않고 503 으로 거부한다 (fail-closed, see ADR-0013 D3)
 - **일반 결제 웹훅**: 16KiB 이하의 `PAYMENT_STATUS_CHANGED` 중첩 `data.paymentKey`와 알려진 status만 접수한다. 알려진 UNRESOLVED 승인에 원장당 한 번의 조회 가속을 허용하며, 중복·미등록·진행 중·종결 건은 아무 상태도 바꾸지 않는다. payload는 결제 증빙이 아니고 확정은 서버 PG 조회가 담당한다(see ADR-0041).
 
 ### 7-6. 로깅 및 분산 트레이싱
 
-- **Correlation ID 전파**: Micrometer Tracing을 활용하여 요청별 Trace ID를 전체 서비스 체인에 전파
-- **구조화된 로깅**: JSON 포맷 로그 출력, MDC(Mapped Diagnostic Context)에 traceId · userId · orderId 포함
-- **Phase별 적용**: Phase 1에서 MDC + JSON 로깅 적용, Phase 4에서 서비스 간 Correlation ID 전파 구현
+- **Correlation ID 전파**: HTTP 요청은 서비스의 `MdcFilter` 가 요청마다 traceId 를 만든다. Kafka 경로는 outbox 가 trace context 를 저장해 메시지 헤더로 싣고, 소비자의 `MdcRecordInterceptor` 가 MDC 로 잇는다 (see ADR-0008)
+- **구조화된 로깅**: k8s 프로파일에서 JSON 포맷 로그 출력, MDC(Mapped Diagnostic Context)에 traceId · userId · orderId 포함
 
 ### 비동기 승인 응답 (see ADR-0034)
 
