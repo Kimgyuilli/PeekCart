@@ -19,7 +19,6 @@
 ### 6-3. 주문 (Order)
 
 - 장바구니 담기 / 수정 / 삭제
-- 주문 생성 → `@TransactionalEventListener`로 결제/알림 도메인에 이벤트 전달 (Phase 1)
 - 주문 생성 → Outbox 테이블 저장 → Kafka 이벤트 발행 (Phase 2 이후)
 - 주문 내역 조회 (페이징)
 - 주문 취소 (재고 롤백 포함)
@@ -38,7 +37,6 @@
 
 ### 6-5. 알림 (Notification)
 
-- **Phase 1**: `@TransactionalEventListener`로 이벤트 수신 → Slack Webhook으로 알림 발송
 - **Phase 2+**: Kafka Consumer로 이벤트 수신 → Slack Webhook으로 알림 발송
 - 알림 내역 DB 저장 및 조회
 - 환불 완료 알림 — **성공(`payment.refunded(SUCCEEDED)`)만** 발송합니다. 실패·미확정은 내부 미결 상태이며
@@ -98,11 +96,9 @@
 ### 7-2. 안정성
 
 - **이벤트 처리 (Phase별 구분)**
-    - Phase 1: `@TransactionalEventListener`로 도메인 간 이벤트 처리 (로컬 트랜잭션)
     - Phase 2~: Outbox 패턴 + Kafka로 전환, 이벤트 유실 방지
 - **Outbox 발행 실패 처리**: `retry_count` 증가 → 최대 재시도 횟수 초과 시 `FAILED` 상태로 전환, 별도 알림
 - **Saga 패턴 (Phase별 구분)** (Phase 4 경계는 see ADR-0010)
-    - Phase 1: `@TransactionalEventListener`로 결제 실패 시 로컬 보상 트랜잭션 처리
     - Phase 4: Choreography-based Saga — `order.created` → Product 재고 예약 → `stock.reservation.result` → 결제, `payment.failed`/`order.cancelled` → **Product 재고(예약) 복구** (재고 소유자가 Product). 재고 예약/차감 경계·토픽 매트릭스 확정은 ADR-0012 §D3/§D4 (see ADR-0012). **보상 수렴**: 환불이 필요한 상태를 감지한 서비스가 요청 토픽(`stock.compensation.requested` · `order.compensation.requested`)을 발행하고, Payment 가 `payment_refunds.order_id` UNIQUE fence 로 합류시켜 실행한 뒤 `payment.refunded` 로 각 원장을 닫습니다 (see ADR-0018)
 - **재고 동시성 제어**
     - `Inventory.@Version`과 DB 트랜잭션 원자성으로 보호하며 재고 경로에는 Redis 분산 락을 사용하지 않습니다 (see ADR-0025).
