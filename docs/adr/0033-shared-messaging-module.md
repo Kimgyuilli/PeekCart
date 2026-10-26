@@ -125,5 +125,10 @@ byte 동일성 lint 를 없애고 **중복 FQCN 게이트**(`assertNoDuplicateGl
 
 `BACKFILL` migration은 order V5와 product V4다. 당시 `dead-letter-schema-parity-lint.sh`의 Java 비교 범위는
 deadletter 16개와 outbox 8개, 그리고 `OutboxEventStatus`의 두 집합이다. `idempotency` 6개와 `ShedLockConfig`를
-그 lint가 byte parity 검사로 강제하지는 않았다. 근거는 commit `7e83ee3`의 소스 트리·lint, migration 경로와
-`docs/learning/drafts/tools/blog32/hash-inventory.json`이다.
+그 lint가 byte parity 검사로 강제하지는 않았다. 근거는 commit `7e83ee3`의 소스 트리·lint와 migration 경로다.
+
+### 2026-10-26 D-116 인용 정리
+
+위 D-096 정정의 근거 나열에서 `docs/learning/drafts/tools/blog32/hash-inventory.json` 을 지웠다(결정 3-6, 정정 기준
+main `5261510`). gitignore 된 로컬 학습 자료라 저장소 안에서 확인할 수 없다. 남은 근거(commit `7e83ee3` 의 소스 트리·lint,
+migration 경로)는 저장소에서 다시 읽을 수 있다.
