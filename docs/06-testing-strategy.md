@@ -6,14 +6,14 @@
 | --- | --- | --- | --- |
 | Domain | 단위 테스트 | JUnit 5 | 주문 상태 전이 로직, 재고 차감/복구, 비즈니스 규칙 검증 |
 | Application | 단위 테스트 | JUnit 5 + Mockito | UseCase 조율 로직, 트랜잭션 경계 내 도메인 호출 순서 |
-| Infrastructure | 통합 테스트 | Testcontainers | DB Repository 쿼리, Redis 캐시/락, Kafka Producer/Consumer |
+| Infrastructure | 통합 테스트 | Testcontainers | DB Repository 쿼리, Redis 캐시(장애 시 fallback 포함), Kafka Producer/Consumer |
 | Presentation | 슬라이스 테스트 | MockMvc + @WebMvcTest | 요청/응답 직렬화, 인증/인가 필터, Bean Validation |
 | E2E (단일 서비스) | 통합 테스트 | @SpringBootTest + Testcontainers | 주문 → 결제 → 알림 전체 플로우 |
-| E2E (cross-service saga) | 실제 스택 | `docker-compose.e2e.yml` + `scripts/saga-e2e-smoke.sh` | 4서비스를 실제 HTTP 진입점으로 구동해 saga 5종(결제 실패·예약 실패·환불 체인·DLQ intake·승인 예약 보호) 관측 (구현 ④-d-2) |
+| E2E (cross-service saga) | 실제 스택 | `docker-compose.e2e.yml` + `scripts/saga-e2e-smoke.sh` | 4서비스를 실제 HTTP 진입점으로 구동해 saga 6종(결제 실패·예약 실패·환불 체인·DLQ intake·승인 예약 보호·환불 결과 매트릭스) 관측 (구현 ④-d-2) |
 | 음성 대조군 | 결함 주입 | `saga-e2e-smoke.sh --negative-control` | **검사가 결함을 실제로 잡는지** — poller 정지·서비스 정지·재고 충분·listener 부재·project 병렬·egress 격리 양음 대조 |
 | 계약 게이트 | 증적 대조 | `scripts/saga-contract-matrix-lint.sh` | 매트릭스(`scripts/saga-contract-matrix.tsv`) ↔ JUnit XML · E2E manifest 를 `evidence_key` 단위 exact equality 로 대조 |
 
-### 13-1-a. cross-service saga 계약 게이트 (구현 ④-d-2)
+### 13-1-a. cross-service saga 계약 게이트
 
 **통과하는 검사는 그것이 무엇을 잡을 수 있는지 말해주지 않는다.** 그래서 세 층으로 나눈다.
 
@@ -79,6 +79,8 @@ scenario_e는 `stock_reservations.expires_at` 저장값을 과거로 바꿔 만�
 | Application 레이어 | 80%+ | UseCase 조율 로직 |
 | 전체 프로젝트 | 70%+ | Presentation/Infrastructure 포함 |
 
+JaCoCo 플러그인은 모든 모듈에 적용돼 있지만 이 목표치를 강제하는 검증 게이트는 없다. 목표는 지침이다.
+
 ### 13-3. 주요 테스트 시나리오
 
 - PG 주문 식별자: 실제 MySQL에서 반복·동시 prepare의 ID 고정, UNIQUE 충돌, legacy migration 값 보존, 불일치 confirm의 원장·outbox 불변을 확인한다. HTTP fixture는 checkout과 승인 body의 동일 ID 및 다른 식별자 응답의 비종결을 검증한다. 실제 PG 검증과 구분한다(see ADR-0042).
@@ -102,12 +104,14 @@ scenario_e는 `stock_reservations.expires_at` 저장값을 과거로 바꿔 만�
 
 ## 14. 성능 테스트 시나리오
 
-| 시나리오 | 도구 | 조건 | 검증 항목 |
+스크립트는 `loadtest/scripts/` 의 k6 시나리오이고, 절차와 run 규칙은 `loadtest/README.md` 에 있다. 아래 조건은 2026-10 세션(D-078·D-108)에서 쓴 값이다.
+
+| 시나리오 | 스크립트 | 조건 | 검증 항목 |
 | --- | --- | --- | --- |
-| 상품 목록 대량 조회 | nGrinder | 500 VUser, 5분 | 캐싱 전/후 TPS, 응답시간 비교 |
-| 동시 주문 폭주 | k6 | 1,000 VUser 동시 요청 | 재고 정합성, 오버셀링 방지 |
-| 결제 연속 처리 | nGrinder | 300 VUser, 3분 | 결제 성공률, Kafka Lag |
-| K8s HPA 스케일아웃 | nGrinder | 점진적 VUser 증가 | Pod 수 변화, TPS 회복 시간 |
-| 전체 플로우 E2E | k6 | 100 VUser, 10분 | 전체 TPS, p95/p99 응답시간 |
+| 상품 조회 읽기 경로 | `d002a-product-read.js` (`d026-run-cell.sh` 가 셀마다 실행) | 경로(목록·상세) × 캐시 ON/OFF × MySQL CPU 상한, 셀마다 반복 | 처리율·응답시간, 캐시 효과, MySQL 스로틀 |
+| 주문 생성 기준선 | `d002bc-order-create.js` | RPS·USERS 는 세션 계획에서 정한다 | 동기 구간 응답, DB 로 잰 사가 지연 |
+| 재고 경합 | `d002bc-contention.js` (`MODE=contend` 상품 1개, `spread` 상품 1,000개) | 초당 170건, 60초, USERS 450 | 정합성(음수 재고·품목별 차이 0), 전달 실패와 DLQ 비율, outbox·사가 지연 |
+| rate limit 배선 | `d002bc-ratelimit-probe.js` | 측정 전 1회 | 429 발생 |
+| HPA 스케일아웃 | `d002bc-order-create.js` | 초당 100건, USERS 200, 3분 | HPA 결정과 Pod 증가 시점, 5xx·429 |
 
 승인 예약 보호 검증은 실제 MySQL `data_lock_waits`로 두 승자 순서를 확인하고, PG 호출 전 중단과 성공 후 결과 저장 누락을 HTTP stub 및 원장 조회로 검사한다. 실제 스택 시나리오 e는 sweeper 대조군 회수·취소된 보호 유지·Payment 재시작 후 PG 조회와 정상 승인 확정을 검증한다(see ADR-0034, ADR-0035).

@@ -1,9 +1,9 @@
 # ADR-NNNN: {결정 제목}
 
-- **Status**: {Proposed | Accepted | Deprecated | Superseded by ADR-XXXX}
+- **Status**: {Proposed | Accepted | Deprecated | Superseded by ADR-XXXX | Partially Superseded by ADR-XXXX}
 - **Date**: YYYY-MM-DD
 - **Deciders**: {결정 주체}
-- **관련 Phase**: {Phase 1 | Phase 2 | Phase 3 | Phase 4 | 전체}
+- **관련 Phase**: {Phase 1 | Phase 2 | Phase 3 | Phase 4 | Phase 5 | Phase 6 | 전체}
 
 ## Context
 

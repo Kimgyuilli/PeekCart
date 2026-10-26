@@ -1,7 +1,7 @@
 # PeekCart 부하 테스트 리포트 — YYYY-MM-DD
 
 > 복사하여 `loadtest/reports/YYYY-MM-DD/REPORT.md` 로 저장 후 사용.
-> 기록 항목은 `docs/04-design-deep-dive.md` §10-7 "Phase 3 — 부하 테스트 단계" 에 정의된 (a)~(f) 를 따른다.
+> 기록 항목은 옛 `docs/04-design-deep-dive.md` §10-7 "Phase 3 — 부하 테스트 단계" 에 정의된 (a)~(f) 를 따른다. 그 절은 `docs/progress/archive/layer1-history-phase1-4.md` 로 옮겼다(D-116).
 
 ## (a) 환경 스펙
 

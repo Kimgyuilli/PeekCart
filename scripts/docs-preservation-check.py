@@ -92,9 +92,10 @@ def visible(text):
                 if closing is None:
                     # A genuinely unmatched run is ordinary literal Markdown. A matching
                     # run in this paragraph would create a multiline code span, unsupported here.
+                    # A bullet item starts a new block, so the paragraph ends before it.
                     tail = []
                     for later in lines[line_number + 1:]:
-                        if not later.strip() or re.match(r'^\s{0,3}(?:`{3,}|~{3,}|#{1,6}\s)', later): break
+                        if not later.strip() or re.match(r'^\s{0,3}(?:`{3,}|~{3,}|#{1,6}\s|[-+*][ \t]+\S)', later): break
                         tail.append(later)
                     require(not re.search(r'(?<!`)' + re.escape(opener.group()) + r'(?!`)', ''.join(tail)),
                             'Unsupported multiline backtick span')

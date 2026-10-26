@@ -15,8 +15,12 @@
 | `stock.compensation.requested` | Product Service | Payment Service | `PAID_BUT_UNRESERVED` 환불 요청 (see ADR-0018 D1) |
 | `order.compensation.requested` | Order Service | Payment Service | `PAID_BUT_CANCELLED` 환불 요청 (see ADR-0018 D1) |
 | `payment.refunded` | Payment Service | Order Service, Product Service, Notification Service | 환불 결과 회신 → 각 보상 원장 종결 (see ADR-0018 D4) |
+| `payment.approval-recovery.requested` | Payment Service | Product Service | 보호 승인 대사 복구 요청 → 예약 snapshot 회신 (see ADR-0040) |
+| `stock.approval-recovery.snapshot` | Product Service | Payment Service | 복구 대상 예약의 status·version·fence snapshot (see ADR-0040) |
+| `payment.approval-recovery.execute` | Payment Service | Product Service | 승인된 복구의 예약 해제 실행 요청, snapshot version 으로 fence (see ADR-0040) |
+| `stock.approval-recovery.result` | Product Service | Payment Service | 해제 결과 회신. 해제를 확인해야 복구가 `COMPLETED` 가 된다 (see ADR-0040) |
 
-> 토픽 매트릭스의 SSOT 는 **ADR-0012 D4**(기존 7토픽) + **ADR-0018 D1**(환불 3토픽) + **ADR-0034**(승인 보호 회신/구독)입니다.
+> 토픽 매트릭스의 SSOT 는 **ADR-0012 D4**(기존 7토픽) + **ADR-0018 D1**(환불 3토픽) + **ADR-0034**(승인 보호 회신/구독) + **ADR-0040**(승인 대사 복구 4토픽)이고, 구독의 코드 정본은 `DlqTopology` 입니다.
 > 각 토픽은 **1 topic = 1 producer** 규약을 따르며, `NewTopic` 프로비저닝은 producer 서비스가 소유합니다.
 
 > 모든 이벤트는 **Outbox 패턴**을 통해 발행됩니다.
@@ -31,7 +35,8 @@ Producer는 DB 트랜잭션 내에서 Outbox 테이블에 이벤트를 저장하
 {
   "eventId": "550e8400-e29b-41d4-a716-446655440000",
   "eventType": "order.created",
-  "timestamp": "2026-03-20T10:30:00Z",
+  "timestamp": "2026-03-20T10:30:00",
+  "schemaVersion": 1,
   "payload": {
     "orderId": 1001,
     "orderNumber": "ORD-20260320-0001",
@@ -56,7 +61,8 @@ Producer는 DB 트랜잭션 내에서 Outbox 테이블에 이벤트를 저장하
 {
   "eventId": "661f9511-f30c-52e5-b827-557766551111",
   "eventType": "payment.completed",
-  "timestamp": "2026-03-20T10:31:00Z",
+  "timestamp": "2026-03-20T10:31:00",
+  "schemaVersion": 1,
   "payload": {
     "paymentId": 501,
     "orderId": 1001,
@@ -64,10 +70,12 @@ Producer는 DB 트랜잭션 내에서 Outbox 테이블에 이벤트를 저장하
     "paymentKey": "toss_pay_key_abc123",
     "amount": 59000,
     "method": "CARD",
-    "approvedAt": "2026-03-20T10:31:00Z"
+    "approvedAt": "2026-03-20T10:31:00"
   }
 }
 ```
+
+> envelope 은 `KafkaEventEnvelope` 이다. `timestamp` 는 시간대 없는 `LocalDateTime` 이고, `schemaVersion` 이 빠진 옛 메시지는 1 로 읽는다 (see ADR-0012).
 
 ### 8-3. DLQ(Dead Letter Queue) 전략
 
@@ -78,12 +86,13 @@ Consumer 재시도 흐름:
      예: order.created 실패 → order.created.dlq
   3. DLQ 도달 → 서비스별 DLQ 원장(`dead_letter_records`) 적재 → `peekcart-dlq-backlog` alert 가 운영 신호
      (Slack 은 best-effort 보조 신호 — notification-service 외에는 no-op 이므로 판정에 쓰지 않음, see ADR-0018 D6)
-  4. 수동 재처리: DLQ 메시지를 확인 후 원인 해결 → 원본 토픽으로 재발행
-     (재발행의 보장 수준·발행 권한 예외·좌표 유효성·종결 축은 ADR-0020 이 계약으로 확정.
-      원장 적재는 구현 ④-c-2a, replay 경로 구현은 ④-c-2b — see ADR-0020)
+  4. 수동 재처리: 원인을 해결한 뒤 DLQ 관리자 경로(03 §6-6)로 원장을 전이하고,
+     replay 는 kill-switch 를 켠 ADMIN 이 원본 토픽으로 재발행한다
+     (재발행의 보장 수준·발행 권한 예외·좌표 유효성·종결 축은 see ADR-0020,
+      진입점 개방과 drain 절차는 see ADR-0022)
 
 DLQ 토픽:
-  - 위 8-1 표의 모든 토픽에 대해 <topic>.dlq 를 둡니다 (producer 가 NewTopic 소유).
+  - 위 8-1 표의 업무 토픽 15개 모두 <topic>.dlq(파티션 1)를 둡니다 (producer 가 NewTopic 소유).
   - 예: order.created.dlq, payment.completed.dlq, payment.failed.dlq, order.cancelled.dlq,
         stock.compensation.requested.dlq, order.compensation.requested.dlq, payment.refunded.dlq
 ```
@@ -91,7 +100,7 @@ DLQ 토픽:
 ### 8-4. Consumer Group 네이밍 규칙
 
 ```
-규칙: {service-name}-{topic-name}-group
+규칙: {service-name}-svc-{topic 요약}-group (정본은 DlqTopology 의 구독 목록)
 
 예시:
   - payment-svc-order-created-group     (Payment Service가 order.created 소비)
@@ -105,30 +114,43 @@ DLQ 토픽:
 서비스별 독립적 오프셋 관리와 소비 속도 조절이 가능합니다.
 ```
 
-### 8-5. Choreography Saga 플로우 (Phase 4 — 결제 실패 시)
+### 8-5. Choreography Saga 플로우 (결제 실패 시)
+
+모든 발행은 Outbox 를 거친다. 서비스 사이의 직접 호출은 없다 (see ADR-0012 §D3, ADR-0034).
 
 ```mermaid
 sequenceDiagram
     actor User
     participant OS as Order Service
     participant Kafka
-    participant PS as Payment Service
     participant ProdS as Product Service (재고)
+    participant PS as Payment Service
+    participant PG as Toss Payments
 
     User->>OS: 주문 생성 요청
-    OS->>OS: 재고 차감 + 주문 저장 + Outbox 저장 (단일 트랜잭션)
+    OS->>OS: 주문 저장(PENDING) + Outbox 저장 (단일 트랜잭션)
     OS-->>Kafka: order.created 발행
-    Kafka-->>PS: order.created 소비
-    PS->>PS: Toss 결제 요청
-    PS-->>PS: 결제 실패
-    PS->>PS: payment.failed Outbox 저장
+    Kafka-->>ProdS: order.created 소비
+    ProdS->>ProdS: 재고 차감 + 예약 원장(RESERVED) + Outbox 저장
+    Kafka-->>PS: order.created 소비 → 결제 원장 생성
+    ProdS-->>Kafka: stock.reservation.result 발행
+    Kafka-->>OS: 예약 확정 시각 기록
+    Kafka-->>PS: 결제 준비 표시
+    User->>PS: 결제 승인 요청 → 202 Accepted
+    PS->>PS: 승인 원장(WAITING_STOCK) + Outbox 저장
+    PS-->>Kafka: payment.requested 발행
+    Kafka-->>OS: 주문 상태 → PAYMENT_REQUESTED
+    Kafka-->>ProdS: 예약 보호 RESERVED → APPROVAL_HELD
+    ProdS-->>Kafka: stock.approval.result 발행
+    Kafka-->>PS: 승인 READY → dispatcher 가 CLAIMED 커밋
+    PS->>PG: 결제 승인 호출 (1회)
+    PG-->>PS: 결제 실패
     PS-->>Kafka: payment.failed 발행
-    Kafka-->>OS: payment.failed 소비
-    OS->>OS: 주문 상태 → CANCELLED
-    OS-->>Kafka: order.cancelled 발행
-    Kafka-->>ProdS: order.cancelled 소비
-    ProdS->>ProdS: 재고 복구
+    Kafka-->>OS: 주문 상태 → CANCELLED, order.cancelled(reason=PAYMENT_FAILED) 발행
+    Kafka-->>ProdS: 보호 예약 해제 + 재고 복구
 ```
+
+`order.cancelled` 는 모든 취소의 단일 이벤트다. 결제 실패로 이미 해제한 예약에 대한 두 번째 해제는 예약 원장의 상태 전이 조건 때문에 no-op 이다.
 
 ---
 
@@ -161,9 +183,9 @@ Redis (블랙리스트):           로그아웃된 토큰 즉시 무효화 (TTL 
 
 DB 단독 사용 시 매 요청마다 DB 조회가 발생하고, Redis 단독 사용 시 서버 재시작에서 데이터가 유실될 수 있습니다. 두 저장소의 역할을 분리해 각 단점을 보완합니다.
 
-> **Phase 4**: rotation 을 삭제 기반에서 **이력 모델**(`family_id`/`status`/`grace_until`)로 전환하여 **Refresh Token Reuse Detection**(탈취 감지 시 family 전체 무효화 + Gateway access token 차단)을 도입한다 (see ADR-0013 §D4).
+> rotation 은 **이력 모델**(`family_id`/`status`/`grace_until`)이다. **Refresh Token Reuse Detection** 은 탈취를 감지하면 family 전체를 무효화하고 Gateway 가 access token 을 차단한다 (see ADR-0013 §D4).
 
-### 9-3. Outbox 패턴 — Kafka 이벤트 유실 방지 (Phase 2~)
+### 9-3. Outbox 패턴 — Kafka 이벤트 유실 방지
 
 ```
 기존 방식 (문제):
@@ -184,7 +206,7 @@ DLQ 연계:
   앱의 Slack 직접 발송은 notification-service 에서만 실제로 나가는 보조 신호입니다.
 ```
 
-### 9-4. Saga 패턴 — Phase별 구현 방식
+### 9-4. Saga 패턴 — Choreography
 
 Phase 1 과 Phase 4 의 구현 비교 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). 현재 Saga 흐름은 §8-5 와 ADR-0012 §D3/§D4 다.
 
@@ -192,9 +214,15 @@ Phase 1 과 Phase 4 의 구현 비교 원문은 [Layer 1 이력 아카이브](pr
 
 Notification Service는 이벤트를 수신한 후 Slack Webhook으로 실제 알림을 발송합니다. 추가 인프라 없이 실제 동작을 증명할 수 있으며, 테스트 환경에서 알림 수신을 즉시 확인할 수 있습니다.
 
-### 9-6. 재고 차감 시점 — 주문 생성 시 즉시 차감 (전략 A)
+### 9-6. 재고 차감 시점 — Product 예약 모델
 
-전략 A 를 채택하던 Phase 1~3 서술 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). Phase 4 부터 재고는 Product 예약 모델로 차감한다(see ADR-0012 §D3, ADR-0016).
+주문 생성은 재고를 직접 차감하지 않는다. Product 가 `order.created` 를 소비해 재고를 차감하고 주문 단위 예약 원장(`stock_reservations`)에 `RESERVED` 로 기록한 뒤 `stock.reservation.result` 를 발행한다 (see ADR-0012 §D3, ADR-0016).
+
+- 예약에는 lease(30분)가 있다. Order 는 결과에 실린 만료 시각이 지나도록 결제를 시작하지 않은 주문을 취소하고, Product 의 lease sweeper 는 만료 뒤 유예 5분이 지난 `RESERVED` 를 회수한다.
+- 결제 승인 접수(`payment.requested`)가 오면 Product 는 만료되지 않은 `RESERVED` 를 `APPROVAL_HELD` 로 바꾸고 보호 회신을 보낸다. 취소와 lease 회수는 `RESERVED` 만 풀고, 보호된 예약은 확정된 `payment.failed` 나 성공한 환불에서만 푼다 (see ADR-0034, 아래 "승인과 재고 회수의 경합").
+- `payment.completed` 는 예약을 `CONFIRMED` 로 확정한다.
+
+전략 A(주문 생성 시 즉시 차감)를 쓰던 Phase 1~3 서술 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).
 
 ### 9-7. Kafka Consumer 멱등성 처리
 
@@ -214,30 +242,27 @@ Consumer 수신 시:
 
 `event_id`는 Outbox 이벤트 생성 시 UUID로 부여합니다.
 
-> 운영 환경에서는 `processed_at` 기준 30일 이상 경과 데이터를 배치 삭제하거나 파티셔닝을 적용합니다.
+> 처리 이력은 9일 보존한 뒤 매일 배치(`ProcessedEventCleanupScheduler`)로 지운다. 보존 기간이 DLQ replay 안전 여유보다 짧으면 부팅이 실패한다 (see ADR-0012 §D5, ADR-0020 §D4-3).
 
 ### 9-8. 주문 상태 전이도
 
-`orders.status`는 주문 생명주기 전체를 표현합니다. 배송 상태는 포트폴리오 범위에서 `SHIPPED`, `DELIVERED`까지 포함합니다.
+`orders.status`의 전이 규칙은 `OrderStatus` 가 가진다. 현재 코드가 실제로 들어가는 상태는 `PENDING`, `PAYMENT_REQUESTED`, `PAYMENT_COMPLETED`, `CANCELLED` 넷이다.
 
 ```
-PENDING → PAYMENT_REQUESTED → PAYMENT_COMPLETED → PREPARING → SHIPPED → DELIVERED
-                ↓
-          PAYMENT_FAILED → CANCELLED
-                                ↑
-               (결제 타임아웃 15분 초과 시 스케줄러가 자동 전이)
+PENDING → PAYMENT_REQUESTED → PAYMENT_COMPLETED
+   ↓              ↓
+CANCELLED ←───────┘
 ```
 
-| 상태 | 설명 |
-| --- | --- |
-| `PENDING` | 주문 생성, 재고 차감 완료 |
-| `PAYMENT_REQUESTED` | Toss 결제 위젯 오픈 |
-| `PAYMENT_COMPLETED` | 결제 승인 완료 |
-| `PAYMENT_FAILED` | 결제 실패 → 재고 복구 트리거 |
-| `PREPARING` | 상품 준비 중 |
-| `SHIPPED` | 배송 시작 |
-| `DELIVERED` | 배송 완료 |
-| `CANCELLED` | 취소 (결제 실패 / 타임아웃 / 수동 취소) |
+| 상태 | 설명 | 들어오는 경로 |
+| --- | --- | --- |
+| `PENDING` | 주문 생성. 재고 예약 결과를 기다리거나 예약 확정 뒤 결제를 기다린다 | 주문 생성 |
+| `PAYMENT_REQUESTED` | 결제 승인 접수 | `payment.requested` 소비. 예약 확정 전에 오면 확정할 때 전이한다 |
+| `PAYMENT_COMPLETED` | 결제 승인 완료 | `payment.completed` 소비 |
+| `CANCELLED` | 취소 | `PENDING` 에서 예약 실패·예약 미확정 5분·예약 lease 만료·사용자 취소, `PAYMENT_REQUESTED` 에서 결제 실패·결제 요청 뒤 15분·사용자 취소 |
+| `PAYMENT_FAILED`·`PREPARING`·`SHIPPED`·`DELIVERED` | 전이 규칙만 있다 | 없음. 결제 실패는 바로 `CANCELLED` 로 가고 배송 단계는 구현하지 않았다 |
+
+이미 취소된 주문에 `payment.completed` 가 오면 상태를 되돌리지 않고 보상 원장을 남겨 환불로 수렴한다 (see ADR-0018).
 
 ### 9-9. Kafka 파티션 키 전략
 
@@ -247,35 +272,40 @@ PENDING → PAYMENT_REQUESTED → PAYMENT_COMPLETED → PREPARING → SHIPPED �
 파티션 키: order_id
   → 동일 order_id의 이벤트는 항상 같은 파티션으로 라우팅
   → 파티션 내 순서 보장
+  (product.updated 의 키는 productId — see ADR-0012 §D2)
 
-초기 파티션 설정:
-  토픽: order.created, payment.completed, payment.failed, order.cancelled
-  파티션 수: 3 (Consumer 수와 동일, 1:1 매핑)
-  Replication Factor: 1 (로컬 단일 브로커 기준)
+파티션 설정:
+  업무 토픽 15개: 파티션 3, DLQ 토픽: 파티션 1
+  Replication Factor: 1 (단일 브로커)
+  정본: kafka-subscription-contract-lint.sh --emit-topics (토픽 30개)
   Consumer Group: 서비스별 독립 Consumer Group 운영 (네이밍 규칙: 섹션 8-4)
 ```
 
+토픽은 producer 서비스의 KafkaAdmin 이 만들고, 배포 래퍼가 앱보다 먼저 선언 파티션 수로 만든다(`docs/02-architecture.md` §12). 서로 다른 토픽 사이에는 같은 키여도 소비 순서가 보장되지 않는다.
+
 ### 9-10. ShedLock — 스케줄러 중복 실행 방지
 
-결제 타임아웃 자동 취소 스케줄러와 Outbox 폴링 스케줄러는 Phase 3~4에서 수평 확장(HPA)되면 여러 Pod에서 동시에 실행될 수 있습니다. ShedLock으로 분산 환경에서 스케줄러가 단일 인스턴스에서만 실행되도록 보장합니다.
+Pod 가 여럿이면(HPA 포함) 같은 스케줄러가 여러 Pod 에서 동시에 실행될 수 있습니다. ShedLock 으로 스케줄러가 한 인스턴스에서만 실행되도록 보장합니다. 주기와 락 보존은 서비스 base yml 이 소유하고, 주문 취소 잡은 기본값 없이 값이 빠지면 부팅이 실패합니다.
 
 ```java
-// 결제 타임아웃 자동 취소 — 60초 주기, 락 최대 10분 / 최소 30초
-@SchedulerLock(name = "orderTimeoutCancelJob", lockAtMostFor = "PT10M", lockAtLeastFor = "PT30S")
-@Scheduled(fixedDelay = 60000)
+// 결제 요청 뒤 15분 지난 주문 취소 — order base yml: 주기 60s, 락 최대 10m / 최소 30s
+@Scheduled(fixedDelayString = "${app.scheduler.order.cancel-expired-delay}")
+@SchedulerLock(name = "orderTimeoutCancelJob",
+        lockAtMostFor = "${app.scheduler.order.lock-at-most-for}",
+        lockAtLeastFor = "${app.scheduler.order.lock-at-least-for}")
 public void cancelExpiredOrders() { ... }
 
 // Outbox 폴링 → Kafka 발행 — 주기·최소 보존은 서비스 base yml 소유, 락 최대 5분 (see ADR-0045)
 //   order·product·payment 500ms·400ms, notification 5s·4s. 최소 보존 < 주기를 부팅 시 검사한다
-@SchedulerLock(name = "${app.outbox.lock-name:outboxPollingJob}", lockAtMostFor = "PT5M",
+@SchedulerLock(name = "${app.outbox.lock-name:outboxPollingJob}", lockAtMostFor = LOCK_AT_MOST_FOR /* PT5M */,
         lockAtLeastFor = "${app.outbox.polling.lock-at-least-for}")
 @Scheduled(fixedDelayString = "${app.outbox.polling.delay}")
 public void pollAndPublish() { ... }
 ```
 
-ShedLock은 DB(MySQL)에 `shedlock` 테이블을 생성해 락을 관리합니다.
+ShedLock은 DB(MySQL)에 `shedlock` 테이블을 생성해 락을 관리합니다. 주문 서비스에는 같은 방식의 취소 잡이 둘 더 있다(예약 미확정 5분 `orderReservationTimeoutJob`, 예약 lease 만료 `orderReservationLeaseExpiryJob`).
 
-> **Phase 2 배치 근거**: Phase 2에서는 단일 인스턴스이므로 ShedLock의 분산 락 기능이 즉시 필요하지 않습니다. 그러나 스케줄러 구현 시점(Phase 2)에 ShedLock을 함께 적용하여 Phase 3~4 분산 환경 전환 시 추가 작업 비용을 제거합니다.
+> **도입 시점 근거**: ShedLock 은 단일 인스턴스였던 Phase 2 에 스케줄러와 함께 넣었다. 분산 환경으로 옮길 때 추가 작업이 없도록 미리 적용한 것이다.
 >
 
 ### 9-11. Refresh Token Rotation — Race Condition 처리
@@ -284,14 +314,15 @@ ShedLock은 DB(MySQL)에 `shedlock` 테이블을 생성해 락을 관리합니�
 
 ```
 완화 전략: Grace Period 적용
-  Refresh Token 재발급 시 이전 토큰을 즉시 삭제하지 않고
-  짧은 유효 기간(예: 10초)을 두고 유예 후 만료 처리
-  → 정상적인 동시 요청(탭 여러 개, 네트워크 재시도)은 허용
-  → 탈취된 토큰 재사용은 유예 시간 초과 후 차단
+  Refresh Token 재발급 시 이전 토큰을 지우지 않고 ROTATED 로 바꾸며
+  grace_until(10초)을 둔다
+  → grace 안의 같은 토큰 재제시는 1회 허용 (탭 여러 개, 네트워크 재시도)
+  → grace 초과나 이미 소비한 재제시는 reuse 로 판정해
+    family 전체 무효화 + Redis family deny 기록
 
 구현:
-  Redis에 이전 토큰을 TTL=10s로 보관 (블랙리스트와 별도 키 공간)
-  → 유예 기간 내 요청은 허용, 만료 후 완전 차단
+  refresh_tokens 의 status·grace_until(DB)로 판정한다
+  Redis 는 블랙리스트와 family deny 만 둔다 (see ADR-0013 §D4)
 ```
 
 ### 9-12. 에러 핸들링 체계
@@ -300,12 +331,14 @@ ShedLock은 DB(MySQL)에 `shedlock` 테이블을 생성해 락을 관리합니�
 
 ```json
 {
-  "status": 400,
+  "status": 404,
   "code": "ORD-001",
-  "message": "재고가 부족합니다.",
+  "message": "주문을 찾을 수 없습니다.",
   "timestamp": "2026-03-20T10:30:00Z"
 }
 ```
+
+포맷은 `ErrorResponse(status, code, message, timestamp)` 이고 코드와 메시지·HTTP 상태의 정본은 `ErrorCode` 다.
 
 ### 도메인별 에러 코드 체계
 
@@ -321,19 +354,20 @@ ShedLock은 DB(MySQL)에 `shedlock` 테이블을 생성해 락을 관리합니�
 
 ```
 BusinessException (추상)        — 도메인별 에러 코드 + HTTP 상태 코드 포함
-  ├── UserException             — USR-XXX
+  ├── UserException             — USR-XXX (RefreshTokenReuseException 포함)
   ├── ProductException          — PRD-XXX
   ├── OrderException            — ORD-XXX
   └── PaymentException          — PAY-XXX
 
-SystemException                 — SYS-XXX, 500 응답 고정
+SYS-XXX 는 예외 클래스 없이 핸들러가 붙인다
+  미처리 예외 SYS-001(500) · 입력 검증 SYS-003(400) · 권한 거부 SYS-004(403) · 지원하지 않는 메서드 SYS-005(405)
 ```
 
-`GlobalExceptionHandler`에서 `BusinessException`은 에러 코드와 메시지를 그대로 반환하고, 그 외 예외는 `SYS-001`로 래핑하여 내부 정보 노출을 방지합니다.
+`GlobalExceptionHandler`에서 `BusinessException`은 에러 코드와 메시지를 그대로 반환하고, 그 외 예외는 `SYS-001`로 래핑하여 내부 정보 노출을 방지합니다. 낙관적 락 충돌은 `PRD-004`(409)로 응답합니다.
 
 ### 9-13. MSA 동기 호출 시나리오 대응 — CQRS 로컬 캐시
 
-Phase 4 MSA 환경에서 주문 생성 시 상품 단가를 즉시 확인해야 합니다. 순수 비동기(Kafka)만으로는 최신 데이터를 즉시 얻을 수 없고, 동기 API 호출은 서비스 간 결합도를 높입니다.
+MSA 환경에서 주문 생성 시 상품 단가를 즉시 확인해야 합니다. 순수 비동기(Kafka)만으로는 최신 데이터를 즉시 얻을 수 없고, 동기 API 호출은 서비스 간 결합도를 높입니다.
 
 ```
 대안 비교:
@@ -353,15 +387,19 @@ Phase 4 MSA 환경에서 주문 생성 시 상품 단가를 즉시 확인해야 
 
 > `product.updated` payload 필수 필드(productId/name/price/availableStock/status/categoryId/updatedAt) 및 파티션 키(productId)는 ADR-0012 §D2 에서 확정 (see ADR-0012).
 
-**구현 범위 (구현 ⑤ 종결 시점)**
+**구현 범위**
 
-- 실제 테이블명은 `product_price_cache` 이며 Order 는 payload 중 **`price`/`version` 만 소비**합니다. 나머지 필드는 발행되지만 적재하지 않습니다.
+- 실제 테이블명은 `product_price_cache` 이며 Order 는 payload 중 **`price`·`name`·`status`·`version` 을 적재**합니다(이름·상태는 장바구니 조합용, see ADR-0036). 나머지 필드는 발행되지만 적재하지 않습니다.
 - **재고는 이 캐시에 없습니다.** 재고 정합성은 캐시가 아니라 재고 예약 Saga(`stock.reservation.result`)가 책임집니다 (see ADR-0012 F2/D3).
 - 멱등은 `processed_events`, 재정렬·replay 방어는 `source_version < version` stale-skip 입니다.
 
-**Redis 조회 캐시의 장애 정책 (L-006)**
+**Redis 조회 캐시의 장애 정책**
 
-Product Service 의 상품 조회 Redis 캐시는 **fail-open** 입니다. `CacheErrorHandler`(`ResilientCacheErrorHandler`)가 조회 실패를 캐시 미스로 흘려 DB 로 우회하므로, Redis 장애가 상품 조회 API 를 5xx 로 만들지 않습니다. 단 `@CacheEvict` 실패는 TTL(상세 30m / 목록 10m) 만료 전까지 stale 을 남기므로 WARN + `cache_fallback_total` 메트릭으로 가시화합니다. 상품 상세의 **재고는 세 번째 캐시**(`productStock`, TTL 5초)에서 오며 쓰기 경로 무효화가 없습니다 — 정확성의 상한을 TTL 하나가 주고, 상세의 재고는 예약 보증이 아니라 표시용 힌트입니다 (see ADR-0026). 상세가 캐시를 둘 타므로 무응답 Redis 구간의 타임아웃 예산은 목록의 2배입니다. Gateway 의 rate limit 이 정반대로 fail-closed 인 이유는 보호 장치와 가속 장치의 차이입니다 (see ADR-0013 D3). 운영 절차: `docs/runbooks/redis-cache-fallback.md`.
+Product Service 의 상품 조회 Redis 캐시는 **fail-open** 입니다(L-006). `CacheErrorHandler`(`ResilientCacheErrorHandler`)가 조회 실패를 캐시 미스로 흘려 DB 로 우회하므로, Redis 장애가 상품 조회 API 를 5xx 로 만들지 않습니다. 단 `@CacheEvict` 실패는 TTL(상세 30m / 목록 10m) 만료 전까지 stale 을 남기므로 WARN + `cache_fallback_total` 메트릭으로 가시화합니다. 상품 상세의 **재고는 세 번째 캐시**(`productStock`, TTL 5초)에서 오며 쓰기 경로 무효화가 없습니다 — 정확성의 상한을 TTL 하나가 주고, 상세의 재고는 예약 보증이 아니라 표시용 힌트입니다 (see ADR-0026). 상세가 캐시를 둘 타므로 무응답 Redis 구간의 타임아웃 예산은 목록의 2배입니다. Gateway 의 rate limit 이 정반대로 fail-closed 인 이유는 보호 장치와 가속 장치의 차이입니다 (see ADR-0013 D3). 운영 절차: `docs/runbooks/redis-cache-fallback.md`.
+
+**캐시 miss 의 DB 진입 상한**
+
+캐시 miss 가 DB 로 가는 조회는 Pod 마다 동시에 1개까지다(`peekcart.cache.db-max-concurrency`, 기본 1). 넘치면 기다리지 않고 `PRD-005`(503)로 거절하며, cache hit 은 이 상한을 거치지 않습니다 (see ADR-0037). 상한 1 은 D-078 재측정 뒤에도 유지했습니다 (see ADR-0046 D1). 같은 키 로딩 묶기, 재고 만료 전 갱신, Redis 장애 때 Pod 에 둔 마지막 값 응답(ADR-0046 D2~D6)은 결정됐지만 아직 구현되지 않았습니다(D-109). 지금은 같은 키의 동시 miss 가 각자 상한을 두드리고, Redis 장애 때는 위 fail-open 경로대로 모든 조회가 이 상한을 지나 DB 로 갑니다.
 
 ---
 
@@ -371,7 +409,7 @@ Product Service 의 상품 조회 Redis 캐시는 **fail-open** 입니다. `Cach
 
 ### 10-1. Outbox Polling 방식의 이벤트 지연
 
-Polling 스케줄러 방식은 폴링 주기(예: 1~5초)만큼 이벤트 발행이 지연됩니다.
+Polling 스케줄러 방식은 폴링 주기만큼 이벤트 발행이 지연됩니다. 주기는 order·product·payment 500ms(배치 500), notification 5초(배치 100)입니다 (see ADR-0045). backlog 가 쌓이면 주기보다 이벤트마다 broker ack 를 기다리는 순차 발행 비용이 처리율을 정합니다.
 
 ```
 대안: Debezium CDC (Change Data Capture)
@@ -387,7 +425,7 @@ Polling 방식 선택 이유:
 
 ### 10-2. API Gateway 인증 책임 범위 (RS256·Rate Limit 은 see ADR-0013 · 내부 토큰은 see ADR-0017)
 
-Phase 4에서 사용자 JWT 검증은 Spring Cloud Gateway에서 **RS256 공개키**로 수행하며(서명은 User 서버 개인키), 내부 서비스는 사용자 토큰을 재검증하지 않습니다. Gateway 검증 순서(서명/만료 → blacklist+family deny)·Rate Limit 은 ADR-0013 §D1/D3.
+사용자 JWT 검증은 Spring Cloud Gateway에서 **RS256 공개키**로 수행하며(서명은 User 서버 개인키), 내부 서비스는 사용자 토큰을 재검증하지 않습니다. Gateway 검증 순서(서명/만료 → blacklist+family deny)·Rate Limit 은 ADR-0013 §D1/D3.
 
 Gateway 통과 후의 신뢰 전달은 **평문 헤더가 아니라 Gateway가 서명한 내부 토큰**입니다 (ADR-0017).
 
@@ -426,7 +464,7 @@ reuse 감지·로그아웃은 User 소유(auth.token.reuse.detected / auth.logou
 
 ### 10-3. 페이지네이션 전략 — Offset 방식의 한계
 
-주문 내역 조회는 **Cursor 기반 페이지네이션**입니다 (구현 ⑥에서 Offset 에서 전환).
+주문 내역 조회는 **Cursor 기반 페이지네이션**입니다 (Offset 에서 전환했다).
 
 ```
 Offset 방식의 문제:
@@ -478,27 +516,28 @@ Outbox 패턴으로 이벤트 발행 실패는 방지할 수 있지만, Consumer
 
 > 10-5(Phase 1 `@TransactionalEventListener` 의 AFTER_COMMIT 이후 실패 처리)는 Phase 2 Outbox 전환으로 해소돼 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).
 
-### 10-6. Redis 단일 인스턴스 — JWT 블랙리스트 SPOF
+### 10-6. Redis 단일 인스턴스 — 장애 시 역할별 동작
 
-분산 락 Redis 장애 시 DB 낙관적 락 fallback이 설계되어 있지만(섹션 9-1), JWT 블랙리스트에 대한 Redis 장애 시나리오는 별도 처리가 없습니다.
+Redis 는 단일 인스턴스입니다(Sentinel·Cluster 없음). 장애 때 동작은 역할마다 다릅니다. 재고 정합성은 Redis 를 쓰지 않으므로 영향이 없습니다(섹션 9-1).
 
 ```
 Redis 장애 시:
-  - 분산 락: DB 낙관적 락(version)이 최후 방어선 → 이미 설계됨
-  - JWT 블랙리스트: 로그아웃된 토큰이 일시적으로 유효하게 처리될 수 있음
+  - 상품 조회 캐시: fail-open. 조회 실패를 캐시 미스로 보고 DB 로 우회 (섹션 9-13)
+  - Gateway 토큰 deny 조회: fail-closed. 토큰을 실은 요청을 503 으로 거부
+  - Gateway rate limit: fail-closed. 판정할 수 없으면 503 으로 거부 (see ADR-0013 D3)
+    rate limit 이 모든 라우트에 걸려 있어 gateway 를 지나는 요청 전체가 503 이 된다
 
 선택 근거:
-  - 현 운영 환경(단일 K8s 클러스터 내 Redis 단일 인스턴스)에서 Sentinel/Cluster는
-    운영 복잡도 대비 효용 낮음
-  - Access Token 만료 시간(예: 30분)이 짧아 장애 지속 시간이 길지 않다면
-    실제 보안 위협은 제한적임
-  - 포트폴리오 범위에서 허용 가능한 트레이드오프로 판단
+  - 보호 장치(토큰 차단·남용 차단)는 판정할 수 없을 때 거부하고,
+    가속 장치(조회 캐시)는 우회한다 (see ADR-0013)
+  - 단일 K8s 클러스터에서 Sentinel/Cluster 는 운영 복잡도 대비 효용이 낮다고 보고
+    단일 인스턴스를 유지한다. 그 대가로 Redis 장애가 곧 gateway 장애다
   - 프로덕션 전환 시 Redis Sentinel 구성 필요
 ```
 
 ### 10-7. 성능 측정 환경과 수치 맥락
 
-성능 수치는 측정 환경의 특성과 함께 해석되어야 합니다. PeekCart 는 Phase 진행에 따라 측정 환경이 진화하므로, 환경별 측정 방침을 구분하여 기술합니다.
+성능 수치는 측정 환경의 특성과 함께 해석되어야 합니다. 측정 환경은 단계마다 바뀌어 왔으므로 수치는 그 run 의 환경과 함께 읽습니다.
 
 > 환경 SSOT: `docs/01-project-overview.md` §4. 환경 선택 근거: ADR-0004 (§Context 가 Phase 3 초기 minikube 선택 근거를 포함. ADR-0003 은 Deprecated).
 
@@ -507,6 +546,13 @@ Redis 장애 시:
 - 절대값보다 **개선 비율**(캐싱 전/후 TPS 비교, HPA 적용 전/후 처리량 변화)에 초점을 맞춘다.
 - 측정 시 환경·시나리오·도구 버전을 함께 기록하여 재현 가능성을 확보한다.
 - 환경이 바뀌면 이전 수치와 동일 축에서 비교하지 않고 환경별 baseline 을 재수집한다.
+
+#### 현재 측정 환경과 run 규칙
+
+- **환경**: GKE 와 부하 발생기 구성은 `docs/01-project-overview.md` §4-3 이다. base MySQL 의 CPU 상한은 2000m 이고(see ADR-0027), 측정 overlay 가 이 값이나 다른 설정을 바꾸면 run 기록에 함께 적는다(예: `gke-d002a-mysql-500m`, `gke-d078-read-bulkhead-4`).
+- **측정 전 게이트**: 인증 왕복(`scripts/auth-roundtrip-gate.sh`), rate limit 배선 확인(`loadtest/scripts/d002bc-ratelimit-probe.js`, 429 가 나와야 통과), 토픽 상태 가드(`scripts/kafka-topic-state-guard.py`, 선언 토픽 30개의 파티션·설정과 consumer group 할당)를 통과한 뒤에만 run 을 시작한다.
+- **run 규칙**: 배포·재기동 뒤 같은 시나리오의 워밍업 run 을 먼저 돌리고 버린다. 목표 부하가 실제로 들어간 run(누락 반복이 목표의 1% 이하)만 표본으로 쓴다. 건수는 그래프가 아니라 Prometheus 원값 차분과 DB 조회로 센다.
+- 절차와 도구는 `loadtest/README.md`, 캡처 기준은 `loadtest/captures.md` 에 있다.
 
 Phase 1~3 의 단계별 측정 환경 서술 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).
 
