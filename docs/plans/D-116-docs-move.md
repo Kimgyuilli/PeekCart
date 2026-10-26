@@ -55,11 +55,11 @@ grade: L
 
 ## 3. 작업 항목
 
-- [ ] P1. 이력 문서 이동. 7개를 같은 이름으로 `docs/progress/archive/` 에 옮기고 manifest `docs/preservation/d116-docs-move-20261026.json` 에 선언한다. `docs/02-architecture.md` 의 링크를 새 경로로 고친다. `docs/progress/archive/README.md` 색인(8개 문서의 원래 경로·옮긴 때·내용)과 `docs/review/README.md` 대응표를 만든다.
-- [ ] P2. TASKS 문서 맵의 3행을 새 경로로 고치고 문서 맵(`docs/README.md`) 행을 더한다.
-- [ ] P3. `docs/learning` 인용 삭제. ADR 4개는 본문을 고치고 Update Log 에 일자·지운 경로·사유(추적되지 않는 로컬 자료라 저장소에서 확인할 수 없다, 결정 3-6)를 적는다. D-100 README 는 원본 경로만 뺀다.
-- [ ] P4. D-024 정정. 같은 manifest 의 corrections 로 `| **D-024** | **Resilience / Availability** |` 를 `| D-024 | Resilience / Availability |` 로 바꾼다.
-- [ ] P5. 문서 맵. `docs/README.md` 에 레이어, Layer 1 문서와 참조 시점, 작업 추적, 계획, 증적, 규약·운영, 하네스 앵커, 로컬 전용 폴더를 적는다. `CLAUDE.md` 의 문서 참조 맵 표를 이 파일을 가리키는 포인터로 바꾼다.
+- [x] P1. 이력 문서 이동. 7개를 같은 이름으로 `docs/progress/archive/` 에 옮기고 manifest `docs/preservation/d116-docs-move-20261026.json` 에 선언한다. `docs/02-architecture.md` 의 링크를 새 경로로 고친다. `docs/progress/archive/README.md` 색인(8개 문서의 원래 경로·옮긴 때·내용)과 `docs/review/README.md` 대응표를 만든다.
+- [x] P2. TASKS 문서 맵의 3행을 새 경로로 고치고 문서 맵(`docs/README.md`) 행을 더한다.
+- [x] P3. `docs/learning` 인용 삭제. ADR 4개는 본문을 고치고 Update Log 에 일자·지운 경로·사유(추적되지 않는 로컬 자료라 저장소에서 확인할 수 없다, 결정 3-6)를 적는다. D-100 README 는 원본 경로만 뺀다.
+- [x] P4. D-024 정정. 같은 manifest 의 corrections 로 `| **D-024** | **Resilience / Availability** |` 를 `| D-024 | Resilience / Availability |` 로 바꾼다.
+- [x] P5. 문서 맵. `docs/README.md` 에 레이어, Layer 1 문서와 참조 시점, 작업 추적, 계획, 증적, 규약·운영, 하네스 앵커, 로컬 전용 폴더를 적는다. `CLAUDE.md` 의 문서 참조 맵 표를 이 파일을 가리키는 포인터로 바꾼다.
 
 ## 4. 검증 방법
 
@@ -68,7 +68,7 @@ base 는 `5261510` 이다. 실패를 먼저 주입한다.
 1. 보존: `docs-preservation-ci.py --base 5261510` PASS. 옮긴 문서에서 줄 하나를 빼면 FAIL, D-024 정정의 `old` 를 바꾸면 FAIL.
 2. 링크: `docs/02-architecture.md` 의 링크가 새 문서의 같은 앵커로 해석된다. 파싱 가능한 추적 md 에서 옛 7개 경로로 해석되는 링크 0건, 새 문서의 링크 대상 실재.
 3. 행: D-024 가 보존 검사의 task 행과 하네스 다이제스트에 보인다. `harness-context.sh --check --base 5261510` ok, 완료 행 수가 하나 늘어난 것 말고 다이제스트가 같다.
-4. 인용: ADR 4개와 D-100 README 의 `docs/learning` 0건. 규약·스크립트의 gitignore 설명과 D-116 조사 보고서만 남는다.
+4. 인용: ADR 4개 본문과 D-100 README 의 `docs/learning` 인용 0건. 남는 것은 ADR Update Log 의 삭제 기록, gitignore 설명, 계획·이력 문서다.
 5. 문서 맵: `docs/` 아래 모든 폴더가 `docs/README.md` 에 있다. 맵의 링크 대상이 모두 있다.
 6. CI lint 잡 단계를 ci.yml 원문대로 로컬 실행, `plans-index.sh --check`, consistency precheck, 앵커 이동·삭제 0건.
 
