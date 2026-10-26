@@ -7,12 +7,13 @@
 
 | 대상 | 경로 |
 |---|---|
+| 전체 문서 맵 (레이어·폴더·하네스 앵커·증적 위치) | `docs/README.md` |
 | Phase 1~3 task 이력 (아카이브) | `docs/progress/TASKS-archive-phase1-3.md` |
 | Phase 4 task 이력 (아카이브) | `docs/progress/TASKS-archive-phase4.md` |
 | 완료된 D- 행 | `docs/progress/TASKS-done.md` |
-| Phase 4 설계·실행 로드맵 (ADR 시퀀싱·구현 순서) | `docs/progress/phase4-design-roadmap.md` |
-| 진입 전 부채 해소 로드맵 (버킷 1 완결, 버킷 2/3 이관·게이트) | `docs/progress/phase4-prep-debt-roadmap.md` |
-| 부채 후보 분류·승격 매핑 (L-001~L-022) | `docs/progress/phase4-prep-debt-roadmap.md §2~5` |
+| Phase 4 설계·실행 로드맵 (ADR 시퀀싱·구현 순서) | `docs/progress/archive/phase4-design-roadmap.md` |
+| 진입 전 부채 해소 로드맵 (버킷 1 완결, 버킷 2/3 이관·게이트) | `docs/progress/archive/phase4-prep-debt-roadmap.md` |
+| 부채 후보 분류·승격 매핑 (L-001~L-022) | `docs/progress/archive/phase4-prep-debt-roadmap.md §2~5` |
 | Phase별 작업 이력 | `docs/progress/PHASE1.md` · `PHASE2.md` · `PHASE3.md` · `PHASE4.md` · `PHASE5.md` |
 
 ---

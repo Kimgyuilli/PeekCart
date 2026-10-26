@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/progress/design-archive-phase1-2.md",
+      "sha256": "bef37e944fb1c418cfa2e103fd7afdf12940d64c8c38a245d8006fa3b25feb73"
+    },
+    {
+      "path": "docs/progress/phase4-design-roadmap.md",
+      "sha256": "9e49e9ac2a746aef0675a53d478f47c8c190bb0a0a4b48bee0ab1cf53719c279"
+    },
+    {
+      "path": "docs/progress/phase4-prep-debt-roadmap.md",
+      "sha256": "06315f03d5f68cf73a5c8a4bbda5993d1aa97128707f5762bb150a3a7cdb3fa6"
+    },
+    {
+      "path": "docs/progress/loadtest-tool-evaluation.md",
+      "sha256": "78fd434be2e00a6455b93afbce46592d523035961a82af58ef187345d304dd3e"
+    },
+    {
+      "path": "docs/progress/d001-metrics-histogram-fix.md",
+      "sha256": "3ed815f75a31ef1f66fabdf7c5f832501c17069f5bd7def7330081a18a65148f"
+    },
+    {
+      "path": "docs/review/final-report.md",
+      "sha256": "ad2233dc2a58186fe612fea7f47c418c846905c728c2e0630cb943c5467f845b"
+    },
+    {
+      "path": "docs/review/ci-optimization-analysis.md",
+      "sha256": "c22277d299239722101b43a48ebe45ce01f929c7bd6ea768ec00e71c72ec4c0b"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/progress/archive/design-archive-phase1-2.md",
+      "parts": [
+        {
+          "source": "docs/progress/design-archive-phase1-2.md",
+          "start": 1,
+          "end": 410
+        }
+      ]
+    },
+    {
+      "path": "docs/progress/archive/phase4-design-roadmap.md",
+      "parts": [
+        {
+          "source": "docs/progress/phase4-design-roadmap.md",
+          "start": 1,
+          "end": 79
+        }
+      ]
+    },
+    {
+      "path": "docs/progress/archive/phase4-prep-debt-roadmap.md",
+      "parts": [
+        {
+          "source": "docs/progress/phase4-prep-debt-roadmap.md",
+          "start": 1,
+          "end": 155
+        }
+      ]
+    },
+    {
+      "path": "docs/progress/archive/loadtest-tool-evaluation.md",
+      "parts": [
+        {
+          "source": "docs/progress/loadtest-tool-evaluation.md",
+          "start": 1,
+          "end": 231
+        }
+      ]
+    },
+    {
+      "path": "docs/progress/archive/d001-metrics-histogram-fix.md",
+      "parts": [
+        {
+          "source": "docs/progress/d001-metrics-histogram-fix.md",
+          "start": 1,
+          "end": 105
+        }
+      ]
+    },
+    {
+      "path": "docs/progress/archive/final-report.md",
+      "parts": [
+        {
+          "source": "docs/review/final-report.md",
+          "start": 1,
+          "end": 184
+        }
+      ]
+    },
+    {
+      "path": "docs/progress/archive/ci-optimization-analysis.md",
+      "parts": [
+        {
+          "source": "docs/review/ci-optimization-analysis.md",
+          "start": 1,
+          "end": 295
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    {
+      "path": "docs/progress/TASKS-done.md",
+      "base_sha256": "dc41407b196115727e7abc6fd5fb368faf78332ff9457859b6bb7cf4c2417fc2",
+      "old": "| **D-024** | **Resilience / Availability** |",
+      "new": "| D-024 | Resilience / Availability |",
+      "old_sha256": "f70c646ae71541e5a24965714002e6556615a8d2373199df9918bd2adf8e001c",
+      "reason": "D-024 행만 ID 와 분류가 굵게 적혀 보존 검사(ROW)와 harness-context.sh 의 행 정규식이 이 행을 보지 못했다. 이웃 행과 같은 평문으로 바꿔 ID 유일성·순서·본문 보존 검사 안에 넣는다. 내용은 바뀌지 않는다(D-116 결정 3-7)."
+    }
+  ]
+}
