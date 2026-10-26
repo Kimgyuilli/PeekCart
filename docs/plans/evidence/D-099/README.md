@@ -19,7 +19,7 @@ standalone은 현재 읽기·필수 구획 형식, 완료 archive heading/table/
 
 ```bash
 python3 -B scripts/harness-context-selftest.py
-python3 -B docs/plans/evidence/D-099/check-mutants.py
+python3 -B scripts/harness-context-mutants.py
 bash -n scripts/harness-context.sh
 bash scripts/ci-release-gate-lint.sh
 bash scripts/ci-e2e-parallel-lint.sh
@@ -55,3 +55,7 @@ bash scripts/ci-test-matrix-lint.sh
 [review-fix-minimal.txt](review-fix-minimal.txt)는 원래 두 결함의 최소 2 method PASS다. 수정 전체 41 method와 16 wrong-implementation control(11 CLI/5 exact-workflow)은 Actions에서 실행할 대상으로, 이 로컬 기록은 전체 통과 증거가 아니다. `review-fix-manifest.json`은 수정 source와 최소 출력의 hash이며 독립 oracle이나 전체 CI 성공 판정은 아니다.
 
 [review-shape-minimal.txt](review-shape-minimal.txt)는 후속 escaped-pipe 열 수 반례의 추가 1 method PASS다. 상태와 행 모양 판정이 모두 같은 `cells()` 규칙을 사용하도록 수정했다. 유효한 5열 escaped 본문/짝수 backslash delimiter와 잘못된 3열의 홀수 backslash(1/3개)를 paired control로 확인한다. 전체 대상은 41 method와 16 mutant(11 CLI/5 exact-workflow)이며 원격 Actions 결과와 구분한다.
+
+## 도구 위치 (2026-10-26, D-116 P2)
+
+`check-mutants.py` 는 CI 의 Harness archive health 단계가 실행하는 도구라 `scripts/harness-context-mutants.py` 로 옮겼다. 위 명령은 새 경로다. 이 폴더의 json 기록에 남은 옛 경로는 당시 변경 목록이다.

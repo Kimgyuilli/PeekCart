@@ -66,6 +66,7 @@ def bucket(tid):
     if re.match(r'^task-adr\d+', tid):  return ('ADR 설계', 1)
     if re.match(r'^task-impl', tid):    return ('구현', 2)
     if re.match(r'^task-d\d+', tid):    return ('부채 · 측정', 3)
+    if re.match(r'^D-\d+', tid):        return ('부채 · 측정', 3)
     return ('기타', 4)
 
 groups = {}

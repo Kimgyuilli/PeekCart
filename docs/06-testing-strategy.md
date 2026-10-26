@@ -11,7 +11,7 @@
 | E2E (단일 서비스) | 통합 테스트 | @SpringBootTest + Testcontainers | 주문 → 결제 → 알림 전체 플로우 |
 | E2E (cross-service saga) | 실제 스택 | `docker-compose.e2e.yml` + `scripts/saga-e2e-smoke.sh` | 4서비스를 실제 HTTP 진입점으로 구동해 saga 5종(결제 실패·예약 실패·환불 체인·DLQ intake·승인 예약 보호) 관측 (구현 ④-d-2) |
 | 음성 대조군 | 결함 주입 | `saga-e2e-smoke.sh --negative-control` | **검사가 결함을 실제로 잡는지** — poller 정지·서비스 정지·재고 충분·listener 부재·project 병렬·egress 격리 양음 대조 |
-| 계약 게이트 | 증적 대조 | `scripts/saga-contract-matrix-lint.sh` | 매트릭스(`docs/plans/fixtures/saga-contract-matrix.tsv`) ↔ JUnit XML · E2E manifest 를 `evidence_key` 단위 exact equality 로 대조 |
+| 계약 게이트 | 증적 대조 | `scripts/saga-contract-matrix-lint.sh` | 매트릭스(`scripts/saga-contract-matrix.tsv`) ↔ JUnit XML · E2E manifest 를 `evidence_key` 단위 exact equality 로 대조 |
 
 ### 13-1-a. cross-service saga 계약 게이트 (구현 ④-d-2)
 

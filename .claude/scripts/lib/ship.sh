@@ -1,7 +1,7 @@
 # ---------- /ship: consistency precheck / commit plan / PR body ----------
 
 # hpx_consistency_precheck <task_id>
-# bash docs/consistency-hints.sh 실행. 결과 3줄 출력:
+# bash scripts/consistency-hints.sh 실행. 결과 3줄 출력:
 #   line1: status (ok|warnings|unavailable|script_error)
 #   line2: log path (stdout+stderr 합쳐 기록)
 #   line3: exit code
@@ -14,12 +14,12 @@ hpx_consistency_precheck() {
   local log_path=".cache/consistency-${task_id}-${ts}.log"
   mkdir -p .cache >/dev/null 2>&1 || true
 
-  if [ ! -f docs/consistency-hints.sh ]; then
+  if [ ! -f scripts/consistency-hints.sh ]; then
     printf 'unavailable\n%s\n0\n' "$log_path"
     return 0
   fi
 
-  bash docs/consistency-hints.sh >"$log_path" 2>&1
+  bash scripts/consistency-hints.sh >"$log_path" 2>&1
   local ec=$?
 
   local status

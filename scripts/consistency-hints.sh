@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# docs/consistency-hints.sh
+# scripts/consistency-hints.sh
 #
 # 문서 일관성 **수동 점검 힌트** 출력 스크립트.
 #
@@ -13,7 +13,7 @@
 #   2. 모든 `ADR-NNNN` 참조의 실제 파일 존재 여부 (유일한 자동 판정)
 #   3. k8s/ 디렉토리 트리 (02-architecture.md §12 와 사람이 비교)
 #
-# 사용법: bash docs/consistency-hints.sh
+# 사용법: bash scripts/consistency-hints.sh
 # 종료 코드: 항목 2 만 영향. 0 = ADR 참조 깨짐 없음, 1 = 깨진 ADR 참조 발견
 #            (다른 항목의 의미적 일관성은 종료 코드에 반영되지 않음)
 

@@ -9,7 +9,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 LINT="scripts/saga-contract-matrix-lint.sh"
-MATRIX="docs/plans/fixtures/saga-contract-matrix.tsv"
+MATRIX="scripts/saga-contract-matrix.tsv"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
@@ -36,7 +36,7 @@ mutate() {
   python3 - "$1" "$2" <<'PYEOF'
 import sys
 out, expr = sys.argv[1], sys.argv[2]
-with open("docs/plans/fixtures/saga-contract-matrix.tsv", encoding="utf-8") as f:
+with open("scripts/saga-contract-matrix.tsv", encoding="utf-8") as f:
     lines = [ln.rstrip("\n") for ln in f if ln.strip()]
 header, rows = lines[0], [ln.split("\t") for ln in lines[1:]]
 exec(expr, {"rows": rows, "header": header})
@@ -127,7 +127,7 @@ expect "키의 클래스명이 경로" fail structure "$TMP/key-path.tsv"
 # ---- 열 구조 -------------------------------------------------------------------
 python3 - "$TMP/short-col.tsv" <<'PYEOF'
 import sys
-with open("docs/plans/fixtures/saga-contract-matrix.tsv", encoding="utf-8") as f:
+with open("scripts/saga-contract-matrix.tsv", encoding="utf-8") as f:
     lines = [ln.rstrip("\n") for ln in f if ln.strip()]
 with open(sys.argv[1], "w", encoding="utf-8") as f:
     f.write(lines[0] + "\n")
@@ -137,7 +137,7 @@ expect "열 개수 부족" fail structure "$TMP/short-col.tsv"
 
 python3 - "$TMP/bad-header.tsv" <<'PYEOF'
 import sys
-with open("docs/plans/fixtures/saga-contract-matrix.tsv", encoding="utf-8") as f:
+with open("scripts/saga-contract-matrix.tsv", encoding="utf-8") as f:
     lines = [ln.rstrip("\n") for ln in f if ln.strip()]
 with open(sys.argv[1], "w", encoding="utf-8") as f:
     f.write("id\tkind\tpath\tfault\texpected\tevidence_key\n")

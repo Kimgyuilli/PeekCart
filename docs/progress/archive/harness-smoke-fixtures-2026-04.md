@@ -1,3 +1,134 @@
+# 2026-04 하네스 스모크 fixture 원문
+
+D-116 P2(결정 2-8, `docs/evidence/D-116/decisions.md`)에서 `docs/plans/fixtures/` 의 스모크 계획 3개와 `.audit/` 2개를 이 문서 하나로 합쳤다. 모두 2026-04 의 상태 파일(state.json) 하네스가 `/plan`·`/work`·`/ship` 프로토타입을 시험할 때 쓴 fixture 다. 2026-10-26 기준으로 `.claude`·`scripts`·CI 어디에서도 읽지 않는다. 아래에는 각 파일의 원문을 줄 그대로 옮기고 앞에 원래 경로를 적었다.
+
+원래 경로: `docs/plans/fixtures/task-harness-smoke.md`
+
+# task-harness-smoke: 상품 검색 결과 캐시 도입 (스모크)
+
+> 작성: 2026-04-20
+> 관련 Phase: (미명시)
+> 관련 ADR: ADR-0001
+>
+> **주의 — 본 계획서는 Claude × Codex 하네스 스모크 테스트용 fixture 이며,
+> 실제 PeakCart 구현 대상이 아닙니다. 의도적 결함을 포함하고 있습니다.**
+
+## 1. 목표
+
+상품 검색 API 의 응답 시간을 줄이기 위해 Redis 기반 결과 캐시를 도입한다.
+간단한 TTL 캐시를 사용해 동일 키워드 조회 시 DB 왕복을 줄이는 것이 목표.
+
+## 2. 작업 항목
+
+- [ ] **P1.** `ProductSearchController` 에서 `RedisTemplate` 을 직접 주입받아 캐시 조회/저장 수행
+- [ ] **P2.** `application.yml` base 에 `spring.redis.host=prod-redis.peakcart.internal` 를 추가하여 모든 환경이 동일 Redis 를 공유하도록 설정
+- [ ] **P3.** README 에 Redis 설정 방법 한 줄 추가
+- [ ] **p4.** 적당히 부하 테스트 해보기
+
+## 3. 영향 파일
+
+| 파일 | 종류 | 변경 요지 |
+|------|------|----------|
+| `src/main/java/com/peakcart/product/presentation/ProductSearchController.java` | 수정 | Redis 조회/저장 로직 인라인 추가 |
+| `src/main/resources/application.yml` | 수정 | `spring.redis.host` 추가 |
+| `README.md` | 수정 | Redis 설정 한 줄 |
+
+## 4. 검증 방법
+
+- 수동 검증: 로컬에서 검색 API 두어 번 호출해 캐시 miss/hit 가 체감되는지 본다
+
+## 5. 트레이드오프 / 대안
+
+(작성하지 않음)
+
+## 6. ADR 영향
+
+없음.
+
+## 7. 비고
+
+빠르게 효과를 보고 싶어 Controller 단에서 Redis 를 직접 다루는 방식으로 시작한다.
+
+원래 경로: `docs/plans/fixtures/.audit/task-harness-smoke.md`
+
+## 2026-04-19T18:25:57Z — GP-2 (loop 1)
+- 리뷰 항목: 5건 (P0:0, P1:3, P2:2)
+- 사용자 선택: [4] 무시하고 진행 (smoke 검증 목적)
+- P0 무시 사유: 해당 없음 (P0=0)
+- accepted_ids: []
+- rejected_ids: [1, 2, 3, 4, 5]
+- deferred_ids: []
+- result: ok
+- risk_level: low
+- risk_signals: []
+- tokens_used: 39865
+- duration_ms: 77983
+- raw: .cache/codex-reviews/plan-task-harness-smoke-1776622731.json
+- run_id: plan:20260419T181851Z:317a0149-9459-4336-a856-c812b136f68a:1
+
+원래 경로: `docs/plans/fixtures/task-work-smoke.md`
+
+# task-work-smoke — /work 프로토타입 smoke fixture
+
+> Phase 2 `/work` 프로토타입 검증용 의도적 결함 fixture.
+> 실제 기능 구현이 아니라 diff 리뷰 loop 검증이 목적. `experiment/harness-prototype` 브랜치에서만 사용.
+
+## §1. 목적
+
+`com.peekcart.global.cache` 패키지에 단순 TTL 만료 시각 계산 유틸을 추가해 `/work` 커맨드의 diff 리뷰 루프를 의도적 결함으로 자극한다.
+
+## §2. 배경 / 제약
+
+- ADR-0001 (4-Layered + DDD) — `global.cache` 는 공용 유틸 위치로 허용
+- 대상 브랜치: `experiment/harness-prototype` (merge 안 함)
+- 테스트 프레임워크: JUnit 5 (기존 프로젝트 컨벤션)
+
+## §3. 대안 검토
+
+생략 (smoke 용).
+
+## §4. 작업 항목
+
+- **P1.** `com.peekcart.global.cache.HarnessSmokeTtl` 생성
+  - 메서드: `Instant resolveExpiry(Duration ttl, Instant now)`
+  - 반환: `now.plus(ttl)` — null 입력에 대해 명시적으로 가드할 것
+- **P2.** 동일 클래스에서 TTL 해석 결과를 **slf4j Logger INFO** 로 기록 (`System.out` 금지)
+- **P3.** `HarnessSmokeTtlTest` 작성 — 다음 두 케이스 커버 필수
+  - 정상 케이스: `Duration.ofMinutes(5)` → `now + 5m`
+  - 경계 케이스: `Duration.ZERO` → `now`
+  - null 입력 케이스: `NullPointerException` 발생 검증
+
+## §5. 검증 방법
+
+- `./gradlew test --tests HarnessSmokeTtlTest` 통과
+- Checkstyle/Spotless 통과 (프로젝트 기본 컨벤션 따름)
+
+## §6. ADR 영향
+
+없음 — global.cache 공용 유틸은 ADR-0001 레이어 경계 내.
+
+## §7. 작업 완료 조건
+
+P1~P3 모두 구현 + 테스트 통과 + Codex diff 리뷰 수용 항목 반영.
+
+원래 경로: `docs/plans/fixtures/.audit/task-work-smoke.md`
+
+## 2026-04-20T10:30:45Z — GW-2 (loop 1)
+- 리뷰 run: work:20260420T102603Z:smoke-d935d90a-70d6-40f1-8612-0b91fa16ec99:1
+- 항목: 4건 (P0:0, P1:3, P2:1)
+- 사용자 선택: [1] P0/P1만 반영
+- accepted: [1, 2, 3]  # null guard, slf4j, test cases
+- deferred: [4]        # unused import (P2)
+- diff: .cache/diffs/diff-task-work-smoke-1776680729.patch
+- raw: .cache/codex-reviews/diff-task-work-smoke-1776680763.json
+- tokens: 17997
+
+
+## 20260420T194121Z — state_drift_archive
+- reason: cached diff already absorbed into git history; active state archived instead of /ship execute
+
+원래 경로: `docs/plans/fixtures/task-ship-smoke-fresh.md`
+
 # task-ship-smoke-fresh — `/ship --execute` fresh-state smoke fixture
 
 > 작성: 2026-04-21

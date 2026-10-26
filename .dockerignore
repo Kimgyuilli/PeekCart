@@ -7,3 +7,6 @@ docs
 k8s
 docker-compose.yml
 *.md
+loadtest
+local-keys
+.cache

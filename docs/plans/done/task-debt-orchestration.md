@@ -1,6 +1,5 @@
 ---
 grade: L
-archive: hold 177 179 180 181
 ---
 # 남은 부채 병렬 처리 — root 조율 · 독립 PR 검증 · 무료 CI 우선
 
@@ -227,3 +226,9 @@ root가 보호 규칙을 지켜 병합한 SHA는 `1178071e9bbffec77676fa0e2f0bee
 별도 codex exec 리뷰 미호출; 구현에 참여하지 않은 독립 PR 서브에이전트 검증 PASS. 무료 조건은 공개 저장소·표준 runner·GHCR 및 사용자의 artifact/cache 확인으로 충족했다. 기존 두 lint 실패는 정확한 원인과 수정·반례를 audit에 보존했고, 이전 실패/skip/오래된 결과로 병합하지 않았다. PR의 main 전용 publish 미실행과 실제 main6publish 성공을 구분했다.
 
 이 항목의 구현·검증·병합·main 확인이 끝나 TASKS 완료 행·PHASE·개별 plan/audit와 선택 아카이브에 반영한다. 이 문서 기록의 전달은 별도 `debt/final-records` PR이 담당하며 그 PR 자체의 최종 CI·병합·main 증거는 해당 PR 본문에 이어 기록한다.
+
+## 종결 (2026-10-26, D-116)
+
+위 열린 항목 표의 다섯 건은 지금 각자 다른 곳이 추적한다. D-075 는 #242(ADR-0045)로, D-064 는 #249 로 닫혀 `docs/progress/TASKS-done.md` 에 있다. D-084 는 #181 부분 병합 뒤 보류이고 `docs/plans/D-084.md` 와 TASKS 행이 추적한다. D-065 는 보류, D-078 은 부분 완료로 각자 TASKS 행이 추적한다. 이 상위 계획에만 남은 열린 항목은 없다.
+
+그래서 "실행 처분" 과 열린 항목 표 아래의 "계획을 아카이브하지 않는다" 는 이 시점에 풀린다. 두 문장과 작업 항목 P4·P6 의 빈 상자는 2026-10-17 의 판단 그대로 둔다. P4 의 남은 D-075 는 위처럼 닫혔고 P6 의 D-084 는 자기 계획서가 이어받았다. frontmatter 의 `archive: hold 177 179 180 181` 은 아카이브하면서 지웠고, 지운 사유는 `docs/preservation/plans-d116-tooling-archive-20261026.json` 의 corrections 에 있다(결정 2-2, `docs/evidence/D-116/decisions.md`).

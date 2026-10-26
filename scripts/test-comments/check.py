@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[2]
 BASE = 'be535c57ced11acfcbe9a24a349ddb6ad2055d8a'
 BROAD = re.compile(r'구현\s*[①②③④⑤⑥]|PR\d|(?<![A-Z])P\d|loop\d|계획|[①②③④⑤⑥]-|diff 리뷰|리뷰\s*[123]R|strangler')
 EXTRA = re.compile(r'(?:GW|GP)-\d|\bc[123]:\d|\b[123]R\s*#|\b(?:R|C|N|U|B)-?\d+[a-z]?\b|§\d')

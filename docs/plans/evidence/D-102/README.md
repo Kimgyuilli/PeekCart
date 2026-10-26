@@ -6,15 +6,15 @@
 
 - 후보 235행의 주석을 보정했고 12행은 구체 출처·로컬 시나리오·일반 용어로 보존했다. before/after와 보존 근거를 각 행에 남겼다.
 - 최종 변경 파일은 Java test 116개다. 후보 전체 117파일 중 GatewayObservabilityMetricsIntegrationTest는 ADR-0009가 정의한 P1-D를 사용하므로 그대로다.
-- 최종 broad scan의 20개 적중은 [보존 근거](accepted-candidates.tsv)에 전부 기록했다. 기존에 보존된 12개뿐 아니라 풀어 쓴 뒤 검색에 남는 유효한 ADR·runbook 참조 등을 포함한다.
+- 최종 broad scan의 20개 적중은 [보존 근거](../../../../scripts/test-comments/accepted-candidates.tsv)에 전부 기록했다. 기존에 보존된 12개뿐 아니라 풀어 쓴 뒤 검색에 남는 유효한 ADR·runbook 참조 등을 포함한다.
 - 후보 밖의 문맥도 읽어 기존 4서비스 복제본이라는 설명은 공유 구현의 서비스별 배선 검사로, 없는 replay 진입점이라는 설명은 실제 테스트 seam/fixture 경계로 고쳤다. 기존 ADR·D-/L- 식별자는 파일별로 모두 보존했다.
 
 재현 명령은 저장소 루트에서 실행한다.
 
 ```sh
-python3 docs/plans/evidence/D-102/check.py
-python3 docs/plans/evidence/D-102/check.py --scan
-python3 docs/plans/evidence/D-102/check.py --inventory /tmp/d102-inventory.tsv
+python3 scripts/test-comments/check.py
+python3 scripts/test-comments/check.py --scan
+python3 scripts/test-comments/check.py --inventory /tmp/d102-inventory.tsv
 ```
 
 JDK 17의 `java`/`javac`가 필요하다. 기본 실행은 저장소 내 JavaTokenScanner.java를 임시 디렉터리에 컴파일하고 JDK 17 compiler ScannerFactory가 반환한 token kind와 원문 spelling을 비교한다. compiler가 건너뛴 토큰 사이 구간만 comment 후보로 검색하므로 문자열/text block 경계도 compiler가 결정한다. handwritten Java lexer를 증거로 쓰지 않는다. JDK 17 이외 버전이나 lexical error는 실패 처리한다.
@@ -38,9 +38,13 @@ C의 merchant 계약 frozen head `651044aa669032cf4fdecbaefcc3c58208ddcef7`와 �
 새 비교 base는 `4a4a36a12a3d914d6bc0379ded94bc0123c4d370`이다. 그 사이 추가된 기능/테스트를 원래 be535와 같다고 주장하지 않는다. 원래 204파일/247 inventory/20 accepted 결과는 당시 population 기록이다. 아래 별도 명령은 현재 전체 208 Java test 파일, main 대비 주석 변경 116파일의 token kind/raw spelling 및 기존 source ID 부분집합을 확인한다.
 
 ```sh
-python3 -B docs/plans/evidence/D-102/check-integration.py --base 4a4a36a12a3d914d6bc0379ded94bc0123c4d370
+python3 -B scripts/test-comments/check-integration.py --base 4a4a36a12a3d914d6bc0379ded94bc0123c4d370
 ```
 
 원래 새로 풀어 쓴 comment 줄도 각각 원래 클래스에 남아 있는지 확인한다. 이 추가 확인은 줄 존재 확인이며 중복 개수·의미의 독립 oracle이 아니다. 결과는 [integration-results.txt](integration-results.txt)에 보존했다. 현재 broad scan은 여전히 20개이고 기존 처분 근거와 같다.
 
 수동 충돌은 ProductCacheFallbackIntegrationTest의 V3 fallback assertion 블록 한 곳이다. main의 D-094 timeout/경과/4delta observation과 실행 assertion 전부를 보존하고 누적값이 이전 테스트 잔여로 통과할 수 있다는 유용한 comment를 유지했다. ApprovalLedgerIntegrationTest, TossPaymentClientTest, DlqReplayCorrelationIntegrationTest는 자동 통합됐으며 이들도 전체 token/source-ID 대조에 포함된다. 원래 독립 review를 새 head의 승인으로 간주하지 않으며 정확한 통합 head 재검토와 전체 CI를 기다린다. Gradle/Docker 재실행은 없다.
+
+## 도구 위치 (2026-10-26, D-116 P2)
+
+규약(`docs/conventions/test-comments.md`)이 실행하는 `check.py` 를 `JavaTokenScanner.java`·`check-integration.py`·`accepted-candidates.tsv` 와 함께 `scripts/test-comments/` 로 옮겼다. 위 명령과 보존 근거 링크는 새 경로다. 기본 실행과 `check-integration.py` 는 고정 base 를 재현하므로, 그 뒤 Java test 파일이 바뀐 main 에서는 `JAVA TEST FILE ADDED OR REMOVED` 로 끝난다.

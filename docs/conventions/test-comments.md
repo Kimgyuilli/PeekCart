@@ -15,8 +15,8 @@ D-102 정리 범위는 Java `src/test`의 comment다. DisplayName, assertion 문
 
 ## 재발 감시와 CI 후속 조건
 
-현재 검색 baseline은 [accepted-candidates.tsv](../plans/evidence/D-102/accepted-candidates.tsv)의 20개 comment 적중과 그 보존 사유다. 줄번호가 이동했다는 이유만으로 재발로 세지 않고 파일·주석 내용·소유 출처를 확인한다. 후보를 자동으로 모두 부채 처리하지 않는다.
+현재 검색 baseline은 [accepted-candidates.tsv](../../scripts/test-comments/accepted-candidates.tsv)의 20개 comment 적중과 그 보존 사유다. 줄번호가 이동했다는 이유만으로 재발로 세지 않고 파일·주석 내용·소유 출처를 확인한다. 후보를 자동으로 모두 부채 처리하지 않는다.
 
-테스트 주석을 추가하거나 수정하는 작업에서 `python3 docs/plans/evidence/D-102/check.py --scan`을 실행해 기존 baseline 밖의 후보를 읽는다. 새 marker가 ADR·전역 부채·구체 파일이나 파일 내 시나리오로 의미를 복원할 수 없다면 **새 opaque comment 재발 1건**으로 기록한다. 해당 작업의 task/PR에 파일·줄·marker·발생 commit을 남기고 별도 CI lint 후속 항목을 연다. D-102의 기존 제외 범위에 돌려놓거나 baseline에 설명 없이 추가하지 않는다.
+테스트 주석을 추가하거나 수정하는 작업에서 `python3 scripts/test-comments/check.py --scan`을 실행해 기존 baseline 밖의 후보를 읽는다. 새 marker가 ADR·전역 부채·구체 파일이나 파일 내 시나리오로 의미를 복원할 수 없다면 **새 opaque comment 재발 1건**으로 기록한다. 해당 작업의 task/PR에 파일·줄·marker·발생 commit을 남기고 별도 CI lint 후속 항목을 연다. D-102의 기존 제외 범위에 돌려놓거나 baseline에 설명 없이 추가하지 않는다.
 
 CI lint 후속의 완료 조건은 comment와 문자열을 구분하고, 이 문서의 유효한 출처를 보존하며, 새 opaque comment 변이는 실패시키고 문자열/ADR/전역 ID 대조군은 통과시키는 것이다. 이 조건은 D-088의 일반 lint 생존·배선 검사와 별개다. 아직 새 재발을 관찰한 결과가 아니므로 이번 PR에서 CI의 기존 job이나 전체 lint 정책을 바꾸지는 않는다.

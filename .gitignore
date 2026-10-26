@@ -2,7 +2,6 @@
 .gradle/
 .gradle-work/
 build/
-!gradle/wrapper/gradle-wrapper.jar
 
 # IntelliJ IDEA
 .idea/
@@ -22,10 +21,6 @@ out/
 # macOS
 .DS_Store
 
-# Application config (secrets)
-src/main/resources/application-local.yml
-src/main/resources/application-prod.yml
-
 # Logs
 *.log
 logs/
@@ -33,16 +28,13 @@ logs/
 # Java
 *.class
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
 .sdkmanrc
 
 # Environment
 .env
 
-# Claude × Codex harness (prototype)
-docs/plans/**/*.state.json
-docs/plans/**/*.state.json.tmp.*
-docs/plans/**/*.lock/
-docs/plans/.archive/
+# 하네스 로컬 캐시 (codex-off 스위치, 리뷰 원본, 아카이브 백업)
 .cache/
 
 # Load test local rehearsal output (task-loadtest-session-c §4)

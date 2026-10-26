@@ -177,7 +177,7 @@ exit "$HARNESS_TEST_TOOL_RC"
     def test_workflow_normal_shallow_and_full_states(self):
         expected_tools = ['tool:bash:scripts/harness-context.sh --check --base fixture-base',
                           'tool:python3:-B scripts/harness-context-selftest.py',
-                          'tool:python3:-B docs/plans/evidence/D-099/check-mutants.py']
+                          'tool:python3:-B scripts/harness-context-mutants.py']
         for state in ('true', 'false'):
             with self.subTest(state=state):
                 result, calls = self.workflow(state)

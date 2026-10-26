@@ -211,7 +211,7 @@ else:
 # ---------- 계획서 ----------
 import glob
 root_plans = [os.path.basename(p) for p in glob.glob('docs/plans/*.md')
-              if not p.endswith('.audit.md') and 'PLAN-BLINDSPOTS' not in p]
+              if not p.endswith('.audit.md')]
 out.append('')
 out.append('## 계획서')
 out.append('진행 중 %d개%s · 아카이브 %d개'

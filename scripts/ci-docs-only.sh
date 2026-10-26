@@ -3,8 +3,8 @@
 # `code=true|false` 를 낸다. 목록이 비면 code=true 다 — 판정이 틀릴 때는 검사를
 # 건너뛰는 쪽이 아니라 도는 쪽으로 틀려야 한다.
 #
-# 문서로 보는 경로: docs/** 와 루트의 *.md. docs/plans/fixtures/** 는 제외한다 —
-# saga 계약 매트릭스가 그 아래 있고, gate 의 JVM·E2E 증적 대조가 그것을 입력으로 읽는다.
+# 문서로 보는 경로: docs/** 와 루트의 *.md. CI 가 읽는 입력은 docs/ 에 두지 않는다 —
+# 두면 그 입력만 바꾼 PR 이 문서 전용으로 판정돼 검사를 건너뛴다(saga 계약 매트릭스는 scripts/ 에 있다).
 #
 #   git diff --no-renames --name-only A B | bash scripts/ci-docs-only.sh
 #   bash scripts/ci-docs-only.sh --self-test
@@ -17,7 +17,6 @@ classify() {
     [[ -n "$path" ]] || continue
     seen=1
     case "$path" in
-      docs/plans/fixtures/*) code=true ;;
       docs/*) ;;
       */*) code=true ;;
       *.md) ;;
@@ -49,7 +48,7 @@ expect false "docs 아래 문서" 'docs/TASKS.md\ndocs/adr/0001-x.md'
 expect false "루트 마크다운" 'README.md\nCLAUDE.md'
 expect false "docs 아래 비-마크다운 증적" 'docs/evidence/D-063/evaluated-grafana-alerts.yml'
 expect true "빈 목록" ''
-expect true "saga 계약 매트릭스" 'docs/plans/fixtures/saga-contract-matrix.tsv'
+expect true "saga 계약 매트릭스" 'scripts/saga-contract-matrix.tsv'
 expect true "문서와 코드 혼합" 'docs/TASKS.md\norder-service/src/main/java/A.java'
 expect true "모듈 안의 마크다운" 'order-service/README.md'
 expect true "워크플로" '.github/workflows/ci.yml'

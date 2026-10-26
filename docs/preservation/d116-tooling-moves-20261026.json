@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/fixtures/task-harness-smoke.md",
+      "sha256": "0d1329d0106c450686fbaf75bce82feb099b7e4d6eac91fd260dca843d4ccfd4"
+    },
+    {
+      "path": "docs/plans/fixtures/.audit/task-harness-smoke.md",
+      "sha256": "511a5d6807895aa531253ce94350dc601cf31f14b9e9338b7cb34abae38003f4"
+    },
+    {
+      "path": "docs/plans/fixtures/task-work-smoke.md",
+      "sha256": "564db40c413dba07fbe8040892235bc8d0fe3f3caad5c828272ac481092ef507"
+    },
+    {
+      "path": "docs/plans/fixtures/.audit/task-work-smoke.md",
+      "sha256": "b862a3d57267aa96ed977285a64b2a67d3252bc8f05e4f04e052fdb1d3df94f5"
+    },
+    {
+      "path": "docs/plans/fixtures/task-ship-smoke-fresh.md",
+      "sha256": "3ad6d151faeae393694be48160dcc6188626e143523a41f7c437b5b7fff1381b"
+    },
+    {
+      "path": "docs/plans/PLAN-BLINDSPOTS.md",
+      "sha256": "c10620879b3cebd2f3d452ad07308e0254c1b263d70e4769f61203de921541f8"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/progress/archive/harness-smoke-fixtures-2026-04.md",
+      "parts": [
+        {
+          "literal": "# 2026-04 하네스 스모크 fixture 원문\n\nD-116 P2(결정 2-8, `docs/evidence/D-116/decisions.md`)에서 `docs/plans/fixtures/` 의 스모크 계획 3개와 `.audit/` 2개를 이 문서 하나로 합쳤다. 모두 2026-04 의 상태 파일(state.json) 하네스가 `/plan`·`/work`·`/ship` 프로토타입을 시험할 때 쓴 fixture 다. 2026-10-26 기준으로 `.claude`·`scripts`·CI 어디에서도 읽지 않는다. 아래에는 각 파일의 원문을 줄 그대로 옮기고 앞에 원래 경로를 적었다.\n"
+        },
+        {
+          "literal": "\n원래 경로: `docs/plans/fixtures/task-harness-smoke.md`\n\n"
+        },
+        {
+          "source": "docs/plans/fixtures/task-harness-smoke.md",
+          "start": 1,
+          "end": 44
+        },
+        {
+          "literal": "\n원래 경로: `docs/plans/fixtures/.audit/task-harness-smoke.md`\n\n"
+        },
+        {
+          "source": "docs/plans/fixtures/.audit/task-harness-smoke.md",
+          "start": 1,
+          "end": 14
+        },
+        {
+          "literal": "\n원래 경로: `docs/plans/fixtures/task-work-smoke.md`\n\n"
+        },
+        {
+          "source": "docs/plans/fixtures/task-work-smoke.md",
+          "start": 1,
+          "end": 42
+        },
+        {
+          "literal": "\n원래 경로: `docs/plans/fixtures/.audit/task-work-smoke.md`\n\n"
+        },
+        {
+          "source": "docs/plans/fixtures/.audit/task-work-smoke.md",
+          "start": 1,
+          "end": 13
+        },
+        {
+          "literal": "\n원래 경로: `docs/plans/fixtures/task-ship-smoke-fresh.md`\n\n"
+        },
+        {
+          "source": "docs/plans/fixtures/task-ship-smoke-fresh.md",
+          "start": 1,
+          "end": 113
+        }
+      ]
+    },
+    {
+      "path": "docs/conventions/plan-blindspots.md",
+      "parts": [
+        {
+          "source": "docs/plans/PLAN-BLINDSPOTS.md",
+          "start": 1,
+          "end": 102
+        }
+      ]
+    }
+  ]
+}
