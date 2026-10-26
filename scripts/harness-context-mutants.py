@@ -6,7 +6,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[1]
 source = (ROOT / 'scripts/harness-context.sh').read_text()
 mutants = [
     ('empty-archive-allowed', 'archived_debts = archive_health(archive, archive_path)',

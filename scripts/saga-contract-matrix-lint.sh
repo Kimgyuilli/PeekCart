@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # saga-contract-matrix-lint — saga 계약 매트릭스 게이트 (계획 P11~P15)
 #
-# 매트릭스(`docs/plans/fixtures/saga-contract-matrix.tsv`)는 "이 saga 의 어떤 계약이
+# 매트릭스(`scripts/saga-contract-matrix.tsv`)는 "이 saga 의 어떤 계약이
 # 무엇으로 증명되는가" 의 정본이다. 세 분기로 나뉜다:
 #
 #   --structure       매트릭스 자체의 유효성 (증적 없이도 돈다 — build 잡에서 먼저)
@@ -16,7 +16,7 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-MATRIX="${SAGA_MATRIX:-docs/plans/fixtures/saga-contract-matrix.tsv}"
+MATRIX="${SAGA_MATRIX:-scripts/saga-contract-matrix.tsv}"
 
 LINT_PY="$(mktemp -t saga-contract-matrix-lint.XXXXXX.py)"
 trap 'rm -f "$LINT_PY"' EXIT
