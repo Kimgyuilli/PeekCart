@@ -1,0 +1,289 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/01-project-overview.md",
+      "sha256": "2f57d9222defd8e14c3dab7075d1a50f5be834ea954780410f4f9e4da604cf2d"
+    },
+    {
+      "path": "docs/02-architecture.md",
+      "sha256": "53317637c231b976e6d6b0983c291615dda7d56c4e4b923fab9f7a4534508a8f"
+    },
+    {
+      "path": "docs/03-requirements.md",
+      "sha256": "8646cc141780cb7b6a2012d4dab16ef529aeaa821619c4e42f697843d5a5c3c0"
+    },
+    {
+      "path": "docs/04-design-deep-dive.md",
+      "sha256": "c2d7d7ee6c93c2378851e85f158f1f0d34e55995d7fd436320911a7917beeb40"
+    },
+    {
+      "path": "docs/07-roadmap-portfolio.md",
+      "sha256": "43c2d7736438be98b8e3ff5ba870e3231ed258a469336ac36bf1c1effbf8aaad"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/01-project-overview.md",
+      "parts": [
+        {
+          "source": "docs/01-project-overview.md",
+          "start": 1,
+          "end": 87
+        },
+        {
+          "literal": "Phase 1~4 의 단계별 환경 표 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).\n"
+        },
+        {
+          "source": "docs/01-project-overview.md",
+          "start": 93,
+          "end": 98
+        },
+        {
+          "literal": "> 단계별 환경 진화의 의도(Phase 1~3)는 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/02-architecture.md",
+      "parts": [
+        {
+          "source": "docs/02-architecture.md",
+          "start": 1,
+          "end": 19
+        },
+        {
+          "literal": "Phase 1~4 의 단계표 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).\n"
+        },
+        {
+          "source": "docs/02-architecture.md",
+          "start": 26,
+          "end": 28
+        },
+        {
+          "literal": "- **환경**: 단계별 전환 서술은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). 현재 환경은 `docs/01-project-overview.md` §4 다\n"
+        },
+        {
+          "source": "docs/02-architecture.md",
+          "start": 32,
+          "end": 272
+        }
+      ]
+    },
+    {
+      "path": "docs/03-requirements.md",
+      "parts": [
+        {
+          "source": "docs/03-requirements.md",
+          "start": 1,
+          "end": 21
+        },
+        {
+          "source": "docs/03-requirements.md",
+          "start": 23,
+          "end": 40
+        },
+        {
+          "source": "docs/03-requirements.md",
+          "start": 42,
+          "end": 100
+        },
+        {
+          "source": "docs/03-requirements.md",
+          "start": 102,
+          "end": 104
+        },
+        {
+          "source": "docs/03-requirements.md",
+          "start": 106,
+          "end": 181
+        }
+      ]
+    },
+    {
+      "path": "docs/04-design-deep-dive.md",
+      "parts": [
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 1,
+          "end": 186
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 190,
+          "end": 191
+        },
+        {
+          "literal": "Phase 1 과 Phase 4 의 구현 비교 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). 현재 Saga 흐름은 §8-5 와 ADR-0012 §D3/§D4 다.\n"
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 207,
+          "end": 213
+        },
+        {
+          "literal": "전략 A 를 채택하던 Phase 1~3 서술 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). Phase 4 부터 재고는 Product 예약 모델로 차감한다(see ADR-0012 §D3, ADR-0016).\n"
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 236,
+          "end": 516
+        },
+        {
+          "literal": "> 10-5(Phase 1 `@TransactionalEventListener` 의 AFTER_COMMIT 이후 실패 처리)는 Phase 2 Outbox 전환으로 해소돼 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).\n"
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 544,
+          "end": 574
+        },
+        {
+          "literal": "Phase 1~3 의 단계별 측정 환경 서술 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116).\n"
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 597,
+          "end": 610
+        }
+      ]
+    },
+    {
+      "path": "docs/07-roadmap-portfolio.md",
+      "parts": [
+        {
+          "source": "docs/07-roadmap-portfolio.md",
+          "start": 1,
+          "end": 34
+        },
+        {
+          "literal": "Phase 1~4 의 순서표와 Exit Criteria 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). 네 단계는 모두 끝났고 작업 이력은 `docs/progress/PHASE1.md`~`PHASE4.md` 에 있다.\n"
+        },
+        {
+          "source": "docs/07-roadmap-portfolio.md",
+          "start": 116,
+          "end": 128
+        }
+      ]
+    },
+    {
+      "path": "docs/progress/archive/layer1-history-phase1-4.md",
+      "parts": [
+        {
+          "literal": "# PeekCart — Layer 1 의 Phase 1~4 서술 아카이브\n\n> ⚠️ **아카이브 문서**: 2026-10-27 분리 (D-116 P4a, 결정 3-1). Layer 1 문서는 현재 상태만 적으므로, Phase 1~4 의 단계별 서술과 그 시점의 결정 원문을 그대로 옮겼다. 이후 수정하지 않는다.\n> 현재 상태는 `docs/01~07` 이 정본이고, 단계별 작업 이력은 `docs/progress/PHASE1.md`~`PHASE4.md` 에 있다. 2026-09-30 의 첫 분리(다이어그램·패키지 구조·ERD)는 [design-archive-phase1-2.md](design-archive-phase1-2.md) 에 있다.\n\n---\n"
+        },
+        {
+          "literal": "\n## `01-project-overview.md` §4-1 Phase별 환경\n\n"
+        },
+        {
+          "source": "docs/01-project-overview.md",
+          "start": 88,
+          "end": 92
+        },
+        {
+          "literal": "\n## `01-project-overview.md` §4-3 환경 진화의 의도\n\n"
+        },
+        {
+          "source": "docs/01-project-overview.md",
+          "start": 99,
+          "end": 101
+        },
+        {
+          "literal": "\n## `02-architecture.md` §4-2 서비스 전략 — 단계표\n\n"
+        },
+        {
+          "source": "docs/02-architecture.md",
+          "start": 20,
+          "end": 25
+        },
+        {
+          "literal": "\n## `02-architecture.md` §4-3 인프라 전략 — 단계별 환경\n\n"
+        },
+        {
+          "source": "docs/02-architecture.md",
+          "start": 29,
+          "end": 31
+        },
+        {
+          "literal": "\n## `03-requirements.md` §6-3 주문 — Phase 1 이벤트 전달\n\n"
+        },
+        {
+          "source": "docs/03-requirements.md",
+          "start": 22,
+          "end": 22
+        },
+        {
+          "literal": "\n## `03-requirements.md` §6-5 알림 — Phase 1\n\n"
+        },
+        {
+          "source": "docs/03-requirements.md",
+          "start": 41,
+          "end": 41
+        },
+        {
+          "literal": "\n## `03-requirements.md` §7-2 안정성 — 이벤트 처리의 Phase 1\n\n- **이벤트 처리 (Phase별 구분)**\n"
+        },
+        {
+          "source": "docs/03-requirements.md",
+          "start": 101,
+          "end": 101
+        },
+        {
+          "literal": "\n## `03-requirements.md` §7-2 안정성 — Saga 의 Phase 1\n\n- **Saga 패턴 (Phase별 구분)**\n"
+        },
+        {
+          "source": "docs/03-requirements.md",
+          "start": 105,
+          "end": 105
+        },
+        {
+          "literal": "\n## `04-design-deep-dive.md` §9-3 Outbox 패턴 — 도입 시점\n\n"
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 187,
+          "end": 189
+        },
+        {
+          "literal": "## `04-design-deep-dive.md` §9-4 Saga 패턴 — Phase별 구현 방식\n\n"
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 192,
+          "end": 206
+        },
+        {
+          "literal": "\n## `04-design-deep-dive.md` §9-6 재고 차감 시점 — 전략 A\n\n"
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 214,
+          "end": 235
+        },
+        {
+          "literal": "\n## `04-design-deep-dive.md` §10-5 @TransactionalEventListener — AFTER_COMMIT 이후 실패 처리\n\n"
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 517,
+          "end": 543
+        },
+        {
+          "literal": "\n## `04-design-deep-dive.md` §10-7 단계별 측정 환경\n\n"
+        },
+        {
+          "source": "docs/04-design-deep-dive.md",
+          "start": 575,
+          "end": 596
+        },
+        {
+          "literal": "\n## `07-roadmap-portfolio.md` §16 Phase 1~4 로드맵\n\n"
+        },
+        {
+          "source": "docs/07-roadmap-portfolio.md",
+          "start": 35,
+          "end": 115
+        }
+      ]
+    }
+  ]
+}
