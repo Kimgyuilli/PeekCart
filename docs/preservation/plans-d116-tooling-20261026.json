@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-116-tooling.md",
+      "sha256": "7508d5e99750769bf13b8fb09ffad6a4799d1719bfda45c7251c8ee9fce1f1c7"
+    },
+    {
+      "path": "docs/plans/D-116-tooling.audit.md",
+      "sha256": "67e1520af7a6704854399a368e0d7273011bbaba93eedc8d42290a49959e31a0"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-116-tooling.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116-tooling.md",
+          "start": 1,
+          "end": 123
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-116-tooling.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116-tooling.audit.md",
+          "start": 1,
+          "end": 34
+        }
+      ]
+    }
+  ]
+}
