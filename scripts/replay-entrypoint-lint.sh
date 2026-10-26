@@ -57,14 +57,16 @@ owned_collector_setup() {
 
 # --- (3) 문서·스크립트의 직접 상태 변경 SQL 0건 ---
 # 계획서(docs/plans)는 설계 논의 중 금지 사례를 인용하므로 제외한다 — 실행 절차가 아니다.
+# 추적 파일만 본다. gitignore 된 로컬 사본(docs/learning/ 등)은 저장소 문서가 아니고,
+# 그것까지 읽으면 같은 커밋이 로컬에서만 실패한다.
 while IFS= read -r hit; do
     hit_file="${hit%%:*}"
     hit_statement="${hit#*:}"
     hit_statement="${hit_statement#*:}"
     owned_collector_setup "$hit_file" "$hit_statement" && continue
     violations+=("[REPLAY-ENTRY-003] 문서/스크립트가 원장 상태를 직접 SQL 로 바꾼다: $hit")
-done < <(grep -rn -E "UPDATE[[:space:]]+dead_letter_records[[:space:]]+SET[[:space:]]+(status|publication_status)" \
-            docs scripts --include="*.md" --include="*.sh" --include="*.py" 2>/dev/null \
+done < <(git grep -n -E "UPDATE[[:space:]]+dead_letter_records[[:space:]]+SET[[:space:]]+(status|publication_status)" \
+            -- 'docs/*.md' 'scripts/*.sh' 'scripts/*.py' 2>/dev/null \
             | grep -v "^docs/plans/" || true)
 
 # --- (4) kill-switch 가 4서비스 base yml 에 **false 로** 선언돼 있어야 한다 ---

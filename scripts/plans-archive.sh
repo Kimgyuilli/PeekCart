@@ -28,9 +28,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLANS="docs/plans"
 DONE="${PLANS}/done"
 
-# 계획서가 아닌 것. 완료 개념이 없으므로 절대 옮기지 않는다.
-KEEP_ALWAYS="PLAN-BLINDSPOTS.md"
-
 # PR 상태는 한 번에 받아 둔다. PR 마다 `gh pr view` 를 부르면 후보 4개(PR 42개)에 23초가 걸렸다.
 # 목록에 없는 번호는 UNKNOWN 이 되어 후보에서 빠진다 — 옮기지 않는 쪽으로 실패한다.
 PR_STATES=""
@@ -121,7 +118,7 @@ run() {
   load_pr_states
   for plan in "$PLANS"/*.md; do
     base="$(basename "$plan")"
-    case "$base" in *.audit.md|"$KEEP_ALWAYS") continue ;; esac
+    case "$base" in *.audit.md) continue ;; esac
     if [ "${#SELECTED[@]}" -gt 0 ]; then
       found=no
       for selection in "${SELECTED[@]}"; do [ "$base" = "$selection.md" ] && found=yes; done
@@ -180,7 +177,6 @@ STUB
   printf 'PR: https://github.com/x/y/pull/888\n' > docs/plans/task-open.md
   printf 'PR: https://github.com/x/y/pull/999\n' > docs/plans/task-closed.md
   printf '계획만 있고 PR 없음\n'                   > docs/plans/task-bare.md
-  printf '%s\n' '- [ ] 미완'                       > docs/plans/PLAN-BLINDSPOTS.md
 
   check() {
     local file="$1" want="$2" got
@@ -217,14 +213,6 @@ STUB
   # 목록에 없는 PR 번호는 머지로 보지 않는다
   printf 'PR: https://github.com/x/y/pull/555\n' > docs/plans/task-unknown.md
   check task-unknown.md NO_EVIDENCE
-
-  # PLAN-BLINDSPOTS 는 순회 대상에서 빠져야 한다
-  if run no 2>/dev/null | grep -q 'PLAN-BLINDSPOTS'; then
-    echo "self-test 실패: PLAN-BLINDSPOTS.md 가 순회에 잡혔다"
-    rc=1
-  else
-    echo "  ok  PLAN-BLINDSPOTS.md 제외"
-  fi
   return "$rc"
 }
 
