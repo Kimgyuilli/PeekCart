@@ -41,7 +41,7 @@ One transient burst (three originals plus three duplicates) and one persistent r
 
 ## Scoped result
 
-Product Actions39630546332 at sourceb933806 passed47 suites/240cases, including four finite cases. [Raw evidence](../evidence/D-078-retry-load/README.md) preserves both earlier failures separately. Actual fixed/jitter natural failure callbacks were3/2 on three original records each, with6/5 original deliveries and three additional duplicate deliveries per mode; this single observation does not establish an advantage. Persistent control reached4deliveries/oneDLQ with original coordinates and zeroeffects in both. Full matching-head CI and independent review remain required. D-078⑤ sustained-load rate/promotion input and the broader D-078 remain incomplete.
+Product Actions39630546332 at sourceb933806 passed47 suites/240cases, including four finite cases. [Raw evidence](../../evidence/D-078-retry-load/README.md) preserves both earlier failures separately. Actual fixed/jitter natural failure callbacks were3/2 on three original records each, with6/5 original deliveries and three additional duplicate deliveries per mode; this single observation does not establish an advantage. Persistent control reached4deliveries/oneDLQ with original coordinates and zeroeffects in both. Full matching-head CI and independent review remain required. D-078⑤ sustained-load rate/promotion input and the broader D-078 remain incomplete.
 
 ## 완료 기록
 
