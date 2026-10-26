@@ -23,7 +23,8 @@ guard = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(guard)
 
 # GKE S4(2026-10-24) 의 `kafka-configs.sh --describe --entity-type topics --all` 원 출력.
-SNAPSHOT = ROOT / "loadtest/reports/2026-10-24/s4/d065-5-topic-configs-all.txt"
+# 측정 원자료 loadtest/reports/2026-10-24/s4/ 의 같은 이름 파일을 바이트 그대로 복사했다(D-116).
+SNAPSHOT = ROOT / "scripts/tests/fixtures/d065-5-topic-configs-all.txt"
 # 손 대조가 브로커 기본값으로 판정한 토픽(docs/progress/evidence/d078-gke-20261024.md §S4).
 SNAPSHOT_DEFAULT_TOPICS = {"payment.completed", "payment.requested", "payment.completed.dlq",
                            "payment.failed.dlq", "payment.refunded.dlq", "payment.requested.dlq"}
