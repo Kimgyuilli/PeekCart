@@ -63,9 +63,20 @@ python3 -B scripts/docs-preservation-ci.py --base <같은-PR-base-SHA>
 
 old는 정확히 한 번 나타나야 하고 실제 변경·이유가 필요하다. 같은 파일의 old 합계는 20줄/2000자 이하이며 원본 절반 미만이어야 한다. 중복 source, 미사용 예외, 잘못된 hash/범위, whole-file 대체는 실패한다. 광범위 path 제외나 모든 차이를 허용하는 bypass는 없다. 의미상 정당한 정정인지는 PR 검토로 판단하며 hash가 그 사실을 증명하지 않는다. source 제목 변경처럼 inbound 앵커를 재해석해야 하는 변경은 자동 archive로 처리하지 말고 역사 추기 등 별도 명시 변경을 검토한다.
 
+## 디렉터리 이동과 비-Markdown 경로 대응
+
+Markdown 밖의 파일(json·gz·로그·도구)은 내용 비교 대상이 아니지만, 폴더째 옮기면 그 파일을 가리키는 링크의 해석이 바뀐다. manifest 의 `routes` 로 디렉터리 대응을 선언한다.
+
+```json
+{"version": 1, "sources": [...], "destinations": [...],
+ "routes": [{"from": "docs/plans/evidence/D-075", "to": "docs/evidence/D-075"}]}
+```
+
+비교할 때 원본 쪽 링크가 `from` 아래(폴더 자체 포함)를 가리키면 `to` 아래 같은 상대 경로로 읽는다. 그래서 README 의 형제 파일 링크와 보호 이력의 비-Markdown 링크를 옮긴 위치로 보일 수 있다. 검사는 base 의 `from` 아래 파일이 하나 이상 있고, 그 가운데 Markdown 은 선언한 source 이며, 나머지는 `to` 아래 같은 경로에 있고 옛 경로에는 없다는 것이다. 경로는 `docs/` 로 시작하는 정규형이어야 하고 route 끼리 겹칠 수 없다. 비-Markdown 내용과 인바운드 비-Markdown 링크의 재표적은 검사하지 않는다. 그대로 둔 문서의 깨진 비-Markdown 링크는 PR 안에서 따로 대조한다.
+
 ## Markdown 지원 경계와 검증
 
-표준 라이브러리만 사용하는 제한된 링크/heading 해석이다. inline `[label](path#anchor)`와 한 줄 reference definition, ATX/setext heading, 단순 명시 HTML anchor를 지원한다. fenced/same-line inline code를 링크로 재작성하지 않는다. 모호한 escaped/nested link와 entity-escaped target, 여러 줄 backtick span, 들여쓴 code/list의 link, HTML comment/link/block(quoted/unquoted href/src 모두 포함), 복잡한 heading, 내부 canonical marker 문자열은 관련 비교에서 실패한다. 짝 없는 backtick은 Markdown의 문자 원문으로 유지한다. parser를 우회하려고 원문을 바꾸지 말고 별도 검토 가능한 명시 이전 방식으로 처리한다. 이 제한은 일반 문서 전체의 Markdown lint가 아니다. 동일한 보호 archive 원문은 다시 해석하지 않는다.
+표준 라이브러리만 사용하는 제한된 링크/heading 해석이다. inline `[label](path#anchor)`와 한 줄 reference definition, ATX/setext heading, 단순 명시 HTML anchor를 지원한다. fenced/same-line inline code를 링크로 재작성하지 않는다. 모호한 escaped/nested link와 entity-escaped target, 여러 줄 backtick span, 들여쓴 code/list의 link, HTML comment/link/block(quoted/unquoted href/src 모두 포함), 복잡한 heading, 내부 canonical marker 문자열은 관련 비교에서 실패한다. 짝 없는 backtick은 Markdown의 문자 원문으로 유지한다. parser를 우회하려고 원문을 바꾸지 말고 별도 검토 가능한 명시 이전 방식으로 처리한다. D-116 P3a 의 D-104 README 가 그 예다. 원문을 새 위치에 그대로 두고 옛 자리에 안내 파일을 남겨, 파싱되지 않는 PHASE4 의 링크가 안내로 이어지게 했다. 인바운드 링크를 찾는 사전 필터는 소스 이름을 링크 문맥에서 찾되, 소스 폴더 밖의 문서에서는 상위 폴더 이름이 파일 이름 앞에 있어야 후보로 본다. 폴더 밖에서 소스에 닿는 링크는 그 폴더 이름을 반드시 적기 때문이다. 이 제한은 일반 문서 전체의 Markdown lint가 아니다. 동일한 보호 archive 원문은 다시 해석하지 않는다.
 
 ```bash
 python3 -B scripts/docs-preservation-selftest.py
