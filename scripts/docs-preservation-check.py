@@ -44,6 +44,18 @@ def safe_path(value):
     return value
 
 
+def safe_directory(value):
+    require(isinstance(value, str) and value.startswith('docs/'), f'Invalid route path: {value!r}')
+    path = PurePosixPath(value)
+    require(not path.is_absolute() and '..' not in path.parts and str(path) == value,
+            f'Unsafe route path: {value!r}')
+    return value
+
+
+def within(path, directory):
+    return path == directory or path.startswith(directory + '/')
+
+
 def visible(text):
     """Mask fenced/inline code without changing byte positions of ordinary text."""
     lines = text.splitlines(keepends=True)
@@ -119,15 +131,22 @@ def links(text):
     return [(m.start(1), m.end(1), m.group(1).strip('<>')) for m in matches]
 
 
-def references_source(text, sources):
+def references_source(text, sources, path=None):
     """Conservative raw target prefilter; prose/code path mentions need no retarget.
 
     This deliberately includes code/escaped candidates: those still fail closed
-    in links(). Whitespace/newline after a link opener is included.
+    in links(). Whitespace/newline after a link opener is included. A document
+    outside the source directory reaches the source only through a target that
+    names that directory, so there the parent name must precede the file name.
+    A link to a same-named file elsewhere (README.md) then no longer forces an
+    unrelated, possibly unparseable document through links().
     """
     decoded = html.unescape(unquote(text)).replace("\\", "")
     for source in sources:
-        name = re.escape(PurePosixPath(source).name)
+        source_path = PurePosixPath(source)
+        name = re.escape(source_path.name)
+        if path is not None and not PurePosixPath(path).is_relative_to(source_path.parent):
+            name = re.escape(source_path.parent.name) + r'[^\n]*' + name
         if re.search(r'(?:\]\(\s*|\]:\s*|(?:href|src)\s*=\s*)[^\n]*' + name, decoded, re.I):
             return True
     return False
@@ -172,11 +191,16 @@ class Checker:
         self.sources, self.destinations = {}, []
         self.entry_routes = {}
         self.anchor_routes = {}
+        self.routes = []
         for filename in manifests:
             data = json.loads(filename.read_text())
-            require(set(data) <= {'version', 'sources', 'destinations', 'corrections'}, 'Unknown manifest field')
+            require(set(data) <= {'version', 'sources', 'destinations', 'corrections', 'routes'},
+                    'Unknown manifest field')
             require(data.get('version') == 1 and type(data.get('version')) is int, 'Manifest version must be 1')
-            require(data.get('sources') or data.get('corrections'), 'Empty manifest')
+            require(data.get('sources') or data.get('corrections') or data.get('routes'), 'Empty manifest')
+            for route in data.get('routes', []):
+                require(isinstance(route, dict) and set(route) == {'from', 'to'}, 'Invalid route schema')
+                self.routes.append((safe_directory(route['from']), safe_directory(route['to'])))
             for source in data.get('sources', []):
                 require(set(source) == {'path', 'sha256'}, 'Invalid source schema')
                 path = safe_path(source['path'])
@@ -206,6 +230,10 @@ class Checker:
             old = ''.join(c['old'] for c in corrections)
             require(len(old.splitlines()) <= 20 and len(old) <= 2000 and len(old) < len(self.before(path)) / 2,
                     f'Combined corrections are too broad: {path}')
+        ends = [end for route in self.routes for end in route]
+        for i, end in enumerate(ends):
+            require(not any(within(end, other) or within(other, end) for other in ends[i + 1:]),
+                    f'Overlapping/duplicate route path: {end}')
 
     def before(self, path):
         if path not in self.cache:
@@ -249,9 +277,29 @@ class Checker:
             if dest in self.sources and fragment:
                 require((dest, fragment) in self.anchor_routes, f'Unknown source anchor: {dest}#{fragment}')
                 dest, fragment = self.anchor_routes[dest, fragment]
-            else:
+            elif dest in self.sources:
                 dest = self.entry_routes.get(dest, dest)
+            else:
+                dest = self.route(dest)
         return dest, fragment, parsed.query
+
+    def route(self, path):
+        # Declared directory moves for non-Markdown files; Markdown always moves by sources/parts.
+        for old, new in self.routes:
+            if within(path, old): return new + path[len(old):]
+        return path
+
+    def routed_files(self):
+        for old, new in self.routes:
+            tracked = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', self.base, '--', old],
+                                              cwd=self.root, text=True).splitlines()
+            require(tracked, f'Route has no base files: {old}')
+            for path in tracked:
+                if path.endswith('.md'):
+                    require(path in self.sources, f'Routed Markdown needs a source/destination manifest: {path}')
+                    continue
+                require(not (self.root / path).exists(), f'Routed file still exists at old path: {path}')
+                require((self.root / self.route(path)).is_file(), f'Routed file missing at new path: {path}')
 
     def canonical(self, text, path, before=False, validate=False):
         require(not any(marker in text for marker in ('@@LOCAL[', '@@EXTERNAL[', '@@URL[')),
@@ -428,7 +476,8 @@ class Checker:
             base = subprocess.run(['git', 'show', f'{self.base}:{path}'], cwd=self.root,
                                   capture_output=True)
             original = base.stdout.decode("utf-8") if base.returncode == 0 else ""
-            if not references_source(original, self.sources) and not references_source(actual, self.sources): continue
+            if (not references_source(original, self.sources, path)
+                    and not references_source(actual, self.sources, path)): continue
             expected = Counter()
             try:
                 old_links, new_links = links(original), links(actual)
@@ -455,6 +504,7 @@ class Checker:
 
     def run(self):
         self.declared_deletions()
+        self.routed_files()
         self.transfers()
         self.tasks()
         self.protected()

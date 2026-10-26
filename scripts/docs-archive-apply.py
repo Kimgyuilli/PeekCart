@@ -97,7 +97,7 @@ def main():
     for path in tracked:
         if not path or path in routes or not (root / path).is_file(): continue
         text = checker.current(path)
-        if not module.references_source(text, routes): continue
+        if not module.references_source(text, routes, path): continue
         rewritten = rewrite(text, path, path)
         if rewritten != text: updates[path] = rewritten
 
