@@ -135,7 +135,7 @@ consumer 계층에서 productId 정렬 순으로 다중 락을 선획득한 뒤 
   충돌은 **실패한 뒤에만** 드러난다. `PRD-004` 자체는 남지만(D4-1) 가리키는 사건이 바뀐다.
 - `DistributedLockManager` 가 `:common` 에 **사용처 없이** 남는다(D4). 의도된 보존이지만
   "쓰이지 않는 코드"라는 비용은 실재한다.
-- `docs/learning/09-distributed-lock-optimistic-lock.md` 가 설명하는 설계가 더는 코드에 없다.
+- 분산 락·낙관락을 설명한 로컬 학습 자료의 설계가 더는 코드에 없다.
 
 ### 후속 결정에 미치는 영향
 - **C 승격 게이트**: 부하 세션에서 동일-상품 경합 시 **낙관락 충돌률 또는 DLQ 유입이 허용 범위를
@@ -155,7 +155,6 @@ consumer 계층에서 productId 정렬 순으로 다중 락을 선획득한 뒤 
 - DLQ 계약: ADR-0020 · ADR-0021 · ADR-0022
 - 재현 테스트: `StockReservationLockBoundaryIntegrationTest` ·
   `DistributedLockLeaseExpiryIntegrationTest` · `StockConflictRetryPolicyTest`
-- `docs/learning/09-distributed-lock-optimistic-lock.md` (이 결정으로 갱신 대상)
 
 ---
 
@@ -167,3 +166,7 @@ Facade가 호출되어 unlock이 바깥 트랜잭션 커밋보다 앞섰다. 기
 consumer 경로로 이어진 것이다. Context·References의 측정 세션은 #120이며 #119는
 측정 하네스다. Decision은 변경하지 않는다.
 [원본 코드·git 대조](../progress/evidence/d073-source-corrections.md).
+
+## Update Log
+
+- 2026-10-26, D-116(결정 3-6, 정정 기준 main `5261510`): Consequences 와 References 가 인용하던 `docs/learning/09-distributed-lock-optimistic-lock.md` 를 지웠다. gitignore 된 로컬 학습 자료라 저장소 안에서 확인할 수 없다. Consequences 의 문장은 경로 없이 남겼고, 경로만 적힌 References 한 줄은 지웠다. 결정은 바뀌지 않는다.

@@ -147,7 +147,7 @@ graph TD
 
 ## 12. 패키지 구조
 
-> 현재 Gradle 멀티모듈 구조와 배포 파일은 아래 트리를 따른다. 모듈 경계·의존 규칙은 ADR-0011/0014/0033, Phase 1·2 패키지 구조는 [설계 아카이브](progress/design-archive-phase1-2.md#02-architecturemd-12-패키지-구조)를 참조한다. 루트는 빌드/가드 aggregator이며 애플리케이션 `src/`는 각 모듈에 있다.
+> 현재 Gradle 멀티모듈 구조와 배포 파일은 아래 트리를 따른다. 모듈 경계·의존 규칙은 ADR-0011/0014/0033, Phase 1·2 패키지 구조는 [설계 아카이브](progress/archive/design-archive-phase1-2.md#02-architecturemd-12-패키지-구조)를 참조한다. 루트는 빌드/가드 aggregator이며 애플리케이션 `src/`는 각 모듈에 있다.
 
 ### 레이어 책임 원칙
 

@@ -111,7 +111,7 @@ e2e 단언은 배선 때문에 그대로 둔다. JVM 에 테스트를 더하면 
 API의 타입 검사를 제공하지만, Jackson 직렬화 결과의 JSON 필드명과 소비자 파싱 호환성은 보장하지 않는다. 현재
 `NotificationConsumer`는 `JsonNode.get("userId")`로 필드를 읽는다. D-095의 양성 탐침은 `userId` JSON을 통과했고,
 `@JsonProperty("recipientId")` 변이는 payment/notification `compileJava` 성공 뒤 직렬화 결과에 `recipientId`만
-포함되어 소비자 필드 검증에서 실패했다 (`docs/learning/drafts/tools/blog31/payload/`). 따라서 실제 wire 필드를 검증하는
+포함되어 소비자 필드 검증에서 실패했다. 따라서 실제 wire 필드를 검증하는
 테스트 근거는 보강하지만 Pact 채택을 결론내리지는 않는다.
 
 Context 4와 D-042 §4-3의 수치는 당시 run의 특정 단계다. run `36338959413` (2026-09-27, commit
@@ -120,3 +120,8 @@ Context 4와 D-042 §4-3의 수치는 당시 run의 특정 단계다. run `36338
 같은 모집단이 아니다. run `38991415193` (2026-10-17, commit `8e5f6ce9c037a5c3a2d3538a47a1a909bf72ece9`)
 의 여섯 시나리오 잡은 714초 wall time이었다. 이 차이는 측정 시점·범위를 한정하며 본 결정의 비용 논거를 새 측정치로
 대체하지 않는다.
+
+### 2026-10-26 D-116 인용 정리
+
+위 D-091/D-095 정정의 탐침 근거로 적은 `docs/learning/drafts/tools/blog31/payload/` 를 지웠다(결정 3-6, 정정 기준 main
+`5261510`). gitignore 된 로컬 학습 자료라 저장소 안에서 확인할 수 없다. 탐침 결과를 적은 문장은 그대로 두었다.

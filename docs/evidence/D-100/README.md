@@ -38,7 +38,7 @@ BUILD SUCCESSFUL in 4s
 1 actionable task: 1 executed
 ```
 
-기존 과거 로그: [historical-dependency.txt](historical-dependency.txt). 원본은 로컬 학습 자료 `docs/learning/drafts/tools/blog32/flyway/historical-dependency.log`였고 줄 끝 공백만 제거해 복사했다. 이 파일 자체에 checkout SHA/명령이 없다는 한계는 위의 git 설정 대조와 구분한다.
+기존 과거 로그: [historical-dependency.txt](historical-dependency.txt). 원본은 로컬 학습 자료(gitignore 된 블로그 연재 도구 폴더)의 로그였고 줄 끝 공백만 제거해 복사했다. 이 파일 자체에 checkout SHA/명령이 없다는 한계는 위의 git 설정 대조와 구분한다.
 
 ## 두 jar 직접 실행
 

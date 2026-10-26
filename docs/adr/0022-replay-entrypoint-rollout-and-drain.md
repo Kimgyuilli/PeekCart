@@ -78,7 +78,7 @@ reconciler 는 원장의 `outbox_event_id` 가 가리키는 outbox 행이 **사�
 
 - `scripts/replay-drain-preflight.sh` 가 판정하고, `scripts/deploy-overlay.sh` 가 `preflight → kubectl apply -k` 순으로 감싼다.
 - **감싸는 범위는 앱 overlay 배포뿐이다.** monitoring/shared 매니페스트 적용은 서비스 이미지를 바꾸지 않아 이 위험과 무관하다.
-- **"레포 전체에서 raw `kubectl apply -k` 0건" 은 계약으로 세우지 않는다.** `apply -k` 는 immutable ADR(0005/0006)·`docs/learning/`·`PHASE3.md`·아카이브에도 있고 이력은 고칠 수 없으므로 그 lint 는 영원히 실패한다. 대신 **운영 절차 문서 2개**(`docs/02-architecture.md` 배포 순서 · `k8s/overlays/gke/README.md`)만 래퍼를 가리키도록 하고, lint 도 그 둘만 본다.
+- **"레포 전체에서 raw `kubectl apply -k` 0건" 은 계약으로 세우지 않는다.** `apply -k` 는 immutable ADR(0005/0006)·`PHASE3.md`·아카이브에도 있고 이력은 고칠 수 없으므로 그 lint 는 영원히 실패한다. 대신 **운영 절차 문서 2개**(`docs/02-architecture.md` 배포 순서 · `k8s/overlays/gke/README.md`)만 래퍼를 가리키도록 하고, lint 도 그 둘만 본다.
 - **운영자가 래퍼를 건너뛰고 직접 `kubectl apply -k` 를 치면 우회된다.** 이것은 알려진 한계이며, 검증은 "래퍼가 exit≠0 이다" 만 주장하고 "우회 불가" 를 주장하지 않는다.
 - in-cluster initContainer 게이트는 진짜 강제지만, 4서비스 × in-cluster DB 자격증명 + mysql 클라이언트 이미지 + **정상 배포마다 드는 상시 비용** 때문에 채택하지 않았다. CD 파이프라인이 생기면 그 지점이 더 나은 자리다.
 
@@ -171,3 +171,4 @@ kill-switch 를 열어도 부를 수 없으므로 ④ 가 종결되지 않는다
 - 기존 D2의 상한 소유권·handlerBudget 선언의 한계·lag2회관측·fail-closed 조건은 유지한다. drift guard는 공유 jitter 비율0.5/기준1·5·30초/시도4회/최대합계와 clock-skew 설정을 함께 확인한다. 비율·간격·횟수·옛36초 회귀는 거절한다. D-065 운영 replay 실행은 여전히 범위 밖이며 이 정정은 그 실험 완료를 뜻하지 않는다.
 - 2026-10-24, D-106 ⑨: GKE 세션에서 preflight 가 `localhost:9092` 로 lag 를 물어 k8s Kafka(리스너 29092)의 DLQ group 조회가 전부 실패했다. collector fixture 가 리스너를 9092 로 덮어써 이 결함을 숨기고 있었다. preflight 와 fixture 를 29092 로 맞추고, drift guard(REPLAY-ENTRY-007)가 preflight 포트와 k8s 리스너를 대조한다.
 - 같은 정정에서 ⓑⓒ 의 lag 읽기를 고쳤다. 4서비스 컨슈머는 `auto-offset-reset: earliest` 라 레코드가 한 번도 쓰이지 않은 파티션에 커밋을 남기지 않고, describe 는 그 파티션을 `CURRENT-OFFSET -`·`LOG-END-OFFSET 0`·`LAG -` 로 낸다. 소비할 레코드가 없으므로 lag 0 으로 센다. 이 행까지 막으면 정상 스택에서도 쓰이지 않은 DLQ 파티션 때문에 preflight 가 항상 실패한다. LEO 를 모르거나 0 보다 큰 미커밋, 음수, 비숫자는 그대로 fail-closed 다. lag=0 2회 관측과 fail-closed 원칙은 바뀌지 않는다.
+- 2026-10-26, D-116(결정 3-6, 정정 기준 main `5261510`): Consequences 의 `apply -k` 출현 위치 나열에서 `docs/learning/` 을 지웠다. gitignore 된 로컬 학습 자료라 저장소 안에서 확인할 수 없다. 나머지 나열과 그 lint 를 세우지 않는다는 판단은 그대로다.
