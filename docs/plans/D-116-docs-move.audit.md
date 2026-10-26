@@ -16,3 +16,9 @@
   6. CI lint 잡 단계를 ci.yml 원문대로 로컬 실행: 6단계 전부 PASS. `plans-index.sh --check` 최신, consistency precheck ok, 앵커·기존 manifest 이동/삭제 0건.
 - `./gradlew test --continue`: BUILD SUCCESSFUL(Java 입력 무변경).
 - 계획과 달라진 것: 검증 4의 기준을 "본문 인용 0건, Update Log 의 삭제 기록은 남김" 으로 바로잡았다. 결정 3-6 은 Update Log 에 지운 사실을 적으라고 하므로 지운 경로를 기록에 적었다.
+
+## 2026-10-27 00:50 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/254 (base main `5261510`)
+- 커밋 8개(docs 7 · adr 1). 분류 검사 통과, writing-lint(커밋 8건·본문·제목) 통과. CI 는 문서 전용(`ci-docs-only.sh` code=false)
+- precheck: consistency ok, `hpx_review_health` ok, 보존 검사 `--base 5261510` PASS, `harness-context.sh --check --base 5261510` ok
+- 갱신: TASKS D-116 행에 PR 링크(진행 중 유지), PHASE5 엔트리. 상위 계획의 P3b 칸과 P3 상자는 머지 뒤 다음 단계가 채운다

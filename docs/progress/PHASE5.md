@@ -1177,3 +1177,17 @@ CI·규약·하네스가 실행하거나 읽는 docs 안 파일을 `scripts/` �
 - 파싱 불가 문서 14개는 그대로다. 그 문서들이 링크하는 대상을 옮길 때마다 같은 명시 이전이 필요하다.
 - `routes` 는 비-Markdown 인바운드 링크의 재표적을 강제하지 않는다. 이번에는 corpus 대조로 깨진 링크 0건을 확인했다.
 - 보수적 기본값으로 정한 해석 5건을 PR 본문 "확인 요청" 에 올렸다.
+
+## 2026-10-27 — Phase 5 마감 정리 3b단계: 이력 문서 재배치와 문서 맵
+
+[PR254](https://github.com/Kimgyuilli/PeekCart/pull/254) · 계획 `D-116-docs-move`(상위 `D-116`) · 결정 `docs/evidence/D-116/decisions.md` 3-2·3-6·3-7·3-8.
+어느 맵에도 없던 이력 문서를 아카이브로 모으고, 저장소 문서 전체를 설명하는 맵을 만들었다.
+
+- 결정: 이력 잡다 문서 7개(`docs/progress/` 5, `docs/review/` 2)를 `docs/progress/archive/` 로 옮겼다. `docs/review/` 옛 자리에는 대응표를 두었다.
+- ADR 0022·0025·0032·0033 과 D-100 README 가 근거로 인용하던 `docs/learning` 경로를 지우고, ADR 마다 Update Log 에 지운 경로와 사유를 적었다.
+- `TASKS-done.md` 의 D-024 행 ID 를 평문으로 정정해 보존 검사와 하네스의 행 정규식이 이 행을 보게 했다.
+- `docs/README.md` 문서 맵을 새로 쓰고 `CLAUDE.md` 의 문서 참조 맵을 그 포인터로 바꿨다.
+
+미충족과 관찰:
+- Layer 1 재작성과 ADR 색인 정비는 P4, Phase 6 개시와 맵의 Phase 갱신은 P5 다.
+- 보수적 기본값으로 정한 해석 4건을 PR 본문 "확인 요청" 에 올렸다.
