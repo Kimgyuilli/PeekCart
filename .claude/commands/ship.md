@@ -82,7 +82,7 @@ LOG=$(echo "$RES" | sed -n 2p); [ -f "$LOG" ] && tail -30 "$LOG"
   ```
   `[2]` 선택 시 사유를 **PR 본문의 "Skipped consistency checks" 섹션**에 적는다
 - `script_error` → stderr 와 exit code 를 그대로 제시하고 동일 3선택지
-- `unavailable` → "`docs/consistency-hints.sh` 없음. skip" 한 줄 안내 후 진행
+- `unavailable` → "`scripts/consistency-hints.sh` 없음. skip" 한 줄 안내 후 진행
 
 ### 3. 커밋 정리
 
@@ -247,17 +247,16 @@ gh pr create --base "$(hpx_base_branch_name)" --head "$BRANCH" \
    범위가 착수 전과 달라졌으면 **그 사실과 근거를 행에 기록한다** (구현 ④·⑤ 선례).
    그 행을 `docs/progress/TASKS-done.md` 표 **맨 아래**로 옮기고 `TASKS.md` 에서 지운다.
    `TASKS.md` 에는 열린 행만 남긴다
-2. 편입 부채가 있으면 `docs/progress/phase4-prep-debt-roadmap.md` 의 해당 행에 ✅ + PR 번호
-3. `docs/progress/PHASE{N}.md` — 작업 이력에 PR URL. **미충족 항목을 함께 남긴다**
-4. 이월 항목 중 구조적이거나 반복되는 것은 `docs/TASKS.md` 부채 표에 `D-0NN` 으로 등록한다.
+2. `docs/progress/PHASE{N}.md` — 작업 이력에 PR URL. **미충족 항목을 함께 남긴다**
+3. 이월 항목 중 구조적이거나 반복되는 것은 `docs/TASKS.md` 부채 표에 `D-0NN` 으로 등록한다.
    한두 건짜리 국소 항목은 PR 본문 §이월 에만 두고 부채 ID 를 만들지 않는다
-5. 결정 사항 분류:
+4. 결정 사항 분류:
    - 대안 비교·후속 전제가 있으면 → ADR (Layer 2)
    - ADR 의 **사실 진술**이 틀렸으면 → 새 ADR 이 아니라 **Update Log + `fix(adr):`** (`docs/adr/README.md` §원칙)
    - 구현 디테일 → progress (Layer 3)
    - 확신이 없으면 사용자에게 묻는다
-6. Layer 1(01~07) 이 코드 사실과 어긋나면 **What 만** 정정. Why 는 ADR
-7. `docs/plans/${TASK_ID}.audit.md` 에 `/ship` 결과 1블록 append (PR URL · precheck 결과 · 갱신 항목).
+5. Layer 1(01~07) 이 코드 사실과 어긋나면 **What 만** 정정. Why 는 ADR
+6. `docs/plans/${TASK_ID}.audit.md` 에 `/ship` 결과 1블록 append (PR URL · precheck 결과 · 갱신 항목).
    **등급 S 는 audit 파일이 없으므로 이 단계를 건너뛴다** — PR URL 은 `docs/progress/TASKS-done.md` 와
    progress 에 이미 남는다. 없는 파일을 만들자고 audit 을 되살리지 않는다
 
