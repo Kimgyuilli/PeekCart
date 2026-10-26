@@ -67,12 +67,12 @@ grade: L
 - [x] P1. 사전 필터 정밀화. `references_source(text, sources, path=None)` 가 문서 경로를 받는다. 소스 폴더 밖의 문서는 링크 문맥 안에서 소스의 상위 폴더 이름이 파일 이름보다 앞에 있어야 걸린다. 폴더 안(하위 포함)의 문서와 `path` 를 안 준 호출은 지금처럼 이름만 본다. 두 호출(`inbound_links`, `docs-archive-apply.py`)이 경로를 넘긴다.
 - [x] P2. `routes`. manifest 선택 필드 `routes: [{"from": "docs/…", "to": "docs/…"}]`(디렉터리). 경로 검증(`docs/` 시작, 정규형, `..`·절대경로 금지, 서로 포함 금지, 중복 금지). 검사 단계 `routes()`: base 의 `from` 아래 파일이 하나 이상 있어야 하고, 그 가운데 md 는 선언한 source 여야 하며, 나머지는 `to` 아래 같은 상대 경로에 있고 옛 경로에는 없어야 한다. `resolve(before=True)` 가 md 대응 다음에 `routes` 를 적용한다(폴더 자체 링크 포함). sources 없이 routes 만 담은 manifest 도 허용한다.
 - [x] P3. 셀프테스트(`scripts/docs-preservation-selftest.py`). 필터: 다른 폴더의 같은 이름 README 를 링크하는 파싱 불가 문서는 이동을 막지 않는다, 폴더 밖에서 우회 경로(`dir/sub/../README.md`)로 소스를 가리키는 링크는 여전히 재표적을 요구한다, 소스를 실제로 가리키는 파싱 불가 문서는 실패한다. routes: 형제 파일 링크를 가진 README 의 폴더 이동이 routes 로 통과하고 routes 없이 실패한다, 옮기지 않은 파일·옛 경로에 남은 파일·선언 안 된 md 는 실패한다, 보호 문서의 비-md 링크를 routes 대상으로 고치면 통과하고 다른 곳으로 고치면 실패한다.
-- [ ] P4. 증적 이동. `docs/plans/evidence/<dir>/` 26개를 `docs/evidence/<dir>/` 로 `git mv`(`D098` 은 `D-098`). manifest `docs/preservation/d116-evidence-20261026.json` 에 md 23개(D-104 README 제외)의 sources·destinations 와 25개 폴더의 routes(D-104 제외)를 쓴다. 옮긴 README 의 바깥 링크, 자유 문서 3개, 보호 문서 14개의 링크를 새 경로로 고친다.
-- [ ] P5. D-104 명시 이전. 원문을 `docs/evidence/D-104/README.md` 로 두고, 옛 `docs/plans/evidence/D-104/README.md` 는 새 위치와 이유(PHASE4 파싱 불가)를 적은 안내 파일로 바꾼다. 나머지 D-104 파일은 함께 옮긴다. `harness-rationale.md` 와 `codex-review-render.sh:10` 은 새 위치를 가리킨다.
-- [ ] P6. D-078 재현 도구 두 개의 `parents[4]` 를 `parents[3]` 으로 고친다.
-- [ ] P7. 대응표 `docs/plans/evidence/README.md`: 26 폴더의 옛 경로·새 경로·이동일과, 보호 이력의 백틱 경로는 옛 경로로 남는다는 안내.
-- [ ] P8. 색인과 README. `docs/evidence/README.md` 에 32 폴더(옮긴 26 + 기존 6)의 계획·내용·원자료 종류·Actions 사본 만료일을 적는다. 고아 6개(`D-065-access-denied-mvc`, `D-065-signed-gateway`, `D-078-product-actions`, `D-084-signed-recovery`, `D-088`, `D-103`)는 대응 계획을 찾아 적는다. README 없는 5개(`D-065-access-denied-mvc`, `D-065-collector-adapter`, `D-084-signed-recovery`, `D-076`, `D-084`)에 README 를 만든다.
-- [ ] P9. 규약. `docs/conventions/evidence.md`(세 위치의 역할·이름 규칙·README 필수 항목·Actions 사본 만료 표기), `docs/conventions/docs-preservation.md` 에 `routes` 와 필터 규칙을 추기한다.
+- [x] P4. 증적 이동. `docs/plans/evidence/<dir>/` 26개를 `docs/evidence/<dir>/` 로 `git mv`(`D098` 은 `D-098`). manifest `docs/preservation/d116-evidence-20261026.json` 에 md 23개(D-104 README 제외)의 sources·destinations 와 25개 폴더의 routes(D-104 제외)를 쓴다. 옮긴 README 의 바깥 링크, 자유 문서 3개, 보호 문서 14개의 링크를 새 경로로 고친다.
+- [x] P5. D-104 명시 이전. 원문을 `docs/evidence/D-104/README.md` 로 두고, 옛 `docs/plans/evidence/D-104/README.md` 는 새 위치와 이유(PHASE4 파싱 불가)를 적은 안내 파일로 바꾼다. 나머지 D-104 파일은 함께 옮긴다. `harness-rationale.md` 와 `codex-review-render.sh:10` 은 새 위치를 가리킨다.
+- [x] P6. D-078 재현 도구 두 개의 `parents[4]` 를 `parents[3]` 으로 고친다.
+- [x] P7. 대응표 `docs/plans/evidence/README.md`: 26 폴더의 옛 경로·새 경로·이동일과, 보호 이력의 백틱 경로는 옛 경로로 남는다는 안내.
+- [x] P8. 색인과 README. `docs/evidence/README.md` 에 32 폴더(옮긴 26 + 기존 6)의 계획·내용·원자료 종류·Actions 사본 만료일을 적는다. 고아 6개(`D-065-access-denied-mvc`, `D-065-signed-gateway`, `D-078-product-actions`, `D-084-signed-recovery`, `D-088`, `D-103`)는 대응 계획을 찾아 적는다. README 없는 5개(`D-065-access-denied-mvc`, `D-065-collector-adapter`, `D-084-signed-recovery`, `D-076`, `D-084`)에 README 를 만든다.
+- [x] P9. 규약. `docs/conventions/evidence.md`(세 위치의 역할·이름 규칙·README 필수 항목·Actions 사본 만료 표기), `docs/conventions/docs-preservation.md` 에 `routes` 와 필터 규칙을 추기한다.
 
 ## 4. 검증 방법
 
