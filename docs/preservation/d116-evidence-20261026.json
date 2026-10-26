@@ -1,0 +1,437 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/evidence/D-065-constraints/README.md",
+      "sha256": "a78f34bc2ee5841e96cafcf9c10a6b0e00cf02f5201488671d074f8bb284580b"
+    },
+    {
+      "path": "docs/plans/evidence/D-065-dlq-diagnostic/README.md",
+      "sha256": "3730c89de0cb16dfc16d437cd9b1ab1b5a89042f2f9e3252a199f82c12f1db6b"
+    },
+    {
+      "path": "docs/plans/evidence/D-065-flyway-contract/README.md",
+      "sha256": "38543dacfaaea83aa6410779f50403de5a46176801f3c65f4534ca69fbd891a1"
+    },
+    {
+      "path": "docs/plans/evidence/D-065-lineage-writer/README.md",
+      "sha256": "157849fef9dd4638ff6fb581221dfe6e2796159a38643d25fe68c59d888d410d"
+    },
+    {
+      "path": "docs/plans/evidence/D-065-signed-gateway/README.md",
+      "sha256": "42c0c9369e0fd5f23d42f99c50d4ac69be4da39519f74c4c04ef699310830f68"
+    },
+    {
+      "path": "docs/plans/evidence/D-075/README.md",
+      "sha256": "f48362fc67bdb20aba3858fb47982d82616652a8f2d740d08e39020cf0df2bc4"
+    },
+    {
+      "path": "docs/plans/evidence/D-075/summary.md",
+      "sha256": "e7f51664d41eb6cb17d931109ce2965a9f3be5e82e53cc92c75af65edcec36ba"
+    },
+    {
+      "path": "docs/plans/evidence/D-078-product-actions/README.md",
+      "sha256": "bd1eaa9dabfc672b85216709769bf6242663ce14507e7e71222dac05b61c4fb2"
+    },
+    {
+      "path": "docs/plans/evidence/D-078-product-barrier-review/README.md",
+      "sha256": "3f7ab12c4c3309aff9dbce0743a20ad48e9202679b2391d3080bd6f92a90fd72"
+    },
+    {
+      "path": "docs/plans/evidence/D-078-retry-load/README.md",
+      "sha256": "94d7030e535fb4ff43acd45137b445926fd36359af859a9b72eb0b0d05e96ac0"
+    },
+    {
+      "path": "docs/plans/evidence/D-078-scheduler-capacity/README.md",
+      "sha256": "7dc59448d781a053bbb7e4dc329dd5d2314b3bfff0dbd3bd9741678991a242c1"
+    },
+    {
+      "path": "docs/plans/evidence/D-078/README.md",
+      "sha256": "60907bf26849bbcd856f2d139ef74f301fa00164ec8efc655764bd2459d72423"
+    },
+    {
+      "path": "docs/plans/evidence/D-087-profile-cache/README.md",
+      "sha256": "351862664aba652d50bff7cee66001e42498ca4e441365756b0eb8aa7c377a5d"
+    },
+    {
+      "path": "docs/plans/evidence/D-087/README.md",
+      "sha256": "afc5b020096531ec9be8e200c2eba275271073ecffb84b13eddbd0809faa402c"
+    },
+    {
+      "path": "docs/plans/evidence/D-088/README.md",
+      "sha256": "4b22c776185852f296b384faa02128490e0887782a02569cc701e981ae20dac0"
+    },
+    {
+      "path": "docs/plans/evidence/D-089/README.md",
+      "sha256": "f39f1ba96f2fb06216c14929b642fd332d9a45a286e899376957e00e34a983d5"
+    },
+    {
+      "path": "docs/plans/evidence/D-094/README.md",
+      "sha256": "df7222be991378b945b6219f422016bd23b94eeacecc475a59b98ba8467dc8c5"
+    },
+    {
+      "path": "docs/plans/evidence/D-099/README.md",
+      "sha256": "0cecfac388a390fea3c8b6303808a632d45fc55e5075f72cee7bb66928ebe99c"
+    },
+    {
+      "path": "docs/plans/evidence/D-100/README.md",
+      "sha256": "9ede9e5c7cd6866990ed48ab0117aff2688876346b08d90620f38701f034521d"
+    },
+    {
+      "path": "docs/plans/evidence/D-102/README.md",
+      "sha256": "dd962f27691ddbb1562cf6494ddbae90c36b220fd6bc974f348c8e39fa7f2adb"
+    },
+    {
+      "path": "docs/plans/evidence/D-103/README.md",
+      "sha256": "2ec65d439e0cf4315765b238f5d33b1aadb1ca657e91d2d3d4ac718785d49f7f"
+    },
+    {
+      "path": "docs/plans/evidence/D098/README.md",
+      "sha256": "a9bbf0d5463f99845d707ae1f6fcb9d5c54cc39cdbdb6e5699439b01c9991007"
+    },
+    {
+      "path": "docs/plans/evidence/campaign-records-review/c3a180f-review.md",
+      "sha256": "0b93a8f75a84ec525f3ef7ab0618577642c60f476bf76779e7c8de091abd3968"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/evidence/D-065-constraints/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-065-constraints/README.md",
+          "start": 1,
+          "end": 57
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-065-dlq-diagnostic/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-065-dlq-diagnostic/README.md",
+          "start": 1,
+          "end": 13
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-065-flyway-contract/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-065-flyway-contract/README.md",
+          "start": 1,
+          "end": 15
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-065-lineage-writer/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-065-lineage-writer/README.md",
+          "start": 1,
+          "end": 9
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-065-signed-gateway/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-065-signed-gateway/README.md",
+          "start": 1,
+          "end": 13
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-075/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-075/README.md",
+          "start": 1,
+          "end": 70
+        },
+        {
+          "literal": "\n## 도구 위치 (2026-10-26, D-116 P3a)\n\n이 폴더는 `docs/plans/evidence/D-075/` 에서 `docs/evidence/D-075/` 로 옮겼다. 위 명령의 `docs/plans/evidence/D-075/` 는 옮기기 전 경로이고, 지금은 `docs/evidence/D-075/` 로 바꿔 실행한다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-075/summary.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-075/summary.md",
+          "start": 1,
+          "end": 15
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-078-product-actions/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-078-product-actions/README.md",
+          "start": 1,
+          "end": 23
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-078-product-barrier-review/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-078-product-barrier-review/README.md",
+          "start": 1,
+          "end": 15
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-078-retry-load/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-078-retry-load/README.md",
+          "start": 1,
+          "end": 29
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-078-scheduler-capacity/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-078-scheduler-capacity/README.md",
+          "start": 1,
+          "end": 15
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-078/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-078/README.md",
+          "start": 1,
+          "end": 36
+        },
+        {
+          "literal": "\n## 도구 위치 (2026-10-26, D-116 P3a)\n\n이 폴더는 `docs/plans/evidence/D-078/` 에서 `docs/evidence/D-078/` 로 옮겼다. 위 명령의 `docs/plans/evidence/D-078/` 는 옮기기 전 경로이고, 지금은 `docs/evidence/D-078/` 로 바꿔 실행한다. 두 검사 도구의 저장소 루트 계산은 새 깊이(`parents[3]`)로 고쳤다.\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-087-profile-cache/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-087-profile-cache/README.md",
+          "start": 1,
+          "end": 15
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-087/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-087/README.md",
+          "start": 1,
+          "end": 92
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-088/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-088/README.md",
+          "start": 1,
+          "end": 30
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-089/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-089/README.md",
+          "start": 1,
+          "end": 27
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-094/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-094/README.md",
+          "start": 1,
+          "end": 40
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-099/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-099/README.md",
+          "start": 1,
+          "end": 61
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-100/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-100/README.md",
+          "start": 1,
+          "end": 89
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-102/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-102/README.md",
+          "start": 1,
+          "end": 50
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-103/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D-103/README.md",
+          "start": 1,
+          "end": 23
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/D-098/README.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/D098/README.md",
+          "start": 1,
+          "end": 27
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/campaign-records-review/c3a180f-review.md",
+      "parts": [
+        {
+          "source": "docs/plans/evidence/campaign-records-review/c3a180f-review.md",
+          "start": 1,
+          "end": 18
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "from": "docs/plans/evidence/D-065-access-denied-mvc",
+      "to": "docs/evidence/D-065-access-denied-mvc"
+    },
+    {
+      "from": "docs/plans/evidence/D-065-collector-adapter",
+      "to": "docs/evidence/D-065-collector-adapter"
+    },
+    {
+      "from": "docs/plans/evidence/D-065-constraints",
+      "to": "docs/evidence/D-065-constraints"
+    },
+    {
+      "from": "docs/plans/evidence/D-065-dlq-diagnostic",
+      "to": "docs/evidence/D-065-dlq-diagnostic"
+    },
+    {
+      "from": "docs/plans/evidence/D-065-flyway-contract",
+      "to": "docs/evidence/D-065-flyway-contract"
+    },
+    {
+      "from": "docs/plans/evidence/D-065-lineage-writer",
+      "to": "docs/evidence/D-065-lineage-writer"
+    },
+    {
+      "from": "docs/plans/evidence/D-065-signed-gateway",
+      "to": "docs/evidence/D-065-signed-gateway"
+    },
+    {
+      "from": "docs/plans/evidence/D-075",
+      "to": "docs/evidence/D-075"
+    },
+    {
+      "from": "docs/plans/evidence/D-078",
+      "to": "docs/evidence/D-078"
+    },
+    {
+      "from": "docs/plans/evidence/D-078-product-actions",
+      "to": "docs/evidence/D-078-product-actions"
+    },
+    {
+      "from": "docs/plans/evidence/D-078-product-barrier-review",
+      "to": "docs/evidence/D-078-product-barrier-review"
+    },
+    {
+      "from": "docs/plans/evidence/D-078-retry-load",
+      "to": "docs/evidence/D-078-retry-load"
+    },
+    {
+      "from": "docs/plans/evidence/D-078-scheduler-capacity",
+      "to": "docs/evidence/D-078-scheduler-capacity"
+    },
+    {
+      "from": "docs/plans/evidence/D-084-signed-recovery",
+      "to": "docs/evidence/D-084-signed-recovery"
+    },
+    {
+      "from": "docs/plans/evidence/D-087",
+      "to": "docs/evidence/D-087"
+    },
+    {
+      "from": "docs/plans/evidence/D-087-profile-cache",
+      "to": "docs/evidence/D-087-profile-cache"
+    },
+    {
+      "from": "docs/plans/evidence/D-088",
+      "to": "docs/evidence/D-088"
+    },
+    {
+      "from": "docs/plans/evidence/D-089",
+      "to": "docs/evidence/D-089"
+    },
+    {
+      "from": "docs/plans/evidence/D-094",
+      "to": "docs/evidence/D-094"
+    },
+    {
+      "from": "docs/plans/evidence/D-099",
+      "to": "docs/evidence/D-099"
+    },
+    {
+      "from": "docs/plans/evidence/D-100",
+      "to": "docs/evidence/D-100"
+    },
+    {
+      "from": "docs/plans/evidence/D-102",
+      "to": "docs/evidence/D-102"
+    },
+    {
+      "from": "docs/plans/evidence/D-103",
+      "to": "docs/evidence/D-103"
+    },
+    {
+      "from": "docs/plans/evidence/D098",
+      "to": "docs/evidence/D-098"
+    },
+    {
+      "from": "docs/plans/evidence/campaign-records-review",
+      "to": "docs/evidence/campaign-records-review"
+    }
+  ]
+}
