@@ -20,3 +20,9 @@
 - `./gradlew test --continue`: BUILD SUCCESSFUL, 54개 작업 전부 up-to-date. Java·리소스 입력이 바뀌지 않았고 실행 중 `loadtest/reports` 를 읽는 테스트는 없다(주석 1곳만).
 - `docs/consistency-hints.sh`: 처음에 exit 1. 새 문서가 파일 없는 ADR 번호(결번 두 개와 다음 번호)를 접두사와 함께 적어서다. 표기를 바꾼 뒤 exit 0. 같은 함정을 상위 계획 P4 항목에 적었다.
 - 계획과 달라진 것: 기록에 쓰려던 "서명키가 지워졌다" 는 확인하지 못해 뺐다. 토큰의 `kid` 는 `peekcart-dev-2026` 이고 30분 만료라는 것만 확인해 적었다. 측정 run 의 kafka-lag export 는 결정 범위 밖으로 보고 남겼다.
+
+## 2026-10-26 20:32 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/251 (base main `91cfa1f`)
+- 커밋 6개(docs 3 · src 2 · chore 1). 분류 검사 통과, writing-lint(커밋 6건·본문·제목) 통과
+- precheck: consistency ok(warnings 0), `hpx_review_health` ok, 보존 검사 `--base 91cfa1f` PASS, `harness-context.sh --check --base 91cfa1f` ok
+- 갱신: TASKS D-116 행에 PR 링크(5개 PR 중 첫 번째라 진행 중 유지), PHASE5 엔트리. 상위 계획의 P1 상자는 머지 뒤 다음 세션이 채운다
