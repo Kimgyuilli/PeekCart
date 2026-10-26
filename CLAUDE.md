@@ -68,16 +68,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ### 문서 참조 맵
 
-| 문서 | 경로 | 참조 시점 |
-|------|------|-----------|
-| 프로젝트 개요 / 기술 스택 | `docs/01-project-overview.md` | 기술 선택 근거 확인 시 |
-| 아키텍처 / 패키지 구조 | `docs/02-architecture.md` | 파일 위치 / 레이어 결정 시 |
-| 기능 요구사항 / API 명세 | `docs/03-requirements.md` | 기능 구현 범위 확인 시 |
-| 설계 결정 / 트레이드오프 | `docs/04-design-deep-dive.md` | 구현 방식 결정 시 |
-| ERD / 인덱스 전략 | `docs/05-data-design.md` | DB 스키마 / Flyway 작성 시 |
-| 테스트 전략 | `docs/06-testing-strategy.md` | 테스트 코드 작성 시 |
-| 로드맵 / 포트폴리오 | `docs/07-roadmap-portfolio.md` | Phase 범위 확인 시 |
-| 아키텍처 결정 이력 (ADR) | `docs/adr/README.md` | 결정 근거/트레이드오프 확인 시 |
+문서별 경로와 참조 시점, 폴더 구성, 하네스 앵커, 증적 위치는 [`docs/README.md`](docs/README.md)에 있습니다.
 
 > **문서 레이어 원칙**: Layer 1 (01~07) = 현재 상태(What) · Layer 2 (adr/) = 결정 근거(Why, immutable) · Layer 3 (progress/) = 작업 이력(When).
 > 새 결정 시 ADR을 먼저 작성하고, Layer 1에서는 `(see ADR-NNNN)` 형태로 참조합니다.
