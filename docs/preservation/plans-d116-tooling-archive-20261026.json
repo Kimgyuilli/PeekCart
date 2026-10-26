@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-078-remeasure-plan.md",
+      "sha256": "eb83e224435bc8036bec7d6514896acd2274d5da206c3e0989afa9d936c8166c"
+    },
+    {
+      "path": "docs/plans/D-078-remeasure-plan.audit.md",
+      "sha256": "fb0ec120359320ca77ef59d715b3795551a2f29e1313b850f97ae1834acfef83"
+    },
+    {
+      "path": "docs/plans/D-108.md",
+      "sha256": "aab4136dafedb418de5a3ebe50b39fcb2bf01b9275f32e5bb1e714cef0a7bbda"
+    },
+    {
+      "path": "docs/plans/D-108.audit.md",
+      "sha256": "ba2ab0fe74a9d55181505a39f6cd29dbe6d3caaa13220f75d537778363d2aba7"
+    },
+    {
+      "path": "docs/plans/D-116-loadtest.md",
+      "sha256": "fe99b8546bcd0a5315e05f385a231101f0c036c6ba5349ebb25ca8f96e49ff0f"
+    },
+    {
+      "path": "docs/plans/D-116-loadtest.audit.md",
+      "sha256": "d040b4583fc540ee23cb1076a57381a2cd4bd10ee26c89eeaec446df1e14a94a"
+    },
+    {
+      "path": "docs/plans/task-debt-orchestration.md",
+      "sha256": "125fb31e7aee886fd6b787a9a58cfe6b4644376ef06ec1baf8e9033c3d2e1a73"
+    },
+    {
+      "path": "docs/plans/task-debt-orchestration.audit.md",
+      "sha256": "d67d6a4d519ca2db851252edcfaf98549593f94c25bb919bbed8e5fa7fa9dbfd"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-078-remeasure-plan.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-remeasure-plan.md",
+          "start": 1,
+          "end": 499
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-078-remeasure-plan.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-078-remeasure-plan.audit.md",
+          "start": 1,
+          "end": 62
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-108.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-108.md",
+          "start": 1,
+          "end": 207
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-108.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-108.audit.md",
+          "start": 1,
+          "end": 40
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-116-loadtest.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116-loadtest.md",
+          "start": 1,
+          "end": 55
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-116-loadtest.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116-loadtest.audit.md",
+          "start": 1,
+          "end": 28
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/task-debt-orchestration.md",
+      "parts": [
+        {
+          "source": "docs/plans/task-debt-orchestration.md",
+          "start": 1,
+          "end": 228
+        },
+        {
+          "literal": "\n## 종결 (2026-10-26, D-116)\n\n위 열린 항목 표의 다섯 건은 지금 각자 다른 곳이 추적한다. D-075 는 #242(ADR-0045)로, D-064 는 #249 로 닫혀 `docs/progress/TASKS-done.md` 에 있다. D-084 는 #181 부분 병합 뒤 보류이고 `docs/plans/D-084.md` 와 TASKS 행이 추적한다. D-065 는 보류, D-078 은 부분 완료로 각자 TASKS 행이 추적한다. 이 상위 계획에만 남은 열린 항목은 없다.\n\n그래서 \"실행 처분\" 과 열린 항목 표 아래의 \"계획을 아카이브하지 않는다\" 는 이 시점에 풀린다. 두 문장과 작업 항목 P4·P6 의 빈 상자는 2026-10-17 의 판단 그대로 둔다. P4 의 남은 D-075 는 위처럼 닫혔고 P6 의 D-084 는 자기 계획서가 이어받았다. frontmatter 의 `archive: hold 177 179 180 181` 은 아카이브하면서 지웠고, 지운 사유는 `docs/preservation/plans-d116-tooling-archive-20261026.json` 의 corrections 에 있다(결정 2-2, `docs/evidence/D-116/decisions.md`).\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/task-debt-orchestration.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/task-debt-orchestration.audit.md",
+          "start": 1,
+          "end": 405
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    {
+      "path": "docs/plans/D-108.md",
+      "base_sha256": "aab4136dafedb418de5a3ebe50b39fcb2bf01b9275f32e5bb1e714cef0a7bbda",
+      "old": "grade: M\narchive: hold 248\n",
+      "new": "grade: M\n",
+      "old_sha256": "f9223fa4c29cf1981e736da162be0a2fb5fe1989e93e9fa00cdfaef0095325f8",
+      "reason": "아카이브 보류 표시를 지운다. hold 248 은 과금 세션을 실행하기 전까지 옮기지 않으려는 표시였고, 세션 실행 기록(§5)이 #250 으로 머지돼 계획 범위가 끝났다. 남은 ③ 은 §9 에서 범위 밖으로 정했고 TASKS D-108 행이 추적한다. 근거는 결정 2-1(docs/evidence/D-116/decisions.md)이다."
+    },
+    {
+      "path": "docs/plans/task-debt-orchestration.md",
+      "base_sha256": "125fb31e7aee886fd6b787a9a58cfe6b4644376ef06ec1baf8e9033c3d2e1a73",
+      "old": "grade: L\narchive: hold 177 179 180 181\n",
+      "new": "grade: L\n",
+      "old_sha256": "dc86cea5f3a57dfba792980d6fe6d5c984ddc75f012659667708ae9a8880dbce",
+      "reason": "아카이브 보류 표시를 지운다. hold 177 179 180 181 은 D-075·D-084 가 열려 있어 붙였다. D-075(#242)와 D-064(#249)가 닫혔고 남은 D-084·D-065·D-078 은 각자 TASKS 행이 추적한다. 이 파일 끝에 종결 절을 추기했다. 근거는 결정 2-2(docs/evidence/D-116/decisions.md)이다."
+    }
+  ]
+}
