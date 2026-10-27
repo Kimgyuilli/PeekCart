@@ -47,7 +47,7 @@ git config core.hooksPath .githooks
 | --- | --- |
 | 결정 근거 | [ADR 색인](docs/adr/README.md) |
 | 열린 작업과 부채 | [docs/TASKS.md](docs/TASKS.md) |
-| 단계별 작업 이력 | `docs/progress/PHASE1.md`~`PHASE5.md` |
+| 단계별 작업 이력 | `docs/progress/PHASE1.md`~`PHASE6.md` |
 | 운영 절차 | `docs/runbooks/` |
 | 부하 측정 절차 | [loadtest/README.md](loadtest/README.md) |
 
@@ -66,4 +66,4 @@ git config core.hooksPath .githooks
 | 레포 전략 | 모노레포 (Gradle 멀티모듈) |
 | 서비스 구조 | 도메인 서비스 5개와 Spring Cloud Gateway (모놀리식에서 단계적으로 분리) |
 | 인프라 | Kubernetes (로컬 minikube, 측정 GKE). 환경은 `docs/01-project-overview.md` §4 |
-| 현재 단계 | Phase 5 — 수요 기반, 로드맵 없음 (`docs/07-roadmap-portfolio.md` §16) |
+| 현재 단계 | Phase 6 — 수요 기반, 로드맵 없음 (`docs/07-roadmap-portfolio.md` §16) |
