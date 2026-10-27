@@ -14,13 +14,13 @@
 | Phase 4 설계·실행 로드맵 (ADR 시퀀싱·구현 순서) | `docs/progress/archive/phase4-design-roadmap.md` |
 | 진입 전 부채 해소 로드맵 (버킷 1 완결, 버킷 2/3 이관·게이트) | `docs/progress/archive/phase4-prep-debt-roadmap.md` |
 | 부채 후보 분류·승격 매핑 (L-001~L-022) | `docs/progress/archive/phase4-prep-debt-roadmap.md §2~5` |
-| Phase별 작업 이력 | `docs/progress/PHASE1.md` · `PHASE2.md` · `PHASE3.md` · `PHASE4.md` · `PHASE5.md` |
+| Phase별 작업 이력 | `docs/progress/PHASE1.md` · `PHASE2.md` · `PHASE3.md` · `PHASE4.md` · `PHASE5.md` · `PHASE6.md` |
 
 ---
 
-## 현재 단계: Phase 5 — 수요 기반 (로드맵 없음, 2026-09-22~, [#134](https://github.com/Kimgyuilli/PeakCart/pull/134))
+## 현재 단계: Phase 6 — 수요 기반 (로드맵 없음, 2026-10-27~, see ADR-0047)
 
-> **Phase 1~4 로 사전 로드맵은 끝났다.** Phase 5 는 순서표가 없다. 필요하다고 느낀
+> **Phase 1~4 로 사전 로드맵은 끝났다.** Phase 5 에 이어 Phase 6 도 순서표가 없다. 필요하다고 느낀
 > 시점에 항목을 추가하고 그때 착수한다.
 >
 > **추적 축은 아래 §개발 부채 / 작업 표 하나다.** 기존 D- 번호를 그대로 이어 쓴다
@@ -32,11 +32,12 @@
 > 세션/PR/문서) · `상태`. 로드맵이 없으므로 **동기를 요약에 적어 두지 않으면 나중에
 > 왜 적었는지 복원할 수 없다.** 착수 시 `/plan`, 머지 시 `/done`.
 >
-> **단계 종결 조건 없음.** Phase 4 처럼 순서표 소진으로 닫히지 않는다. 열린 표가 곧 현황이다.
+> **단계 종결 조건 없음.** 순서표 소진이 아니라 사용자 결정으로 닫고, 열린 행은 그대로 다음 단계로 넘긴다(see ADR-0047). 열린 표가 곧 현황이다.
 >
 > 열린 항목은 아래 표에 있다. 완료된 행은 `docs/progress/TASKS-done.md` 로 옮긴다.
 
-지난 단계: Phase 4 는 `docs/progress/TASKS-archive-phase4.md` ·
+지난 단계: Phase 5(2026-09-22~2026-10-27)는 이력 `docs/progress/PHASE5.md` 와 완료 행 `docs/progress/TASKS-done.md` ·
+Phase 4 는 `docs/progress/TASKS-archive-phase4.md` ·
 Phase 1~3 은 `docs/progress/TASKS-archive-phase1-3.md`.
 
 ---
