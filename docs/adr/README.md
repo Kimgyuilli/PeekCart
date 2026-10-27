@@ -21,7 +21,7 @@
 > Status 컬럼 값: `Proposed` · `Accepted` · `Deprecated` · `Superseded` · `Partially Superseded`
 > 제목은 각 ADR 파일의 H1 에서 `ADR-NNNN:` 을 뺀 문자열이다.
 > "관련 Layer 1 문서" 열은 `docs/01~07`(번호로 적는다)과 `CLAUDE.md` 가운데 본문에서 그 ADR 을 `ADR-NNNN` 으로 인용하는 문서다. 인용이 없으면 `—` 다. Layer 1 을 고치면 이 열도 다시 맞춘다.
-> 0038·0039 는 한 번도 쓰이지 않은 결번이다. 2026-10-17 병렬 작업에서 0040 이 두 번호를 건너뛰었다. 다음 번호는 0047 이다.
+> 0038·0039 는 한 번도 쓰이지 않은 결번이다. 2026-10-17 병렬 작업에서 0040 이 두 번호를 건너뛰었다. 다음 번호는 0048 이다.
 
 <!-- INDEX:BEGIN -->
 | # | 제목 | Status | Phase | 관련 Layer 1 문서 |
@@ -70,4 +70,5 @@
 | [0044](./0044-ci-critical-path-and-docs-only-skip.md) | CI 임계경로 단축 — 문서 전용 skip, images 의 lint 비대기, e2e 3러너 | Accepted | Phase 5 | 01, 06 |
 | [0045](./0045-outbox-polling-throughput-defaults.md) | outbox poller 발행 처리율 기본값 (주기 500ms, 배치 500, 락 최소 보존 설정화) | Accepted | Phase 5 | 04, 06 |
 | [0046](./0046-product-read-cache-coalescing-and-stale-serving.md) | 상품 조회 캐시의 로딩 묶기·재고 만료 전 갱신·장애 시 마지막 값 응답 (DB 진입 상한 1 유지) | Accepted | Phase 5 | 04 |
+| [0047](./0047-phase5-closure-and-phase6-operation.md) | Phase 5 마감과 Phase 6 운영 방식 (수요형 유지, 열린 행 이월, 2026-10-25 범위 결정) | Accepted | Phase 6 | 07 |
 <!-- INDEX:END -->
