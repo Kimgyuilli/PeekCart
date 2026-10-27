@@ -130,12 +130,12 @@ grade: L
 - [x] P6. `docs/progress/PHASE6.md` 를 새로 쓴다. 머리말(PHASE5 와 같은 두 줄)과 구분선, "Phase 6 은 무엇이 다른가"(Phase 5 와 같은 수요형이다. 단계를 결정으로 닫는 규칙과 이월 규칙이 처음부터 있고, 문서 구조가 `docs/README.md` 맵으로 정리된 상태로 시작하며, 엔트리 형식과 방향이 하나다), "이월 항목 (Phase 5 → 6)" 표(열린 행 11개의 ID·영역·이월 시 상태, 현황은 TASKS 가 정본이라는 한 줄)와 그 아래 부채 ID 없는 판단 항목(§2.7-5), 구분선, `## 작업 이력` 과 형식 선언을 둔다. 틀 헤딩에는 날짜를 넣지 않는다(다이제스트가 엔트리로 센다).
 - [x] P7. 현재 단계 문구. 07 §16 은 Phase 5 절을 2026-09-22~2026-10-27 완료로 줄이고 마감 ADR 과 PHASE5 를 가리킨다. Phase 6 절은 지금 Phase 5 절의 형식으로 두되 작업 목록과 Exit Criteria 는 적지 않는다(현황 TASKS, 이력 PHASE6). `docs/README.md:33` 은 지금 단계를 PHASE6 으로, 루트 `README.md:50,69` 와 `docs/01-project-overview.md:5` 는 PHASE1~PHASE6 와 Phase 6 으로 고친다.
 - [x] P8. PHASE5 종결 엔트리를 끝에 붙인다(`## 2026-10-27 — Phase 5 마감 정리 5단계: Phase 5 마감과 Phase 6 개시`). 계획·결정 줄, 마감 결정(ADR 참조), 재정렬 결과(엔트리 82, 바뀐 줄 42), 다이제스트·검사기 수정, PHASE6 개시와 이월 11행, D-116 하위 PR 일곱 개를 적는다. PR 링크와 로컬 정리 결과는 P14 와 8단계에서 채운다.
-- [ ] P9. 로컬 정리 준비. §4 의 1~5·7 통과, `git status --porcelain` 이 빈 것, #251~#256 이 MERGED 인 것을 확인한다. `git fetch --prune origin` 뒤 `plan/p6/` 목록을 다시 산출해 대조하고, 다르면 멈추고 보고한다.
-- [ ] P10. 비추적 로그. `check_logs.py` 가 exit 0 이면 삭제 57개를 경로를 하나씩 넘겨 지운다(글롭 금지). 유지 2개와 발췌가 그대로인지 본다. `docs/plans/.archive/` 가 없는지 확인한다.
-- [ ] P11. worktree 4개를 조건(§2.6, §2.7-4)을 확인한 뒤 `git worktree unlock`(잠긴 것만)·`git worktree remove`·`git worktree prune` 으로 지운다. 비추적 내용이 §2.6 의 분류(빌드 산출물과 `.cache`)뿐이면 `remove --force` 를 쓰고, 지우기 전에 비추적 목록을 `plan/p6/` 에 남긴다. 그 밖의 비추적 파일이 있으면 그 worktree 는 남긴다. 조건이 깨진 worktree 는 남기고 사유를 P14 기록에 넣는다. 이어서 로컬 브랜치 26개를 `git branch -d` 로 지운다(`-D` 금지, 남긴 worktree 의 브랜치는 둔다).
-- [ ] P12. 원격 브랜치 26개를 `git push origin --delete --force-with-lease=<브랜치>:<기록 SHA> <브랜치>` 로 하나씩 지우고 `git fetch --prune origin` 한다.
-- [ ] P13. `.gradle-work/` 를 지우고 `.cache/` 를 `codex-off`·`d078-s0.txt` 두 파일만 남긴다(로컬 lint 산출물 포함).
-- [ ] P14. 결과 기록. 사후 목록을 `plan/p6/after.txt` 로 남긴다. 종결 엔트리에 로컬 정리 결과(건수, 크기, 남긴 것과 사유)를, audit 에 지운 브랜치의 이름과 SHA 표(로컬·원격)를 적는다. §4 의 1·3 검사를 다시 돈다.
+- [x] P9. 로컬 정리 준비. §4 의 1~5·7 통과, `git status --porcelain` 이 빈 것, #251~#256 이 MERGED 인 것을 확인한다. `git fetch --prune origin` 뒤 `plan/p6/` 목록을 다시 산출해 대조하고, 다르면 멈추고 보고한다.
+- [x] P10. 비추적 로그. `check_logs.py` 가 exit 0 이면 삭제 57개를 경로를 하나씩 넘겨 지운다(글롭 금지). 유지 2개와 발췌가 그대로인지 본다. `docs/plans/.archive/` 가 없는지 확인한다.
+- [x] P11. worktree 4개를 조건(§2.6, §2.7-4)을 확인한 뒤 `git worktree unlock`(잠긴 것만)·`git worktree remove`·`git worktree prune` 으로 지운다. 비추적 내용이 §2.6 의 분류(빌드 산출물과 `.cache`)뿐이면 `remove --force` 를 쓰고, 지우기 전에 비추적 목록을 `plan/p6/` 에 남긴다. 그 밖의 비추적 파일이 있으면 그 worktree 는 남긴다. 조건이 깨진 worktree 는 남기고 사유를 P14 기록에 넣는다. 이어서 로컬 브랜치 26개를 `git branch -d` 로 지운다(`-D` 금지, 남긴 worktree 의 브랜치는 둔다).
+- [x] P12. 원격 브랜치 26개를 `git push origin --delete --force-with-lease=<브랜치>:<기록 SHA> <브랜치>` 로 하나씩 지우고 `git fetch --prune origin` 한다.
+- [x] P13. `.gradle-work/` 를 지우고 `.cache/` 를 `codex-off`·`d078-s0.txt` 두 파일만 남긴다(로컬 lint 산출물 포함).
+- [x] P14. 결과 기록. 사후 목록을 `plan/p6/after.txt` 로 남긴다. 종결 엔트리에 로컬 정리 결과(건수, 크기, 남긴 것과 사유)를, audit 에 지운 브랜치의 이름과 SHA 표(로컬·원격)를 적는다. §4 의 1·3 검사를 다시 돈다.
 
 `/ship` 8단계(PR URL 확정 뒤, 상자 없음)에서 할 일:
 
@@ -171,3 +171,4 @@ P1~P14 상자가 채워지고 §4 결과를 audit 에 남기면 `/ship` 한다. 
 - `CLAUDE.md:88` 의 낡은 07 포인터와 Flyway 경로(P4b 기록). Layer 1 밖이다.
 - `--phase 1`·`--phase 2`·`--phase 4` 로 옛 파일을 읽을 때 날짜 없는 절을 세지 않게 되는 변화는 되돌리지 않는다.
 - 재정렬·대조 도구와 로컬 정리 확인기는 저장소에 두지 않는다(P4b 와 같은 판단).
+- P10 실행 중 결정 1-4 가 남기기로 한 원본 2개가 함께 지워졌다. 되살릴 수 없고 #251 의 발췌는 남아 있다. 경위와 처리는 audit 의 로컬 정리 블록과 PHASE5 종결 엔트리에 있다.
