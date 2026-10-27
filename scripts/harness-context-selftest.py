@@ -93,6 +93,21 @@ class HarnessContextTest(unittest.TestCase):
             self.assertIn('- [%s] Docs | %s\n' % (ident, label), result.stdout)
         self.assertNotIn('D-904', result.stdout)
 
+    def test_digest_counts_dated_entries_before_work_history(self):
+        # Entries are dated headings on either side of 작업 이력, newest first by date.
+        self.write('docs/progress/PHASE5.md', '# Phase 5\n## 2026-10-22 — before history\n'
+                   '## 이월 항목\n## 작업 이력\n## 2026-10-21 — after history\n')
+        result = self.check(digest=True)
+        self.assertIn('## progress 최근 (PHASE5.md, 전체 2엔트리)\n- 2026-10-22 — before history\n'
+                      '- 2026-10-21 — after history\n\n## 계획서', result.stdout)
+
+    def test_digest_empty_work_history_reports_none_without_frame_headings(self):
+        # A new phase file has only undated frame headings until its first entry; that is not a warning.
+        self.write('docs/progress/PHASE5.md', '# Phase 5\n## Phase 5 는 무엇이 다른가\n'
+                   '## 이월 항목 (Phase 4 → 5)\n## 작업 이력\n')
+        result = self.check(digest=True)
+        self.assertIn('## progress 최근 (PHASE5.md, 전체 0엔트리)\n(없음)\n\n## 계획서', result.stdout)
+
     def test_empty_archive_and_digest_are_failures(self):
         self.write(DONE, '')
         self.check(3); self.check(3, digest=True)
