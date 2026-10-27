@@ -77,3 +77,9 @@
 - 계획과 달라진 점: PHASE5 형식 선언에 재정렬 전 본문의 위치 표현("아래 2026-10-17 기록")은 옛 순서 기준이라는 문장을 더했다. ADR-0047 D5 에 D-065 ③ 코드 몫(#244)을 출처와 함께 더했다. TASKS 단계 줄 괄호에는 PR 링크 없이 `see ADR-0047` 만 달았다. 07 Phase 5 소제목의 앵커 문자열이 바뀌었다(07 앵커 링크 0건 확인). `PHASE5.md#` 를 문자 그대로 grep 하면 이 계획서가 검색 패턴을 인용한 2건이 나와 링크 형태로 세어 0건으로 판정했다.
 - 검증: `./gradlew test --rerun --continue` BUILD SUCCESSFUL(시험 1,507 · 실패 0 · 오류 0 · 건너뜀 1, 9분 19초) · 보존 셀프테스트 66 OK · 실제 원문 셀프테스트 PASS · `plans-archive.sh --self-test` 11 ok · 하네스 셀프테스트 44 OK · 변이 17 REJECTED · `docs-preservation-ci.py --base 9d3cd957` PASS · `harness-context.sh --check --base 9d3cd957` ok · `consistency-hints.sh` 0 · `plans-index.sh --check` 최신 · ci.yml lint 잡 재현 6단계 PASS(설치 2단계 SKIP) · writing-lint(커밋) 통과 · §4-2 재정렬 대조(대응표 42줄 밖 다중집합 차이 0, 대조군 5종 실패) · §4-5 단계 문구 0건(대조군 1건 검출) · §4-6 사후 목록 일치(원격의 이 PR 브랜치만 push 전)
 - compound capture: P10 손실(한글 처분값 awk 비교, 삭제와 붙은 건수 출력)은 자동 검사로 바꿀 저장소 스크립트가 아니라 일회성 정리 명령에서 났다. 세션 메모리에 "목록은 Python 정확 비교, 건수·집합 관문은 삭제와 다른 명령" 으로 남겼다.
+
+## 2026-10-27 13:07 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/257 (base main `9d3cd957`)
+- 커밋 18개(chore 2 · docs 15 · adr 2)와 이 갱신 커밋. 분류 검사 통과, writing-lint(커밋 18건·본문·제목) 통과. 스크립트 변경이 있어 CI 는 전체 매트릭스
+- precheck: consistency ok(경고 0), `hpx_review_health` ok, 보존 검사 `--base 9d3cd957` PASS
+- 갱신: TASKS 의 D-116 행을 상태 칸만 완료와 PR 링크로 바꿔 TASKS-done 표 끝으로 옮김. PHASE5 종결 엔트리 첫 줄에 PR 링크. 상위 계획 D-116 의 `archive: hold` 삭제, §3 의 P5·P6 칸과 상자, 결과 절(하위 PR 일곱)
