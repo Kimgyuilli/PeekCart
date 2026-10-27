@@ -36,14 +36,19 @@ GKE 에서 상품 하나에 초당 170건 주문을 몰아도 음수 재고와 �
 
 Phase 1~4 의 순서표와 Exit Criteria 원문은 [Layer 1 이력 아카이브](progress/archive/layer1-history-phase1-4.md)로 옮겼다(D-116). 네 단계는 모두 끝났고 작업 이력은 `docs/progress/PHASE1.md`~`PHASE4.md` 에 있다.
 
-### Phase 5 — 수요 기반 (로드맵 없음, 2026-09-22~)
+### Phase 5 — 수요 기반 (로드맵 없음, 2026-09-22~2026-10-27, 완료)
 
-**사전 순서표가 없는 단계다.** Phase 1~4 로 계획된 로드맵은 소진됐고, 이후 작업은
-필요하다고 판단한 시점에 추가한다. 따라서 이 문서에는 Phase 5 의 작업 목록도
-Exit Criteria 도 적지 않는다 — 적는 순간 로드맵이 되기 때문이다.
+순서표 없이 진행한 첫 단계다. Exit Criteria 가 아니라 사용자 결정으로 2026-10-27 에 닫았고, 열린 행은 그대로 Phase 6 으로
+넘겼다(see ADR-0047). 작업 이력과 종결 엔트리는 `docs/progress/PHASE5.md` 에 있다.
+
+### Phase 6 — 수요 기반 (로드맵 없음, 2026-10-27~)
+
+**사전 순서표가 없는 단계다.** Phase 5 와 같이 작업은 필요하다고 판단한 시점에 추가하고, 단계는 사용자 결정으로
+닫는다(see ADR-0047). 따라서 이 문서에는 Phase 6 의 작업 목록도 Exit Criteria 도 적지 않는다. 적으면 그것이
+로드맵이 된다.
 
 - **현황·백로그**: `docs/TASKS.md §개발 부채 / 작업` (D- 단일 축)
-- **작업 이력·결정**: `docs/progress/PHASE5.md`
+- **작업 이력·결정**: `docs/progress/PHASE6.md`
 
 ---
 

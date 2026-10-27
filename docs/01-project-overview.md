@@ -2,7 +2,7 @@
 
 > **고가용성 이커머스 플랫폼**
 Java 17 · Spring Boot 3.x · Kafka · Redis · Toss Payments · Kubernetes
-작성 기준: 현재 코드(2026-10-27). 단계별 작업 이력은 `docs/progress/PHASE1.md`~`PHASE5.md` 에 있다.
+작성 기준: 현재 코드(2026-10-27). 단계별 작업 이력은 `docs/progress/PHASE1.md`~`PHASE6.md` 에 있다.
 >
 
 ---

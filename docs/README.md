@@ -30,7 +30,7 @@ PeekCart 저장소 문서의 위치와 역할이다. 문서를 새로 두거나 
 |---|---|
 | [TASKS.md](TASKS.md) | 열린 Task 와 부채 행 |
 | [progress/TASKS-done.md](progress/TASKS-done.md) | 완료한 D- 행 |
-| `progress/PHASE{N}.md` | 단계별 작업 이력. 지금 단계는 [PHASE5.md](progress/PHASE5.md) |
+| `progress/PHASE{N}.md` | 단계별 작업 이력. 지금 단계는 [PHASE6.md](progress/PHASE6.md) |
 | `progress/TASKS-archive-*.md` | Phase 1~4 의 task 이력(보호 이력) |
 | [progress/archive/](progress/archive/README.md) | 이력 문서(Phase 1·2 설계 아카이브, Layer 1 의 Phase 1~4 서술, 옛 loadtest 절차, Phase 4 로드맵, 2026-04 리뷰 보고서·도구 평가, 상태 파일 하네스 fixture) |
 | [review/](review/README.md) | 옛 리뷰 보고서 자리. 대응표만 있다 |

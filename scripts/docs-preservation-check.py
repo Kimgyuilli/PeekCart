@@ -424,32 +424,33 @@ class Checker:
                 status = new[key][1].rsplit('|', 2)[1]
                 require('✅' in status and re.search(r'https://github\.com/[^/]+/[^/]+/pull/[0-9]+', status),
                         f'Moved row lacks completion/PR evidence: {key}')
-        for path in (TASKS, DONE):
-            if path != DONE and not moved: continue
-            retained = {key for key, _ in originals[path] if key not in moved}
+        # Only done keeps its existing rows in place among header/footer history lines.
+        # TASKS lines outside rows are current prose, so a completion move may revise them in
+        # the same PR; remaining TASKS row order and moved row bodies are checked above.
+        retained = {key for key, _ in originals[DONE] if key not in moved}
 
-            def history(text, before):
-                # Preserve where the existing rows occur among header/footer lines.
-                # Ignore only newly appended/moved rows; their bodies/order are checked above.
-                canonical = self.canonical(text, path, before=before, validate=not before)
-                result = []
-                for line in canonical.splitlines(keepends=True):
-                    match = ROW.match(line)
-                    if match:
-                        if match.group(1) in retained: result.append(('row', match.group(1)))
-                    else:
-                        result.append(('text', line))
-                return result
+        def history(text, before):
+            # Preserve where the existing rows occur among header/footer lines.
+            # Ignore only newly appended/moved rows; their bodies/order are checked above.
+            canonical = self.canonical(text, DONE, before=before, validate=not before)
+            result = []
+            for line in canonical.splitlines(keepends=True):
+                match = ROW.match(line)
+                if match:
+                    if match.group(1) in retained: result.append(('row', match.group(1)))
+                else:
+                    result.append(('text', line))
+            return result
 
-            before = history(self.corrected(path), True)
-            after = history(self.current(path), False)
-            prefix_preserved = after[:len(before)] == before
-            # A byte-preserving append may extend an original final line without LF.
-            final_line_append = (before and len(after) >= len(before) and before[-1][0] == 'text'
-                                 and after[len(before) - 1][0] == 'text'
-                                 and after[:len(before) - 1] == before[:-1]
-                                 and after[len(before) - 1][1].startswith(before[-1][1]))
-            require(prefix_preserved or final_line_append, f'Existing row/footer interleave changed: {path}')
+        before = history(self.corrected(DONE), True)
+        after = history(self.current(DONE), False)
+        prefix_preserved = after[:len(before)] == before
+        # A byte-preserving append may extend an original final line without LF.
+        final_line_append = (before and len(after) >= len(before) and before[-1][0] == 'text'
+                             and after[len(before) - 1][0] == 'text'
+                             and after[:len(before) - 1] == before[:-1]
+                             and after[len(before) - 1][1].startswith(before[-1][1]))
+        require(prefix_preserved or final_line_append, f'Existing row/footer interleave changed: {DONE}')
 
     def protected(self):
         paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', self.base, 'docs'],

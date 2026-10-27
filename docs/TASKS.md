@@ -14,13 +14,13 @@
 | Phase 4 설계·실행 로드맵 (ADR 시퀀싱·구현 순서) | `docs/progress/archive/phase4-design-roadmap.md` |
 | 진입 전 부채 해소 로드맵 (버킷 1 완결, 버킷 2/3 이관·게이트) | `docs/progress/archive/phase4-prep-debt-roadmap.md` |
 | 부채 후보 분류·승격 매핑 (L-001~L-022) | `docs/progress/archive/phase4-prep-debt-roadmap.md §2~5` |
-| Phase별 작업 이력 | `docs/progress/PHASE1.md` · `PHASE2.md` · `PHASE3.md` · `PHASE4.md` · `PHASE5.md` |
+| Phase별 작업 이력 | `docs/progress/PHASE1.md` · `PHASE2.md` · `PHASE3.md` · `PHASE4.md` · `PHASE5.md` · `PHASE6.md` |
 
 ---
 
-## 현재 단계: Phase 5 — 수요 기반 (로드맵 없음, 2026-09-22~, [#134](https://github.com/Kimgyuilli/PeakCart/pull/134))
+## 현재 단계: Phase 6 — 수요 기반 (로드맵 없음, 2026-10-27~, see ADR-0047)
 
-> **Phase 1~4 로 사전 로드맵은 끝났다.** Phase 5 는 순서표가 없다. 필요하다고 느낀
+> **Phase 1~4 로 사전 로드맵은 끝났다.** Phase 5 에 이어 Phase 6 도 순서표가 없다. 필요하다고 느낀
 > 시점에 항목을 추가하고 그때 착수한다.
 >
 > **추적 축은 아래 §개발 부채 / 작업 표 하나다.** 기존 D- 번호를 그대로 이어 쓴다
@@ -32,11 +32,12 @@
 > 세션/PR/문서) · `상태`. 로드맵이 없으므로 **동기를 요약에 적어 두지 않으면 나중에
 > 왜 적었는지 복원할 수 없다.** 착수 시 `/plan`, 머지 시 `/done`.
 >
-> **단계 종결 조건 없음.** Phase 4 처럼 순서표 소진으로 닫히지 않는다. 열린 표가 곧 현황이다.
+> **단계 종결 조건 없음.** 순서표 소진이 아니라 사용자 결정으로 닫고, 열린 행은 그대로 다음 단계로 넘긴다(see ADR-0047). 열린 표가 곧 현황이다.
 >
 > 열린 항목은 아래 표에 있다. 완료된 행은 `docs/progress/TASKS-done.md` 로 옮긴다.
 
-지난 단계: Phase 4 는 `docs/progress/TASKS-archive-phase4.md` ·
+지난 단계: Phase 5(2026-09-22~2026-10-27)는 이력 `docs/progress/PHASE5.md` 와 완료 행 `docs/progress/TASKS-done.md` ·
+Phase 4 는 `docs/progress/TASKS-archive-phase4.md` ·
 Phase 1~3 은 `docs/progress/TASKS-archive-phase1-3.md`.
 
 ---
@@ -60,4 +61,3 @@ Phase 1~3 은 `docs/progress/TASKS-archive-phase1-3.md`.
 | D-113 | Product / Inventory | **DB 커밋 정지 뒤 재고 원장이 1 어긋났다(원인 미확인)** — D-108 세션의 MySQL 디스크 가득 참(쓰기 약 82분 정지) 복구 뒤 무효 run 최종 상태에서 음수 재고는 0 이지만 product 1 재고가 원장 기대값보다 1 적고(diff −1), CANCELLED 주문 54839 의 예약 1건이 RESERVED 로 남았다(취소는 Inventory#1 낙관락 소진으로 DLQ). 예약 RELEASED 7,034·CANCEL_REQUESTED 2,834·RESERVED 1, product DLQ 52(lock wait timeout 40·낙관락 12). 커밋 정지·lock wait timeout 경로를 로컬 장애 주입으로 재현해 원장 불변식이 깨지는 지점을 찾는다 | `loadtest/reports/2026-10-26/s3/c0/invalid/contend-retry2/integrity-anomaly.txt` · session-issues 6 · 관련: ADR-0025 | 🔲 대기 |
 | D-114 | Infra / Measurement | **측정 환경의 볼륨 크기와 영속성이 과금 세션을 견디지 못한다** — ① base `mysql-pvc` 1Gi 에서 MySQL 8 기본 binlog(ROW·FULL, 보존 30일)가 run 마다 83~123MiB 쌓여 7번째 run(누적 약 6만 주문)에 가득 찼다(errno 28). 초기화 DELETE 는 binlog 를 더 쓴다. 계획 run 수(C0 통과 6~8회 + 재시도)가 처음부터 들어가지 않았는데 계획에 디스크 예산 점검이 없었다 ② payment 스키마가 run 사이 초기화 대상이 아니다(77MiB 까지 증가) ③ `kafka-pvc` 사용량이 세션 내내 0MiB 였다(매니페스트는 `/var/lib/kafka/data` 를 마운트하지만 log.dirs 설정이 없음, 확인 필요). 측정 overlay 볼륨 크기, 커밋 경로를 바꾸지 않는 binlog 처분, 계획서의 디스크 예산 점검(PLAN-BLINDSPOTS)을 정한다 | `loadtest/reports/2026-10-26/session-issues.md` 1·10 · `stall-logs/mysql-disk.txt` | 🔲 대기 |
 | D-115 | Loadtest / Harness | **측정 하네스가 멈춤과 오판을 조용히 지나친다** — ① `d078-s3-run.sh` 초기화(`d002bc-reset.sql`)에 시간 제한이 없어 binlog 공간 대기에서 53분 무인 정지 ② `lag_total` 이 describe 빈 출력을 0 으로 돌려 배수 완료로 오판할 수 있다(복구 배수의 lag 0 이 빈 출력이었을 가능성) ③ 캡처(headless Chrome)에 시간 제한이 없어 Grafana port-forward 끊김에 10분 정지 ④ outbox 가 0 에 닿지 못하면 "outbox 0 까지 0초" 로 찍힌다 ⑤ D-108 ⑤ 흡수: `d026-run-block.sh` 워밍업 SQL `SUM(quantity)` 컬럼 오류(실제 `stock`), S2 run 단위 기록 자리 없음 | `loadtest/reports/2026-10-26/session-issues.md` 2·3·4·12 · 흡수: D-108 ⑤ | 🔲 대기 |
-| D-116 | Docs / Harness | **Phase 5 를 마감하기 전에 문서·계획서·측정 산출물이 일관된 구조로 정리돼 있지 않다** — 증적 루트가 셋(`docs/evidence`·`docs/plans/evidence`·`docs/progress/evidence`)이고, runbooks·conventions·이력 잡다 문서는 어느 문서 맵에도 없다. Layer 1 은 Phase 3~4 기준 서술이 남았다(stale 24, 문서 안 모순 2). `loadtest/reports` 44.6MB 가운데 워밍업·무효 run 지연 TSV 8.7MB 와 k6 요약 안 JWT 4.6MB 는 지표를 다시 읽을 때 쓰이지 않는다. 맥락·판단·근거·성과·결과는 잃지 않는다(지운 파일은 base 커밋 경로 목록으로 복원, 옮긴 문서는 보존 manifest). 순차 PR: ① 측정 산출물 ② 도구 경로·계획 폴더 ③ 문서 재배치 ④ 현행 문서 재기준선 ⑤ Phase 5 마감·Phase 6 개시. 로컬 정리는 ⑤ 세션에서 한다 | 사용자 요청 2026-10-26 · 전수조사·결정 `docs/evidence/D-116/` · 계획 `docs/plans/D-116.md` | 🔄 진행 중: P1 측정 원자료 정리 [#251](https://github.com/Kimgyuilli/PeekCart/pull/251) · P2 도구 경로·계획 폴더 [#252](https://github.com/Kimgyuilli/PeekCart/pull/252) · P3a 증적 통합·보존 검사기 디렉터리 이동 지원 [#253](https://github.com/Kimgyuilli/PeekCart/pull/253) · P3b 이력 문서 재배치·문서 맵 [#254](https://github.com/Kimgyuilli/PeekCart/pull/254) · P4a Layer 1 의 Phase 1~4 서술 원문 이동 [#255](https://github.com/Kimgyuilli/PeekCart/pull/255) · P4b 현행 문서 재기준선 [#256](https://github.com/Kimgyuilli/PeekCart/pull/256). 남은 것: P5 Phase 5 마감 |

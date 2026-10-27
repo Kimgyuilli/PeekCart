@@ -26,6 +26,8 @@ mutants = [
      'pass', 'test_git_source_failure_is_propagated'),
     ('archive-return-to-active-allowed', "archive_lost = {key for key, _ in old_archive} - {key for key, _ in archived_debts}",
      'archive_lost = set()', 'test_archive_return_to_active_preserves_total_but_is_regression'),
+    ('undated-frame-headings-counted', '[h for h in heads if entry_date(h)]', 'list(heads)',
+     'test_digest_empty_work_history_reports_none_without_frame_headings'),
     ('always-success', 'sys.exit(3)', 'sys.exit(0)', 'test_header_only_archive_is_failure'),
     ('always-reject', "if mode == '--check':", "sys.exit(3)\nif mode == '--check':",
      'test_normal_standalone_explicitly_reports_no_base'),
@@ -67,4 +69,4 @@ with tempfile.TemporaryDirectory(prefix='d099-mutants-') as directory:
                                  'HarnessContextTest.' + test], env=environment, text=True, capture_output=True)
         assert result.returncode != 0 and 'FAIL: ' + test in result.stderr, (name, result.stdout, result.stderr)
         print(name + ': REJECTED by ' + test)
-print('PASS: 11 CLI and 5 exact-workflow wrong-implementation controls rejected; source worktree untouched.')
+print('PASS: 12 CLI and 5 exact-workflow wrong-implementation controls rejected; source worktree untouched.')

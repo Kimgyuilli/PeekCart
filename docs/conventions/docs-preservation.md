@@ -10,7 +10,7 @@ D-098은 완료 행과 선언한 문서 이동의 원문·중복·순서·문서
 python3 -B scripts/docs-preservation-ci.py --base <PR-base-SHA>
 ```
 
-TASKS와 TASKS-done 첫 column의 D-ID는 각각 한 번만 존재해야 한다. 기존 ID는 사라질 수 없고 새 ID는 TASKS에만 등록한다. 완료 이동은 TASKS → TASKS-done이며 기존 done 행 뒤에 append한다. 여러 이동 행은 비교 base의 TASKS 원래 순서대로 추가한다. 기존 done 행과 남은 TASKS 행 순서도 보존한다.
+TASKS와 TASKS-done 첫 column의 D-ID는 각각 한 번만 존재해야 한다. 기존 ID는 사라질 수 없고 새 ID는 TASKS에만 등록한다. 완료 이동은 TASKS → TASKS-done이며 기존 done 행 뒤에 append한다. 여러 이동 행은 비교 base의 TASKS 원래 순서대로 추가한다. 기존 done 행과 남은 TASKS 행 순서도 보존한다. TASKS의 행 밖 줄은 현행 서술이라 완료 이동과 같은 PR에서 고칠 수 있다.
 
 완료 행의 마지막 상태 cell은 ✅와 실제 GitHub PR 링크로 갱신할 수 있다. 그 앞의 본문은 그대로 보존한다(`rsplit('|', 2)`로 code 안의 pipe도 보존). 이동 때문에 상대 Markdown 링크가 달라지면 같은 파일·앵커·query를 가리켜야 한다. 비교할 때 세 값을 JSON 배열로 구조화해 구분자가 포함된 fragment/query도 서로 혼동하지 않는다. 기존 done footer/정정 이력은 기존 행 사이의 위치와 순서를 함께 보존하며 뒤에 추기할 수 있다. 마지막 줄에 LF가 없던 원문에도 기존 byte prefix를 유지한 추기가 가능하다. 상태 외 본문 사실 정정은 아래 좁은 예외를 선언한다.
 

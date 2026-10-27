@@ -123,6 +123,18 @@ class PreservationTest(unittest.TestCase):
         self.write(DONE, '# Done\n' + OLDROW + completed(ROW2) + completed(ROW1) + FOOTER)
         self.check(False)
 
+    def test_tasks_prose_edit_beside_completion_move(self):
+        # TASKS lines outside rows are current prose; only done keeps its row/footer interleave.
+        self.move_task()
+        self.write(TASKS, self.read(TASKS).replace('# Active\n', '# Active: Phase 6\n')); self.check()
+
+    def test_remaining_row_order_rejected_beside_completion_move(self):
+        row3 = '| D-023 | docs | third body | origin | 🔲 |\n'
+        self.write(TASKS, self.read(TASKS) + row3)
+        self.commit_changes()
+        self.move_task(); self.write(TASKS, '# Active\n' + row3 + ROW2)
+        self.check(False, 'Task row order changed: docs/TASKS.md')
+
     def test_done_prepend_rejected(self):
         self.move_task()
         rows = self.read(DONE).splitlines(keepends=True)
