@@ -57,7 +57,7 @@ grade: L
 - 엔트리는 날짜(`YYYY-MM-DD`)가 있는 `## ` 헤딩이다. `작업 이력` 앞뒤를 가리지 않고, 날짜 없는 틀 헤딩은 세지 않는다.
 - 최근 넷은 날짜로 정렬(같은 날짜는 파일 순서)한 뒤의 마지막 넷이다. 엔트리가 없으면 `(없음)` 한 줄을 낸다. 빈 작업 이력은 경고가 아니다.
 - 경고 조건(읽기 실패, `## ` 0개, PHASE 파일 없음)은 그대로다.
-- `--phase 1`·`--phase 4` 로 옛 파일을 읽으면 날짜 없는 절(PHASE1 의 옛 템플릿 절, PHASE4 의 목차 헤딩)을 더는 엔트리로 세지 않는다. 기본 다이제스트는 현재 단계 파일만 읽는다.
+- `--phase 1`·`--phase 2`·`--phase 4` 로 옛 파일을 읽으면 날짜 없는 절(PHASE1 의 옛 템플릿 절, PHASE4 의 목차 헤딩)을 더는 엔트리로 세지 않는다. PHASE1·2 는 날짜 엔트리를 `###` 로 적어 와서 0엔트리 `(없음)` 이 되고, PHASE4 는 67 에서 41 이 된다. PHASE3 은 그대로다. 기본 다이제스트는 현재 단계 파일만 읽는다(P2 구현 중 확인, 처음 계획은 PHASE2 를 빠뜨렸다).
 - 198·201 행 주석을 새 규칙으로 바꾼다.
 
 ### 2.4 B1 역의존 스윕
@@ -115,8 +115,8 @@ grade: L
 
 순서대로 한다. 커밋은 분류별로 나눈다(`scripts/*` 는 chore, `docs/adr/*` 는 adr, 나머지는 docs). 마감 ADR 을 그것을 가리키는 문서보다 먼저 커밋한다. P4 재정렬은 다른 변경과 섞지 않고 단독 커밋으로 둔다(§4-2 의 대조 기준). P8 뒤에 §4 의 1~5·7 을 돌고, 통과하면 P9 로 간다.
 
-- [ ] P1. 보존 검사기. `scripts/docs-preservation-check.py` 의 interleave 비교(427~452 행)를 done 에만 적용한다. `scripts/docs-preservation-selftest.py` 에 시험 2건을 더한다. TASKS 의 단계 서술 줄을 고치면서 행을 옮기면 통과(수정 전 실패), 행을 옮기면서 남은 행의 순서를 바꾸면 실패다. 규약 `docs/conventions/docs-preservation.md` §비교 기준과 완료 행 에 "TASKS 의 행 밖 줄은 현행 서술이라 완료 이동과 같은 PR 에서 고칠 수 있다" 는 문장을 더한다.
-- [ ] P2. 다이제스트. `scripts/harness-context.sh` 의 progress 절을 §2.3 대로 고친다. `scripts/harness-context-selftest.py` 에 시험 2건(작업 이력 앞의 날짜 엔트리를 센다, 빈 작업 이력에서 `(없음)` 을 내고 틀 헤딩을 내지 않는다)을, `scripts/harness-context-mutants.py` 에 변이 1건(날짜 거르기를 빼면 둘째 시험이 잡는다)을 더하고 마지막 줄의 건수를 고친다.
+- [x] P1. 보존 검사기. `scripts/docs-preservation-check.py` 의 interleave 비교(427~452 행)를 done 에만 적용한다. `scripts/docs-preservation-selftest.py` 에 시험 2건을 더한다. TASKS 의 단계 서술 줄을 고치면서 행을 옮기면 통과(수정 전 실패), 행을 옮기면서 남은 행의 순서를 바꾸면 실패다. 규약 `docs/conventions/docs-preservation.md` §비교 기준과 완료 행 에 "TASKS 의 행 밖 줄은 현행 서술이라 완료 이동과 같은 PR 에서 고칠 수 있다" 는 문장을 더한다.
+- [x] P2. 다이제스트. `scripts/harness-context.sh` 의 progress 절을 §2.3 대로 고친다. `scripts/harness-context-selftest.py` 에 시험 2건(작업 이력 앞의 날짜 엔트리를 센다, 빈 작업 이력에서 `(없음)` 을 내고 틀 헤딩을 내지 않는다)을, `scripts/harness-context-mutants.py` 에 변이 1건(날짜 거르기를 빼면 둘째 시험이 잡는다)을 더하고 마지막 줄의 건수를 고친다.
 - [ ] P3. 마감 ADR `docs/adr/0047-phase5-closure-and-phase6-operation.md`. template 형식, Status Accepted, Date 2026-10-27, Deciders 는 프로젝트 오너(2026-10-26 질문지 0-1·3-5), 관련 Phase 6. Context 는 Phase 5 가 "종결 조건 없음" 을 결정으로 적어 둔 것(PHASE5 "Phase 5 는 무엇이 다른가", TASKS 단계 절, 07 §16)과 2026-10-26 마감 요청의 충돌, 범위 결정이 TASKS 행과 PHASE5 엔트리에만 있다는 사실이다. 줄 번호는 재정렬로 바뀌므로 절 이름으로 가리킨다. Decision 은 아래 앞의 다섯 항목이다.
   - Phase 5 는 Exit Criteria 가 아니라 사용자 결정으로 2026-10-27 에 닫는다. 마감 정리(D-116)가 끝나는 시점이다.
   - Phase 6 도 수요형이다. 순서표·작업 목록·Exit Criteria 를 두지 않고, D- 단일 축과 다음 번호 규칙을 잇는다. 단계는 사용자 결정으로 닫고 그 결정을 ADR 로 남긴다.
@@ -169,5 +169,5 @@ P1~P14 상자가 채워지고 §4 결과를 audit 에 남기면 `/ship` 한다. 
 - Phase 5 완료 행을 `TASKS-archive-phase5.md` 로 옮기지 않는다. D- 축이 이어지고 `TASKS-done.md` 는 단계와 무관한 완료 표다.
 - §2.7-5 판단 항목의 처분. PHASE6 이월 절에 남겨 사용자 결정을 기다린다.
 - `CLAUDE.md:88` 의 낡은 07 포인터와 Flyway 경로(P4b 기록). Layer 1 밖이다.
-- `--phase 1`·`--phase 4` 로 옛 파일을 읽을 때 날짜 없는 절을 세지 않게 되는 변화는 되돌리지 않는다.
+- `--phase 1`·`--phase 2`·`--phase 4` 로 옛 파일을 읽을 때 날짜 없는 절을 세지 않게 되는 변화는 되돌리지 않는다.
 - 재정렬·대조 도구와 로컬 정리 확인기는 저장소에 두지 않는다(P4b 와 같은 판단).
