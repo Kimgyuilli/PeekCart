@@ -102,6 +102,8 @@ sequenceDiagram
 Phase 1 모놀리식 구현, Phase 2 성능 개선(Redis 캐시, Kafka 와 Outbox, 재고 동시성 제어), Phase 3 인프라와 테스트
 (K8s 배포, Prometheus 와 Grafana, 부하 테스트, HPA), Phase 4 MSA 분리 순서로 진행했습니다. Phase 5 부터는 로드맵 없이
 필요한 작업을 골라서 합니다. 단계별 이력은 `docs/progress/PHASE1.md`~`PHASE6.md` 에 있습니다.
+서비스를 떼어낸 순서와 공유 MySQL 을 서비스별 스키마로 나눈 과정은 블로그에 썼습니다([학습 기록 20](https://blog.rlarbdlf222.workers.dev/blog/peekcart-monolith-peel-order/),
+[학습 기록 21](https://blog.rlarbdlf222.workers.dev/blog/peekcart-db-per-service-schema/)).
 
 ## 대표 사례
 
@@ -114,6 +116,7 @@ Phase 1 모놀리식 구현, Phase 2 성능 개선(Redis 캐시, Kafka 와 Outbo
 - **결과**: 주문 생성은 초당 54.0건에서 158.6건으로 2.94배가 됐고, p95 는 2.38초에서 879ms 로 낮아졌습니다. 상품 상세(캐시 OFF)는
   393 rps 에서 904 rps 로 올랐고, MySQL 스로틀은 60초 런 기준 147.6초에서 0.1초로 줄었습니다. 500m 으로 되돌리자 392.6 rps(+0.2%)로 돌아왔습니다.
 - 근거: [주문 경로 측정](docs/progress/evidence/d002bc-gke-20260917.md), [읽기 경로 측정](docs/progress/evidence/d026-d002a-read-ceiling-20260920.md)
+- 블로그 글: [학습 기록 28: "병목이 아니다"라는 측정은 무엇을 배제했을까?](https://blog.rlarbdlf222.workers.dev/blog/peekcart-ruled-out-bottleneck/)
 
 ### B. 재고 경로에서 분산 락을 뺐다
 
@@ -124,6 +127,7 @@ Phase 1 모놀리식 구현, Phase 2 성능 개선(Redis 캐시, Kafka 와 Outbo
   함께 충돌한 소비자들이 같은 시각에 다시 처리를 시도해 또 충돌했기 때문입니다([ADR-0025](docs/adr/0025-inventory-concurrency-control.md)).
 - **결과**: product 3대 환경에서 상품 하나에 초당 170건씩 주문이 들어와도 음수 재고 0, 품목별 재고 불일치 0 이었습니다(유효 측정 3회).
 - 근거: [2026-10-24 측정](docs/progress/evidence/d078-gke-20261024.md), [2026-10-26 측정](docs/plans/done/D-108.md)
+- 블로그 글: 사례 A 와 같은 글의 [재고 분산 락 절](https://blog.rlarbdlf222.workers.dev/blog/peekcart-ruled-out-bottleneck/#재고-분산-락-원인을-구별하지-못한-0건)
 
 ### C. Outbox 발행 설정이 처리량 상한이었다
 
@@ -154,14 +158,17 @@ notification 이 같이 씁니다([ADR-0033](docs/adr/0033-shared-messaging-modu
   ([ADR-0023](docs/adr/0023-payment-approval-reconciliation.md)). Toss 테스트 API 를 실제로 호출해 승인과 환불 경로가
   끝까지 성공하는 것을 확인했고 실제 응답 8건을 테스트 fixture 로 고정했습니다(`TossSandboxResponseTest` 13건).
 - 근거: [Toss 실호출 기록](docs/progress/evidence/d064-toss-sandbox-20261026.md), [ADR-0012](docs/adr/0012-phase4-db-event-saga-contract.md), [ADR-0018](docs/adr/0018-compensation-refund-contract.md)
+- 블로그 글: [학습 기록 11: 같은 이벤트가 두 번 왔다(Consumer 멱등성과 DLQ)](https://blog.rlarbdlf222.workers.dev/blog/peekcart-consumer-idempotency-dlq/),
+  [학습 기록 26: DLQ 메시지를 원래 토픽에 다시 넣기 전에 무엇을 정해야 할까](https://blog.rlarbdlf222.workers.dev/blog/peekcart-dlq-replay-four-questions/),
+  [학습 기록 24: 롤백되지 않는 환불 호출에서 '한 번'은 어디서 셀까](https://blog.rlarbdlf222.workers.dev/blog/peekcart-saga-refund-exactly-once/)
 
 ## 그 밖의 개선
 
 | 항목 | 결과 | 조건 | 근거 |
 |---|---|---|---|
-| CI 시간 | 36분에서 11~15분으로 | PR 전체 실행 기준 (2026-09-22, 2026-10-24~27) | 워크플로 재배치와 통합 테스트 컨테이너 공유([ADR-0028](docs/adr/0028-integration-test-container-lifecycle.md)), e2e 3러너 분할([ADR-0044](docs/adr/0044-ci-critical-path-and-docs-only-skip.md)) |
-| 조회 캐시 | TPS 265.0에서 612.7로 (2.31배) | 모놀리식, nGrinder 50 VU (2026-04-09) | [측정 리포트](loadtest/reports/2026-04-09/REPORT.md) |
-| 커서 페이지네이션 | 깊이 900 에서 검사 행 20 대 920 (46배) | Testcontainers MySQL 8.0.46 (2026-08-30) | [실행 계획 기록](docs/progress/evidence/impl6-cursor-queryplan-20260830.md) |
+| CI 시간 | 36분에서 11~15분으로 | PR 전체 실행 기준 (2026-09-22, 2026-10-24~27) | 워크플로 재배치와 통합 테스트 컨테이너 공유([ADR-0028](docs/adr/0028-integration-test-container-lifecycle.md)), e2e 3러너 분할([ADR-0044](docs/adr/0044-ci-critical-path-and-docs-only-skip.md)), [블로그 글](https://blog.rlarbdlf222.workers.dev/blog/peekcart-ci-critical-path/) |
+| 조회 캐시 | TPS 265.0에서 612.7로 (2.31배) | 모놀리식, nGrinder 50 VU (2026-04-09) | [측정 리포트](loadtest/reports/2026-04-09/REPORT.md), [블로그 글](https://blog.rlarbdlf222.workers.dev/blog/peekcart-cache-effect-measurement/) |
+| 커서 페이지네이션 | 깊이 900 에서 검사 행 20 대 920 (46배) | Testcontainers MySQL 8.0.46 (2026-08-30) | [실행 계획 기록](docs/progress/evidence/impl6-cursor-queryplan-20260830.md), [블로그 글](https://blog.rlarbdlf222.workers.dev/blog/peekcart-unsorted-pagination-cursor/) |
 
 ## 기술 스택
 
