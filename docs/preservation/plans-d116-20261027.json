@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-116-phase-close.md",
+      "sha256": "5e033b9ff3e47fd87d2bdde7a4570af10a9f9166a504269df89d7cd1f592ce6b"
+    },
+    {
+      "path": "docs/plans/D-116-phase-close.audit.md",
+      "sha256": "1069298b41287fdeb2208438f1713f969e2da6959f65a553bf8ada5d968d202c"
+    },
+    {
+      "path": "docs/plans/D-116.md",
+      "sha256": "3e770f4beba6f6ae5d6652e55c4a975c3c05ba6315a5bb66e87ab83a290d506e"
+    },
+    {
+      "path": "docs/plans/D-116.audit.md",
+      "sha256": "a93f6834f50f9cedee56a5f2774c71b57927a8d391f49408549b66dbe0874b62"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-116-phase-close.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116-phase-close.md",
+          "start": 1,
+          "end": 174
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-116-phase-close.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116-phase-close.audit.md",
+          "start": 1,
+          "end": 85
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-116.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116.md",
+          "start": 1,
+          "end": 189
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-116.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-116.audit.md",
+          "start": 1,
+          "end": 8
+        }
+      ]
+    }
+  ]
+}
