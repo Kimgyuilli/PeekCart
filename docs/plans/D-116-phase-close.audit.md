@@ -69,3 +69,11 @@
 
 - P13: `.gradle-work/` 539,720K 를 지웠다(열린 파일·사용 프로세스 0). `.cache/` 75개(10,028KB)를 지우고 `codex-off`·`d078-s0.txt` 를 남겼다.
 - P14: 사후 목록은 세션 scratchpad `plan/p6/after.txt` 다. 표의 SHA 객체는 모두 있다(`git cat-file -e`). 계획 §4-6 의 기대값과 같고, 원격의 이 PR 브랜치만 push 전이라 없다.
+
+## 2026-10-27 13:03 — diff 리뷰
+- 상태: 의도적 생략(file: 사용자 지시 (2026-09-22): Codex 리뷰를 호출하지 않는다.)
+- 게이트: `hpx_codex_allowed "D-116-phase-close"` 가 `blocked`(source file, origin `.cache/codex-off`). codex 명령은 실행하지 않았다.
+- 총괄 검토: 구현 단계마다 diff 를 읽고 코드·원문과 대조했다. 보정 4건. ADR-0047 D4 에 날짜 없는 하위 절의 H3 강등을 적었고, D5 의 D-109 ⑤ 서술을 결정이 아닌 결과라서 Consequences 로 옮겼고, PHASE6 틀 헤딩의 조사를 저장소 표기(Phase 6 으로)에 맞췄고, 계획 §2.3·§6 에 빠진 PHASE2 영향을 더했다.
+- 계획과 달라진 점: PHASE5 형식 선언에 재정렬 전 본문의 위치 표현("아래 2026-10-17 기록")은 옛 순서 기준이라는 문장을 더했다. ADR-0047 D5 에 D-065 ③ 코드 몫(#244)을 출처와 함께 더했다. TASKS 단계 줄 괄호에는 PR 링크 없이 `see ADR-0047` 만 달았다. 07 Phase 5 소제목의 앵커 문자열이 바뀌었다(07 앵커 링크 0건 확인). `PHASE5.md#` 를 문자 그대로 grep 하면 이 계획서가 검색 패턴을 인용한 2건이 나와 링크 형태로 세어 0건으로 판정했다.
+- 검증: `./gradlew test --rerun --continue` BUILD SUCCESSFUL(시험 1,507 · 실패 0 · 오류 0 · 건너뜀 1, 9분 19초) · 보존 셀프테스트 66 OK · 실제 원문 셀프테스트 PASS · `plans-archive.sh --self-test` 11 ok · 하네스 셀프테스트 44 OK · 변이 17 REJECTED · `docs-preservation-ci.py --base 9d3cd957` PASS · `harness-context.sh --check --base 9d3cd957` ok · `consistency-hints.sh` 0 · `plans-index.sh --check` 최신 · ci.yml lint 잡 재현 6단계 PASS(설치 2단계 SKIP) · writing-lint(커밋) 통과 · §4-2 재정렬 대조(대응표 42줄 밖 다중집합 차이 0, 대조군 5종 실패) · §4-5 단계 문구 0건(대조군 1건 검출) · §4-6 사후 목록 일치(원격의 이 PR 브랜치만 push 전)
+- compound capture: P10 손실(한글 처분값 awk 비교, 삭제와 붙은 건수 출력)은 자동 검사로 바꿀 저장소 스크립트가 아니라 일회성 정리 명령에서 났다. 세션 메모리에 "목록은 Python 정확 비교, 건수·집합 관문은 삭제와 다른 명령" 으로 남겼다.
