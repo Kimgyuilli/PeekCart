@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 173개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 175개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -45,7 +45,7 @@
 | [task-impl3-pr4-auth-observability](./task-impl3-pr4-auth-observability.md) | 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-09-14 | 있음 |
 | [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#109](https://github.com/Kimgyuilli/PeakCart/pull/109) | 2026-09-15 | 있음 |
 
-## 부채 · 측정 (127)
+## 부채 · 측정 (129)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -173,9 +173,11 @@
 | [D-116-evidence](./D-116-evidence.md) | 증적 통합과 보존 검사기의 디렉터리 이동 지원 (D-116 P3a) | [#253](https://github.com/Kimgyuilli/PeakCart/pull/253) | 2026-10-26 | 있음 |
 | [D-116-loadtest](./D-116-loadtest.md) | 측정 산출물 정리 (D-116 P1) | [#251](https://github.com/Kimgyuilli/PeakCart/pull/251) | 2026-10-26 | 있음 |
 | [D-116-tooling](./D-116-tooling.md) | 도구 경로와 계획 폴더 정비 (D-116 P2) | [#252](https://github.com/Kimgyuilli/PeakCart/pull/252) | 2026-10-26 | 있음 |
+| [D-116](./D-116.md) | Phase 5 마감 정리: 문서·계획서·측정 산출물 재구성 | [#257](https://github.com/Kimgyuilli/PeakCart/pull/257) | 2026-10-27 | 있음 |
 | [D-116-docs-move](./D-116-docs-move.md) | 이력 문서 재배치와 문서 맵 (D-116 P3b) | [#254](https://github.com/Kimgyuilli/PeakCart/pull/254) | 2026-10-27 | 있음 |
 | [D-116-layer1](./D-116-layer1.md) | 현행 문서 재기준선 (D-116 P4b) | [#256](https://github.com/Kimgyuilli/PeakCart/pull/256) | 2026-10-27 | 있음 |
 | [D-116-layer1-archive](./D-116-layer1-archive.md) | Layer 1 의 Phase 1~4 서술 원문 이동 (D-116 P4a) | [#255](https://github.com/Kimgyuilli/PeakCart/pull/255) | 2026-10-27 | 있음 |
+| [D-116-phase-close](./D-116-phase-close.md) | Phase 5 마감과 Phase 6 개시 (D-116 P5·P6) | [#257](https://github.com/Kimgyuilli/PeakCart/pull/257) | 2026-10-27 | 있음 |
 
 ## 기타 (16)
 

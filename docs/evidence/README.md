@@ -38,5 +38,5 @@
 | [D-102](D-102/README.md) | [D-102](../plans/done/D-102.md) | 테스트 주석 inventory, 통합 대조 결과. 도구와 baseline 은 `scripts/test-comments/` | 근거 | 3 · 83KB | — |
 | [D-103](D-103/README.md) | [D-103](../plans/done/D-103.md) | 리뷰 렌더러 계약 로컬 결과 json·txt | 로컬 실행 | 7 · 11KB | — |
 | [D-104](D-104/README.md) | [D-104](../plans/done/D-104.md) | 리뷰 수치 재계산 근거(source-scan json)와 도구 2개 | 재계산 근거 + 도구 | 7 · 59KB | — |
-| [D-116](D-116/README.md) | [D-116](../plans/D-116.md)(진행 중) | Phase 5 마감 정리 전수조사 보고서 5개, 결정 기록, 정리 전 인벤토리 | 조사·결정 | 8 · 254KB | — |
+| [D-116](D-116/README.md) | [D-116](../plans/done/D-116.md) | Phase 5 마감 정리 전수조사 보고서 5개, 결정 기록, 정리 전 인벤토리 | 조사·결정 | 8 · 254KB | — |
 | [campaign-records-review](campaign-records-review/README.md) | [task-debt-20261021](../plans/done/task-debt-20261021.md) | 캠페인 기록 독립 검토 메모와 API 응답 | 사람 검토 + Actions API 사본 | 2 · 44KB | 2026-10-27 · 2027-01-18 · 2027-01-19 |
