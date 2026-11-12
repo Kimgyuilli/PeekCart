@@ -59,12 +59,13 @@ echo "-- effective mysql cpu limit = $EFF ($(milli "$EFF")m · 기대 $(milli "$
 
 # ── 버퍼풀 워밍업 — 블록마다 **동일한 종료 조건**으로 ────────────────────────
 # 재기동 직후의 콜드 버퍼풀이 그대로 측정에 들어가면 그것이 CPU 효과로 보인다.
+# 실패하면 멈춘다. 출력을 버리므로 확인하지 않으면 없는 컬럼(`quantity`)을 읽어도 조용히 지나간다.
 echo "-- 버퍼풀 워밍업 (전 상품 풀스캔 3회) --"
 for i in 1 2 3; do
   kubectl -n "$NS" exec deploy/mysql -- \
     mysql -upeekcart_product -ppeekcart_product -e \
-    "SELECT COUNT(*) FROM products; SELECT COUNT(*) FROM inventories; SELECT SUM(quantity) FROM inventories;" \
-    peekcart_product >/dev/null 2>&1
+    "SELECT COUNT(*) FROM products; SELECT COUNT(*) FROM inventories; SELECT SUM(stock) FROM inventories;" \
+    peekcart_product >/dev/null 2>&1 || { echo "!! 버퍼풀 워밍업 실패 — 중단"; exit 1; }
 done
 
 # ── 셀 실행 ──────────────────────────────────────────────────────────────────
