@@ -29,6 +29,9 @@ dependencies {
     // Cache — @EnableCaching/@Cacheable(product/products) RedisCacheManager (CacheConfig)
     implementation 'org.springframework.boot:spring-boot-starter-cache'
 
+    // Caffeine — 캐시 Pod 사본(장애 응답·재고 갱신). 버전은 Boot BOM 관리 (ADR-0046 D6)
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
     // Redis — @Cacheable RedisCacheManager + blacklist read adapter(common-auth) 런타임
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
