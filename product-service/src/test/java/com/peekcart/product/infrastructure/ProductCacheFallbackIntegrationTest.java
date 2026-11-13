@@ -28,6 +28,7 @@ import org.springframework.boot.test.autoconfigure.actuate.observability.AutoCon
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
@@ -44,7 +45,11 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -148,6 +153,40 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
                 }
             };
         }
+
+        /** 캐시 값의 나이(ADR-0046 soft·hard·허용 범위)를 Redis TTL 과 떼어 앞당기기 위한 시계. */
+        @Bean
+        ShiftableClock cacheClock() {
+            return new ShiftableClock();
+        }
+    }
+
+    /** 실제 시각에 오프셋을 더한다. Redis TTL 은 실제 시간으로 흐르므로, 값의 나이만 앞당길 수 있다. */
+    static final class ShiftableClock extends Clock {
+        private volatile Duration offset = Duration.ZERO;
+
+        void advance(Duration duration) {
+            offset = offset.plus(duration);
+        }
+
+        void reset() {
+            offset = Duration.ZERO;
+        }
+
+        @Override
+        public Instant instant() {
+            return Instant.now().plus(offset);
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
+        }
     }
 
     @Autowired javax.sql.DataSource dataSource;
@@ -155,6 +194,8 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
     @Autowired ProductCommandService commandService;
     @Autowired TestRestTemplate restTemplate;
     @Autowired RedisConnectionFactory redisConnectionFactory;
+    @Autowired CacheManager cacheManager;
+    @Autowired ShiftableClock clock;
 
     /** 캐시 미스 시 DB 를 실제로 몇 번 치는지 세기 위한 스파이 (V5). */
     @MockitoSpyBean ProductRepository productRepository;
@@ -180,6 +221,9 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
                 new CreateProductCommand(categoryId, "스마트폰", "설명", 1_000_000L, null, 100)).id();
 
         flushRedis();
+        // Pod 사본(ADR-0046 D4)은 Redis 를 비워도 남는다. 앞선 테스트의 사본이 장애 응답으로 새지 않게 함께 지운다.
+        cleanCaches(cacheManager);
+        clock.reset();
         clearInvocations(productRepository);
     }
 
@@ -209,6 +253,8 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
         clearInvocations(productRepository);
         redisProxy.disable();
 
+        double staleBefore = metricCount("cache_stale_served_total", DETAIL_CACHE);
+
         assertThat(queryService.getProduct(productId))
                 .as("프록시 차단 후에도 조회는 성공해야 한다(fail-open)")
                 .isNotNull();
@@ -216,8 +262,9 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
         assertThat(before.deltaOf(DETAIL_CACHE, "get"))
                 .as("프록시를 끊었는데 product 캐시의 get fallback 이 늘지 않으면 앱이 프록시를 우회하고 있다")
                 .isEqualTo(1.0);
-        verify(productRepository, times(1))
-                .findById(productId);   // 캐시가 살아 있었다면 0회였다
+        // 직전 정상 조회가 남긴 Pod 사본으로 응답한다(ADR-0046 D4). DB 는 치지 않는다.
+        verify(productRepository, times(0)).findById(productId);
+        assertThat(metricCount("cache_stale_served_total", DETAIL_CACHE) - staleBefore).isEqualTo(1.0);
     }
 
     // ---------- V1 · V2: 연결 거부 ----------
@@ -277,6 +324,8 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
         // 정상 경로로 한 번 예열한다 — 첫 호출의 JIT/Hibernate/HTTP 초기화 비용(~600ms)이
         // 타임아웃 상한 측정에 섞이면 무엇을 재는지 알 수 없게 된다.
         queryService.getProduct(productId);
+        // 예열이 남긴 Redis 값과 Pod 사본을 지운다. 사본이 있으면 장애 중 get 뒤에 적재(put)가 없다(ADR-0046 D4).
+        cleanCaches(cacheManager);
 
         FallbackSnapshot before = captureFallback();
         Timeout toxic = redisProxy.toxics().timeout(TIMEOUT_TOXIC, ToxicDirection.DOWNSTREAM, 0);
@@ -364,10 +413,11 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
     // ---------- V5: put 실패의 DB 부하 전이 ----------
 
     @Test
-    @DisplayName("V5 — 캐시가 죽어 있으면 동일 상품 N회 조회가 DB 를 N회 친다 (put 실패는 무해하지 않다)")
-    void cacheOutage_transfersLoadToDatabase() throws IOException {
+    @DisplayName("V5 — 캐시가 죽어 있어도 동일 상품 N회 조회는 DB 를 1회만 친다 (첫 적재가 Pod 사본이 된다, ADR-0046 D4)")
+    void cacheOutage_loadsOnceThenServesPodCopy() throws IOException {
         int repeats = 5;
         FallbackSnapshot before = captureFallback();
+        double staleBefore = metricCount("cache_stale_served_total", DETAIL_CACHE);
         redisProxy.disable();
         clearInvocations(productRepository);
 
@@ -375,11 +425,37 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
             assertThat(queryService.getProduct(productId).name()).isEqualTo("스마트폰");
         }
 
-        // 상세 조회의 재고 조회(InventoryRepository)는 캐시와 무관하게 매 요청 발생하므로
-        // 부하 증거에서 제외하고, 캐시가 살아 있었다면 1회로 줄었을 findById 만 센다.
-        verify(productRepository, times(repeats)).findById(productId);
+        // D-109 전에는 repeats 회였다. Redis 에 못 넣은 값도 Pod 사본으로 남아 다음 요청에 나간다.
+        verify(productRepository, times(1)).findById(productId);
         assertThat(before.deltaOf(DETAIL_CACHE, "get")).isEqualTo((double) repeats);
-        assertThat(before.deltaOf(DETAIL_CACHE, "put")).isEqualTo((double) repeats);
+        assertThat(before.deltaOf(DETAIL_CACHE, "put")).isEqualTo(1.0);
+        assertThat(metricCount("cache_stale_served_total", DETAIL_CACHE) - staleBefore)
+                .isEqualTo((double) repeats - 1);
+    }
+
+    @Test
+    @DisplayName("V6 — 장애 중 허용 범위를 넘은 Pod 사본은 내지 않는다 (정보 30분, 재고 5초)")
+    void cacheOutage_doesNotServeCopiesBeyondLimit() throws IOException {
+        assertThat(queryService.getProduct(productId).stock()).isEqualTo(100);
+        updateStockDirectly(7);
+        redisProxy.disable();
+        clearInvocations(productRepository);
+
+        // 실제 시간도 흐르므로(예열 뒤 1초 안팎) 경계 가까이 대지 않는다.
+        clock.advance(Duration.ofSeconds(2));
+        ProductDetailDto withinLimit = queryService.getProduct(productId);
+        assertThat(withinLimit.stock()).as("재고 사본은 5초 안이면 낸다").isEqualTo(100);
+        verify(productRepository, times(0)).findById(productId);
+
+        clock.advance(Duration.ofSeconds(3));
+        assertThat(queryService.getProduct(productId).stock())
+                .as("5초를 넘긴 재고 사본은 장애 중에도 내지 않는다(ADR-0026 D2)")
+                .isEqualTo(7);
+        verify(productRepository, times(0)).findById(productId);
+
+        clock.advance(Duration.ofMinutes(30));
+        assertThat(queryService.getProduct(productId).name()).isEqualTo("스마트폰");
+        verify(productRepository, times(1)).findById(productId);
     }
 
     @Test
@@ -446,9 +522,32 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
                 .sum();
     }
 
+    /** 새 캐시 지표(ADR-0046)의 {@code cache} 시계열 값. 없으면 0. */
+    private double metricCount(String metric, String cache) {
+        return prometheusBody().lines()
+                .filter(line -> line.startsWith(metric + "{"))
+                .filter(line -> line.contains("cache=\"" + cache + "\""))
+                .mapToDouble(line -> Double.parseDouble(line.substring(line.lastIndexOf(' ') + 1)))
+                .sum();
+    }
+
+    private void updateStockDirectly(int stock) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            em.getTransaction().begin();
+            em.createNativeQuery("UPDATE inventories SET stock = ? WHERE product_id = ?")
+                    .setParameter(1, stock)
+                    .setParameter(2, productId)
+                    .executeUpdate();
+            em.getTransaction().commit();
+        } finally {
+            em.close();
+        }
+    }
+
     private long readCachedProductKeyCount() {
         try (var connection = redisConnectionFactory.getConnection()) {
-            return connection.keyCommands().keys("cache:product::*".getBytes()).size();
+            return connection.keyCommands().keys("cache:v2:product::*".getBytes()).size();
         }
     }
 
@@ -489,7 +588,12 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
                 });
     }
     @Test
-    void outageBoundsConcurrentDatabaseLoadsAndRecovers() throws Exception {
+    @DisplayName("D2 — 장애 중 같은 키 동시 조회는 한 로딩에 묶여 모두 200 이고, 다른 키는 상한에 거절된다")
+    void outageCoalescesSameKeyAndBoundsOtherKeys() throws Exception {
+        Long otherProductId = commandService.create(
+                new CreateProductCommand(categoryId, "태블릿", "설명", 500_000L, null, 10)).id();
+        cleanCaches(cacheManager);
+        clearInvocations(productRepository);
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         var executor = Executors.newFixedThreadPool(5);
@@ -499,33 +603,35 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
             return invocation.callRealMethod();
         }).when(productRepository).findById(productId);
         redisProxy.disable();
+        double coalescedBefore = metricCount("cache_load_coalesced_total", DETAIL_CACHE);
         try {
             var admitted = executor.submit(() -> queryService.getProduct(productId));
             assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
-            var rejected = new java.util.ArrayList<java.util.concurrent.Future<ResponseEntity<String>>>();
-            for (int i = 0; i < 4; i++) rejected.add(executor.submit(() ->
+            var waiters = new java.util.ArrayList<java.util.concurrent.Future<ResponseEntity<String>>>();
+            for (int i = 0; i < 4; i++) waiters.add(executor.submit(() ->
                     restTemplate.getForEntity("/api/v1/products/" + productId, String.class)));
-            for (var response : rejected) {
-                var result = response.get(10, TimeUnit.SECONDS);
-                assertThat(result.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
-                assertThat(result.getBody()).contains("PRD-005");
-            }
-            verify(productRepository, times(1)).findById(productId);
+            // 기다림 상한(3초) 안에 넷 모두 리더의 로딩에 붙었는지 확인한 뒤 놓는다.
+            Awaitility.await().atMost(Duration.ofSeconds(2)).pollInterval(Duration.ofMillis(50)).until(() ->
+                    metricCount("cache_load_coalesced_total", DETAIL_CACHE) - coalescedBefore >= 4);
+
+            ResponseEntity<String> other =
+                    restTemplate.getForEntity("/api/v1/products/" + otherProductId, String.class);
+            assertThat(other.getStatusCode()).as("다른 키의 miss 는 상한을 지나야 한다(ADR-0037)")
+                    .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+            assertThat(other.getBody()).contains("PRD-005");
+
             var pool = dataSource.unwrap(com.zaxxer.hikari.HikariDataSource.class);
-            int active = pool.getHikariPoolMXBean().getActiveConnections();
-            System.out.printf("D-069 pool maximum=%d active=%d idle=%d%n", pool.getMaximumPoolSize(),
-                    active, pool.getHikariPoolMXBean().getIdleConnections());
-            assertThat(pool.getMaximumPoolSize()).isGreaterThan(1);
-            assertThat(active).as("only admitted cache miss holds a DB connection").isEqualTo(1);
-            // A real unrelated writer must still obtain a connection and commit while the read is held.
-            try (var connection = dataSource.getConnection();
-                 var update = connection.prepareStatement("UPDATE categories SET name = name WHERE id = ?")) {
-                update.setQueryTimeout(2);
-                update.setLong(1, categoryId);
-                assertThat(update.executeUpdate()).isEqualTo(1);
-            }
+            assertThat(pool.getHikariPoolMXBean().getActiveConnections())
+                    .as("기다리는 요청은 커넥션을 잡지 않는다 — 리더 하나만 잡는다").isEqualTo(1);
+
             release.countDown();
             assertThat(admitted.get(10, TimeUnit.SECONDS).id()).isEqualTo(productId);
+            for (var response : waiters) {
+                var result = response.get(10, TimeUnit.SECONDS);
+                assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+                assertThat(result.getBody()).contains("스마트폰");
+            }
+            verify(productRepository, times(1)).findById(productId);
         } finally {
             release.countDown();
             executor.shutdownNow();
@@ -533,11 +639,101 @@ class ProductCacheFallbackIntegrationTest extends AbstractIntegrationTest {
             reset(productRepository);
             healRedis();
         }
+        cleanCaches(cacheManager);
         assertThat(queryService.getProduct(productId).id()).isEqualTo(productId);
         clearInvocations(productRepository);
         assertThat(queryService.getProduct(productId).id()).isEqualTo(productId);
         verify(productRepository, times(0)).findById(productId);
     }
+
+    @Test
+    @DisplayName("D2 — Redis 가 정상일 때도 같은 키 동시 miss 는 DB 를 1회만 친다")
+    void healthyRedisCoalescesSameKeyMisses() throws Exception {
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        var executor = Executors.newFixedThreadPool(5);
+        doAnswer(invocation -> {
+            entered.countDown();
+            if (!release.await(15, TimeUnit.SECONDS)) throw new IllegalStateException("test release timed out");
+            return invocation.callRealMethod();
+        }).when(productRepository).findById(productId);
+        double coalescedBefore = metricCount("cache_load_coalesced_total", DETAIL_CACHE);
+        try {
+            var results = new java.util.ArrayList<java.util.concurrent.Future<ProductDetailDto>>();
+            results.add(executor.submit(() -> queryService.getProduct(productId)));
+            assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
+            for (int i = 0; i < 4; i++) results.add(executor.submit(() -> queryService.getProduct(productId)));
+            Awaitility.await().atMost(Duration.ofSeconds(2)).pollInterval(Duration.ofMillis(50)).until(() ->
+                    metricCount("cache_load_coalesced_total", DETAIL_CACHE) - coalescedBefore >= 4);
+            release.countDown();
+
+            for (var result : results) assertThat(result.get(10, TimeUnit.SECONDS).name()).isEqualTo("스마트폰");
+            verify(productRepository, times(1)).findById(productId);
+        } finally {
+            release.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+            reset(productRepository);
+        }
+    }
+
+    @Test
+    @DisplayName("D3 — soft 를 지난 재고의 갱신이 상한에 거절되면 hard 안에서는 기존 값이 200 으로 나간다")
+    void rejectedStockRefreshServesPreviousValueUntilHard() throws Exception {
+        Long otherProductId = commandService.create(
+                new CreateProductCommand(categoryId, "태블릿", "설명", 500_000L, null, 10)).id();
+        assertThat(queryService.getProduct(productId).stock()).isEqualTo(100);
+        updateStockDirectly(7);
+        cacheManager.getCache(DETAIL_CACHE).evict(otherProductId);
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        var executor = Executors.newSingleThreadExecutor();
+        doAnswer(invocation -> {
+            entered.countDown();
+            if (!release.await(15, TimeUnit.SECONDS)) throw new IllegalStateException("test release timed out");
+            return invocation.callRealMethod();
+        }).when(productRepository).findById(otherProductId);
+        double rejectedBefore = metricCount("cache_refresh_rejected_total", STOCK_CACHE);
+        try {
+            var holder = executor.submit(() -> queryService.getProduct(otherProductId)); // 상한(permit 1)을 잡는다
+            assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
+
+            // soft 3초 < 나이 < hard 5초. 실제 시간도 흐르므로 soft 바로 위에 둔다.
+            clock.advance(Duration.ofMillis(3_100));
+            ResponseEntity<String> refreshed =
+                    restTemplate.getForEntity("/api/v1/products/" + productId, String.class);
+            assertThat(refreshed.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(refreshed.getBody()).as("거절된 갱신 대신 기존 재고가 나간다").contains("\"stock\":100");
+            assertThat(metricCount("cache_refresh_rejected_total", STOCK_CACHE) - rejectedBefore).isEqualTo(1.0);
+
+            clock.advance(Duration.ofMillis(1_900)); // hard 5초 이상. Redis 에는 아직 남아 있다
+            ResponseEntity<String> expired =
+                    restTemplate.getForEntity("/api/v1/products/" + productId, String.class);
+            assertThat(expired.getStatusCode()).as("hard 를 넘으면 기존 값을 내지 않고 상한 거절이 그대로 보인다")
+                    .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+
+            release.countDown();
+            assertThat(holder.get(10, TimeUnit.SECONDS).id()).isEqualTo(otherProductId);
+            assertThat(queryService.getProduct(productId).stock()).isEqualTo(7);
+        } finally {
+            release.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+            reset(productRepository);
+        }
+    }
+
+    @Test
+    @DisplayName("롤링 호환 — 옛 접두사(cache:)의 값은 읽지 않는다")
+    void legacyPrefixIsIgnored() {
+        try (var connection = redisConnectionFactory.getConnection()) {
+            connection.stringCommands().set(("cache:product::" + productId).getBytes(), "\"legacy\"".getBytes());
+        }
+
+        assertThat(queryService.getProduct(productId).name()).isEqualTo("스마트폰");
+        verify(productRepository, times(1)).findById(productId);
+    }
+
     @Test
     void healthyCacheHitBypassesSaturatedDatabasePermit() throws Exception {
         queryService.getProducts(null, DEFAULT_PAGE); // warm only the list, leaving detail a miss

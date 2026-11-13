@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-115.md",
+      "sha256": "250d198e99c12802df1944957048de171a20de0ee04f3894b3a3799ad4886172"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-115.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-115.md",
+          "start": 1,
+          "end": 56
+        },
+        {
+          "literal": "\n## 결과\n\n2026-11-13 에 끝났다. PR: https://github.com/Kimgyuilli/PeekCart/pull/261\n"
+        }
+      ]
+    }
+  ]
+}

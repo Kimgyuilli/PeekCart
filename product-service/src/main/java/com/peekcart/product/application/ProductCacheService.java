@@ -22,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
  * 상품 조회 캐싱을 담당하는 서비스.
  * <p>Spring AOP 프록시가 {@code @Cacheable}을 정상 인터셉트하도록
  * {@link ProductQueryService}와 별도 빈으로 분리하였다.
+ *
+ * <p>세 캐시 모두 {@code sync = true} 다. 그래야 캐시가 {@code get(key, loader)} 로 불려 같은 키 miss 를
+ * 한 로딩으로 묶을 수 있다 (ADR-0046 D2).
  */
 @Service
 @Transactional(readOnly = true)
@@ -40,7 +43,7 @@ public class ProductCacheService {
      * @return 재고를 제외한 상품 정보 DTO
      * @throws ProductException 상품이 없으면 {@code PRD-001}
      */
-    @Cacheable(cacheNames = CacheConfig.PRODUCT_DETAIL_CACHE, key = "#productId")
+    @Cacheable(cacheNames = CacheConfig.PRODUCT_DETAIL_CACHE, key = "#productId", sync = true)
     public ProductInfoDto getProductInfo(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductException(ErrorCode.PRD_001));
@@ -60,12 +63,15 @@ public class ProductCacheService {
      * 돌고, 그 창의 재조회가 미커밋 구값을 되캐싱하면 stale 이 TTL 까지 고착된다(ADR-0025 와
      * 같은 함정). 정확성의 상한은 evict 이 아니라 <b>TTL</b> 이 준다.
      *
+     * <p>soft 3초가 지나면 한 요청만 다시 읽고 나머지는 기존 값을 받는다. 다시 읽기가 DB 진입 상한에 거절돼도
+     * TTL(hard 5초) 안이면 기존 값을 낸다 (ADR-0046 D3, {@code ResilientRedisCache}).
+     *
      * <p>재고 행이 없으면 0 을 반환한다 — 상세 조회는 재고 부재로 실패하지 않는다(기존 동작 유지).
      *
      * @param productId 조회할 상품 PK
      * @return 가용 재고. 재고 행이 없으면 0
      */
-    @Cacheable(cacheNames = CacheConfig.PRODUCT_STOCK_CACHE, key = "#productId")
+    @Cacheable(cacheNames = CacheConfig.PRODUCT_STOCK_CACHE, key = "#productId", sync = true)
     public int getStock(Long productId) {
         return inventoryRepository.findByProductId(productId)
                 .map(Inventory::getStock)
@@ -79,7 +85,7 @@ public class ProductCacheService {
      * @param pageable   페이징 정보
      * @return 캐시 직렬화 가능한 페이지 래퍼
      */
-    @Cacheable(cacheNames = CacheConfig.PRODUCT_LIST_CACHE,
+    @Cacheable(cacheNames = CacheConfig.PRODUCT_LIST_CACHE, sync = true,
             key = "'list:' + #categoryId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
     public CachedPage<ProductListDto> getProductList(Long categoryId, Pageable pageable) {
         Page<Product> page;

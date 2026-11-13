@@ -96,3 +96,23 @@ Phase 5 와 다른 점은 셋이다:
 - 실제 GKE 세션에서는 아직 돌리지 않았다. 다음 측정 세션이 첫 실사용이다.
 - 시간 초과 때 끊는 것은 로컬 `kubectl` 이고 MySQL 서버 쪽 쿼리는 계속될 수 있다. exit 4 면 다음 run 전에 DB 상태를 확인한다.
 - shellcheck 는 로컬에 없어 돌리지 않았다.
+
+## 2026-11-13 — 상품 조회 캐시의 로딩 묶기와 장애 시 Pod 사본 응답
+
+[PR262](https://github.com/Kimgyuilli/PeekCart/pull/262) · 계획 `D-109` · ADR-0046 D2~D6 구현.
+`ResilientRedisCache` 가 Redis 캐시를 감싸 `@Cacheable(sync = true)` 의 `get(key, loader)` 에서 처리한다. 같은 키 miss 는 Pod 안에서
+한 로딩으로 묶고(기다림 상한 3초, 넘으면 `PRD-005`), 재고는 soft 3초 뒤 한 요청만 갱신하며 상한에 거절되면 hard 5초 안에서 기존 값을
+낸다. Redis 가용성 오류 때는 허용 범위(정보 30분, 목록 10분, 재고 5초) 안의 Pod 사본으로 응답한다. DB 진입 상한 1(ADR-0037)과
+advice 순서는 그대로다.
+
+- 값의 나이를 DB 를 읽은 시각으로 재려고 Redis 값을 `CacheEnvelope` 로 싼다. 같은 키에 새 형식을 쓰면 롤링 배포 중 옛 Pod 가
+  `SerializationException`(500)을 내므로 키 접두사를 `cache:v2:` 로 바꿨다. 배포 중 evict 가 서로의 키를 지우지 못하는 창은 런북 §6.3 에 적었다.
+- Boot 의 캐시 메트릭 바인딩은 감싼 캐시를 알아보지 못한다. `CacheMeterBinderProvider` 를 따로 등록해 `cache_gets_total`(S7)을 유지했다.
+- 기다림 상한 3초는 ADR 에 없던 값이다. 로딩이 멈췄을 때 같은 키 요청이 요청 스레드를 다 쓰지 않게 한다.
+- 검증: 옛 캐시 코드로 새 통합 테스트 7건이 실패하는 것을 먼저 확인했다. 바인더 빈을 빼면 S7 테스트 2건이 실패한다.
+  product-service 270건 0 실패.
+
+미충족과 범위 밖:
+- GKE 측정(캐시 ON 고부하 503 비율, Redis 중단 시 DB 조회 수)은 다음 과금 세션으로 넘긴다. D-114 가 선행이다. D-109 는 부분 완료다.
+- 무응답 Redis 에서는 사본을 내기 전에도 요청마다 명령 타임아웃을 한 번 기다린다. 회로 차단기는 ADR-0046 범위 밖이다.
+- 새 지표의 Grafana alert 는 GKE 측정 값을 본 뒤 정한다.
