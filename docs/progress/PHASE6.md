@@ -116,3 +116,16 @@ advice 순서는 그대로다.
 - GKE 측정(캐시 ON 고부하 503 비율, Redis 중단 시 DB 조회 수)은 다음 과금 세션으로 넘긴다. D-114 가 선행이다. D-109 는 부분 완료다.
 - 무응답 Redis 에서는 사본을 내기 전에도 요청마다 명령 타임아웃을 한 번 기다린다. 회로 차단기는 ADR-0046 범위 밖이다.
 - 새 지표의 Grafana alert 는 GKE 측정 값을 본 뒤 정한다.
+
+## 2026-11-13 — Docker 29 러너의 원격 이미지 검사 수정
+
+[PR263](https://github.com/Kimgyuilli/PeekCart/pull/263) · 계획 `D-118`.
+`ubuntu-latest` 가 ubuntu-26.04(Docker 29.4.2)로 바뀐 뒤 main push 의 이미지 publish 6개가 실패했다. containerd 이미지 저장소에서는
+`docker image inspect .Id` 가 manifest digest 라, 기록 ID 를 원격 config digest 와 비교하던 `ci-image-identity.sh verify-remote` 가 같은
+이미지를 불일치로 판정했다. 검사가 `docker info` 의 `DriverStatus` 로 저장소를 판정해 containerd 면 push manifest digest 와 비교한다.
+
+- 검사가 서비스마다 `docker info` 를 한 번 더 부르므로 `ci-publication-state-selftest.py` 의 docker 호출 수 단정(18회)을
+  manifest 조회 18회와 저장소 확인 6회로 나눴다. 첫 PR CI 가 이 단정에서 실패했다.
+
+미충족과 범위 밖:
+- publish 는 PR CI 에서 돌지 않는다. 실제 확인은 머지 뒤 main push CI 다.

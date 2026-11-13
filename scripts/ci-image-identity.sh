@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
-# 빌드 artifact, e2e 로드 이미지, GHCR manifest 의 config digest 를 연결한다.
+# 빌드 artifact, e2e 로드 이미지, GHCR manifest 를 이미지 ID 로 연결한다.
+# 이미지 ID 의 뜻은 Docker 이미지 저장소에 따라 다르다. 기존 저장소(overlay2 등)에서는 config digest 이고,
+# containerd 저장소(Docker 29 기본, ubuntu-26.04 러너)에서는 manifest digest 다. 원격 비교는 저장소에 맞춰 한다.
 set -euo pipefail
 
 fail() { echo "[ci-image-identity] $*" >&2; exit 1; }
 
 image_id() {
   docker image inspect --format '{{.Id}}' "$1"
+}
+
+uses_containerd_store() {
+  docker info --format '{{json .DriverStatus}}' | grep -q 'io.containerd.snapshotter'
 }
 
 valid_id() {
@@ -37,6 +43,11 @@ verify_remote() {
   [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]] || fail "원격 digest 형식 오류: $digest"
   expected="$(cat "$id_file")"
   valid_id "$expected" || fail "기록된 이미지 ID 형식 오류: $expected"
+  if uses_containerd_store; then
+    # 이미지 ID 가 manifest digest 다. push 가 돌려준 원격 manifest digest 와 같아야 한다.
+    [[ "$digest" == "$expected" ]] || fail "원격 manifest digest 불일치: expected=$expected actual=$digest"
+    return
+  fi
   remote="$(docker buildx imagetools inspect --raw "$repo@$digest" |
     python3 -c 'import json,sys; print(json.load(sys.stdin).get("config", {}).get("digest", ""))')"
   [[ "$remote" == "$expected" ]] || fail "원격 config digest 불일치: expected=$expected actual=$remote"
@@ -55,21 +66,28 @@ self_test() {
 case "$1 $2 $3" in
   'image inspect --format') printf '%s\n' "$CI_IMAGE_TEST_ID" ;;
   'buildx imagetools inspect') printf '{"config":{"digest":"%s"}}\n' "$CI_IMAGE_TEST_REMOTE_ID" ;;
+  'info --format '*) printf '%s\n' "$CI_IMAGE_TEST_DRIVER_STATUS" ;;
   'load  ') cat >/dev/null; echo 'Loaded test image' ;;
   *) exit 2 ;;
 esac
 SH
   chmod +x "$tmp/bin/docker"
-  export PATH="$tmp/bin:$PATH" CI_IMAGE_TEST_ID="$id" CI_IMAGE_TEST_REMOTE_ID="$id"
+  export PATH="$tmp/bin:$PATH" CI_IMAGE_TEST_ID="$id" CI_IMAGE_TEST_REMOTE_ID="$id" \
+    CI_IMAGE_TEST_DRIVER_STATUS='[["Backing Filesystem","extfs"]]'
+  local containerd='[["driver-type","io.containerd.snapshotter.v1"]]'
   printf 'test-image' | gzip > "$tmp/artifact/image.tar.gz"
   bash "$self" record example:ci "$tmp/artifact"
   bash "$self" load example:ci "$tmp/artifact" >/dev/null
   bash "$self" verify-remote example "$id" "$tmp/artifact/image-id.txt"
   CI_IMAGE_TEST_ID="$other" bash "$self" load example:ci "$tmp/artifact" >/dev/null 2>&1 && fail '다른 로드 이미지 ID 를 허용함'
   CI_IMAGE_TEST_REMOTE_ID="$other" bash "$self" verify-remote example "$id" "$tmp/artifact/image-id.txt" >/dev/null 2>&1 && fail '다른 원격 config digest 를 허용함'
+  # containerd 저장소: 이미지 ID 가 manifest digest 이고, 원격 config digest 와는 다르다(ubuntu-26.04 실측).
+  CI_IMAGE_TEST_DRIVER_STATUS="$containerd" CI_IMAGE_TEST_REMOTE_ID="$other" \
+    bash "$self" verify-remote example "$id" "$tmp/artifact/image-id.txt"
+  CI_IMAGE_TEST_DRIVER_STATUS="$containerd" bash "$self" verify-remote example "$other" "$tmp/artifact/image-id.txt" >/dev/null 2>&1 && fail 'containerd 저장소에서 다른 manifest digest 를 허용함'
   printf 'corrupt' >> "$tmp/artifact/image.tar.gz"
   bash "$self" load example:ci "$tmp/artifact" >/dev/null 2>&1 && fail '손상된 artifact 를 허용함'
-  echo 'ci-image-identity self-test OK (정상 2 · 불일치 3)'
+  echo 'ci-image-identity self-test OK (정상 3 · 불일치 4)'
 }
 
 case "${1:-}" in

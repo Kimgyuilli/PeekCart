@@ -47,6 +47,7 @@ class PublicationTest(unittest.TestCase):
 import json,os,sys
 args=sys.argv[1:]
 with open(os.environ['PUBLICATION_CALLS'],'a') as f: f.write(json.dumps(args)+'\\n')
+if args[:2] == ['info','--format']: print('[["Backing Filesystem","extfs"]]'); sys.exit(0)
 if args[:3] != ['buildx','imagetools','inspect']: sys.exit(99)
 ref=args[-1]; service=ref.split('/peekcart-')[1].split(':')[0].split('@')[0]
 x=json.load(open(os.environ['PUBLICATION_FIXTURE']))['services'][service]
@@ -83,7 +84,9 @@ else:
         self.assertTrue((gateway / 'push-outcome.txt').exists(), 'original failed attempt lost')
         self.assertTrue(all(r['status'] == 'aligned' and r['started_at'] <= r['finished_at'] for r in x['rows']))
         calls = [json.loads(line) for line in (self.root / 'calls').read_text().splitlines()]
-        self.assertEqual(len(calls), 18); self.assertTrue(all(c[:3] == ['buildx','imagetools','inspect'] for c in calls))
+        # 서비스마다 manifest 조회 3회와 identity 검사의 이미지 저장소 확인 1회(docker info)다.
+        self.assertEqual(sum(c[:3] == ['buildx','imagetools','inspect'] for c in calls), 18)
+        self.assertEqual(sum(c[:2] == ['info','--format'] for c in calls), 6); self.assertEqual(len(calls), 24)
 
     def test_partial_and_no_aligned_services(self):
         self.fixture['services']['gateway']['latest'] = 'sha256:' + 'f' * 64
