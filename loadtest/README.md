@@ -21,10 +21,12 @@ loadtest/
 │   ├── d002bc-ratelimit-probe.js      rate limit 배선 확인 (429 가 나와야 통과)
 │   ├── d002bc-order-create.js         주문 생성 k6 (기준선·HPA)
 │   ├── d002bc-contention.js           재고 경합 k6 (MODE=contend·spread, 부하 판정 포함)
+│   ├── d078-s2-block.sh               S2 블록 1개 (d026 블록 준비 + run 단위 기록)
 │   ├── d078-s3-run.sh                 경합 run 1개 (원값 전후, k6, 배수, 지연 원자료, 정합성, 초기화)
 │   ├── d078-mysql-sampler.sh          run 중 MySQL 진단 표본
 │   ├── d078-s3-export.sh              run 구간 원 시계열 export
 │   ├── d078-capture.py                Grafana annotate·캡처 URL·export
+│   ├── d078-capture-shots.sh          캡처 URL 을 headless Chrome 으로 JPEG 저장 (장당 시간 제한)
 │   ├── d078-latency.py                사가 왕복·outbox 발행 대기 집계
 │   ├── d078-warmup-check.py           워밍업 수렴 판정
 │   ├── generate-users-csv.sh          users.csv 재생성
@@ -163,7 +165,15 @@ EP=detail CACHE=on MYSQL=500m REP=1 bash loadtest/scripts/d026-run-cell.sh
 python3 loadtest/scripts/d026-collect.py .cache/d026-runs
 ```
 
-`BULKHEAD` 로 조회 DB 진입 상한의 기대값을 주면 Pod env 와 다를 때 측정하지 않는다. 캐시 ON·OFF 는 product-service 의 `peekcart.cache.enabled`(env `PEEKCART_CACHE_ENABLED`)로 바꾸며, false 면 `NoOpCacheManager` 가 들어가 `@Cacheable` 이 그대로 통과된다.
+`BULKHEAD` 로 조회 DB 진입 상한의 기대값을 주면 Pod env 와 다를 때 측정하지 않는다. 버퍼풀 워밍업이 실패해도 블록을 멈춘다.
+
+run 마다 k6 구간(`runs.tsv`)·annotate·Hikari 원값·블록 전후 Pod 배치를 남겨야 하면(D-078 S2) `d078-s2-block.sh` 를 쓴다. 블록 준비는 `d026-run-block.sh` 에 `CELLS=" "` 로 맡기고 셀 루프를 스스로 돈다.
+
+```bash
+BLOCK=b1 MYSQL=2000m LABEL=L1 BULKHEAD=1 CELLS="detail:off list:off" REPS=4 OUTDIR=<dir> LOADGEN=peekcart-d078-loadgen \
+  bash loadtest/scripts/d078-s2-block.sh
+```
+ 캐시 ON·OFF 는 product-service 의 `peekcart.cache.enabled`(env `PEEKCART_CACHE_ENABLED`)로 바꾸며, false 면 `NoOpCacheManager` 가 들어가 `@Cacheable` 이 그대로 통과된다.
 
 ### 주문·경합
 
@@ -176,7 +186,7 @@ SESSION_DIR=loadtest/reports/<날짜> CONFIG=c0 RUN=r1 PREV_RUN=w1 MODE=contend 
 OUT=loadtest/reports/<날짜>/s3/c0/r1-mysql-sample.txt bash loadtest/scripts/d078-mysql-sampler.sh &
 ```
 
-`d078-s3-run.sh` 는 product·order Pod 원값(전), k6(loadgen), 배수(outbox PENDING 0 그리고 전 group lag 0), 원값(후)과 차분, 지연 원자료 TSV, 건수·정합성, 초기화, annotate 순서로 돈다. 기본값은 USERS 450, RPS 170, DUR 60s 이고 `DRY_RUN=1` 이면 산출 경로와 k6 명령만 찍는다.
+`d078-s3-run.sh` 는 product·order Pod 원값(전), k6(loadgen), 배수(outbox PENDING 0 그리고 전 group lag 0), 원값(후)과 차분, 지연 원자료 TSV, 건수·정합성, 초기화, annotate 순서로 돈다. 기본값은 USERS 450, RPS 170, DUR 60s 이고 `DRY_RUN=1` 이면 산출 경로와 k6 명령만 찍는다. MySQL·Kafka 호출은 1회 `CALL_TIMEOUT`(기본 300초)에서 끊고, lag 조회가 비거나 실패하면 0 이 아니라 모름으로 보고 계속 기다린다. exit 3 은 배수가 `DRAIN_LIMIT`(기본 900초)를 넘은 것, exit 4 는 초기화 실패나 시간 초과다. exit 4 면 다음 run 전에 DB 상태를 확인한다.
 
 대조군(spread)을 상품 10개로 돌린 2026-10-24 세션은 대조군의 전달 실패가 경합 run 보다 많았다(D-106 ⑦). `order.created` 의 키가 주문 id 라 같은 상품의 주문도 세 파티션에 흩어지고, product replica 셋이 같은 상품 행에 동시에 쓸 수 있다. 그래서 대조군은 상품 1,000개를 쓴다.
 
@@ -191,7 +201,7 @@ k6 는 **동기 구간만** 낸다. 사가 완결 지연은 DB 원자료(`d078-s
 
 ## 기록과 집계
 
-- **캡처와 원 시계열**: `loadtest/captures.md` 의 기준을 따른다. `d078-capture.py` 가 annotate·캡처 URL·export 를, `d078-s3-export.sh` 가 run 구간 export 를 맡는다. 캡처와 export 가 저장된 것을 확인한 뒤에만 정리 단계로 간다.
+- **캡처와 원 시계열**: `loadtest/captures.md` 의 기준을 따른다. `d078-capture.py` 가 annotate·캡처 URL·export 를, `d078-capture-shots.sh` 가 그 URL 의 headless Chrome 캡처(장당 `SHOT_TIMEOUT` 기본 120초, 1회 재시도)를, `d078-s3-export.sh` 가 run 구간 export 를 맡는다. 캡처와 export 가 저장된 것을 확인한 뒤에만 정리 단계로 간다.
 - **건수**: 그래프가 아니라 `/actuator/prometheus` 원값 차분과 DB 조회로 센다.
 - **지연**: 배수 뒤 초기화 전에 `d078-saga-latency.sql`(order)과 `d078-outbox-latency.sql`(order·product)을 TSV 로 내보내고 `d078-latency.py` 로 집계한다.
 - **세션 기록**: `loadtest/reports/<날짜>/` 에 타임라인·이슈 기록과 원자료를 둔다. 커밋 전 정리(워밍업·무효 run TSV, k6 요약의 토큰, 큰 export)는 `loadtest/captures.md` §세션 뒤 정리와 날짜 폴더의 `pruned.tsv` 를 따른다.

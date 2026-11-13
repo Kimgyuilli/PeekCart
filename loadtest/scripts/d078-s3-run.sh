@@ -8,12 +8,14 @@
 # 필수: SESSION_DIR(저장소 기준 상대 경로 또는 절대 경로), CONFIG(c0·c1·c2·f), RUN, MODE(contend·spread), GW_IP
 # 선택: USERS(기본 450), RPS(기본 170), DUR(기본 60s),
 #       PREV_RUN(같은 디렉터리의 직전 워밍업 run. 주면 d078-warmup-check.py 의 수렴 판정을 찍는다),
-#       DRY_RUN=1(산출 경로와 k6 명령만 찍고 아무것도 하지 않는다)
+#       DRY_RUN=1(산출 경로와 k6 명령만 찍고 아무것도 하지 않는다),
+#       CALL_TIMEOUT(MySQL·Kafka 호출 1회 제한 초, 기본 300), DRAIN_LIMIT(배수 제한 초, 기본 900)
 #
 # 순서: product·order Pod 원값(전) -> k6 (loadgen) -> 배수(outbox PENDING 0 그리고 전 group lag 0, 2초 간격)
 #       -> 원값(후)·차분 -> 지연 원자료 TSV -> 건수·정합성 -> 초기화 -> annotate.
 # RUN 이 w 로 시작하면(워밍업) 같은 절차를 돌되 산출물을 warmup/ 에 두고 분석에 쓰지 않는다.
 # 파일 이름과 형식은 2026-10-24·10-25 S3 원자료와 같다(drain.tsv 는 머리줄을 더했다).
+# exit: 0 정상, 3 배수 제한 초과, 4 초기화 실패 또는 시간 초과(다음 run 전에 DB 상태를 확인한다).
 set -uo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
@@ -24,7 +26,10 @@ DUR="${DUR:-60s}"
 NS=peekcart
 LOADGEN=peekcart-d078-loadgen
 ZONE=asia-northeast3-a
-DRAIN_LIMIT=900   # 지난 계획 §5: 한 run 의 배수가 15분을 넘으면 S3 를 접는다
+DRAIN_LIMIT="${DRAIN_LIMIT:-900}"   # 지난 계획 §5: 한 run 의 배수가 15분을 넘으면 S3 를 접는다
+# 디스크가 가득 차면 MySQL 이 binlog 공간을 기다리며 응답하지 않는다. 제한이 없으면 run 이 알림 없이 멈춘다
+# (2026-10-26 초기화에서 53분). 끊는 것은 로컬 kubectl 이고, 서버 쪽 쿼리는 계속될 수 있다.
+CALL_TIMEOUT="${CALL_TIMEOUT:-300}"
 case "$SESSION_DIR" in /*) BASE="$SESSION_DIR" ;; *) BASE="$ROOT/$SESSION_DIR" ;; esac
 OUT="$BASE/s3/$CONFIG"
 case "$RUN" in w*) OUT="$OUT/warmup" ;; esac
@@ -39,9 +44,11 @@ mkdir -p "$OUT"
 GRAFANA_URL=http://localhost:3000
 GRAFANA_AUTH=admin:admin
 
+# macOS 에 timeout 이 없어 perl alarm 으로 끊는다(시간 초과면 exit 142).
+limited() { perl -e 'alarm shift; exec @ARGV' "$CALL_TIMEOUT" "$@"; }
 ssh_lg() { gcloud compute ssh "$LOADGEN" --zone "$ZONE" --tunnel-through-iap --quiet --command "$1"; }
-q() { local db="$1"; shift; kubectl -n "$NS" exec -i deploy/mysql -- mysql -N -B -u"$db" -p"$db" "$db" -e "$*" 2>/dev/null; }
-sql_file() { local db="$1" f="$2" flags="${3:-}"; kubectl -n "$NS" exec -i deploy/mysql -- mysql $flags -u"$db" -p"$db" "$db" < "$f" 2>/dev/null; }
+q() { local db="$1"; shift; limited kubectl -n "$NS" exec -i deploy/mysql -- mysql -N -B -u"$db" -p"$db" "$db" -e "$*" 2>/dev/null; }
+sql_file() { local db="$1" f="$2" flags="${3:-}"; limited kubectl -n "$NS" exec -i deploy/mysql -- mysql $flags -u"$db" -p"$db" "$db" < "$f" 2>/dev/null; }
 
 prom_snapshot() {
   : > "$1"
@@ -55,12 +62,16 @@ prom_snapshot() {
   done
 }
 
+# 명령이 실패하거나 파티션 줄이 하나도 없으면 0 이 아니라 '?'(모름)다. 빈 출력을 0 으로 읽어 배수 완료로
+# 오판한 일이 있다(2026-10-26 session-issues 3). 배수 루프는 0 일 때만 끝나므로 '?' 이면 계속 기다린다.
 lag_total() {
-  kubectl -n "$NS" exec deploy/kafka -- /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:29092 \
-      --describe --all-groups 2>/dev/null \
+  local out
+  out=$(limited kubectl -n "$NS" exec deploy/kafka -- /opt/kafka/bin/kafka-consumer-groups.sh \
+      --bootstrap-server localhost:29092 --describe --all-groups 2>/dev/null) || { echo '?'; return; }
+  printf '%s\n' "$out" \
     | awk '$1 != "GROUP" && NF >= 6 && $3 ~ /^[0-9]+$/ {
-             if ($5 ~ /^[0-9]+$/) { if ($4 ~ /^[0-9]+$/) l += $5 - $4; else l += $5 }
-           } END { print l + 0 }'
+             n++; if ($5 ~ /^[0-9]+$/) { if ($4 ~ /^[0-9]+$/) l += $5 - $4; else l += $5 }
+           } END { if (n) print l + 0; else print "?" }'
 }
 
 echo "=== S3 $CONFIG $RUN ($MODE, USERS=$USERS RPS=$RPS DUR=$DUR) 시작 $(date -u +%FT%TZ) ==="
@@ -93,7 +104,8 @@ while :; do
   sleep 2
 done
 printf 't0\t%s\nt1\t%s\nt_outbox0\t%s\nt_full\t%s\nk6_exit\t%s\n' "$t0" "$t1" "${t_outbox0:--}" "${t_full:--}" "$rc" > "$P-times.tsv"
-echo "  배수: outbox 0 까지 $(( ${t_outbox0:-$t1} - t1 ))초, lag 0 까지 ${t_full:+$((t_full - t1))초}${aborted:+중단}"
+if [ -n "$t_outbox0" ]; then outbox_wait="$((t_outbox0 - t1))초"; else outbox_wait="미도달"; fi
+echo "  배수: outbox 0 까지 ${outbox_wait}, lag 0 까지 ${t_full:+$((t_full - t1))초}${aborted:+중단}"
 
 prom_snapshot "$P-prom-after.tsv"
 python3 -I - "$P-prom-before.tsv" "$P-prom-after.tsv" > "$P-prom-delta.tsv" <<'PY'
@@ -132,7 +144,10 @@ sql_file peekcart_product loadtest/sql/d078-outbox-latency.sql -B > "$P-outbox-p
 } > "$P-counts.txt"
 sql_file peekcart_product loadtest/sql/d002bc-verify.sql > "$P-verify.txt"
 
-{ sql_file peekcart_order loadtest/sql/d002bc-reset.sql; sql_file peekcart_product loadtest/sql/d002bc-product-reset.sql; } > "$P-reset.txt"
+reset_rc=0
+{ sql_file peekcart_order loadtest/sql/d002bc-reset.sql || reset_rc=$?
+  sql_file peekcart_product loadtest/sql/d002bc-product-reset.sql || reset_rc=$?; } > "$P-reset.txt"
+[ "$reset_rc" = 0 ] || echo "  !! 초기화 실패(exit $reset_rc, 142 는 ${CALL_TIMEOUT}초 초과). 다음 run 전에 DB 상태를 확인한다"
 
 GRAFANA_URL="$GRAFANA_URL" GRAFANA_AUTH="$GRAFANA_AUTH" \
   python3 loadtest/scripts/d078-capture.py annotate --label "S3 $CONFIG $RUN $MODE" --from "$t0" --to "$t1" >/dev/null \
@@ -147,5 +162,6 @@ echo "--- 건수 ---"; cat "$P-counts.txt"
 echo "--- 정합성 ---"; cat "$P-verify.txt"
 echo "--- 차분 ---"; cat "$P-prom-delta.tsv"
 echo "=== S3 $CONFIG $RUN 끝 $(date -u +%FT%TZ) ==="
+[ "$reset_rc" = 0 ] || exit 4
 [ -n "$aborted" ] && exit 3
 exit 0
