@@ -395,11 +395,17 @@ MSA 환경에서 주문 생성 시 상품 단가를 즉시 확인해야 합니�
 
 **Redis 조회 캐시의 장애 정책**
 
-Product Service 의 상품 조회 Redis 캐시는 **fail-open** 입니다(L-006). `CacheErrorHandler`(`ResilientCacheErrorHandler`)가 조회 실패를 캐시 미스로 흘려 DB 로 우회하므로, Redis 장애가 상품 조회 API 를 5xx 로 만들지 않습니다. 단 `@CacheEvict` 실패는 TTL(상세 30m / 목록 10m) 만료 전까지 stale 을 남기므로 WARN + `cache_fallback_total` 메트릭으로 가시화합니다. 상품 상세의 **재고는 세 번째 캐시**(`productStock`, TTL 5초)에서 오며 쓰기 경로 무효화가 없습니다 — 정확성의 상한을 TTL 하나가 주고, 상세의 재고는 예약 보증이 아니라 표시용 힌트입니다 (see ADR-0026). 상세가 캐시를 둘 타므로 무응답 Redis 구간의 타임아웃 예산은 목록의 2배입니다. Gateway 의 rate limit 이 정반대로 fail-closed 인 이유는 보호 장치와 가속 장치의 차이입니다 (see ADR-0013 D3). 운영 절차: `docs/runbooks/redis-cache-fallback.md`.
+Product Service 의 상품 조회 Redis 캐시는 **fail-open** 입니다(L-006). `CacheErrorHandler`(`ResilientCacheErrorHandler`)가 가용성 오류를 삼키고 Pod 에 둔 마지막 값이나 DB 로 응답하므로(아래 상한 절), Redis 장애가 상품 조회 API 를 5xx 로 만들지 않습니다. 단 `@CacheEvict` 실패는 TTL(상세 30m / 목록 10m) 만료 전까지 stale 을 남기므로 WARN + `cache_fallback_total` 메트릭으로 가시화합니다. 상품 상세의 **재고는 세 번째 캐시**(`productStock`, TTL 5초)에서 오며 쓰기 경로 무효화가 없습니다 — 정확성의 상한을 TTL 하나가 주고, 상세의 재고는 예약 보증이 아니라 표시용 힌트입니다 (see ADR-0026). 상세가 캐시를 둘 타므로 무응답 Redis 구간의 타임아웃 예산은 목록의 2배입니다. Gateway 의 rate limit 이 정반대로 fail-closed 인 이유는 보호 장치와 가속 장치의 차이입니다 (see ADR-0013 D3). 운영 절차: `docs/runbooks/redis-cache-fallback.md`.
 
 **캐시 miss 의 DB 진입 상한**
 
-캐시 miss 가 DB 로 가는 조회는 Pod 마다 동시에 1개까지다(`peekcart.cache.db-max-concurrency`, 기본 1). 넘치면 기다리지 않고 `PRD-005`(503)로 거절하며, cache hit 은 이 상한을 거치지 않습니다 (see ADR-0037). 상한 1 은 D-078 재측정 뒤에도 유지했습니다 (see ADR-0046 D1). 같은 키 로딩 묶기, 재고 만료 전 갱신, Redis 장애 때 Pod 에 둔 마지막 값 응답(ADR-0046 D2~D6)은 결정됐지만 아직 구현되지 않았습니다(D-109). 지금은 같은 키의 동시 miss 가 각자 상한을 두드리고, Redis 장애 때는 위 fail-open 경로대로 모든 조회가 이 상한을 지나 DB 로 갑니다.
+캐시 miss 가 DB 로 가는 조회는 Pod 마다 동시에 1개까지다(`peekcart.cache.db-max-concurrency`, 기본 1). 넘치면 기다리지 않고 `PRD-005`(503)로 거절하며, cache hit 은 이 상한을 거치지 않습니다 (see ADR-0037). 상한 1 은 D-078 재측정 뒤에도 유지했습니다 (see ADR-0046 D1). 대신 캐시 계층(`ResilientRedisCache`)이 miss 를 줄입니다 (see ADR-0046 D2~D6).
+
+- 같은 키의 동시 miss 는 Pod 안에서 한 로딩으로 묶습니다. 나머지 요청은 permit 도 커넥션도 잡지 않고 최대 3초 기다리며, 넘으면 `PRD-005` 입니다.
+- 재고는 soft 3초가 지나면 한 요청만 갱신하고 나머지는 기존 값을 받습니다. 갱신이 상한에 거절돼도 hard 5초 안이면 기존 값을 냅니다.
+- Redis 오류 때는 Pod 에 둔 마지막 값을 허용 범위(정보 30분, 목록 10분, 재고 5초) 안에서 냅니다. 범위를 넘었거나 값이 없으면 묶인 DB 조회가 상한을 지납니다. 장애 중 DB 조회는 트래픽이 아니라 "키 수 × Pod 수 ÷ 허용 범위"로 묶입니다.
+- Redis 가 정상이면 정보·목록은 지금처럼 Redis 값을 읽고 수정 때 evict 합니다. Pod 메모리 값은 평상시 응답에 쓰지 않습니다.
+- 값의 나이는 DB 에서 읽은 시각으로 잽니다. 그래서 Redis 값은 읽은 시각을 담은 봉투(`CacheEnvelope`)로 싸고, 키 접두사는 `cache:v2:` 입니다.
 
 ---
 
