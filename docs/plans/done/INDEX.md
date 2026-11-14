@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 177개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 178개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -45,7 +45,7 @@
 | [task-impl3-pr4-auth-observability](./task-impl3-pr4-auth-observability.md) | 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-09-14 | 있음 |
 | [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#109](https://github.com/Kimgyuilli/PeakCart/pull/109) | 2026-09-15 | 있음 |
 
-## 부채 · 측정 (131)
+## 부채 · 측정 (132)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -53,6 +53,7 @@
 | [D-054](./D-054.md) | D-054 | [#164](https://github.com/Kimgyuilli/PeakCart/pull/164) |  |  |
 | [D-078-product-actions](./D-078-product-actions.md) | D-078 product barrier Actions 재현 | [#218](https://github.com/Kimgyuilli/PeakCart/pull/218) |  | 있음 |
 | [D-087-profile-cache](./D-087-profile-cache.md) | D-087 profile export cache 후속 | [#216](https://github.com/Kimgyuilli/PeakCart/pull/216) |  | 있음 |
+| [D-118](./D-118.md) | main push 이미지 publish 의 원격 이미지 검사가 Docker 29 러너에서 실패한다 | [#263](https://github.com/Kimgyuilli/PeakCart/pull/263) |  |  |
 | [task-d002-rescope](./task-d002-rescope.md) | D-002 재정의 (착수 전 코드 검증) | [#117](https://github.com/Kimgyuilli/PeakCart/pull/117) |  |  |
 | [task-d027-rationale-split](./task-d027-rationale-split.md) | task-d027-rationale-split | [#158](https://github.com/Kimgyuilli/PeakCart/pull/158) |  |  |
 | [task-d028-topic-describe-setup-race](./task-d028-topic-describe-setup-race.md) | task-d028-topic-describe-setup-race | [#126](https://github.com/Kimgyuilli/PeakCart/pull/126) |  |  |
