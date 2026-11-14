@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-118.md",
+      "sha256": "fe8493b761ba513926bfdf4d97c6a9dee4db943ccdef4ea91dd755ab42395a3b"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-118.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-118.md",
+          "start": 1,
+          "end": 25
+        },
+        {
+          "literal": "\n## 결과\n\n[PR263](https://github.com/Kimgyuilli/PeekCart/pull/263) 머지 뒤 main push CI run 43381244701 에서 publish 6개와\npublication-state 가 모두 성공했다.\n"
+        }
+      ]
+    }
+  ]
+}
