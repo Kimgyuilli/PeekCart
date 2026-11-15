@@ -36,13 +36,16 @@ MISSING_DISCRIMINATOR = {
 
 
 def migration_set(service):
-    """Versioned files before the contract, the contract itself and the guard callback."""
+    """Versioned files before the contract, the contract itself and the guard callback.
+
+    Migrations after the contract (payment V17, D-112) are outside this lab: it proves the contract step only.
+    """
     folder = ROOT / (service + '-service/src/main/resources/db/migration')
     files = sorted(folder.glob('V*.sql'), key=lambda path: int(re.match(r'V(\d+)__', path.name)[1]))
-    if not files or not files[-1].name.endswith(CONTRACT_SUFFIX) or \
-            sum(path.name.endswith(CONTRACT_SUFFIX) for path in files) != 1:
-        raise RuntimeError(service + ': the contract must be the single latest migration')
-    return files[:-1], files[-1], folder / GUARD_NAME
+    contracts = [i for i, path in enumerate(files) if path.name.endswith(CONTRACT_SUFFIX)]
+    if len(contracts) != 1:
+        raise RuntimeError(service + ': exactly one contract migration is required')
+    return files[:contracts[0]], files[contracts[0]], folder / GUARD_NAME
 
 
 def command(args, data=None, timeout=40, check=True):
