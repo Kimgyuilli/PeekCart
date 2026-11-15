@@ -39,7 +39,11 @@ class FlywayContractIntegrationTest {
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Map<String, Integer> BEFORE_BACKFILL = Map.of(
             "order", 10, "product", 8, "payment", 8, "notification", 6);
+    /** 서비스별 versioned 파일 수(= 최신 버전). contract 뒤에 마이그레이션이 붙으면 CONTRACT 와 갈라진다(D-112 payment V17). */
     private static final Map<String, Integer> LATEST = Map.of(
+            "order", 15, "product", 14, "payment", 17, "notification", 10);
+    /** D-065 contract 마이그레이션의 버전. previous release·guard 대상은 이 값 기준이다. */
+    private static final Map<String, Integer> CONTRACT = Map.of(
             "order", 15, "product", 14, "payment", 16, "notification", 10);
     private static final String CONTRACT_SUFFIX = "__dead_letter_replay_contract.sql";
     private static final String GUARD = "beforeMigrate__dead_letter_replay_contract_guard.sql";
@@ -131,15 +135,15 @@ class FlywayContractIntegrationTest {
             }
         }
         assertThat(hashes).hasSize(LATEST.get(service));
-        Path contract = migrations.resolve("V" + LATEST.get(service) + CONTRACT_SUFFIX);
-        assertThat(contract).as("contract is the latest migration").exists();
+        Path contract = migrations.resolve("V" + CONTRACT.get(service) + CONTRACT_SUFFIX);
+        assertThat(contract).as("contract migration at its pinned version").exists();
         assertThat(migrations.resolve(GUARD)).exists();
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("productionMigrationSha256", hashes);
         result.put("guardSha256", sha256(Files.readAllBytes(migrations.resolve(GUARD))));
         services.put(service, result);
         String locations = "filesystem:" + migrations;
-        String previousRelease = "filesystem:" + copyVersioned(migrations, service + "-previous-release", LATEST.get(service) - 1);
+        String previousRelease = "filesystem:" + copyVersioned(migrations, service + "-previous-release", CONTRACT.get(service) - 1);
 
         String fresh = schema(service, "fresh");
         Scenario freshScenario = new Scenario(fresh, locations, false, 0);
@@ -185,14 +189,14 @@ class FlywayContractIntegrationTest {
 
         String guarded = schema(service, "guard");
         Scenario guardScenario = new Scenario(guarded, locations, false, 0);
-        invoke(guardScenario, "migrate", String.valueOf(LATEST.get(service) - 1), true);
+        invoke(guardScenario, "migrate", String.valueOf(CONTRACT.get(service) - 1), true);
         seed(guarded, false);
         Violation violation = VIOLATIONS.get(service);
         sql(guarded, violation.inject());
         Object beforeRejection = snapshot(guarded);
         assertGuardRejected(invoke(guardScenario, "migrate", "latest", false), violation.rootRows(), violation.kindRows());
         assertThat(snapshot(guarded)).isEqualTo(beforeRejection);
-        assertThat(rows(guarded, "SELECT * FROM flyway_schema_history WHERE version='" + LATEST.get(service) + "'")).isEmpty();
+        assertThat(rows(guarded, "SELECT * FROM flyway_schema_history WHERE version='" + CONTRACT.get(service) + "'")).isEmpty();
         assertNullable(guarded, "dead_letter_records", "root_record_id", "YES");
         assertNullable(guarded, "outbox_events", "record_kind", "YES");
         sql(guarded, violation.repair());
