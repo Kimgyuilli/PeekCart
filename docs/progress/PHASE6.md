@@ -167,3 +167,22 @@ ADR-0025 는 낙관락 충돌률 또는 DLQ 유입이 허용 범위를 넘으면
 미충족과 범위 밖:
 - 0.15% 에는 외부 근거(SLO)가 없다. 기준선 표본은 유효 run 2개다.
 - 게이트 계산을 측정 하네스에 넣지 않았다. 다음 contend 세션 계획서가 ADR-0048 산식을 인용해야 한다.
+
+## 2026-11-15 — payment 예약 결과 선도착의 marker 영속
+
+[PR266](https://github.com/Kimgyuilli/PeekCart/pull/266) · 계획 `D-112` · 관련 ADR-0012 §D3·D4, ADR-0016.
+payment 는 Payment 가 없는 예약 결과를 결제 없음(`PAY-003`)으로 blocking 재시도했다. 선행 결제 생성이 DLQ 로 간 주문은 풀리지 않는데
+D-108 세션에서 134건이 건마다 30~60초씩 약 1.5시간 동안 예약 결과 소비를 막았다.
+
+- 결정: non-blocking 재시도 토픽(새 토픽·순서 상실)과 선행 DLQ 판별(원장 쓰기 실패 시 못 찾음) 대신, 취소 marker 와 같은 방식으로
+  예약 결과를 `payment_reservation_results`(V17)에 영속하고 `order.created` 처리 때 결제 준비로 적용한다(사용자 결정 2026-11-15).
+  선행 `order.created` DLQ 하나만 replay 해도 결제 준비까지 복구된다.
+- 경합: 두 consumer group 이 같은 주문을 동시에 처리하므로 예약 결과 쪽은 Payment 를, 생성 쪽은 Payment INSERT 뒤 marker 를 잠금 조회한다.
+  marker 는 잠금 조회로 받은 엔티티를 PK 로 지운다. 파생 `deleteByOrderId` 는 스냅숏 SELECT 라 스냅숏 이후 커밋된 행을 지우지 못한다.
+- 검증: 한쪽을 커밋 전에 세운 두 순서의 통합 테스트가 결제 준비와 marker 0행을 DB 로 확인한다. 각 잠금을 빼면 해당 순서가 실패했다.
+  `./gradlew test` 1,530개 실패 0.
+- 같은 PR 에서 D-111 계획서를 아카이브했다.
+
+미충족과 범위 밖:
+- 기존 취소 marker 경로의 같은 경합은 D-121 로 등록했다.
+- 고아 주문의 예약 marker 는 남는다(정리 스케줄러 없음). 부하 환경에서 파티션 차단 해소는 재현하지 않았다.
