@@ -6,13 +6,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.peekcart.global.idempotency.IdempotencyChecker;
 import com.peekcart.global.kafka.KafkaMessageParser;
 import com.peekcart.global.port.SlackPort;
-import com.peekcart.payment.domain.exception.PaymentException;
 import com.peekcart.payment.application.PaymentRefundService;
 import com.peekcart.payment.domain.model.Payment;
 import com.peekcart.payment.domain.model.PaymentCancellation;
+import com.peekcart.payment.domain.model.PaymentReservationResult;
 import com.peekcart.payment.domain.model.PaymentStatus;
 import com.peekcart.payment.domain.repository.PaymentCancellationRepository;
 import com.peekcart.payment.domain.repository.PaymentRepository;
+import com.peekcart.payment.domain.repository.PaymentReservationResultRepository;
 import com.peekcart.support.ServiceTest;
 import com.peekcart.support.fixture.PaymentFixture;
 import org.junit.jupiter.api.DisplayName;
@@ -21,10 +22,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -38,6 +39,7 @@ class PaymentEventConsumerTest {
     @InjectMocks PaymentEventConsumer consumer;
     @Mock PaymentRepository paymentRepository;
     @Mock PaymentCancellationRepository paymentCancellationRepository;
+    @Mock PaymentReservationResultRepository paymentReservationResultRepository;
     @Mock IdempotencyChecker idempotencyChecker;
     @Mock KafkaMessageParser kafkaMessageParser;
     @Mock SlackPort slackPort;
@@ -91,12 +93,13 @@ class PaymentEventConsumerTest {
     @DisplayName("stock.reservation.result reserved=true → 결제 준비(readyForPayment) 표시")
     void stockResult_reserved_marksReady() {
         Payment payment = PaymentFixture.pendingPaymentWithId();
-        given(paymentRepository.findByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(Optional.of(payment));
+        given(paymentRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(Optional.of(payment));
         stubStockResult(true);
 
         consumer.handleStockReservationResult("msg");
 
         assertThat(payment.isReadyForPayment()).isTrue();
+        then(paymentReservationResultRepository).should(never()).save(any());
     }
 
     @Test
@@ -106,17 +109,34 @@ class PaymentEventConsumerTest {
 
         consumer.handleStockReservationResult("msg");
 
-        then(paymentRepository).should(never()).findByOrderId(any());
+        then(paymentRepository).should(never()).findByOrderIdForUpdate(any());
+        then(paymentReservationResultRepository).should(never()).save(any());
     }
 
     @Test
-    @DisplayName("stock.reservation.result: Payment 미존재(order.created 미처리) → PAY-003 으로 재시도")
-    void stockResult_paymentMissing_throwsForRetry() {
-        given(paymentRepository.findByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(Optional.empty());
+    @DisplayName("stock.reservation.result: Payment 미존재 → 예외 없이 예약 결과 marker 영속(재시도로 파티션을 막지 않음, D-112)")
+    void stockResult_paymentMissing_persistsMarker() {
+        given(paymentRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(Optional.empty());
+        given(paymentReservationResultRepository.existsByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(false);
         stubStockResult(true);
 
-        assertThatThrownBy(() -> consumer.handleStockReservationResult("msg"))
-                .isInstanceOf(PaymentException.class);
+        consumer.handleStockReservationResult("msg");
+
+        ArgumentCaptor<PaymentReservationResult> captor = ArgumentCaptor.forClass(PaymentReservationResult.class);
+        then(paymentReservationResultRepository).should().save(captor.capture());
+        assertThat(captor.getValue().getOrderId()).isEqualTo(PaymentFixture.DEFAULT_ORDER_ID);
+    }
+
+    @Test
+    @DisplayName("stock.reservation.result: marker 가 이미 있으면 덮지 않는다")
+    void stockResult_paymentMissing_markerExists_keepsFirst() {
+        given(paymentRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(Optional.empty());
+        given(paymentReservationResultRepository.existsByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(true);
+        stubStockResult(true);
+
+        consumer.handleStockReservationResult("msg");
+
+        then(paymentReservationResultRepository).should(never()).save(any());
     }
 
     @Test
@@ -213,5 +233,43 @@ class PaymentEventConsumerTest {
         then(paymentRepository).should().save(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo(PaymentStatus.CANCELLED);
         then(paymentCancellationRepository).should().deleteByOrderId(PaymentFixture.DEFAULT_ORDER_ID);
+    }
+
+    @Test
+    @DisplayName("order.created: 선도착 예약 결과 marker 가 있으면 결제 준비로 적용하고 지운다(D-112)")
+    void orderCreated_withPriorReservationMarker_marksReady() {
+        LocalDateTime expiresAt = LocalDateTime.of(2026, 11, 15, 12, 0);
+        stubOrderCreated();
+        given(paymentCancellationRepository.existsByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(false);
+        given(paymentReservationResultRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID))
+                .willReturn(Optional.of(PaymentReservationResult.of(PaymentFixture.DEFAULT_ORDER_ID, expiresAt)));
+
+        consumer.handleOrderCreated("msg");
+
+        ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
+        then(paymentRepository).should().save(captor.capture());
+        Payment saved = captor.getValue();
+        assertThat(saved.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(saved.isReadyForPayment()).isTrue();
+        assertThat(saved.getReservationExpiresAt()).isEqualTo(expiresAt);
+        then(paymentReservationResultRepository).should().delete(any());
+    }
+
+    @Test
+    @DisplayName("order.created: 취소 marker 와 예약 marker 가 모두 있으면 CANCELLED 가 우선이고 두 marker 를 지운다")
+    void orderCreated_withBothMarkers_cancelWins() {
+        stubOrderCreated();
+        given(paymentCancellationRepository.existsByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(true);
+        given(paymentReservationResultRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID))
+                .willReturn(Optional.of(PaymentReservationResult.of(PaymentFixture.DEFAULT_ORDER_ID, null)));
+
+        consumer.handleOrderCreated("msg");
+
+        ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
+        then(paymentRepository).should().save(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo(PaymentStatus.CANCELLED);
+        assertThat(captor.getValue().isReadyForPayment()).isFalse();
+        then(paymentCancellationRepository).should().deleteByOrderId(PaymentFixture.DEFAULT_ORDER_ID);
+        then(paymentReservationResultRepository).should().delete(any());
     }
 }

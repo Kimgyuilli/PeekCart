@@ -240,6 +240,11 @@ erDiagram
     bigint order_id PK
     timestamp cancelled_at
   }
+  payment_reservation_results {
+    bigint order_id PK
+    timestamp reservation_expires_at
+    timestamp received_at
+  }
   payment_refunds {
     bigint id PK
     bigint order_id UK
@@ -296,7 +301,7 @@ erDiagram
   }
 ```
 
-> **`payment_failures` 미구현 → `payment_cancellations`**: ADR-0012 D1 은 Payment 에 `payment_failures` 를 두었으나 구현은 `payments.status='FAILED'` 로 실패를 표현하고, 대신 `payment_cancellations`(order.cancelled 선도착 silent-charge 방지 marker, strangler)를 둔다 (see ADR-0012 §D1, **ADR-0016** — 재기록). **`payment_refunds`**(V4, 구현 ④-c-1a)는 환불 진행 상태를 소유하는 별도 원장으로, `order_id` UNIQUE 가 "동일 논리 환불 1건" fence 이고 `generation` 이 fencing token 입니다. `payments.status` 에는 종결 상태 `REFUNDED` 만 추가됩니다 (see ADR-0018 §D2/§D3). `order_id`/`user_id` 는 교차 도메인 ID 참조(FK 없음, 구현 ② PR1 V13). 승인 원장 `payment_approvals`(조회 기반 reconciliation, see ADR-0023)와 대사 복구 원장 `approval_recoveries`·`approval_recovery_audit` 은 아래 ADR-0034·ADR-0040·ADR-0042 절이 설명한다.
+> **`payment_failures` 미구현 → `payment_cancellations`**: ADR-0012 D1 은 Payment 에 `payment_failures` 를 두었으나 구현은 `payments.status='FAILED'` 로 실패를 표현하고, 대신 `payment_cancellations`(order.cancelled 선도착 silent-charge 방지 marker, strangler)를 둔다 (see ADR-0012 §D1, **ADR-0016** — 재기록). `payment_reservation_results`(V17)는 같은 방식의 예약 결과 선도착 marker 다. Payment 가 없을 때 받은 `stock.reservation.result(reserved=true)` 를 재시도 대신 영속하고 `order.created` 처리 때 결제 준비로 적용한 뒤 지운다(D-112). **`payment_refunds`**(V4, 구현 ④-c-1a)는 환불 진행 상태를 소유하는 별도 원장으로, `order_id` UNIQUE 가 "동일 논리 환불 1건" fence 이고 `generation` 이 fencing token 입니다. `payments.status` 에는 종결 상태 `REFUNDED` 만 추가됩니다 (see ADR-0018 §D2/§D3). `order_id`/`user_id` 는 교차 도메인 ID 참조(FK 없음, 구현 ② PR1 V13). 승인 원장 `payment_approvals`(조회 기반 reconciliation, see ADR-0023)와 대사 복구 원장 `approval_recoveries`·`approval_recovery_audit` 은 아래 ADR-0034·ADR-0040·ADR-0042 절이 설명한다.
 
 ### Notification DB
 

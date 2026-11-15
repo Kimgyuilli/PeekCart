@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-111.md",
+      "sha256": "0c2f5a867f3cacaa4f942e8490d96b02336590600fef81f1065f5f2d03594a3c"
+    },
+    {
+      "path": "docs/plans/D-111.audit.md",
+      "sha256": "6136fb41d5a95afef584a726cc4013456b0fbfd9881e3c79f7ecd3aa90da178d"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-111.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-111.md",
+          "start": 1,
+          "end": 66
+        }
+      ]
+    },
+    {
+      "path": "docs/plans/done/D-111.audit.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-111.audit.md",
+          "start": 1,
+          "end": 18
+        }
+      ]
+    }
+  ]
+}

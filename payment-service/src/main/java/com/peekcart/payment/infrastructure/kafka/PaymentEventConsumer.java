@@ -1,17 +1,18 @@
 package com.peekcart.payment.infrastructure.kafka;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.peekcart.global.exception.ErrorCode;
 import com.peekcart.global.idempotency.IdempotencyChecker;
 import com.peekcart.global.kafka.KafkaMessageParser;
 import com.peekcart.payment.application.PaymentRefundService;
 import com.peekcart.payment.application.PaymentApprovalService;
 import com.peekcart.global.port.SlackPort;
-import com.peekcart.payment.domain.exception.PaymentException;
 import com.peekcart.payment.domain.model.Payment;
 import com.peekcart.payment.domain.model.PaymentCancellation;
+import com.peekcart.payment.domain.model.PaymentReservationResult;
+import com.peekcart.payment.domain.model.PaymentStatus;
 import com.peekcart.payment.domain.repository.PaymentCancellationRepository;
 import com.peekcart.payment.domain.repository.PaymentRepository;
+import com.peekcart.payment.domain.repository.PaymentReservationResultRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -39,6 +40,7 @@ public class PaymentEventConsumer {
     private final PaymentApprovalService approvalService;
     private final PaymentRepository paymentRepository;
     private final PaymentCancellationRepository paymentCancellationRepository;
+    private final PaymentReservationResultRepository paymentReservationResultRepository;
     private final IdempotencyChecker idempotencyChecker;
     private final KafkaMessageParser kafkaMessageParser;
     private final PaymentRefundService paymentRefundService;
@@ -76,7 +78,16 @@ public class PaymentEventConsumer {
                 paymentCancellationRepository.deleteByOrderId(orderId);
                 log.debug("선도착 취소 marker 적용 — Payment 를 CANCELLED 로 생성, orderId={}", orderId);
             }
-            paymentRepository.save(payment);
+            paymentRepository.save(payment); // IDENTITY 라 여기서 INSERT 된다 — 아래 잠금 조회보다 먼저여야 한다
+            // 예약 결과 선도착 marker(D-112). INSERT 뒤 잠금 조회라야 예약 결과 consumer 의 커밋을 기다려 본다.
+            // 취소가 우선이다: CANCELLED 로 생성됐으면 적용하지 않고 지우기만 한다.
+            paymentReservationResultRepository.findByOrderIdForUpdate(orderId).ifPresent(result -> {
+                if (payment.getStatus() == PaymentStatus.PENDING) {
+                    payment.markReadyForPayment(result.getReservationExpiresAt());
+                }
+                paymentReservationResultRepository.delete(result);
+                log.debug("선도착 예약 결과 marker 적용 — orderId={}, status={}", orderId, payment.getStatus());
+            });
             log.debug("Payment 생성 — orderId={}, status={}", orderId, payment.getStatus());
         });
     }
@@ -97,13 +108,20 @@ public class PaymentEventConsumer {
                 return;
             }
             Long orderId = payload.get("orderId").asLong();
-            // order.created → stock.reservation.result 순서는 saga 가 보장하나, payment 의 order.created
-            // 소비가 지연되면 미존재 가능 → 예외로 재시도(backoff)해 수렴시킨다.
-            Payment payment = paymentRepository.findByOrderId(orderId)
-                    .orElseThrow(() -> new PaymentException(ErrorCode.PAY_003));
             LocalDateTime expiresAt = readReservationExpiresAt(payload);
-            payment.markReadyForPayment(expiresAt);
-            log.debug("결제 준비 완료(reserved=true) — orderId={}, lease 만료={}", orderId, expiresAt);
+            // payment 의 order.created 소비가 늦거나 DLQ 로 갔으면 Payment 가 없다. 재시도는 영구 실패에서도
+            // 파티션을 막으므로 marker 로 영속하고 handleOrderCreated 가 적용한다(D-112).
+            // 잠금 조회여야 한다: 행이 없으면 키 구간을 잠가 Payment INSERT 를 이 커밋 뒤로 세운다.
+            // 비잠금이면 미커밋 Payment 를 못 보고 marker 를 남겨, 이미 marker 조회를 끝낸 생성 쪽이 놓친다.
+            paymentRepository.findByOrderIdForUpdate(orderId).ifPresentOrElse(payment -> {
+                payment.markReadyForPayment(expiresAt);
+                log.debug("결제 준비 완료(reserved=true) — orderId={}, lease 만료={}", orderId, expiresAt);
+            }, () -> {
+                if (!paymentReservationResultRepository.existsByOrderId(orderId)) {
+                    paymentReservationResultRepository.save(PaymentReservationResult.of(orderId, expiresAt));
+                }
+                log.debug("예약 결과 선도착 — marker 영속, orderId={}", orderId);
+            });
         });
     }
 
