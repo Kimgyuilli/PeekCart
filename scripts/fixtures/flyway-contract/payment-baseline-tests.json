@@ -210,7 +210,7 @@
     "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::order.created: 선도착 취소 marker 가 있으면 Payment 를 CANCELLED 로 생성(누수 0)",
     "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::stock.reservation.result reserved=false → no-op (조회조차 하지 않음)",
     "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::stock.reservation.result reserved=true → 결제 준비(readyForPayment) 표시",
-    "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::stock.reservation.result: Payment 미존재(order.created 미처리) → PAY-003 으로 재시도",
+    "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::stock.reservation.result: Payment 미존재 → 예외 없이 예약 결과 marker 영속(재시도로 파티션을 막지 않음, D-112)",
     "com.peekcart.payment.infrastructure.kafka.PaymentKafkaConfigRetryTest::actualHandlerRetriesThreeTimesWithJitterThenPublishesOnceToDlq()",
     "com.peekcart.payment.infrastructure.kafka.PaymentKafkaConfigTopicConfigContractTest::NewTopics 묶음 선언을 쓰지 않는다 — 이 수집기를 우회해 config 누락이 조용히 통과한다",
     "com.peekcart.payment.infrastructure.kafka.PaymentKafkaConfigTopicConfigContractTest::retention.ms 는 floor.kafka-topic-retention 에서 유도된다 — 리터럴이면 floor 변경 시 갈라진다",
