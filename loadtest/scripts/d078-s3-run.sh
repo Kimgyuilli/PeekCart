@@ -9,13 +9,15 @@
 # 선택: USERS(기본 450), RPS(기본 170), DUR(기본 60s),
 #       PREV_RUN(같은 디렉터리의 직전 워밍업 run. 주면 d078-warmup-check.py 의 수렴 판정을 찍는다),
 #       DRY_RUN=1(산출 경로와 k6 명령만 찍고 아무것도 하지 않는다),
-#       CALL_TIMEOUT(MySQL·Kafka 호출 1회 제한 초, 기본 300), DRAIN_LIMIT(배수 제한 초, 기본 900)
+#       CALL_TIMEOUT(MySQL·Kafka 호출 1회 제한 초, 기본 300), DRAIN_LIMIT(배수 제한 초, 기본 900),
+#       MIN_FREE_MIB(run 을 시작할 MySQL·Kafka 데이터 볼륨 최소 여유 MiB, 기본 1024)
 #
-# 순서: product·order Pod 원값(전) -> k6 (loadgen) -> 배수(outbox PENDING 0 그리고 전 group lag 0, 2초 간격)
-#       -> 원값(후)·차분 -> 지연 원자료 TSV -> 건수·정합성 -> 초기화 -> annotate.
+# 순서: 디스크 여유 확인 -> product·order Pod 원값(전) -> k6 (loadgen) -> 배수(outbox PENDING 0 그리고 전 group lag 0, 2초 간격)
+#       -> 원값(후)·차분 -> 지연 원자료 TSV -> 건수·정합성 -> 초기화 -> 디스크 기록 -> annotate.
 # RUN 이 w 로 시작하면(워밍업) 같은 절차를 돌되 산출물을 warmup/ 에 두고 분석에 쓰지 않는다.
 # 파일 이름과 형식은 2026-10-24·10-25 S3 원자료와 같다(drain.tsv 는 머리줄을 더했다).
-# exit: 0 정상, 3 배수 제한 초과, 4 초기화 실패 또는 시간 초과(다음 run 전에 DB 상태를 확인한다).
+# exit: 0 정상, 3 배수 제한 초과, 4 초기화 실패 또는 시간 초과(다음 run 전에 DB 상태를 확인한다),
+#       5 데이터 볼륨 여유가 MIN_FREE_MIB 미만이거나 읽지 못함(부하를 걸기 전에 멈춘다).
 set -uo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
@@ -30,6 +32,8 @@ DRAIN_LIMIT="${DRAIN_LIMIT:-900}"   # 지난 계획 §5: 한 run 의 배수가 1
 # 디스크가 가득 차면 MySQL 이 binlog 공간을 기다리며 응답하지 않는다. 제한이 없으면 run 이 알림 없이 멈춘다
 # (2026-10-26 초기화에서 53분). 끊는 것은 로컬 kubectl 이고, 서버 쪽 쿼리는 계속될 수 있다.
 CALL_TIMEOUT="${CALL_TIMEOUT:-300}"
+# run 당 증가는 MySQL 83~123MiB(2026-10-25, binlog 73%)였다. Kafka 는 아직 잰 적이 없어 run 마다 disk.tsv 에 남긴다(D-114).
+MIN_FREE_MIB="${MIN_FREE_MIB:-1024}"
 case "$SESSION_DIR" in /*) BASE="$SESSION_DIR" ;; *) BASE="$ROOT/$SESSION_DIR" ;; esac
 OUT="$BASE/s3/$CONFIG"
 case "$RUN" in w*) OUT="$OUT/warmup" ;; esac
@@ -74,7 +78,28 @@ lag_total() {
            } END { if (n) print l + 0; else print "?" }'
 }
 
+# 데이터 볼륨의 사용·여유(MiB)를 disk.tsv 에 한 줄씩 남긴다. 읽지 못하면 '?' 다.
+disk_record() {
+  local stage="$1" deploy path out used avail
+  for deploy in mysql:/var/lib/mysql kafka:/var/lib/kafka/data; do
+    path="${deploy#*:}"; deploy="${deploy%%:*}"
+    out=$(limited kubectl -n "$NS" exec "deploy/$deploy" -- df -Pm "$path" 2>/dev/null) || out=""
+    used=$(printf '%s\n' "$out" | awk 'NR == 2 && $3 ~ /^[0-9]+$/ { print $3 }')
+    avail=$(printf '%s\n' "$out" | awk 'NR == 2 && $4 ~ /^[0-9]+$/ { print $4 }')
+    printf '%s\t%s\t%s\t%s\t%s\n' "$stage" "$deploy" "$path" "${used:-?}" "${avail:-?}" >> "$P-disk.tsv"
+  done
+}
+
 echo "=== S3 $CONFIG $RUN ($MODE, USERS=$USERS RPS=$RPS DUR=$DUR) 시작 $(date -u +%FT%TZ) ==="
+# 디스크가 가득 차면 run 중간에 커밋이 멈추고 초기화도 끝나지 않는다(2026-10-26 session-issues 1·2).
+# 부하를 걸기 전에 여유를 본다. 읽지 못한 값도 통과시키지 않는다.
+printf 'stage\tdeploy\tpath\tused_mib\tavail_mib\n' > "$P-disk.tsv"
+disk_record before
+low=$(awk -F'\t' -v min="$MIN_FREE_MIB" 'NR > 1 && ($5 !~ /^[0-9]+$/ || $5 + 0 < min) { print $2 "=" $5 "MiB" }' "$P-disk.tsv" | tr '\n' ' ')
+if [ -n "$low" ]; then
+  echo "  !! 데이터 볼륨 여유가 ${MIN_FREE_MIB}MiB 미만이거나 읽지 못했다: ${low}(부하를 걸지 않고 멈춘다)"
+  exit 5
+fi
 prom_snapshot "$P-prom-before.tsv"
 
 t0=$(date +%s)
@@ -148,6 +173,8 @@ reset_rc=0
 { sql_file peekcart_order loadtest/sql/d002bc-reset.sql || reset_rc=$?
   sql_file peekcart_product loadtest/sql/d002bc-product-reset.sql || reset_rc=$?; } > "$P-reset.txt"
 [ "$reset_rc" = 0 ] || echo "  !! 초기화 실패(exit $reset_rc, 142 는 ${CALL_TIMEOUT}초 초과). 다음 run 전에 DB 상태를 확인한다"
+# 초기화 DELETE 도 binlog 를 쓰므로 초기화 뒤에 잰다. before 와의 차이가 이 run 이 남긴 증가분이다.
+disk_record after-reset
 
 GRAFANA_URL="$GRAFANA_URL" GRAFANA_AUTH="$GRAFANA_AUTH" \
   python3 loadtest/scripts/d078-capture.py annotate --label "S3 $CONFIG $RUN $MODE" --from "$t0" --to "$t1" >/dev/null \
@@ -161,6 +188,7 @@ fi
 echo "--- 건수 ---"; cat "$P-counts.txt"
 echo "--- 정합성 ---"; cat "$P-verify.txt"
 echo "--- 차분 ---"; cat "$P-prom-delta.tsv"
+echo "--- 디스크 ---"; cat "$P-disk.tsv"
 echo "=== S3 $CONFIG $RUN 끝 $(date -u +%FT%TZ) ==="
 [ "$reset_rc" = 0 ] || exit 4
 [ -n "$aborted" ] && exit 3

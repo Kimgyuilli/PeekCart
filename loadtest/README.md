@@ -22,7 +22,7 @@ loadtest/
 │   ├── d002bc-order-create.js         주문 생성 k6 (기준선·HPA)
 │   ├── d002bc-contention.js           재고 경합 k6 (MODE=contend·spread, 부하 판정 포함)
 │   ├── d078-s2-block.sh               S2 블록 1개 (d026 블록 준비 + run 단위 기록)
-│   ├── d078-s3-run.sh                 경합 run 1개 (원값 전후, k6, 배수, 지연 원자료, 정합성, 초기화)
+│   ├── d078-s3-run.sh                 경합 run 1개 (디스크 여유, 원값 전후, k6, 배수, 지연 원자료, 정합성, 초기화)
 │   ├── d078-mysql-sampler.sh          run 중 MySQL 진단 표본
 │   ├── d078-s3-export.sh              run 구간 원 시계열 export
 │   ├── d078-capture.py                Grafana annotate·캡처 URL·export
@@ -186,7 +186,7 @@ SESSION_DIR=loadtest/reports/<날짜> CONFIG=c0 RUN=r1 PREV_RUN=w1 MODE=contend 
 OUT=loadtest/reports/<날짜>/s3/c0/r1-mysql-sample.txt bash loadtest/scripts/d078-mysql-sampler.sh &
 ```
 
-`d078-s3-run.sh` 는 product·order Pod 원값(전), k6(loadgen), 배수(outbox PENDING 0 그리고 전 group lag 0), 원값(후)과 차분, 지연 원자료 TSV, 건수·정합성, 초기화, annotate 순서로 돈다. 기본값은 USERS 450, RPS 170, DUR 60s 이고 `DRY_RUN=1` 이면 산출 경로와 k6 명령만 찍는다. MySQL·Kafka 호출은 1회 `CALL_TIMEOUT`(기본 300초)에서 끊고, lag 조회가 비거나 실패하면 0 이 아니라 모름으로 보고 계속 기다린다. exit 3 은 배수가 `DRAIN_LIMIT`(기본 900초)를 넘은 것, exit 4 는 초기화 실패나 시간 초과다. exit 4 면 다음 run 전에 DB 상태를 확인한다.
+`d078-s3-run.sh` 는 디스크 여유 확인, product·order Pod 원값(전), k6(loadgen), 배수(outbox PENDING 0 그리고 전 group lag 0), 원값(후)과 차분, 지연 원자료 TSV, 건수·정합성, 초기화, 디스크 기록, annotate 순서로 돈다. 기본값은 USERS 450, RPS 170, DUR 60s 이고 `DRY_RUN=1` 이면 산출 경로와 k6 명령만 찍는다. MySQL·Kafka 호출은 1회 `CALL_TIMEOUT`(기본 300초)에서 끊고, lag 조회가 비거나 실패하면 0 이 아니라 모름으로 보고 계속 기다린다. exit 3 은 배수가 `DRAIN_LIMIT`(기본 900초)를 넘은 것, exit 4 는 초기화 실패나 시간 초과다. exit 4 면 다음 run 전에 DB 상태를 확인한다. exit 5 는 MySQL·Kafka 데이터 볼륨 여유가 `MIN_FREE_MIB`(기본 1024)보다 적거나 읽지 못한 것이고, 부하를 걸기 전에 멈춘다. 두 볼륨의 사용·여유는 run 전과 초기화 뒤에 `<run>-disk.tsv` 로 남아 run 당 증가량을 잴 수 있다(D-114).
 
 대조군(spread)을 상품 10개로 돌린 2026-10-24 세션은 대조군의 전달 실패가 경합 run 보다 많았다(D-106 ⑦). `order.created` 의 키가 주문 id 라 같은 상품의 주문도 세 파티션에 흩어지고, product replica 셋이 같은 상품 행에 동시에 쓸 수 있다. 그래서 대조군은 상품 1,000개를 쓴다.
 

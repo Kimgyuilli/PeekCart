@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "path": "docs/plans/D-113.md",
+      "sha256": "470803a1033fbec5cc30f9c719f431ec467cf5c9fbd2982b3bb6bc522a5489f8"
+    }
+  ],
+  "destinations": [
+    {
+      "path": "docs/plans/done/D-113.md",
+      "parts": [
+        {
+          "source": "docs/plans/D-113.md",
+          "start": 1,
+          "end": 26
+        },
+        {
+          "literal": "\nPR: https://github.com/Kimgyuilli/PeekCart/pull/267\n"
+        }
+      ]
+    }
+  ]
+}

@@ -57,6 +57,8 @@ patches:
   - path: patches/pvc-storageclass.yml
     target:
       kind: PersistentVolumeClaim
+  # 디스크 예산(D-114). 크기 근거는 patch 파일 주석.
+  - path: patches/pvc-size.yml
 
 # PROJECT_ID 치환은 gke overlay README 와 동일 절차.
 images:
