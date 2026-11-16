@@ -40,7 +40,8 @@ public interface StockReservationJpaRepository extends JpaRepository<StockReserv
             + "AND status IN ('APPROVAL_HELD', 'CONFIRMED')", nativeQuery = true)
     int releaseAfterRefund(@Param("orderId") Long orderId, @Param("now") LocalDateTime now);
 
-    @Modifying(clearAutomatically = true)
+    // flush 없이 clear 하면 같은 트랜잭션의 직전 재고 복구가 버려진다(sweeper 다건 회수, D-113).
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE StockReservation r SET r.version = r.version + 1, r.status = com.peekcart.product.domain.model.ReservationStatus.RELEASED, "
             + "r.releasedAt = :now WHERE r.orderId = :orderId "
             + "AND r.status = com.peekcart.product.domain.model.ReservationStatus.RESERVED")
