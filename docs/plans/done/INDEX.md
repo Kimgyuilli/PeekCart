@@ -2,7 +2,7 @@
 
 `scripts/plans-index.sh` 가 생성한다. 손으로 고치지 않는다.
 
-계획서 180개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
+계획서 181개. 진행 중인 계획서는 `docs/plans/` 루트에 있다.
 아카이브 기준은 PR 머지 여부다 (`scripts/plans-archive.sh`).
 
 ## ADR 설계 (7)
@@ -45,7 +45,7 @@
 | [task-impl3-pr4-auth-observability](./task-impl3-pr4-auth-observability.md) | 구현 ③ PR4: 인증 관측성 S9 + HS512 잔재 제거 | [#108](https://github.com/Kimgyuilli/PeakCart/pull/108) | 2026-09-14 | 있음 |
 | [task-impl3-pr3d-b2-cluster-session](./task-impl3-pr3d-b2-cluster-session.md) | 구현 ③ PR3d-b-2 + PR4 잔여: GKE 클러스터 세션 | [#109](https://github.com/Kimgyuilli/PeakCart/pull/109) | 2026-09-15 | 있음 |
 
-## 부채 · 측정 (134)
+## 부채 · 측정 (135)
 
 | 계획서 | 내용 | PR | 날짜 | audit |
 |---|---|---|---|---|
@@ -183,6 +183,7 @@
 | [D-115](./D-115.md) | 측정 하네스의 멈춤과 오판 | [#261](https://github.com/Kimgyuilli/PeakCart/pull/261) | 2026-11-13 |  |
 | [D-110](./D-110.md) | 부하 중 order outbox 발행 저하의 경계 분리 (ADR-0045 재검토 조건 1·2) | [#264](https://github.com/Kimgyuilli/PeakCart/pull/264) | 2026-11-14 | 있음 |
 | [D-111](./D-111.md) | ADR-0025 C 승격 게이트의 허용 범위 수치화 | [#265](https://github.com/Kimgyuilli/PeakCart/pull/265) | 2026-11-14 | 있음 |
+| [D-112](./D-112.md) | payment 예약 결과 선도착을 marker 로 받아 파티션 차단 제거 | [#266](https://github.com/Kimgyuilli/PeakCart/pull/266) | 2026-11-15 | 있음 |
 
 ## 기타 (16)
 
