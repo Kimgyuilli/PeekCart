@@ -204,3 +204,24 @@ D-108 세션의 디스크 가득 참 복구 뒤 product 1 재고가 원장 기�
 - 세션에 sweeper 실행 기록이 없어 그 세션의 diff −1 이 이 결함 때문인지는 증명하지 못했다. 커밋 정지 장애 주입 재현은 하지 않았다.
 - `markConfirmedIfReserved`·`markCompensatedIfAbsent` 도 `clearAutomatically` 만 있다. 지금 호출 경로에는 앞선 엔티티 변경이 없어 유실이 없다.
 - `saga-contract-matrix.tsv` 의 `SAGA-SWEEPER-LEASE-RECLAIM` 증거는 mock 단위 테스트라 이 결함을 잡지 못했다. 행은 바꾸지 않았다.
+
+## 2026-11-16 — 측정 볼륨 크기와 Kafka 로그의 PVC 연결
+
+[PR268](https://github.com/Kimgyuilli/PeekCart/pull/268) · 계획 `D-114` · 증거 `loadtest/reports/2026-10-26/session-issues.md` 1·2·10.
+D-108 재측정 세션에서 MySQL 볼륨이 가득 찬 원인 세 가지를 처분했다.
+
+- Kafka: 세션 기록은 "log.dirs 가 없어 이미지 기본 경로에 쓰는 것으로 보인다"였다. `apache/kafka:3.8.1` 을 base 와 같은 env 로 띄워
+  `/tmp/kafka-logs` 에 쓰는 것을 확인했다. 측정 환경만이 아니라 모든 환경에서 Pod 재시작 때 토픽과 offset 이 사라지는 상태였다.
+  base 에 `KAFKA_LOG_DIRS=/var/lib/kafka/data/logs` 와 `fsGroup: 1000` 을 넣었다. 볼륨 뿌리의 `lost+found` 는 LogManager 기동을 막고,
+  PD 뿌리는 root 소유라 uid 1000 이 하위 경로를 만들지 못한다. 둘 다 로컬 docker 실패 주입으로 재현했다.
+- MySQL: binlog 설정은 커밋 경로를 바꾸므로 그대로 두고 측정 overlay `gke-d002bc` 에서 `mysql-pvc`·`kafka-pvc` 를 10Gi 로 올렸다(사용자 결정 2026-11-16).
+- 예산 점검: payment 는 초기화하지 않고 예산에 넣는다. `d078-s3-run.sh` 가 run 전에 두 볼륨 여유를 보고 `MIN_FREE_MIB`(기본 1024)보다 적으면
+  exit 5 로 멈춘다. run 전과 초기화 뒤 사용량을 `disk.tsv` 로 남긴다. 계획 단계 점검은 plan-blindspots B14 로 남겼다.
+- 검증: 렌더 diff, 스텁 기반 가드 실패 주입, CI policy lint 51개, `scripts/*-lint.sh` 24개. Java 변경은 없다.
+- 같은 PR 에서 D-113 계획서를 아카이브했다. S 등급이라 audit 이 없어 계획서에 PR 링크가 없었다.
+
+미충족과 범위 밖:
+- GKE 실환경에서 fsGroup·하위 경로 동작은 확인하지 않았다. 다음 과금 세션 첫 배포에서 확인한다.
+- 운영 overlay Kafka 가 보존 정책 없이 1Gi PVC 에 쓰게 됐다. D-122 로 등록했다.
+- 다음 측정부터 Kafka 가 노드 부트 디스크가 아닌 별도 PD 에 쓴다. 과거 기준선과 측정 조건 하나가 다르다.
+- S 등급 계획서는 audit 이 없어 `plans-archive.sh` 가 PR 을 찾지 못하고 보류로 남긴다. 이번에는 손으로 링크를 적었다.
