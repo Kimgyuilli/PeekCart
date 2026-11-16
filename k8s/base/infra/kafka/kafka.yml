@@ -43,6 +43,10 @@ spec:
         app.kubernetes.io/component: messaging
         app.kubernetes.io/part-of: peekcart
     spec:
+      # 이미지는 uid/gid 1000(appuser)로 돈다. PD 를 마운트하면 볼륨 뿌리가 root 소유 0755 라 아래
+      # KAFKA_LOG_DIRS 를 만들지 못해 포맷에서 죽는다. fsGroup 으로 볼륨을 appuser 그룹 쓰기 가능하게 한다 (D-114).
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: kafka
           image: apache/kafka:3.8.1
@@ -72,6 +76,11 @@ spec:
               value: "1"
             - name: CLUSTER_ID
               value: peekcart-kafka-cluster-001
+            # 없으면 Kafka 기본값 /tmp/kafka-logs(컨테이너 저장소)에 써서 PVC 가 비고, Pod 재시작에 토픽·offset 이
+            # 사라진다 (D-114). 마운트 뿌리가 아니라 하위 경로인 이유: ext4 뿌리의 lost+found 를 Kafka 가
+            # 파티션 디렉터리로 읽어 LogManager 기동이 실패한다.
+            - name: KAFKA_LOG_DIRS
+              value: /var/lib/kafka/data/logs
           resources:
             requests:
               cpu: 250m
