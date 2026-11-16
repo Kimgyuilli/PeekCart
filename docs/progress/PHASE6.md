@@ -186,3 +186,21 @@ D-108 세션에서 134건이 건마다 30~60초씩 약 1.5시간 동안 예약 �
 미충족과 범위 밖:
 - 기존 취소 marker 경로의 같은 경합은 D-121 로 등록했다.
 - 고아 주문의 예약 marker 는 남는다(정리 스케줄러 없음). 부하 환경에서 파티션 차단 해소는 재현하지 않았다.
+
+## 2026-11-16 — sweeper 다건 회수의 재고 복구 유실
+
+[PR267](https://github.com/Kimgyuilli/PeekCart/pull/267) · 계획 `D-113` · 관련 ADR-0012 §D3.
+D-108 세션의 디스크 가득 참 복구 뒤 product 1 재고가 원장 기대값보다 1 적었다. 커밋 정지 경로를 재현하기 전에 재고 복구 경로를
+코드로 추적했고, 만료 예약 회수에서 같은 모양의 결함을 찾았다.
+
+- 원인: `sweepExpiredLeases` 는 여러 예약을 한 트랜잭션에서 회수한다. `markReleasedIfReserved` 는 `clearAutomatically` 만 있고
+  JPQL bulk UPDATE 의 auto flush 는 `stock_reservations` 만 보므로, 직전 건의 `inventories` 변경이 flush 되지 않은 채 버려진다.
+  N 건을 회수하면 마지막 1건분만 복구된다.
+- 결정: 범위를 결함 수정으로 줄였다(사용자 결정 2026-11-16). `flushAutomatically = true` 를 더해 같은 리포지터리의 native UPDATE 와 맞췄다.
+- 검증: 만료 예약 3건 회수 통합 테스트가 수정 전 코드에서 기대 100, 실제 80 으로 실패하고 수정 뒤 통과한다. `./gradlew test` 1,531개 실패 0.
+- 같은 PR 에서 D-112 계획서를 아카이브했다.
+
+미충족과 범위 밖:
+- 세션에 sweeper 실행 기록이 없어 그 세션의 diff −1 이 이 결함 때문인지는 증명하지 못했다. 커밋 정지 장애 주입 재현은 하지 않았다.
+- `markConfirmedIfReserved`·`markCompensatedIfAbsent` 도 `clearAutomatically` 만 있다. 지금 호출 경로에는 앞선 엔티티 변경이 없어 유실이 없다.
+- `saga-contract-matrix.tsv` 의 `SAGA-SWEEPER-LEASE-RECLAIM` 증거는 mock 단위 테스트라 이 결함을 잡지 못했다. 행은 바꾸지 않았다.
