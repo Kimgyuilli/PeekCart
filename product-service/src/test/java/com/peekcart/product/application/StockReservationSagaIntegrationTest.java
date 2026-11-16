@@ -356,6 +356,24 @@ class StockReservationSagaIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("sweeper 가 한 번에 여러 건을 회수해도 건마다 재고를 복구한다 (D-113)")
+    void sweeperRestoresStockForEveryReclaimedReservation() {
+        for (long orderId = 1L; orderId <= 3L; orderId++) {
+            reservationService.reserve(orderId, "sweep-" + orderId, List.of(new ReservedItemPayload(product1, 10)));
+        }
+        assertThat(stockOf(product1)).isEqualTo(70);
+        jdbc.update("UPDATE stock_reservations SET expires_at = ?", java.time.LocalDateTime.now().minusDays(1));
+
+        assertThat(reservationService.sweepExpiredLeases()).isEqualTo(3);
+
+        assertThat(stockOf(product1)).isEqualTo(100);
+        for (long orderId = 1L; orderId <= 3L; orderId++) {
+            assertThat(reservationRepository.findByOrderId(orderId).orElseThrow().getStatus())
+                    .isEqualTo(ReservationStatus.RELEASED);
+        }
+    }
+
+    @Test
     void releaseWinsThenApprovalIsRejected() {
         reserveForApproval();
         reservationService.release(1000L);
