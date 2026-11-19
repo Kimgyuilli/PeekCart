@@ -7,6 +7,7 @@ kind: Kustomization
 #   - peekcart Service: ClusterIP → LoadBalancer (Internal, GKE annotation)
 #   - peekcart Deployment: resources requests/limits 상향 (e2-standard-4 기준)
 #   - infra PVC (mysql/redis/kafka): storageClassName = standard-rwo 명시
+#   - kafka PVC: 1Gi 에서 10Gi 로 (D-122)
 #   - 이미지: GHCR → Artifact Registry 경로 (PROJECT_ID_PLACEHOLDER 치환 필요)
 #
 # PROJECT_ID 치환 방법 (README 참고):
@@ -37,6 +38,8 @@ patches:
   - path: patches/pvc-storageclass.yml
     target:
       kind: PersistentVolumeClaim
+  # Kafka 로그 볼륨 크기(D-122). 근거는 patch 파일 주석.
+  - path: patches/kafka-pvc-size.yml
 
 # GHCR → Artifact Registry 경로 재작성 (D-016 image promotion). 도메인 5 + 인프라 gateway 1 = 6.
 # PROJECT_ID 치환은 README 참고 (scripts/promote-images.sh 가 승격·digest 산출).
