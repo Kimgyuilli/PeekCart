@@ -39,7 +39,7 @@ Producer는 DB 트랜잭션 내에서 Outbox 테이블에 이벤트를 저장하
   "schemaVersion": 1,
   "payload": {
     "orderId": 1001,
-    "orderNumber": "ORD-20260320-0001",
+    "orderNumber": "ORD-20260320-0123456789ABCDEF",
     "userId": 42,
     "totalAmount": 59000,
     "items": [
