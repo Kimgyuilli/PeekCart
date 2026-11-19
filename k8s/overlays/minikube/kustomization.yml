@@ -21,3 +21,5 @@ patches:
   # gateway(인프라) — 외부 진입점 NodePort 30080.
   - path: patches/gateway-deployment.yml
   - path: patches/gateway-service.yml
+  # Kafka 로그 볼륨 크기(D-122). 근거는 patch 파일 주석.
+  - path: patches/kafka-pvc-size.yml

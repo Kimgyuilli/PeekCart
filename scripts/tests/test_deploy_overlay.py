@@ -25,6 +25,8 @@ REAL_KUBECTL = shutil.which("kubectl")
 KAFKA_FIRST = {("Namespace", "peekcart"), ("Service", "kafka"), ("PersistentVolumeClaim", "kafka-pvc"),
                ("Deployment", "kafka")}
 FULL = ["kustomize", "apply-f", "rollout", "exec:sh", "exec:kafka-topics.sh", "apply-k"]
+# 운영 overlay 의 kafka-pvc 크기(D-122). 산정은 docs/plans/D-122.md. base 1Gi 로 돌아가면 실패해야 한다.
+KAFKA_PVC_STORAGE = {"k8s/overlays/gke": "10Gi", "k8s/overlays/minikube": "2Gi"}
 # 래퍼가 읽거나 쓰는 환경 변수. 개발자 셸의 값이 테스트에 새지 않게 지운다.
 WRAPPER_ENV = ("GW_URL", "NAMESPACE", "PEEKCART_NAMESPACE", "DRAIN_PREFLIGHT_SKIP_REASON",
                "TOPIC_PRECREATE_SKIP_REASON", "KUBECONFIG")
@@ -217,6 +219,7 @@ class ScopeTest(WrapperCase):
     def test_every_app_overlay_brings_up_its_own_kafka_first(self):
         overlays = app_overlays()
         self.assertIn("k8s/overlays/gke", overlays)
+        self.assertLessEqual(set(KAFKA_PVC_STORAGE), set(overlays))
         for overlay in overlays:
             with self.subTest(overlay=overlay):
                 # 롤아웃 실패를 주입해 선행 단계까지만 본다.
@@ -228,6 +231,11 @@ class ScopeTest(WrapperCase):
                     # overlay patch 가 반영된 PVC 를 먼저 만든다. base PVC 를 먼저 만들면 이 값이 빠진다.
                     self.assertEqual(applied[("PersistentVolumeClaim", "kafka-pvc")]["spec"]["storageClassName"],
                                      "standard-rwo")
+                if overlay in KAFKA_PVC_STORAGE:
+                    # 크기도 overlay patch 다. 먼저 만든 PVC 가 1Gi 면 minikube 는 키울 수 없다(확장 미지원 StorageClass).
+                    self.assertEqual(
+                        applied[("PersistentVolumeClaim", "kafka-pvc")]["spec"]["resources"]["requests"]["storage"],
+                        KAFKA_PVC_STORAGE[overlay])
 
     def test_skip_reason_is_logged_and_skips_only_the_topic_step(self):
         run = self.run_wrapper(env={"TOPIC_PRECREATE_SKIP_REASON": "kafka 없는 드릴 overlay"})
