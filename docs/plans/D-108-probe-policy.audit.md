@@ -11,3 +11,8 @@
 - 역검증: (a) payment base 의 liveness 두 값을 되돌리면 3개 overlay 에서 payment 지목 실패 (b) 측정 patch 에서 readiness 를 빼면
   측정 order-service 불일치로 실패 (c) payment readiness failureThreshold 12 면 기대값·판정 순서 검사가 실패. 각각 되돌린 뒤 PASS
 - 계획 정정: 측정 overlay 렌더 전체 동일 → order-service 만 동일(계획서 §정정 이력)
+
+## 2026-11-20 — /ship
+- PR: https://github.com/Kimgyuilli/PeekCart/pull/276
+- precheck: consistency ok · preflight ok · 문체 lint 통과(커밋 3건, 본문, 제목)
+- 갱신: TASKS D-108 행을 TASKS-done 으로 이동(✅) · PHASE6 엔트리 · 이 블록

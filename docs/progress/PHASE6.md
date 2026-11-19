@@ -309,3 +309,16 @@ PR #269~#272 병합 중 CI `images`·`test` job 이 코드와 무관하게 실�
 - 크레딧: Welcome credit(₩406,379)은 2025-07-01~09-30 기간으로 만료됐다. 그래서 위 금액은 크레딧 차감이 아니라 실제 청구다. 콘솔은 이 계정이 2026-10-22 부터 청구된다고 표시한다.
 - 2026-10-23 의 "무료 크레딧 계정이라 확인하지 않는다" 는 결정(`D-078-session-plan.md` §7)은 이미 만료된 크레딧을 전제로 했다.
 - 2026-09-21(#129) 세션 비용은 활성 계정과 종료된 평가판 계정(`015C72-707B53-300B90`, 2026년 $0) 어디에도 보이지 않아 확인하지 못했다.
+
+## 2026-11-20 — 백엔드 서비스 base 프로브 판정 완화
+
+[PR276](https://github.com/Kimgyuilli/PeekCart/pull/276) · 계획 `D-108-probe-policy` · 출처 D-108 ③.
+2026-10-25 부하 측정에서 order-service 의 liveness 가 기본값(timeout 1초, 3회)을 넘겨 재시작된 뒤 측정 overlay 만 완화해 둔 것을 base 정책으로 처분했다(사용자 결정 2026-11-20, 관리 포트 분리와 현행 유지는 기각).
+
+- 값: 백엔드 5개 서비스의 liveness 는 timeout 5초·12회(약 2분), readiness 는 5초·3회(약 30초). liveness 값은 10-26 세션에서 재시작 0 을 낸 측정 overlay 값이고, readiness 가 먼저 판정해 느린 Pod 는 kill 전에 endpoint 에서 빠진다. 실제 교착 복구는 약 30초에서 약 2분으로 늦어진다.
+- 측정 overlay: base 와 같아진 liveness 를 patch 에서 뺐다. 측정 order-service 렌더는 그대로이고, 이 overlay 는 `gke` 를 상속해 user·product·payment 는 base 값으로 바뀐다(계획 정정 이력).
+- 검증: 3개 overlay 렌더 대조(대상 4필드 밖 차이 없음), 판정 순서, 실패 주입 3건, `scripts/*-lint.sh` 24개.
+
+미충족과 범위 밖:
+- 실제 kubelet 동작은 다음 과금 세션 전까지 관측하지 않는다. 재시작 원인(CPU 포화와 Tomcat 스레드 대기)은 분리하지 않았고, 다시 나면 관리 포트 분리를 재검토한다.
+- startupProbe(timeout 1초)의 동시 콜드 기동 재시작(10-26)은 범위 밖이다. 반복되면 부채로 등록한다.
