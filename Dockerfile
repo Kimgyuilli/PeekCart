@@ -34,11 +34,12 @@ COPY gateway/build.gradle gateway/build.gradle
 # 의존성 레이어: POM 뿐 아니라 jar 까지 받아 둔다(gradle/prefetch-dependencies.init.gradle). build.gradle 이
 # 같으면 이 레이어가 캐시되어 아래 bootJar 는 --offline 으로 원격 저장소에 접속하지 않는다 (D-123).
 # 실패를 삼키지 않는다 — 불완전한 레이어가 캐시에 남으면 이후 빌드가 계속 offline 오류로 떨어진다.
+# 원격의 요청 제한(429)이 1분 넘게 이어진 적이 있어 30초·60초를 기다린 뒤 다시 시도한다.
 RUN chmod +x gradlew \
     && for attempt in 1 2 3; do \
          ./gradlew --init-script gradle/prefetch-dependencies.init.gradle prefetchDependencies --no-daemon -q && break; \
          if [ "$attempt" = 3 ]; then echo "ERROR: 의존성 사전 다운로드 3회 실패" >&2; exit 1; fi; \
-         sleep 10; \
+         sleep $((attempt * 30)); \
        done
 
 # 전 모듈 소스 (settings.gradle include 정합 — 설정 단계가 전 모듈 평가)
