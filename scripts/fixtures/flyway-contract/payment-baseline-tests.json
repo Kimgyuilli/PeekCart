@@ -207,7 +207,7 @@
     "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::order.cancelled 선도착(Payment 미존재) → 취소 marker 영속(누수 방지, throw 안 함)",
     "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::order.cancelled 에 items·reason 이 추가돼도 동작이 같다 (계약 확장 내성, P5·P6)",
     "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::order.created → userId 포함 Payment(PENDING) 생성",
-    "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::order.created: 선도착 취소 marker 가 있으면 Payment 를 CANCELLED 로 생성(누수 0)",
+    "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::order.created: 선도착 취소 marker 가 있으면 Payment 를 CANCELLED 로 전환하고 marker 를 PK 로 지운다(누수 0)",
     "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::stock.reservation.result reserved=false → no-op (조회조차 하지 않음)",
     "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::stock.reservation.result reserved=true → 결제 준비(readyForPayment) 표시",
     "com.peekcart.payment.infrastructure.kafka.PaymentEventConsumerTest::stock.reservation.result: Payment 미존재 → 예외 없이 예약 결과 marker 영속(재시도로 파티션을 막지 않음, D-112)",
