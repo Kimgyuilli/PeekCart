@@ -225,3 +225,50 @@ D-108 재측정 세션에서 MySQL 볼륨이 가득 찬 원인 세 가지를 처
 - 운영 overlay Kafka 가 보존 정책 없이 1Gi PVC 에 쓰게 됐다. D-122 로 등록했다.
 - 다음 측정부터 Kafka 가 노드 부트 디스크가 아닌 별도 PD 에 쓴다. 과거 기준선과 측정 조건 하나가 다르다.
 - S 등급 계획서는 audit 이 없어 `plans-archive.sh` 가 PR 을 찾지 못하고 보류로 남긴다. 이번에는 손으로 링크를 적었다.
+
+## 2026-11-19 — outbox 발행 상태의 사이클 단위 기록
+
+[PR269](https://github.com/Kimgyuilli/PeekCart/pull/269) · 계획 `D-119` · ADR-0049 · 증거 `docs/evidence/D-119/README.md`.
+D-110 이 남긴 부하 중 order outbox 발행 굶음을 저장 묶기(ADR-0045 Alternative C)로 처분했다.
+
+- poller 는 ack 받은 이벤트마다 detached merge 로 저장해 이벤트 한 건이 커넥션 획득과 커밋 한 번이었다. ack 받은 id 를 모아
+  사이클 끝에 `UPDATE ... WHERE id IN (...)` 한 문장으로 기록하도록 바꿨다. 실패 경로는 이벤트별 저장 그대로다. 4서비스 공유 poller 라 함께 바뀐다.
+- 실패 의미: 기록 실패나 ack 뒤 사망 시 그 사이클의 ack 전부가 다시 발행된다. 중복 범위 상한이 1건에서 `batch-size`(500)다.
+  at-least-once 와 소비 멱등(ADR-0020 D1)은 그대로다. `published_at` 은 기록 시각이 됐다.
+- 로컬 판정(결과 전 고정): 같은 세션 풀 10 따라잡기 비율이 기준 코드 0.017, 변경 0.986 이다(K1). 풀은 그대로 포화돼 있었다(pending 평균 53).
+  변경 코드는 부하 뒤 backlog 가 한 사이클 안팎이라 D-110 의 발행비(부하 ÷ 배수)를 용량으로 읽지 않는다.
+- 검증: `./gradlew test` 1538 테스트 실패 0, lint 24개와 CI policy lint 통과. 단위·통합 테스트는 결함·주입 제거로 실패하는 것을 확인했다.
+- 범위 변화: 사용자 결정(2026-11-19)으로 GKE J4 를 다음 과금 세션으로 넘기고 구현과 로컬 판정을 더했다. 같은 PR 에서 D-114 계획서를 아카이브했다.
+
+미충족과 범위 밖:
+- GKE J4(점유 증가가 MySQL 서버 안인지 앱 CPU 인지)와 GKE 에서의 효과는 재지 않았다. D-119 를 부분 완료로 두고 다음 과금 세션에서 잰다.
+- 다음 측정부터 `published_at` 기반 발행 대기(`d078-outbox-latency.sql`)가 한 사이클 이하로 길게 나온다. 다음 측정 계획의 전제표(B13)에 적는다.
+- 계획 단계 코드 검증이 D-075 probe 의 repository 구현체를 놓쳤다. 컴파일이 잡으므로 규율로 남기지 않는다.
+
+## 2026-11-20 — 주문번호 접미사의 64비트 확대
+
+[PR270](https://github.com/Kimgyuilli/PeekCart/pull/270) · 계획 `D-120` · 출처 `docs/evidence/D-110/README.md` §측정 밖 관찰.
+날짜와 32비트 접미사로 만든 주문번호가 같은 날 충돌해 주문 생성이 500 으로 실패하던 문제를 번호 공간 확대로 처분했다(사용자 결정 2026-11-19).
+
+- 접미사를 `SecureRandom.nextLong()` 의 16 hex(64비트)로 바꿨다. UUID 앞 16 hex 는 v4 버전 니블이 고정이라 60비트가 되어 쓰지 않았다.
+- 번호는 order 가 만들고 이벤트·응답·알림 문구로 전달만 된다. 파싱·길이 검사가 없고 컬럼이 `VARCHAR(50)` 이라 스키마 변경은 없다.
+- 검증: `:order-service:test` 448 테스트 실패 0. 생성기를 8 hex 로 되돌리거나 UUID 16 hex 로 바꾸면 새 테스트가 실패한다.
+- D-119·D-121·D-122 와 병렬 레인(서브에이전트)으로 진행했다.
+
+미충족과 범위 밖:
+- 충돌 확률은 0 이 아니다(하루 6만 건 약 1e-10). 충돌하면 여전히 500 이다.
+- `OrderPoolContentionLocalProbeTest` 의 주문번호 충돌 계수는 사실상 0 이 됐다. 남길지는 정하지 않았다.
+
+## 2026-11-20 — 취소 선도착 marker 의 잠금 조회
+
+[PR271](https://github.com/Kimgyuilli/PeekCart/pull/271) · 계획 `D-121` · 출처 D-112([#266](https://github.com/Kimgyuilli/PeekCart/pull/266)) §미해결.
+두 consumer group 이 같은 주문의 `order.created`·`order.cancelled` 를 겹쳐 처리하면 취소 marker 가 남고 Payment 가 PENDING 으로 생기던 경합을 막았다.
+
+- 생성 쪽: Payment INSERT 뒤 취소 marker 를 잠금 조회하고 있으면 `cancelBeforePayment` 후 엔티티로 PK 삭제한다. 파생 `deleteByOrderId` 는 지웠다.
+- 취소 쪽: 비잠금 조회가 비었을 때만 잠금 조회로 다시 본다. D-112 처럼 늘 payment 를 먼저 잠그면 환불 확정 경로(환불 행 잠금 뒤 payments 갱신)와 순서가 반대가 되어 교착할 수 있어 이 형태로 정했다(사용자 결정 2026-11-19).
+- 검증: 새 통합 테스트 두 순서가 수정 전 코드에서 실패하고 수정 뒤 통과했다. 재조회 제거·`@Lock` 제거·파생 삭제 복귀를 각각 넣으면 해당 순서가 실패한다. `:payment-service:test` 361 테스트 실패 0.
+
+미충족과 범위 밖:
+- 교착 분석은 코드와 InnoDB 잠금 규칙을 읽은 결과이고 테스트로 재현하지 않았다.
+- 선도착 취소가 있는 주문의 Payment 는 PENDING INSERT 뒤 같은 트랜잭션에서 CANCELLED 로 바뀌어 version 1 로 커밋된다.
+- 새 통합 테스트의 경합 helper 는 D-112 테스트와 같은 코드를 복제했다.

@@ -20,8 +20,11 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.times;
@@ -31,6 +34,8 @@ import static org.mockito.Mockito.verify;
 @ServiceTest
 @DisplayName("OutboxPollingService 단위 테스트")
 class OutboxPollingServiceTest {
+
+    private static final java.util.concurrent.atomic.AtomicLong NEXT_ID = new java.util.concurrent.atomic.AtomicLong();
 
     OutboxPollingService outboxPollingService;
     SimpleMeterRegistry meterRegistry;
@@ -158,6 +163,7 @@ class OutboxPollingServiceTest {
         assertThat(event.getRetryCount()).isEqualTo(1);
         assertThat(event.getStatus()).isEqualTo(OutboxEventStatus.PENDING);
         verify(outboxEventRepository).save(event);
+        verify(outboxEventRepository, never()).markPublished(any(), any());
     }
 
     @Test
@@ -179,8 +185,133 @@ class OutboxPollingServiceTest {
         verify(outboxEventRepository, never()).save(remaining);
     }
 
+    @Test
+    @DisplayName("ack 받은 이벤트는 개별 save 없이 사이클 끝에 markPublished 한 번으로 기록된다 (ADR-0049 D1)")
+    void publishedEventsAreRecordedOnceAtCycleEnd() {
+        OutboxEvent e1 = pendingEvent(null, null);
+        OutboxEvent e2 = pendingEvent(null, null);
+        OutboxEvent e3 = pendingEvent(null, null);
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(e1, e2, e3));
+        given(kafkaTemplate.send(any(ProducerRecord.class))).willReturn(CompletableFuture.completedFuture(null));
+        given(outboxEventRepository.markPublished(any(), any())).willReturn(3);
+
+        outboxPollingService.pollAndPublish();
+
+        verify(outboxEventRepository, times(1)).markPublished(eq(List.of(e1.getId(), e2.getId(), e3.getId())), any());
+        verify(outboxEventRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("성공·실패가 섞이면 성공분만 묶어 기록하고 실패분은 retry 를 개별 저장한다 (ADR-0049 D2)")
+    void mixedCycleRecordsSuccessesInBulkAndFailuresIndividually() {
+        OutboxEvent ok1 = pendingEvent(null, null);
+        OutboxEvent failed = pendingEvent(null, null);
+        OutboxEvent ok2 = pendingEvent(null, null);
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(ok1, failed, ok2));
+        given(kafkaTemplate.send(any(ProducerRecord.class)))
+                .willReturn(CompletableFuture.completedFuture(null))
+                .willThrow(new RuntimeException("Kafka down"))
+                .willReturn(CompletableFuture.completedFuture(null));
+
+        outboxPollingService.pollAndPublish();
+
+        verify(outboxEventRepository, times(1)).markPublished(eq(List.of(ok1.getId(), ok2.getId())), any());
+        verify(outboxEventRepository, times(1)).save(failed);
+        assertThat(failed.getRetryCount()).isEqualTo(1);
+        assertThat(failed.getStatus()).isEqualTo(OutboxEventStatus.PENDING);
+    }
+
+    @Test
+    @DisplayName("cycle-timeout 으로 끊기면 끊기기 전 ack 분만 기록한다")
+    void cycleTimeoutRecordsOnlyEventsAckedBeforeBreak() {
+        outboxPollingService = service(Duration.ofSeconds(6), Duration.ofMillis(50));
+        OutboxEvent first = pendingEvent(null, null);
+        OutboxEvent remaining = pendingEvent(null, null);
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(first, remaining));
+        given(kafkaTemplate.send(any(ProducerRecord.class))).willAnswer(invocation -> {
+            Thread.sleep(80);
+            return CompletableFuture.completedFuture(null);
+        });
+
+        outboxPollingService.pollAndPublish();
+
+        verify(kafkaTemplate, times(1)).send(any(ProducerRecord.class));
+        verify(outboxEventRepository, times(1)).markPublished(eq(List.of(first.getId())), any());
+    }
+
+    @Test
+    @DisplayName("interrupt 로 끊기면 그 전 ack 분을 기록하고 interrupt 플래그를 유지한다")
+    void interruptRecordsEventsAckedBeforeBreak() throws Exception {
+        OutboxEvent first = pendingEvent(null, null);
+        OutboxEvent interrupted = pendingEvent(null, null);
+        OutboxEvent remaining = pendingEvent(null, null);
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(first, interrupted, remaining));
+        @SuppressWarnings("unchecked")
+        CompletableFuture<org.springframework.kafka.support.SendResult<String, String>> interruptedFuture =
+                org.mockito.Mockito.mock(CompletableFuture.class);
+        given(interruptedFuture.get(anyLong(), any())).willThrow(new InterruptedException("stop"));
+        given(kafkaTemplate.send(any(ProducerRecord.class)))
+                .willReturn(CompletableFuture.completedFuture(null))
+                .willReturn(interruptedFuture);
+
+        try {
+            outboxPollingService.pollAndPublish();
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            Thread.interrupted();
+        }
+
+        verify(kafkaTemplate, times(2)).send(any(ProducerRecord.class));
+        verify(outboxEventRepository, times(1)).markPublished(eq(List.of(first.getId())), any());
+        verify(outboxEventRepository, times(1)).save(interrupted);
+    }
+
+    @Test
+    @DisplayName("묶음 기록이 실패하면 예외가 사이클 밖으로 나간다 — 삼키면 ack 분이 PENDING 인 채 실패가 숨는다 (ADR-0049 D3)")
+    void bulkRecordFailurePropagates() {
+        OutboxEvent event = pendingEvent(null, null);
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(event));
+        given(kafkaTemplate.send(any(ProducerRecord.class))).willReturn(CompletableFuture.completedFuture(null));
+        given(outboxEventRepository.markPublished(any(), any())).willThrow(new RuntimeException("DB down"));
+
+        assertThatThrownBy(() -> outboxPollingService.pollAndPublish())
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("DB down");
+    }
+
+    @Test
+    @DisplayName("실패 경로 저장 예외와 묶음 기록 예외가 겹치면 원래 예외를 던지고 기록 예외는 suppressed 로 남긴다")
+    void failurePathExceptionKeepsBulkRecordFailureAsSuppressed() {
+        OutboxEvent ok = pendingEvent(null, null);
+        OutboxEvent failed = pendingEvent(null, null);
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of(ok, failed));
+        given(kafkaTemplate.send(any(ProducerRecord.class)))
+                .willReturn(CompletableFuture.completedFuture(null))
+                .willThrow(new RuntimeException("Kafka down"));
+        willThrow(new RuntimeException("retry save failed")).given(outboxEventRepository).save(failed);
+        given(outboxEventRepository.markPublished(any(), any())).willThrow(new RuntimeException("bulk failed"));
+
+        assertThatThrownBy(() -> outboxPollingService.pollAndPublish())
+                .hasMessage("retry save failed")
+                .satisfies(e -> assertThat(e.getSuppressed()).extracting(Throwable::getMessage)
+                        .containsExactly("bulk failed"));
+        verify(outboxEventRepository, times(1)).markPublished(eq(List.of(ok.getId())), any());
+    }
+
+    @Test
+    @DisplayName("ack 가 하나도 없는 사이클은 markPublished 를 부르지 않는다")
+    void noAckSkipsBulkRecord() {
+        given(outboxEventRepository.findPendingEvents(anyInt())).willReturn(List.of());
+
+        outboxPollingService.pollAndPublish();
+
+        verify(outboxEventRepository, never()).markPublished(any(), any());
+    }
+
     private static OutboxEvent pendingEvent(String traceId, String userId) {
-        return OutboxEvent.create("Order", "1", "order.created", traceId, userId, eventId -> "{}");
+        OutboxEvent event = OutboxEvent.create("Order", "1", "order.created", traceId, userId, eventId -> "{}");
+        ReflectionTestUtils.setField(event, "id", NEXT_ID.incrementAndGet());
+        return event;
     }
 
     private static OutboxEvent retryableEvent(String traceId, String userId) {

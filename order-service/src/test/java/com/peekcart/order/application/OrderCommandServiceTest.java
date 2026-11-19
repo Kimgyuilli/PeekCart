@@ -16,10 +16,17 @@ import com.peekcart.support.ServiceTest;
 import com.peekcart.support.fixture.OrderFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -59,6 +66,48 @@ class OrderCommandServiceTest {
         // 단가는 Product 동기 호출 없이 로컬 가격 캐시에서 읽는다 (CQRS 로컬 가격 캐시)
         then(priceCacheRepository).should().findUnitPrice(OrderFixture.DEFAULT_PRODUCT_ID);
         then(outboxEventPublisher).should().publishOrderCreated(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("createOrder: 주문번호는 ORD-오늘날짜- 뒤에 16 hex 접미사를 붙인다 (D-120)")
+    void createOrder_orderNumberHas16HexSuffix() {
+        given(cartRepository.findByUserId(OrderFixture.DEFAULT_USER_ID))
+                .willReturn(Optional.of(OrderFixture.cartWithItem()));
+        given(priceCacheRepository.findUnitPrice(OrderFixture.DEFAULT_PRODUCT_ID))
+                .willReturn(Optional.of(OrderFixture.DEFAULT_UNIT_PRICE));
+        given(orderRepository.save(any(Order.class))).willAnswer(invocation -> invocation.getArgument(0));
+        String before = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+
+        orderCommandService.createOrder(OrderFixture.DEFAULT_USER_ID, OrderFixture.createOrderCommand());
+
+        String after = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
+        then(orderRepository).should().save(saved.capture());
+        String orderNumber = saved.getValue().getOrderNumber();
+        assertThat(orderNumber).matches("ORD-\\d{8}-[0-9A-F]{16}");
+        assertThat(orderNumber.substring(4, 12)).isIn(before, after);
+    }
+
+    @Test
+    @DisplayName("generateOrderNumber: 접미사 16자리 중 값이 고정된 자리가 없다 (64비트 공간, D-120)")
+    void generateOrderNumber_noFixedSuffixPosition() {
+        // UUID 앞 16 hex 를 자르면 13번째 자리가 버전 니블 '4' 로 고정돼 60비트가 된다.
+        // 256회면 무작위 자리가 우연히 한 값만 낼 확률은 자리당 16^-255 다.
+        List<Set<Character>> seen = new ArrayList<>();
+        for (int i = 0; i < 16; i++) {
+            seen.add(new HashSet<>());
+        }
+        for (int n = 0; n < 256; n++) {
+            String suffix = OrderCommandService.generateOrderNumber().substring(13);
+            assertThat(suffix).hasSize(16);
+            for (int i = 0; i < 16; i++) {
+                seen.get(i).add(suffix.charAt(i));
+            }
+        }
+
+        for (int i = 0; i < 16; i++) {
+            assertThat(seen.get(i)).as("접미사 %d번째 자리의 값 종류", i + 1).hasSizeGreaterThan(1);
+        }
     }
 
     @Test

@@ -240,7 +240,7 @@ class OutboxThroughputLocalProbeTest extends AbstractIntegrationTest {
         try {
             poller(delayed, registry, 100).pollAndPublish();
             assertThat(delayed.publishedSaves).isEqualTo(30);
-            assertThat(delayed.saveNs).isGreaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(150));
+            assertThat(delayed.saveNs).isGreaterThanOrEqualTo(TimeUnit.MILLISECONDS.toNanos(5) * delayed.saveCalls);
             assertThat(jpaRepository.countByStatus(OutboxEventStatus.PUBLISHED)).isEqualTo(30);
             verifyBroker(topic, expected);
             emit(Map.of("kind", "save-delay-control", "records", 30, "injectedPerSaveMs", 5,
@@ -356,6 +356,19 @@ class OutboxThroughputLocalProbeTest extends AbstractIntegrationTest {
                 OutboxEvent saved = delegate.save(event);
                 if (saved.getStatus() == OutboxEventStatus.PUBLISHED) publishedSaves++;
                 return saved;
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(interrupted);
+            } finally { saveNs += System.nanoTime() - start; saveCalls++; }
+        }
+        // ADR-0049 부터 성공 경로는 사이클당 한 번의 묶음 기록이다. 호출 한 번을 save 한 번으로 센다.
+        @Override public int markPublished(List<Long> ids, java.time.LocalDateTime publishedAt) {
+            long start = System.nanoTime();
+            try {
+                if (delayMs > 0) TimeUnit.MILLISECONDS.sleep(delayMs);
+                int updated = delegate.markPublished(ids, publishedAt);
+                publishedSaves += updated;
+                return updated;
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(interrupted);
