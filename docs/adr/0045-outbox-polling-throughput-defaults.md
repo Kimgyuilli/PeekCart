@@ -1,6 +1,7 @@
 # ADR-0045: outbox poller 발행 처리율 기본값 (주기 500ms, 배치 500, 락 최소 보존 설정화)
 
-- **Status**: Accepted
+- **Status**: Partially Superseded by [ADR-0049](./0049-outbox-cycle-batched-publish-record.md)
+- **후속 범위**: Alternative C(저장 묶기)의 기각과 Consequences 의 "이벤트당 저장 횟수도 같다" 서술을 ADR-0049 가 대체한다(ack 받은 이벤트를 사이클 끝에 한 문장으로 기록). 주기 500ms·배치 500·최소 보존 설정화와 그 검사는 유지한다.
 - **Date**: 2026-10-25
 - **Deciders**: 프로젝트 오너 (2026-10-25 D-075 처분 결정)
 - **관련 Phase**: Phase 5

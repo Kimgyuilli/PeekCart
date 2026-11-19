@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -15,6 +16,11 @@ public class OutboxEventRepositoryImpl implements OutboxEventRepository {
     @Override
     public OutboxEvent save(OutboxEvent outboxEvent) {
         return outboxEventJpaRepository.save(outboxEvent);
+    }
+
+    @Override
+    public int markPublished(List<Long> ids, LocalDateTime publishedAt) {
+        return outboxEventJpaRepository.markPublished(ids, publishedAt);
     }
 
     @Override

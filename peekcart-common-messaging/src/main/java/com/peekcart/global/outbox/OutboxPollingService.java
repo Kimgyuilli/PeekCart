@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -74,32 +76,61 @@ public class OutboxPollingService {
                 .register(meterRegistry);
     }
 
+    /**
+     * PENDING 을 발행하고, ack 받은 이벤트의 PUBLISHED 는 사이클 끝에 한 문장으로 저장한다 (ADR-0049).
+     *
+     * <p>이벤트마다 저장하면 이벤트 한 건이 커넥션 획득·커밋 한 번이 되어, 부하로 공유 자원이 포화될 때 poller 가
+     * 부하 스레드와 같은 몫으로 줄을 선다(D-110). 저장을 묶은 대가로 ack 와 저장 사이에서 죽거나 저장이 실패하면
+     * 그 사이클의 ack 전부가 PENDING 으로 남아 다시 발행된다 — at-least-once 와 소비 멱등(ADR-0020 D1)의 범위 안이다.
+     */
     public void pollAndPublish() {
         List<OutboxEvent> pendingEvents = outboxEventRepository.findPendingEvents(batchSize);
         long cycleDeadlineNanos = System.nanoTime() + cycleTimeout.toNanos();
+        List<Long> publishedIds = new ArrayList<>();
 
-        for (OutboxEvent event : pendingEvents) {
-            if (System.nanoTime() >= cycleDeadlineNanos) {
-                log.warn("Outbox polling cycle 상한 도달 — 잔여 이벤트는 다음 사이클로 이월, cycleTimeout={}",
-                        cycleTimeout);
-                break;
+        try {
+            for (OutboxEvent event : pendingEvents) {
+                if (System.nanoTime() >= cycleDeadlineNanos) {
+                    log.warn("Outbox polling cycle 상한 도달 — 잔여 이벤트는 다음 사이클로 이월, cycleTimeout={}",
+                            cycleTimeout);
+                    break;
+                }
+
+                long publishStartNanos = System.nanoTime();
+                try {
+                    kafkaTemplate.send(buildRecord(event)).get(publishTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                    publishSuccessTimer.record(System.nanoTime() - publishStartNanos, TimeUnit.NANOSECONDS);
+                    publishedIds.add(event.getId());
+                } catch (InterruptedException e) {
+                    publishFailureTimer.record(System.nanoTime() - publishStartNanos, TimeUnit.NANOSECONDS);
+                    Thread.currentThread().interrupt();
+                    handlePublishFailure(event, e);
+                    break;
+                } catch (Exception e) {
+                    publishFailureTimer.record(System.nanoTime() - publishStartNanos, TimeUnit.NANOSECONDS);
+                    handlePublishFailure(event, e);
+                }
             }
-
-            long publishStartNanos = System.nanoTime();
+        } catch (RuntimeException e) {
+            // 실패 경로의 저장이 사이클을 뚫고 나온 경우다. 그 전에 ack 받은 것도 기록을 시도하되, 원래 예외를 가리지 않는다.
             try {
-                kafkaTemplate.send(buildRecord(event)).get(publishTimeout.toMillis(), TimeUnit.MILLISECONDS);
-                publishSuccessTimer.record(System.nanoTime() - publishStartNanos, TimeUnit.NANOSECONDS);
-                event.markPublished();
-                outboxEventRepository.save(event);
-            } catch (InterruptedException e) {
-                publishFailureTimer.record(System.nanoTime() - publishStartNanos, TimeUnit.NANOSECONDS);
-                Thread.currentThread().interrupt();
-                handlePublishFailure(event, e);
-                break;
-            } catch (Exception e) {
-                publishFailureTimer.record(System.nanoTime() - publishStartNanos, TimeUnit.NANOSECONDS);
-                handlePublishFailure(event, e);
+                markPublished(publishedIds);
+            } catch (RuntimeException markEx) {
+                e.addSuppressed(markEx);
             }
+            throw e;
+        }
+        markPublished(publishedIds);
+    }
+
+    private void markPublished(List<Long> ids) {
+        if (ids.isEmpty()) {
+            return;
+        }
+        int updated = outboxEventRepository.markPublished(ids, LocalDateTime.now());
+        if (updated != ids.size()) {
+            // ADR-0022 가 허용하는 outbox 행 강제 삭제 뒤에 생길 수 있다. 발행은 이미 끝났으므로 실패로 다루지 않는다.
+            log.warn("Outbox PUBLISHED 기록 행 수 불일치 — expected={}, updated={}", ids.size(), updated);
         }
     }
 

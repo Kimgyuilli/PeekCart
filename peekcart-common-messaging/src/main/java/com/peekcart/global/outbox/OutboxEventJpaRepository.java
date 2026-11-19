@@ -20,6 +20,18 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEvent, Lon
     long countByStatus(OutboxEventStatus status);
 
     /**
+     * poller 가 한 사이클에 ack 받은 이벤트를 한 문장으로 PUBLISHED 기록한다 (ADR-0049 D1).
+     *
+     * <p><b>상태 조건을 두지 않는다.</b> 이전의 이벤트별 merge 도 행 상태를 보지 않고 덮었다. broker ack 를 받았으면
+     * PUBLISHED 가 사실이다. {@code published_at} 은 ack 시각이 아니라 이 문장의 시각이다(D4).
+     */
+    @Transactional
+    @Modifying
+    @Query("UPDATE OutboxEvent o SET o.status = com.peekcart.global.outbox.OutboxEventStatus.PUBLISHED,"
+            + " o.publishedAt = :publishedAt WHERE o.id IN :ids")
+    int markPublished(@Param("ids") List<Long> ids, @Param("publishedAt") LocalDateTime publishedAt);
+
+    /**
      * retention cleanup 배치 삭제 (ADR-0012 D5).
      * <b>PUBLISHED 상태 + {@code published_at < cutoff}</b> 인 행만 최대 {@code limit} 건 삭제한다.
      * PENDING·FAILED 는 status 조건으로, {@code published_at IS NULL} 은 {@code < cutoff} 비교(NULL 미매치)로

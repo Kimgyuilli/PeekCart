@@ -169,11 +169,6 @@ public class OutboxEvent {
         return recordKind == OutboxRecordKind.REPLAY;
     }
 
-    public void markPublished() {
-        this.status = OutboxEventStatus.PUBLISHED;
-        this.publishedAt = LocalDateTime.now();
-    }
-
     public void incrementRetry() {
         this.retryCount++;
         this.lastAttemptedAt = LocalDateTime.now();

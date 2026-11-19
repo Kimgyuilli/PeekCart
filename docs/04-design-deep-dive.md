@@ -196,7 +196,8 @@ DB 단독 사용 시 매 요청마다 DB 조회가 발생하고, Redis 단독 �
 Outbox 패턴 (해결):
   DB 저장 + Outbox 테이블 저장 (단일 트랜잭션)
   → Polling 스케줄러가 Outbox를 읽어 Kafka 발행
-  → 발행 성공 시 Outbox 레코드 PUBLISHED 상태 업데이트
+  → 발행 성공분은 사이클 끝에 한 문장으로 PUBLISHED 기록 (see ADR-0049)
+    · 기록 전에 죽거나 기록이 실패하면 그 사이클의 성공분 전부가 재발행된다 (at-least-once, 소비는 eventId 로 멱등)
   → 실패 시 retry_count 증가, 횟수 초과 시 FAILED 처리 (운영 신호는 아래 alert)
 
 DLQ 연계:
