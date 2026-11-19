@@ -204,7 +204,7 @@ class ProfileTest(unittest.TestCase):
         self.assertNotIn('if', validate)
         self.assertEqual(validate['run'], 'python3 -B scripts/ci-build-profile.py analyze ${{ runner.temp }}/build-profile')
         self.assertEqual(next(s for s in steps if s.get('name') == 'Health smoke')['run'], 'bash scripts/docker-health-smoke.sh ${{ matrix.service }}:ci')
-        self.assertEqual(image['cache-to'], "${{ github.event_name == 'push' && format('type=gha,mode=max,scope=image-{0}', matrix.service) || '' }}")
+        self.assertEqual(image['cache-to'], 'type=gha,mode=max,scope=image-${{ matrix.service }}')
         self.assertEqual(image['builder'], export['builder']); self.assertEqual(image['build-args'], export['build-args'])
         self.assertEqual(export['target'], 'gradle-profile'); self.assertNotIn('cache-to', export)
         self.assertEqual(image['cache-from'], 'type=gha,scope=image-${{ matrix.service }}')

@@ -545,9 +545,7 @@ jobs:
           # scope 를 서비스별로 나눈다. 매트릭스 6개가 단일 scope 를 공유하면 서로의
           # 캐시를 덮어써 마지막 하나만 남는다.
           cache-from: type=gha,scope=image-${{ matrix.service }}
-          # 캐시는 main push 만 쓴다(D-123). PR 은 main 캐시를 읽기만 한다. PR ref 에 쓴 캐시는 다른 PR 이
-          # 읽지 못하는데 저장소 한도(10GB)를 채워, Gradle 의존성 캐시와 main 레이어 캐시를 밀어냈다.
-          cache-to: ${{ github.event_name == 'push' && format('type=gha,mode=max,scope=image-{0}', matrix.service) || '' }}
+          cache-to: type=gha,mode=max,scope=image-${{ matrix.service }}
 
       - name: Capture exact image build record
         id: image-profile
