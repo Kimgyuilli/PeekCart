@@ -166,6 +166,8 @@ class PaymentEventConsumerTest {
         // Slack 은 배포 구성상 no-op 이라 종결 근거가 못 된다(ADR-0018 C1/D4).
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.APPROVED);
         then(paymentRefundService).should().requestRefund(payment, "PAID_BUT_CANCELLED");
+        // 있는 경로는 결제 행을 잠그지 않는다: 잠그면 finalizeOutcome(환불 행 잠금 뒤 결제 UPDATE)과 교착한다(D-121).
+        then(paymentRepository).should(never()).findByOrderIdForUpdate(any());
     }
 
     @Test
@@ -191,7 +193,24 @@ class PaymentEventConsumerTest {
 
         consumer.handleOrderCancelled("msg");
 
+        // 미존재면 잠금 조회로 다시 봐 키 구간을 잠근 뒤 marker 를 저장한다(D-121)
+        then(paymentRepository).should().findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID);
         then(paymentCancellationRepository).should().save(any(PaymentCancellation.class));
+    }
+
+    @Test
+    @DisplayName("order.cancelled: 비잠금 조회는 비었는데 잠금 조회가 Payment 를 찾으면 취소를 적용하고 marker 를 남기지 않는다(D-121)")
+    void orderCancelled_paymentFoundByLockingRead_cancelsWithoutMarker() {
+        Payment payment = PaymentFixture.pendingPaymentWithId();
+        given(paymentRepository.findByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(Optional.empty());
+        given(paymentRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(Optional.of(payment));
+        stubOrderCancelled();
+
+        consumer.handleOrderCancelled("msg");
+
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.CANCELLED);
+        then(paymentCancellationRepository).should(never()).save(any());
+        then(paymentRefundService).should(never()).requestRefund(any(), anyString());
     }
 
     private void stubOrderCreated() {
@@ -209,7 +228,6 @@ class PaymentEventConsumerTest {
     @DisplayName("order.created → userId 포함 Payment(PENDING) 생성")
     void orderCreated_createsPaymentWithUserId() {
         stubOrderCreated();
-        given(paymentCancellationRepository.existsByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(false);
 
         consumer.handleOrderCreated("msg");
 
@@ -222,17 +240,19 @@ class PaymentEventConsumerTest {
     }
 
     @Test
-    @DisplayName("order.created: 선도착 취소 marker 가 있으면 Payment 를 CANCELLED 로 생성(누수 0)")
+    @DisplayName("order.created: 선도착 취소 marker 가 있으면 Payment 를 CANCELLED 로 전환하고 marker 를 PK 로 지운다(누수 0)")
     void orderCreated_withPriorCancellationMarker_createsCancelled() {
         stubOrderCreated();
-        given(paymentCancellationRepository.existsByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(true);
+        PaymentCancellation marker = PaymentCancellation.of(PaymentFixture.DEFAULT_ORDER_ID);
+        given(paymentCancellationRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID))
+                .willReturn(Optional.of(marker));
 
         consumer.handleOrderCreated("msg");
 
         ArgumentCaptor<Payment> captor = ArgumentCaptor.forClass(Payment.class);
         then(paymentRepository).should().save(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo(PaymentStatus.CANCELLED);
-        then(paymentCancellationRepository).should().deleteByOrderId(PaymentFixture.DEFAULT_ORDER_ID);
+        then(paymentCancellationRepository).should().delete(marker);
     }
 
     @Test
@@ -240,7 +260,6 @@ class PaymentEventConsumerTest {
     void orderCreated_withPriorReservationMarker_marksReady() {
         LocalDateTime expiresAt = LocalDateTime.of(2026, 11, 15, 12, 0);
         stubOrderCreated();
-        given(paymentCancellationRepository.existsByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(false);
         given(paymentReservationResultRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID))
                 .willReturn(Optional.of(PaymentReservationResult.of(PaymentFixture.DEFAULT_ORDER_ID, expiresAt)));
 
@@ -259,7 +278,9 @@ class PaymentEventConsumerTest {
     @DisplayName("order.created: 취소 marker 와 예약 marker 가 모두 있으면 CANCELLED 가 우선이고 두 marker 를 지운다")
     void orderCreated_withBothMarkers_cancelWins() {
         stubOrderCreated();
-        given(paymentCancellationRepository.existsByOrderId(PaymentFixture.DEFAULT_ORDER_ID)).willReturn(true);
+        PaymentCancellation marker = PaymentCancellation.of(PaymentFixture.DEFAULT_ORDER_ID);
+        given(paymentCancellationRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID))
+                .willReturn(Optional.of(marker));
         given(paymentReservationResultRepository.findByOrderIdForUpdate(PaymentFixture.DEFAULT_ORDER_ID))
                 .willReturn(Optional.of(PaymentReservationResult.of(PaymentFixture.DEFAULT_ORDER_ID, null)));
 
@@ -269,7 +290,7 @@ class PaymentEventConsumerTest {
         then(paymentRepository).should().save(captor.capture());
         assertThat(captor.getValue().getStatus()).isEqualTo(PaymentStatus.CANCELLED);
         assertThat(captor.getValue().isReadyForPayment()).isFalse();
-        then(paymentCancellationRepository).should().deleteByOrderId(PaymentFixture.DEFAULT_ORDER_ID);
+        then(paymentCancellationRepository).should().delete(marker);
         then(paymentReservationResultRepository).should().delete(any());
     }
 }

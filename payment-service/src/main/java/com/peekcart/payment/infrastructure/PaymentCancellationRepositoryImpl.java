@@ -5,6 +5,8 @@ import com.peekcart.payment.domain.repository.PaymentCancellationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 @RequiredArgsConstructor
 public class PaymentCancellationRepositoryImpl implements PaymentCancellationRepository {
@@ -22,7 +24,12 @@ public class PaymentCancellationRepositoryImpl implements PaymentCancellationRep
     }
 
     @Override
-    public void deleteByOrderId(Long orderId) {
-        jpaRepository.deleteByOrderId(orderId);
+    public Optional<PaymentCancellation> findByOrderIdForUpdate(Long orderId) {
+        return jpaRepository.findByOrderIdForUpdate(orderId);
+    }
+
+    @Override
+    public void delete(PaymentCancellation cancellation) {
+        jpaRepository.delete(cancellation);
     }
 }
