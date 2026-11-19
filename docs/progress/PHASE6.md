@@ -288,16 +288,16 @@ D-114 가 Kafka 를 `kafka-pvc` 에 연결한 뒤 운영 overlay 가 1Gi 에 쓰
 - 유입량(초당 170 주문, 주문당 레코드 5개·offset 커밋 11건)은 가정이다.
 - `offsets.topic.segment.bytes` 축소는 재검토 조건을 붙여 남겼다(`docs/plans/D-122.md` §미해결).
 
-## 2026-11-20 — CI 이미지 빌드의 jar 사전 다운로드와 캐시 복구 판정
+## 2026-11-20 — CI 이미지 캐시의 PR 쓰기 중단
 
 [PR274](https://github.com/Kimgyuilli/PeekCart/pull/274) · 계획 `D-123`.
-PR #269~#272 병합 중 CI `images` job 이 코드와 무관하게 세 번 실패한 원인을 실제 CI artifact 와 로컬 Gradle 실측으로 갈라 처분했다.
+PR #269~#272 병합 중 CI `images`·`test` job 이 코드와 무관하게 실패한 원인을 캐시 사용량으로 확인했다.
 
-- 캐시 복구 판정: run 44550802629 는 buildkit 이 bootJar 캐시 적중을 알린 뒤 GHA blob 을 못 불러와 단계를 다시 실행해 이미지를 만들었다. `ci-build-profile.py` 가 중간 오류 이벤트만 보고 실패시켰다. 오류 이벤트에서 상태를 초기화하고 뒤의 완료로 판정한다. 레이어 추출 뒤의 기존 cache hit 판정은 그대로다.
-- jar 사전 다운로드: `dependencies` 태스크는 POM 만 받는다(빈 홈 실측 POM 352·jar 23). init script 로 외부 모듈 jar 까지 의존성 레이어에서 받고, bootJar 는 `--offline` 이다. 사전 다운로드는 실패를 삼키지 않고 3회 시도한다.
-- 검증: 실제 실패 artifact 가 수정 전 실패·수정 후 통과. 로컬 `docker build --no-cache` gateway·order-service 와 health smoke 통과, 사전 다운로드를 되돌린 음성 대조는 offline 오류로 실패. selftest 13개·변이 17개, `./gradlew test` 1543 실패 0.
+- 원인: `images` job 의 `cache-to`(mode=max)가 PR 마다 Docker 레이어 캐시를 PR merge ref 에 써서 저장소 GHA 캐시가 16.46GB(PR ref 15.92GB, 844개)로 한도 10GB 를 넘었다. PR ref 캐시는 다른 PR 이 읽지 못한다. 축출로 Gradle 의존성 캐시는 1개, main 레이어 캐시는 0.28GB 만 남았고, 캐시를 잃은 job 이 Maven Central 에서 의존성을 다시 받다 429·404 와 빌드 중 blob 누락으로 떨어졌다.
+- 처분: `cache-to` 를 main push 에서만 쓴다. PR 은 main 캐시를 읽기만 한다. 쌓인 PR ref 캐시는 한 번 지웠다.
+- 경과: 처음에는 증상별로 빌드 증거 검사 로직 수정, Dockerfile 의 jar 사전 다운로드와 `--offline`, 재시도 대기 확대를 넣었다. 사전 다운로드가 캐시 미스로 매번 다시 돌며 같은 원격 실패를 내 원인을 다시 봤고, 덧붙인 변경은 모두 걷어냈다(사용자 결정, 최소 복잡도).
+- 함께 고친 것: #271 이 이름을 바꾼 테스트가 payment baseline fixture 에 반영되지 않아 Flyway contract 워크플로가 실패했다. 경로 필터로 #271 에서 돌지 않았다. 334건을 유지하고 이름만 교체했다.
 
 미충족과 범위 밖:
-- 의존성 레이어 캐시가 없을 때(build.gradle 변경, GHA 캐시 축출)는 여전히 원격에 접속한다. 3회 재시도로만 덮는다.
-- 빌드 프로파일(D-087)의 bootJar 시간이 다운로드분만큼 줄어 과거 값과 측정 조건이 다르다.
-- Docker Hub base 이미지 resolve 실패와 test job 의 Testcontainers 기동 실패는 다른 경로라 다루지 않았다.
+- 병합 뒤 첫 main push 가 캐시를 다시 채울 때까지 PR 은 캐시 미스로 빌드한다.
+- Docker Hub base 이미지 resolve 실패(2026-10-24)는 다른 경로라 다루지 않았다.
