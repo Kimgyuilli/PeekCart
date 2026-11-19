@@ -258,3 +258,17 @@ D-110 이 남긴 부하 중 order outbox 발행 굶음을 저장 묶기(ADR-0045
 미충족과 범위 밖:
 - 충돌 확률은 0 이 아니다(하루 6만 건 약 1e-10). 충돌하면 여전히 500 이다.
 - `OrderPoolContentionLocalProbeTest` 의 주문번호 충돌 계수는 사실상 0 이 됐다. 남길지는 정하지 않았다.
+
+## 2026-11-20 — 취소 선도착 marker 의 잠금 조회
+
+[PR271](https://github.com/Kimgyuilli/PeekCart/pull/271) · 계획 `D-121` · 출처 D-112([#266](https://github.com/Kimgyuilli/PeekCart/pull/266)) §미해결.
+두 consumer group 이 같은 주문의 `order.created`·`order.cancelled` 를 겹쳐 처리하면 취소 marker 가 남고 Payment 가 PENDING 으로 생기던 경합을 막았다.
+
+- 생성 쪽: Payment INSERT 뒤 취소 marker 를 잠금 조회하고 있으면 `cancelBeforePayment` 후 엔티티로 PK 삭제한다. 파생 `deleteByOrderId` 는 지웠다.
+- 취소 쪽: 비잠금 조회가 비었을 때만 잠금 조회로 다시 본다. D-112 처럼 늘 payment 를 먼저 잠그면 환불 확정 경로(환불 행 잠금 뒤 payments 갱신)와 순서가 반대가 되어 교착할 수 있어 이 형태로 정했다(사용자 결정 2026-11-19).
+- 검증: 새 통합 테스트 두 순서가 수정 전 코드에서 실패하고 수정 뒤 통과했다. 재조회 제거·`@Lock` 제거·파생 삭제 복귀를 각각 넣으면 해당 순서가 실패한다. `:payment-service:test` 361 테스트 실패 0.
+
+미충족과 범위 밖:
+- 교착 분석은 코드와 InnoDB 잠금 규칙을 읽은 결과이고 테스트로 재현하지 않았다.
+- 선도착 취소가 있는 주문의 Payment 는 PENDING INSERT 뒤 같은 트랜잭션에서 CANCELLED 로 바뀌어 version 1 로 커밋된다.
+- 새 통합 테스트의 경합 helper 는 D-112 테스트와 같은 코드를 복제했다.
