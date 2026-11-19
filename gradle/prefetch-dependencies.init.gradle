@@ -1,0 +1,19 @@
+// 이미지 빌드의 의존성 레이어에서 jar 까지 미리 받는다 (D-123).
+//
+// `dependencies` 태스크는 의존성 그래프(POM)만 해석하고 jar 는 받지 않는다. 그러면 소스가 바뀐 빌드마다
+// bootJar 단계가 Maven Central 에서 jar 를 다시 받고, 원격의 일시 응답 실패가 빌드 실패가 된다.
+// 이 태스크로 받은 jar 는 build.gradle 이 같으면 레이어 캐시에 남고, bootJar 는 --offline 으로 돈다.
+//
+// 외부 모듈만 받는다. 프로젝트 의존(:common 등)은 소스가 아직 없으므로 여기서 빌드하지 않는다.
+allprojects {
+    tasks.register('prefetchDependencies') {
+        doLast {
+            def names = ['compileClasspath', 'runtimeClasspath', 'productionRuntimeClasspath', 'annotationProcessor']
+            project.configurations.matching { it.canBeResolved && names.contains(it.name) }.each { configuration ->
+                configuration.incoming.artifactView {
+                    componentFilter { it instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier }
+                }.files.files
+            }
+        }
+    }
+}
