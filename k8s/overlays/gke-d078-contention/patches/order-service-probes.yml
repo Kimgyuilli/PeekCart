@@ -5,8 +5,8 @@
 #   재기동 동안 gateway 는 Connection refused 로 order-cart 500 을 냈고, 재기동 직후라 다음 run 도 다시 워밍업이어야 했다.
 #   2026-10-24 세션(USERS 200)에서는 재시작이 없었다.
 # 무엇을 바꾸나: kubelet 의 판정만 늦춘다. 요청 처리 경로·CPU 한도·replicas 는 그대로라 ⑤⑥ 측정값의 조건은 같다.
-#   liveness 는 약 2분(10초 × 12회, 각 5초 대기)까지 응답이 없어도 죽이지 않고, readiness 는 약 1분까지 endpoint 에서 빼지 않는다.
-# 운영 overlay 에는 가져가지 않는다. 운영 프로브 정책은 별도 결정이다.
+#   liveness(약 2분, 5초 × 12회)는 base 가 같은 값을 갖게 돼 여기서 뺐다(D-108, docs/plans/D-108-probe-policy.md).
+#   readiness 만 base(약 30초)보다 길게 약 1분까지 endpoint 에서 빼지 않는다. 측정 조건을 2026-10-26 세션과 같게 두려는 것이다.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,9 +17,6 @@ spec:
     spec:
       containers:
         - name: order-service
-          livenessProbe:
-            timeoutSeconds: 5
-            failureThreshold: 12
           readinessProbe:
             timeoutSeconds: 5
             failureThreshold: 6

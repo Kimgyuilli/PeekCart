@@ -87,16 +87,21 @@ spec:
               port: 8080
             failureThreshold: 30
             periodSeconds: 5
+          # 프로브 수치 근거: order-service/deployment.yml 주석(D-108). 5개 백엔드 서비스가 같은 값을 쓴다.
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
               port: 8080
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8080
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
 ---
 apiVersion: v1
 kind: Service
