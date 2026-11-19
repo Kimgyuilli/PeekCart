@@ -110,9 +110,6 @@ def vertex(log, kind):
 
 def cache_vertex(path, service):
     # Native solve events retain Cached even when plain rendering ends with extraction DONE.
-    # A cache-load failure (e.g. a GHA blob evicted after the cache hit was announced) arrives as an error event,
-    # after which buildkit executes the step. The error resets the digest so only the later completion decides;
-    # an error that is never followed by a clean completion still fails below (D-123).
     vertices = {}; logged = set()
     for line in path.read_text(encoding='utf-8').splitlines():
         event = json.loads(line)
@@ -123,13 +120,8 @@ def cache_vertex(path, service):
             require(':' + service + ':bootJar' in v['name'], 'bootJar service mismatch')
             digest = v.get('digest')
             require(isinstance(digest, str) and re.fullmatch(r'sha256:[0-9a-f]{64}', digest), 'invalid bootJar vertex digest')
-            require(type(v.get('cached', False)) is bool, 'invalid bootJar cache event')
-            require(v.get('error') is None or isinstance(v.get('error'), str), 'invalid bootJar error event')
-            row = vertices.setdefault(digest, {'cached': False, 'completed': False, 'recovered': False,
-                                               'command': re.sub(r'^\[build [^\]]+\] ', '', v['name'])})
-            if v.get('error'):
-                row.update(cached=False, completed=False, recovered=True)
-                continue
+            require(type(v.get('cached', False)) is bool and not v.get('error'), 'invalid/failed bootJar cache event')
+            row = vertices.setdefault(digest, {'cached': False, 'completed': False, 'command': re.sub(r'^\[build [^\]]+\] ', '', v['name'])})
             completed = v.get('completed')
             if completed is not None:
                 require(isinstance(completed, str) and re.fullmatch(r'\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)', completed), 'invalid bootJar completion')
@@ -143,7 +135,7 @@ def cache_vertex(path, service):
     digest, row = next(iter(vertices.items()))
     require(row['completed'], 'incomplete structured bootJar vertex')
     require(not row['cached'] or digest not in logged, 'cached bootJar has execution output')
-    return {'digest': digest, 'cached': row['cached'], 'command': row['command'], 'cache_load_recovered': row['recovered']}
+    return {'digest': digest, 'cached': row['cached'], 'command': row['command']}
 
 
 def reference(metadata):
@@ -170,7 +162,6 @@ def analyze(directory):
     if image_cache['cached'] and not boot['cached']:
         boot['materialization_seconds'] = boot['seconds']; boot['seconds'] = None
     boot['cached'] = image_cache['cached']; boot['digest'] = image_cache['digest']
-    boot['cache_load_recovered'] = image_cache['cache_load_recovered']
     result = {'context': context, 'image_build_ref': main_ref, 'profile_export_build_ref': None,
               'measurement_status': 'cache_hit_unmeasured' if boot['cached'] else 'fresh_execution',
               'profile_origin': None, 'bootjar_vertex': boot, 'profile_export_vertex': None,

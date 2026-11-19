@@ -145,27 +145,6 @@ class ProfileTest(unittest.TestCase):
             with self.subTest(label=label): self.cli(2)
         self.progress('image', True, logged=True); self.cli(2)
 
-    def recovery_events(self, recovered=True):
-        # Shape of run 44550802629 order-service (D-123): cache hit announced, blob load fails, step executes.
-        base = {'digest': 'sha256:' + 'a' * 64, 'name': '[build 27/27] RUN ./gradlew :notification-service:bootJar --profile'}
-        events = [{'vertexes': [dict(base, cached=True, completed='2026-10-21T00:00:00Z')]},
-                  {'vertexes': [dict(base, cached=True, completed='2026-10-21T00:00:01Z', error='blob sha256:' + 'c' * 64 + ': not found')]}]
-        if recovered:
-            events.append({'vertexes': [dict(base, completed='2026-10-21T00:00:40Z')],
-                           'logs': [{'vertex': base['digest'], 'data': 'PiBUYXNrIDpub3RpZmljYXRpb24tc2VydmljZTpib290SmFy'}]})
-        self.write('image-progress.jsonl', ''.join(json.dumps(e) + '\n' for e in events))
-
-    def test_cache_load_failure_recovers_by_execution(self):
-        self.recovery_events()
-        result = self.cli()
-        self.assertEqual(result['measurement_status'], 'fresh_execution')
-        self.assertTrue(result['bootjar_vertex']['cache_load_recovered'])
-        self.assertFalse(result['bootjar_vertex']['cached'])
-        # An error that is never followed by a clean completion is still a failed step.
-        self.recovery_events(recovered=False); self.cli(2)
-        # The ordinary fresh path does not claim a recovery.
-        self.progress('image', False); self.assertFalse(self.cli()['bootjar_vertex']['cache_load_recovered'])
-
     def test_fresh_export_uses_own_vertex_and_strict_profile(self):
         # Different target graphs can have different native vertex IDs; never equate them.
         self.progress('profile', True, digest='sha256:'+'b'*64)
@@ -225,7 +204,7 @@ class ProfileTest(unittest.TestCase):
         self.assertNotIn('if', validate)
         self.assertEqual(validate['run'], 'python3 -B scripts/ci-build-profile.py analyze ${{ runner.temp }}/build-profile')
         self.assertEqual(next(s for s in steps if s.get('name') == 'Health smoke')['run'], 'bash scripts/docker-health-smoke.sh ${{ matrix.service }}:ci')
-        self.assertEqual(image['cache-to'], 'type=gha,mode=max,scope=image-${{ matrix.service }}')
+        self.assertEqual(image['cache-to'], "${{ github.event_name == 'push' && format('type=gha,mode=max,scope=image-{0}', matrix.service) || '' }}")
         self.assertEqual(image['builder'], export['builder']); self.assertEqual(image['build-args'], export['build-args'])
         self.assertEqual(export['target'], 'gradle-profile'); self.assertNotIn('cache-to', export)
         self.assertEqual(image['cache-from'], 'type=gha,scope=image-${{ matrix.service }}')
@@ -246,14 +225,6 @@ EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 '''
         self.assertEqual(runtime, expected)
-        # D-123: jars come from the dependency layer and bootJar never reaches a remote repository.
-        build = dockerfile[:dockerfile.index('# Stage 2: Runtime')]
-        prefetch = build[build.index('RUN chmod +x gradlew'):build.index('# 전 모듈 소스')]
-        self.assertIn('--init-script gradle/prefetch-dependencies.init.gradle prefetchDependencies', prefetch)
-        self.assertNotIn('|| true', prefetch)
-        self.assertIn('exit 1', prefetch)
-        self.assertRegex(build, r'gradlew :\$\{SERVICE\}:bootJar -x test --offline ')
-        self.assertTrue((ROOT / 'gradle/prefetch-dependencies.init.gradle').is_file())
 
     def test_existing_policy_step_propagates_failure(self):
         import yaml
@@ -287,7 +258,6 @@ def mutants():
         ('summary-incomplete', 'set(summary) == SUMMARY', 'True', 'test_hash_and_profile_shape_fail_closed'),
         ('detached-rebuild-accepted', "export_cache['cached']", 'True', 'test_export_rebuild_and_incomplete_vertices_rejected'),
         ('fresh-export-skipped', "if not boot['cached']:", 'if False:', 'test_fresh_profile_and_distinct_cache_export'),
-        ('cache-load-error-not-reset', "row.update(cached=False, completed=False, recovered=True)", "row.update(recovered=True)", 'test_cache_load_failure_recovers_by_execution'),
         ('cached-execution-output-ignored', "not row['cached'] or digest not in logged", 'True', 'test_materialized_cache_requires_structured_vertex_proof'),
         ('checksum-ignored', "manifest == sha(report) + '  build/reports/profile/' + report.name + '\\n'", 'True', 'test_hash_and_profile_shape_fail_closed'),
         ('progress-stream-discarded', 'stderr=subprocess.STDOUT', 'stderr=subprocess.PIPE', 'test_record_command_failure_is_propagated'),
@@ -312,9 +282,6 @@ def mutants():
         (root / 'scripts').mkdir(); (root / '.github/workflows').mkdir(parents=True)
         check = root / 'scripts/ci-build-profile-selftest.py'; check.write_text(Path(__file__).read_text())
         (root / 'Dockerfile').write_bytes((ROOT / 'Dockerfile').read_bytes())
-        # The workflow controls must fail on their own mutation, not on a missing D-123 init script.
-        (root / 'gradle').mkdir()
-        (root / 'gradle/prefetch-dependencies.init.gradle').write_bytes((ROOT / 'gradle/prefetch-dependencies.init.gradle').read_bytes())
         workflow = yaml.safe_load((ROOT / '.github/workflows/ci.yml').read_text())
         for name, value in [('export-cache-import-missing', None), ('export-cache-scope-mismatch', 'type=gha,scope=other'), ('fresh-export-always-skipped', 'skip'), ('cache-export-forced', 'force')]:
             changed = copy.deepcopy(workflow)
@@ -327,7 +294,7 @@ def mutants():
             result = subprocess.run([sys.executable, '-B', str(check), 'ProfileTest.test_workflow_and_final_runtime_contract'], text=True, capture_output=True)
             assert result.returncode and ('test_workflow_and_final_runtime_contract' in result.stderr), (name, result.stdout, result.stderr)
             print(name + ': REJECTED')
-    print('PASS: 17 wrong-implementation controls rejected; no Gradle/Docker invocation')
+    print('PASS: 16 wrong-implementation controls rejected; no Gradle/Docker invocation')
 
 
 if __name__ == '__main__':
