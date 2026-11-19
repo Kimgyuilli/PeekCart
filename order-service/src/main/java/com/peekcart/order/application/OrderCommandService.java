@@ -18,10 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HexFormat;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * 주문 생성/취소를 담당하는 애플리케이션 서비스.
@@ -30,6 +31,8 @@ import java.util.UUID;
 @Transactional
 @RequiredArgsConstructor
 public class OrderCommandService {
+
+    private static final SecureRandom ORDER_NUMBER_RANDOM = new SecureRandom();
 
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
@@ -117,9 +120,13 @@ public class OrderCommandService {
         outboxEventPublisher.publishOrderCancelled(order, OrderCancelReason.TIMEOUT);
     }
 
-    private String generateOrderNumber() {
+    /**
+     * {@code ORD-yyyyMMdd-} 뒤에 64비트 난수 16 hex 를 붙인다. 같은 날 n 건의 충돌 확률은 약 n²/2⁶⁵ 다(D-120).
+     * UUID 앞 16 hex 는 버전 니블이 고정돼 60비트뿐이라 쓰지 않는다.
+     */
+    static String generateOrderNumber() {
         String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
-        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        String suffix = HexFormat.of().withUpperCase().toHexDigits(ORDER_NUMBER_RANDOM.nextLong());
         return "ORD-" + date + "-" + suffix;
     }
 }
