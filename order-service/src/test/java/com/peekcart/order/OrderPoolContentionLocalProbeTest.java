@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -80,6 +81,7 @@ class OrderPoolContentionLocalProbeTest extends AbstractIntegrationTest {
     @Autowired MeterRegistry registry;
     @Autowired TransactionTemplate transactions;
     @Autowired ObjectMapper mapper;
+    @Value("${app.outbox.polling.batch-size}") int batchSize;
 
     private final AtomicBoolean pollerEnabled = new AtomicBoolean(false);
     private final AtomicBoolean pollerInCycle = new AtomicBoolean(false);
@@ -189,8 +191,9 @@ class OrderPoolContentionLocalProbeTest extends AbstractIntegrationTest {
         double seconds = (System.nanoTime() - start) / 1e9;
         long publishedDb = publishedCount() - published0;
         long publishedTimer = published.count() - timer0;
-        // 단일 poller 스레드는 타이머를 save 직전에 올린다. 경계마다 차이가 최대 1이라 구간 차분은 ±1 안이다.
-        assertThat(Math.abs(publishedTimer - publishedDb)).as("timer vs DB published").isLessThanOrEqualTo(1);
+        // 타이머는 ack 마다 오르고 DB PUBLISHED 는 사이클 끝에 한 번에 오른다(ADR-0049). 경계마다 DB 가 진행 중
+        // 사이클의 ack 만큼(최대 batch-size) 늦으므로 구간 차분은 ±batch-size 안이다.
+        assertThat(Math.abs(publishedTimer - publishedDb)).as("timer vs DB published").isLessThanOrEqualTo(batchSize);
         Map<String, Object> row = new LinkedHashMap<>();
         row.put("kind", kind);
         row.put("repetition", repetition);

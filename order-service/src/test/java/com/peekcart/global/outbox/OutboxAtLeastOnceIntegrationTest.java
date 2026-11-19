@@ -37,12 +37,11 @@ import static org.mockito.Mockito.doAnswer;
  * 우리 스택에 없다는 것이 ADR-0020 D1 의 결정이고, 여기서는 그 결정이 <b>참임을 관측</b>한다 —
  * 계약을 "중복은 일어날 수 있다 + 소비 효과는 1회" 로 적어두고 검증에서 반대를 주장하면 둘 중 하나가 거짓이다.
  *
- * <h2>왜 save 를 두 번 실패시키는가</h2>
- * "save 스텁 예외 1회" 로는 <b>중복 발행을 관측할 수 없다</b>:
- * {@link OutboxPollingService} 는 ack 직후 {@code markPublished()} 로 인메모리 상태를 이미 PUBLISHED 로
- * 바꾼 뒤 save 하고, 실패하면 {@code handlePublishFailure} 가 <b>같은 객체를 다시 save</b> 한다.
- * 두 번째 save 가 성공하면 PUBLISHED 가 그대로 저장되어 재발행이 없다.
- * 따라서 <b>한 사이클의 두 save 를 모두</b> 실패시켜야 행이 PENDING 으로 남는다.
+ * <h2>무엇을 실패시키는가</h2>
+ * {@link OutboxPollingService} 는 사이클에 ack 받은 이벤트를 루프가 끝난 뒤 {@code markPublished} 한 문장으로
+ * 기록한다(ADR-0049 D1). 그 문장 하나를 실패시키면 프로세스가 ack 와 기록 사이에서 죽은 것과 DB 결과가 같다.
+ * <b>중복 범위는 이벤트 1건이 아니라 그 사이클의 ack 전부</b>다(ADR-0049 D3). 그래서 이벤트를 여러 건 넣고
+ * 전부가 다시 발행되는지 본다.
  */
 @SpringBootTest
 @TestPropertySource(properties = {
@@ -66,7 +65,7 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
     private static final String TOPIC = "order.created";
 
     /**
-     * save 실패 주입 스위치.
+     * 묶음 기록 실패 주입 스위치.
      *
      * <p><b>Mockito 재스터빙 대신 플래그를 쓰는 이유</b>: 이 spy 는 테스트 스레드만 쓰는 것이 아니다.
      * {@code OutboxPollingScheduler} 가 {@code @Scheduled} 주기로 <b>같은 빈을 동시에</b>
@@ -76,7 +75,9 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
      *
      * <p>answer 를 <b>한 번만</b> 심고 플래그로 분기하면 재스터빙 구간 자체가 없어진다.
      */
-    private final AtomicBoolean failSaves = new AtomicBoolean(false);
+    private final AtomicBoolean failMarkPublished = new AtomicBoolean(false);
+
+    private static final int EVENTS = 3;
 
     @BeforeEach
     void setUp() {
@@ -90,66 +91,69 @@ class OutboxAtLeastOnceIntegrationTest extends AbstractIntegrationTest {
         // 이 테스트가 재는 것은 재발행이지 토픽 프로비저닝이 아니므로 전제를 명시적으로 갖춘다.
         awaitTopicReady();
 
-        failSaves.set(false);
+        failMarkPublished.set(false);
         doAnswer(invocation -> {
-            if (failSaves.get()) {
+            if (failMarkPublished.get()) {
                 throw new RuntimeException("DB down");
             }
             return invocation.callRealMethod();
-        }).when(outboxEventRepository).save(any());
+        }).when(outboxEventRepository).markPublished(any(), any());
     }
 
     @Test
-    @DisplayName("ack 후 상태 저장이 전부 실패하면 같은 이벤트가 두 번 발행되고, 소비 효과는 eventId 로 1회다")
+    @DisplayName("ack 후 묶음 기록이 실패하면 그 사이클의 이벤트 전부가 다시 발행되고, 각 레코드는 eventId 를 보존한다")
     void publicationIsAtLeastOnceAndConsumptionIsIdempotent() {
-        String eventId = UUID.randomUUID().toString();
-        insertPending(eventId);
+        List<String> eventIds = new ArrayList<>();
+        for (int i = 0; i < EVENTS; i++) {
+            String eventId = UUID.randomUUID().toString();
+            insertPending(eventId);
+            eventIds.add(eventId);
+        }
 
-        // 사이클의 두 save(성공 경로 + 실패 처리 경로)를 모두 죽인다 — 프로세스가 ack 와 커밋 사이에서
-        // 죽은 상황과 DB 에 남는 결과가 같다. 배경 poller 도 같은 실패를 겪지만 결과는 같다(행은 PENDING).
-        failSaves.set(true);
-        // 실패 처리 경로의 save(OutboxPollingService:122)는 try 밖이라 예외가 사이클을 뚫고 나온다 —
-        // 프로세스가 ack 와 커밋 사이에서 죽는 것과 같은 상황이다. 삼키지 말고 그 사실을 고정한다.
+        // 사이클 끝의 묶음 기록을 죽인다 — 프로세스가 ack 와 기록 사이에서 죽은 상황과 DB 에 남는 결과가 같다.
+        failMarkPublished.set(true);
+        // 기록 실패는 삼키지 않고 사이클 밖으로 나간다(ADR-0049 D3). 삼키면 PENDING 인 채 실패가 숨는다.
         assertThatThrownBy(() -> pollingService.pollAndPublish())
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("DB down");
 
         // **1사이클이 실제로 broker 에 닿았음을 여기서 확인한다.** 이 단언이 없으면 send 자체가 실패한
-        // 경우와 "send 성공 후 save 실패" 가 구분되지 않는다 — 둘 다 예외를 던지기 때문이다.
-        // 그러면 첫 발행이 조용히 사라진 채로 테스트가 진행해 **마지막 개수 단언에서 엉뚱하게** 터진다
-        // (실측으로 겪었다). at-least-once 의 전제는 "첫 발행이 ack 됐다" 이므로 그것부터 고정한다.
+        // 경우와 "send 성공 후 기록 실패" 가 구분되지 않는다.
         // **소비가 아니라 broker 의 end offset 으로 센다.** consumer group 조인·리밸런스·fetch 타이밍이
         // 끼어들면 "이미 ack 된 레코드를 못 봤다" 와 "생산이 안 됐다" 가 구분되지 않는다.
-        assertThat(brokerRecordCount()).as("1사이클 발행이 broker 에 ack 됐다").isEqualTo(1);
+        assertThat(brokerRecordCount()).as("1사이클 발행 전부가 broker 에 ack 됐다").isEqualTo(EVENTS);
 
-        // 행은 PENDING 으로 남는다. **DB 를 다시 읽어 확인한다** — 인메모리 엔티티는 이미 PUBLISHED 다.
-        assertThat(statusInDb(eventId)).isEqualTo("PENDING");
+        // ack 받은 이벤트 **전부**가 PENDING 으로 남는다. 중복 범위가 사이클 단위라는 것이 이 단언이다.
+        for (String eventId : eventIds) {
+            assertThat(statusInDb(eventId)).as(eventId).isEqualTo("PENDING");
+        }
 
-        // 장애 복구 후 다음 사이클. 배경 poller 가 먼저 집어가도 결과는 같다 — 어느 쪽이 발행하든
-        // 행은 PUBLISHED 가 되고 broker 에는 레코드가 하나 더 쌓인다.
-        failSaves.set(false);
+        // 장애 복구 후 다음 사이클.
+        failMarkPublished.set(false);
         pollingService.pollAndPublish();
-        await().atMost(Duration.ofSeconds(20))
-                .untilAsserted(() -> assertThat(statusInDb(eventId)).isEqualTo("PUBLISHED"));
+        await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> {
+            for (String eventId : eventIds) {
+                assertThat(statusInDb(eventId)).as(eventId).isEqualTo("PUBLISHED");
+            }
+        });
 
-        // broker 에는 같은 이벤트가 **2개 이상** 있다. 이것이 at-least-once 다.
-        //
-        // **정확히 2개를 단언하지 않는다.** 배경 poller(@Scheduled)도 같은 행을 집어가므로 중복 수는
-        // 타이밍에 따라 달라진다 — 실측에서 3개가 나왔다. 그리고 애초에 ADR-0020 D1 은 중복 수에
-        // 상한을 두지 않는다. 정확한 수를 단언하면 계약이 말하지 않는 것을 테스트가 주장하게 되고,
-        // 스케줄러 타이밍에 흔들리는 flaky 가 된다.
-        // 그래도 ">= 2" 로 적는 이유는 ADR-0020 D1 이 중복 수에 상한을 두지 않기 때문이다 —
-        // 계약이 말하지 않는 수를 단언하면 그 수가 바뀔 때 계약이 아니라 테스트가 깨진다.
-        assertThat(brokerRecordCount()).as("2사이클이 같은 이벤트를 다시 발행했다")
-                .isGreaterThanOrEqualTo(2);
+        // broker 에는 각 이벤트가 **2개 이상** 있다. 이것이 at-least-once 다.
+        // **정확한 수를 단언하지 않는다.** ADR-0020 D1 은 중복 수에 상한을 두지 않는다 — 계약이 말하지 않는
+        // 수를 단언하면 그 수가 바뀔 때 계약이 아니라 테스트가 깨진다.
+        assertThat(brokerRecordCount()).as("2사이클이 같은 이벤트들을 다시 발행했다")
+                .isGreaterThanOrEqualTo(2L * EVENTS);
 
-        List<ConsumerRecord<String, String>> records = drain(TOPIC, 2);
-        assertThat(records).hasSizeGreaterThanOrEqualTo(2);
+        List<ConsumerRecord<String, String>> records = drain(TOPIC, 2 * EVENTS);
         assertThat(records).extracting(ConsumerRecord::offset).doesNotHaveDuplicates();
-        // 전부 같은 payload 다 — 소비자의 processed_events (event_id, consumer_group) UNIQUE 가 효과를
-        // 1회로 접는다. 그 멱등이 성립하려면 eventId 가 재발행에도 보존돼야 한다.
-        assertThat(records).extracting(ConsumerRecord::value).containsOnly(records.get(0).value());
-        assertThat(records.get(0).value()).contains(eventId);
+        // 소비자의 processed_events (event_id, consumer_group) UNIQUE 가 효과를 1회로 접는다. 그 멱등이 성립하려면
+        // eventId 가 재발행에도 보존돼야 한다 — 이벤트마다 같은 payload 가 2개 이상 있어야 한다.
+        for (String eventId : eventIds) {
+            assertThat(records).filteredOn(r -> r.value().contains(eventId))
+                    .as(eventId)
+                    .hasSizeGreaterThanOrEqualTo(2)
+                    .extracting(ConsumerRecord::value)
+                    .containsOnly("{\"eventId\":\"" + eventId + "\"}");
+        }
     }
 
     private void insertPending(String eventId) {
