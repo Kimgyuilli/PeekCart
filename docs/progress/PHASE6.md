@@ -288,16 +288,15 @@ D-114 가 Kafka 를 `kafka-pvc` 에 연결한 뒤 운영 overlay 가 1Gi 에 쓰
 - 유입량(초당 170 주문, 주문당 레코드 5개·offset 커밋 11건)은 가정이다.
 - `offsets.topic.segment.bytes` 축소는 재검토 조건을 붙여 남겼다(`docs/plans/D-122.md` §미해결).
 
-## 2026-11-20 — CI 이미지 캐시의 PR 쓰기 중단
+## 2026-11-20 — CI 간헐 실패의 원인 확인과 처분
 
 [PR274](https://github.com/Kimgyuilli/PeekCart/pull/274) · 계획 `D-123`.
-PR #269~#272 병합 중 CI `images`·`test` job 이 코드와 무관하게 실패한 원인을 캐시 사용량으로 확인했다.
+PR #269~#272 병합 중 CI `images`·`test` job 이 코드와 무관하게 실패한 원인을 확인했다.
 
-- 원인: `images` job 의 `cache-to`(mode=max)가 PR 마다 Docker 레이어 캐시를 PR merge ref 에 쓴다. 2026-11-20 측정 16.46GB 중 PR ref 15.92GB 는 이 PR 의 run 3번(run 당 약 5GB)이 쓴 것이었고, 2026-11-19 실패 당시 사용량은 남아 있지 않다. 같은 쓰기가 PR 4개 동시 실행에서 한도 10GB 를 넘겼다고 본다(추정). PR ref 캐시는 다른 PR 이 읽지 못한다. 축출로 Gradle 의존성 캐시는 1개, main 레이어 캐시는 0.28GB 만 남았고, 캐시를 잃은 job 이 Maven Central 에서 의존성을 다시 받다 429·404 와 빌드 중 blob 누락으로 떨어졌다.
-- 처분: `cache-to` 를 main push 에서만 쓴다. PR 은 main 캐시를 읽기만 한다. 쌓인 PR ref 캐시는 한 번 지웠다.
-- 경과: 처음에는 증상별로 빌드 증거 검사 로직 수정, Dockerfile 의 jar 사전 다운로드와 `--offline`, 재시도 대기 확대를 넣었다. 사전 다운로드가 캐시 미스로 매번 다시 돌며 같은 원격 실패를 내 원인을 다시 봤고, 덧붙인 변경은 모두 걷어냈다(사용자 결정, 최소 복잡도).
-- 함께 고친 것: #271 이 이름을 바꾼 테스트가 payment baseline fixture 에 반영되지 않아 Flyway contract 워크플로가 실패했다. 경로 필터로 #271 에서 돌지 않았다. 334건을 유지하고 이름만 교체했다.
+- 직접 원인: Maven Central 요청 제한. test job 이 `Received status code 429` 를 받았고, 이미지 빌드의 jar 404 와 플러그인 해석 실패도 같은 시간대(2026-11-19 15시 이후)에만 났다. 외부 원인이라 코드로 고치지 않고 재실행으로 처리한다(사용자 결정, 최소 복잡도).
+- 시도하고 되돌린 것: 빌드 증거 검사 로직 수정, Dockerfile jar 사전 다운로드와 `--offline`, 재시도 대기 확대, `cache-to` main 전용. 사전 다운로드는 캐시 미스로 매번 다시 돌며 같은 원격 실패를 냈고, `cache-to` 변경은 빌드 증거 검사가 캐시 내보내기 단계를 필수로 요구해 새 실패를 만들었다. 캐시 한도 초과 근거로 쓴 16.46GB 중 15.92GB 는 이 PR 자신의 실행분이었다.
+- 남은 변경: #271 이 이름을 바꾼 테스트가 payment baseline fixture 에 반영되지 않아 Flyway contract 워크플로가 실패했다(경로 필터로 #271 에서 돌지 않음). 334건을 유지하고 이름만 교체했다. 이 PR 의 실행이 쓴 GHA 캐시는 지웠다.
 
 미충족과 범위 밖:
-- 병합 뒤 첫 main push 가 캐시를 다시 채울 때까지 PR 은 캐시 미스로 빌드한다.
-- Docker Hub base 이미지 resolve 실패(2026-10-24)는 다른 경로라 다루지 않았다.
+- Maven Central 요청 제한이 계속되면 실패 시점의 캐시 사용량부터 측정해 축출과의 관계를 확인한다.
+- blob 누락 뒤 재실행으로 끝난 빌드를 빌드 증거 검사가 실패로 보는 문제는 남는다.
