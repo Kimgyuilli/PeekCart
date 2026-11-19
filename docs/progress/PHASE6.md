@@ -272,3 +272,18 @@ D-110 이 남긴 부하 중 order outbox 발행 굶음을 저장 묶기(ADR-0045
 - 교착 분석은 코드와 InnoDB 잠금 규칙을 읽은 결과이고 테스트로 재현하지 않았다.
 - 선도착 취소가 있는 주문의 Payment 는 PENDING INSERT 뒤 같은 트랜잭션에서 CANCELLED 로 바뀌어 version 1 로 커밋된다.
 - 새 통합 테스트의 경합 helper 는 D-112 테스트와 같은 코드를 복제했다.
+
+## 2026-11-20 — 운영 overlay Kafka 볼륨 증설
+
+[PR272](https://github.com/Kimgyuilli/PeekCart/pull/272) · 계획 `D-122` · 출처 D-114([#268](https://github.com/Kimgyuilli/PeekCart/pull/268)) §미해결.
+D-114 가 Kafka 를 `kafka-pvc` 에 연결한 뒤 운영 overlay 가 1Gi 에 쓰던 것을 증설로 처분했다(사용자 결정 2026-11-19, 시간 기준 7일 보존 유지).
+
+- 전제 정정: 선언 토픽 30개는 `KafkaTopicConfigs`(ADR-0020 §D4-1)로 이미 retention·segment 가 작게 묶여 있었다(최대 630MiB). 크기가 묶이지 않은 것은 `__consumer_offsets` 와 KRaft metadata 였다.
+- 산정: 로컬 `apache/kafka:3.8.1` 실측(metadata 유휴 증가 초당 143B, offset 커밋 153B)과 `AckMode.RECORD`·컨슈머 그룹 35개로 상한 약 6.0GiB. `gke` 10Gi, `minikube` 2Gi 로 올렸다.
+- 배포: GKE `standard-rwo` 는 온라인 확장. minikube hostpath 는 확장이 안 되어 기존 클러스터는 `deploy/kafka`·`pvc/kafka-pvc` 를 지우고 다시 적용한다. PVC 는 줄일 수 없어 롤백은 10Gi 유지다.
+- 검증: 11개 overlay 렌더 diff(의도한 2줄만), `test_deploy_overlay.py` 13개(크기 단언 실패 주입 포함), CI policy lint 51개, `scripts/*-lint.sh` 24개.
+
+미충족과 범위 밖:
+- GKE 확장과 minikube 거부는 실클러스터에서 확인하지 않았다. 다음 과금 세션 첫 배포에서 확인한다.
+- 유입량(초당 170 주문, 주문당 레코드 5개·offset 커밋 11건)은 가정이다.
+- `offsets.topic.segment.bytes` 축소는 재검토 조건을 붙여 남겼다(`docs/plans/D-122.md` §미해결).
